@@ -27,6 +27,7 @@ $prompts = New-Object System.Collections.Generic.List[object]
 $toolCount = @{}
 $sessions = @{}
 $agentRuns = New-Object System.Collections.Generic.List[object]
+$harnessNotices = 0
 
 foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory -ErrorAction SilentlyContinue) {
     $dayDir = Join-Path $machineDir.FullName $Date
@@ -36,6 +37,9 @@ foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory 
             try { $o = $line | ConvertFrom-Json } catch { continue }
             $sessions["$($o.machine)/$($o.session)"] = $true
             if ($o.event -eq 'UserPromptSubmit') {
+                # Los avisos automaticos del arnes (fin de tareas en segundo plano, eventos de
+                # otras sesiones, CI...) llegan como UserPromptSubmit pero no son prompts del equipo.
+                if ([string]$o.payload.prompt -match '^\s*<(task-notification|system-reminder|side-sessions-event|ci-monitor-event)\b') { $harnessNotices++; continue }
                 $prompts.Add([pscustomobject]@{ ts = $o.ts_utc; machine = $o.machine; text = (Redact ([string]$o.payload.prompt)) })
             } elseif ($o.event -eq 'PostToolUse') {
                 $k = [string]$o.payload.tool_name
@@ -68,7 +72,7 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine()
 [void]$sb.AppendLine("## Automatic data")
 [void]$sb.AppendLine("- Claude Code sessions: $($sessions.Count)")
-[void]$sb.AppendLine("- Team prompts to agents: $($prompts.Count)")
+[void]$sb.AppendLine("- Team prompts to agents: $($prompts.Count) (automatic harness notices left out: $harnessNotices)")
 [void]$sb.AppendLine("- External agent runs: $(@($agentRuns | Where-Object event -eq 'start').Count)")
 [void]$sb.AppendLine("- MCP calls inside Unreal: $mcpCalls")
 [void]$sb.AppendLine()
