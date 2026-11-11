@@ -25,3 +25,10 @@ Incoming/
 
 # Copia original del kit (ya desplegado en la raiz)
 JamKit/
+
+# Datos locales de maquina (no van al repo)
+Tools/AssetSearch/data/
+_probe_notes/
+MCPProbe59/
+Devlog/prejam_evidencia/
+_backup_presync/
