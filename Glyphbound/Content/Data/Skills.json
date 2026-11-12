@@ -1,0 +1,144 @@
+{
+	"Skills": [
+		{
+			"Id": "Weapon_Damage",
+			"Tree": "Weapon",
+			"DisplayName": "Heavy Rounds",
+			"Description": "+10% gun damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.Damage", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_FireRate",
+			"Tree": "Weapon",
+			"DisplayName": "Quick Trigger",
+			"Description": "8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Recoil",
+			"Tree": "Weapon",
+			"DisplayName": "Steady Grip",
+			"Description": "20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Headshot",
+			"Tree": "Weapon",
+			"DisplayName": "Marksman",
+			"Description": "+0.25x headshot damage per rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Recoil" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 2,
+			"Row": 2
+		},
+		{
+			"Id": "Weapon_ShotgunClose",
+			"Tree": "Weapon",
+			"DisplayName": "Point Blank",
+			"Description": "Shotgun: +0.2x damage up close per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
+			"Id": "Weapon_RifleFar",
+			"Tree": "Weapon",
+			"DisplayName": "Long Shot",
+			"Description": "Rifle: +0.15x damage at long range per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.15 } ],
+			"Column": 1,
+			"Row": 2
+		},
+		{
+			"Id": "Spell_FireballDamage",
+			"Tree": "Spell",
+			"DisplayName": "Searing Fireball",
+			"Description": "+15% fireball damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_FireballBlast",
+			"Tree": "Spell",
+			"DisplayName": "Wide Blast",
+			"Description": "+20% fireball blast radius per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Spell_FireballDamage" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.ExplosionRadius", "Op": "Multiply", "Value": 1.2 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_LightningDamage",
+			"Tree": "Spell",
+			"DisplayName": "Overcharge",
+			"Description": "+15% lightning bolt damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.LightningBolt.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_IceWallHealth",
+			"Tree": "Spell",
+			"DisplayName": "Glacier Wall",
+			"Description": "+25% ice wall health per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceWall.Health", "Op": "Multiply", "Value": 1.25 } ],
+			"Column": 2,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_ManaCost",
+			"Tree": "Spell",
+			"DisplayName": "Frugal Casting",
+			"Description": "10% less mana cost for every spell per rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Spell_LightningDamage" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.All.ManaCost", "Op": "Multiply", "Value": 0.9 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_Cooldown",
+			"Tree": "Spell",
+			"DisplayName": "Quick Recall",
+			"Description": "10% shorter cooldowns for every spell per rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Spell_ManaCost" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.All.Cooldown", "Op": "Multiply", "Value": 0.9 } ],
+			"Column": 1,
+			"Row": 2
+		}
+	]
+}

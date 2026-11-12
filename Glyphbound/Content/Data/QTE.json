@@ -1,0 +1,22 @@
+{
+	"bEnabled": true,
+	"Stats": {
+		"QTE.TimeDilation": 0.1,
+		"QTE.TimeLimit": 3.0,
+		"QTE.SequenceLength": 4,
+		"QTE.GestureCount": 1,
+		"QTE.GestureMinScore": 0.35,
+		"QTE.GestureMinLength": 120.0,
+		"QTE.GestureIdleSubmitTime": 0.25,
+		"QTE.LineSubmitLengthMult": 2.5,
+		"QTE.StickGestureScale": 600.0
+	},
+	"Gestures": [
+		"LineRight",
+		"LineLeft",
+		"LineDown",
+		"LineUp",
+		"CircleClockwise",
+		"CircleCounterClockwise"
+	]
+}

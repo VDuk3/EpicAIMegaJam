@@ -1,0 +1,8 @@
+[0m
+> build · muse-spark-1.3-contributor
+Checking those two files.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h 
+> build · muse-spark-1.3-contributor
+1. Value = `(Base + sum of Add) * product of Multiply`, or the last Override if any.
+2. `UGBStatsComponent::AddModifiers` with Source `Skill.<Name>` e.g. `Skill.FireballDamage`.

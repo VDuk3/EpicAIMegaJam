@@ -1,0 +1,162 @@
+{
+	"Items": [
+		{
+			"Id": "HealthPotion",
+			"DisplayName": "Health Potion",
+			"Description": "Restores health over a few seconds.",
+			"Type": "Consumable",
+			"MaxStack": 5,
+			"bQuickUse": true,
+			"UseEffect": "HealthPotion",
+			"Strings": { "Sprite": "potion_health" }
+		},
+		{
+			"Id": "ManaPotion",
+			"DisplayName": "Mana Potion",
+			"Description": "Restores mana over a few seconds.",
+			"Type": "Consumable",
+			"MaxStack": 5,
+			"bQuickUse": true,
+			"UseEffect": "ManaPotion",
+			"Strings": { "Sprite": "potion_mana" }
+		},
+		{
+			"Id": "HealthInjection",
+			"DisplayName": "Health Injection",
+			"Description": "Heals instantly, but less than a potion.",
+			"Type": "Consumable",
+			"MaxStack": 5,
+			"bQuickUse": true,
+			"UseEffect": "HealthInjection",
+			"Strings": { "Sprite": "injection_health" }
+		},
+		{
+			"Id": "ElectricGrenade",
+			"DisplayName": "Electric Grenade",
+			"Description": "Bounces, then explodes in a burst of lightning that shocks everything around it.",
+			"Type": "Throwable",
+			"MaxStack": 3,
+			"bQuickUse": true,
+			"Element": "Lightning",
+			"Stats": {
+				"Damage": 70,
+				"Radius": 450,
+				"Speed": 1800,
+				"FuseTime": 1.6,
+				"ProjectileGravity": 1,
+				"ProjectileRadius": 12,
+				"ThrowPitch": 8
+			},
+			"Strings": { "OnHitEffect": "Shock", "Sprite": "grenade_electric" }
+		},
+		{
+			"Id": "Ammo_Magazine",
+			"DisplayName": "Magazine",
+			"Description": "A spare magazine for the gun in hand.",
+			"Type": "Ammo",
+			"MaxStack": 1,
+			"Stats": { "SpareMagazines": 1 },
+			"Strings": { "Sprite": "ammo_magazine" }
+		},
+		{
+			"Id": "Armor_Chronoweave",
+			"DisplayName": "Chronoweave Armor",
+			"Description": "Woven from slowed time: the world crawls a little more while you cast, and you get a little longer to finish.",
+			"Type": "Armor",
+			"MaxStack": 1,
+			"Modifiers": [
+				{ "Stat": "QTE.TimeDilation", "Op": "Multiply", "Value": 0.6 },
+				{ "Stat": "QTE.TimeLimit", "Op": "Add", "Value": 0.5 }
+			],
+			"Strings": { "Sprite": "armor_chronoweave" }
+		},
+		{
+			"Id": "Gem_Fire",
+			"DisplayName": "Fire Gem",
+			"Description": "An elemental stone. Combine it with the hilt to forge a fire blade.",
+			"Type": "Material",
+			"MaxStack": 1,
+			"Element": "Fire",
+			"Strings": { "Sprite": "gem_fire" }
+		},
+		{
+			"Id": "Gem_Lightning",
+			"DisplayName": "Lightning Gem",
+			"Description": "An elemental stone. Combine it with the hilt to forge a lightning blade.",
+			"Type": "Material",
+			"MaxStack": 1,
+			"Element": "Lightning",
+			"Strings": { "Sprite": "gem_lightning" }
+		},
+		{
+			"Id": "Gem_Ice",
+			"DisplayName": "Ice Gem",
+			"Description": "An elemental stone. Combine it with the hilt to forge an ice blade.",
+			"Type": "Material",
+			"MaxStack": 1,
+			"Element": "Ice",
+			"Strings": { "Sprite": "gem_ice" }
+		},
+		{
+			"Id": "SwordHilt",
+			"DisplayName": "Sword Hilt",
+			"Description": "A hilt from the future with no blade. A gem could give it one.",
+			"Type": "Material",
+			"MaxStack": 1,
+			"Strings": { "Sprite": "sword_hilt" }
+		},
+		{
+			"Id": "QuestItem_Past",
+			"DisplayName": "Rune Shard",
+			"Description": "Half of a key. The other half is not from this time.",
+			"Type": "KeyItem",
+			"MaxStack": 1,
+			"Strings": { "Sprite": "quest_past" }
+		},
+		{
+			"Id": "QuestItem_Future",
+			"DisplayName": "Cryo Core",
+			"Description": "Half of a key. The other half is not from this time.",
+			"Type": "KeyItem",
+			"MaxStack": 1,
+			"Strings": { "Sprite": "quest_future" }
+		}
+	],
+	"Recipes": [
+		{
+			"Id": "Forge_FireSword",
+			"A": "SwordHilt",
+			"B": "Gem_Fire",
+			"bConsumeA": false,
+			"bConsumeB": false,
+			"ResultWeapon": "ElementalSword",
+			"ResultElement": "Fire"
+		},
+		{
+			"Id": "Forge_LightningSword",
+			"A": "SwordHilt",
+			"B": "Gem_Lightning",
+			"bConsumeA": false,
+			"bConsumeB": false,
+			"ResultWeapon": "ElementalSword",
+			"ResultElement": "Lightning"
+		},
+		{
+			"Id": "Forge_IceSword",
+			"A": "SwordHilt",
+			"B": "Gem_Ice",
+			"bConsumeA": false,
+			"bConsumeB": false,
+			"ResultWeapon": "ElementalSword",
+			"ResultElement": "Ice"
+		},
+		{
+			"Id": "OpenFinalPortal",
+			"A": "QuestItem_Past",
+			"B": "QuestItem_Future",
+			"bConsumeA": true,
+			"bConsumeB": true,
+			"SetsFlag": "FinalPortalOpen"
+		}
+	]
+}

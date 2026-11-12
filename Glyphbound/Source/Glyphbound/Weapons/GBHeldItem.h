@@ -10,6 +10,28 @@
 class AGBPlayerCharacter;
 class UGBStatsComponent;
 
+/** Weapon stats owned by the Weapons module that are not in Core/GBStatNames.h. */
+namespace GBWeaponStat
+{
+	inline const FName AimTime(TEXT("AimTime"));                    // seconds to go from hip to full aim (FOV lerp)
+}
+
+/** Keys of the status-effect "Strings" map read by the gun enchant hook (GDD 6 "Weapon enchant"). */
+namespace GBWeaponString
+{
+	inline const FName WeaponElement(TEXT("WeaponElement"));         // element name ("Fire", "Lightning", "Ice"...)
+	inline const FName WeaponOnHitEffect(TEXT("WeaponOnHitEffect")); // status effect id applied by the enchanted gun's hits
+}
+
+namespace GBWeapon
+{
+	/**
+	 * Channel for hitscan and aim traces. Not Visibility: the engine's Pawn profile ignores Visibility, so a
+	 * Visibility trace would go through enemy capsules. Camera blocks pawns and walls and ignores triggers.
+	 */
+	inline constexpr ECollisionChannel AimTraceChannel = ECC_Camera;
+}
+
 /** Ammo of one weapon (GDD 8: fixed spare magazines, each with a fixed number of bullets). Zero for staffs and swords. */
 USTRUCT(BlueprintType)
 struct GLYPHBOUND_API FGBAmmoState
@@ -80,12 +102,45 @@ public:
 	/** Seconds since the last primary attack, for HUD hand animation. */
 	float GetTimeSinceLastAttack() const;
 
+	/** Definition's bAutomatic (hold to keep attacking). */
+	bool IsAutomatic() const;
+
+	/**
+	 * The weapon enchant active on the player, if any: the first active status effect whose definition has
+	 * Strings["WeaponElement"]. OutOnHitEffect = Strings["WeaponOnHitEffect"] or None. Only guns use it (GDD 6).
+	 */
+	bool GetActiveEnchant(EGBElement& OutElement, FName& OutOnHitEffect) const;
+
+	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	AGBPlayerCharacter* GetPlayerOwner() const { return PlayerOwner.Get(); }
 	UGBStatsComponent* GetOwnerStats() const;
 
 	/** Builds the item's damage for one hit: Damage stat, element, instigator, SourceId = WeaponId, OnHitEffect from Strings. */
 	FGBDamageInfo MakeDamageInfo() const;
+
+	/** True only for items the weapon enchant applies to (guns; never the sword, GDD 6). */
+	virtual bool AcceptsEnchant() const { return false; }
+
+	// ---- Trigger handling shared by every item (FireInterval, bAutomatic, a pressed shot is buffered until ready) ----
+	void PressTrigger();
+	void ReleaseTrigger();
+	/** Attacks if the trigger asks for it and FireInterval has passed. Called from Tick and on press. */
+	void UpdateTrigger();
+	bool IsAttackReady() const;
+	/** One attack. Return true if it happened (sets LastAttackTime); false if refused (no mana, empty magazine...). */
+	virtual bool PerformAttack() { return false; }
+
+	/** Point the camera aims at: trace from the aim origin up to Range; the far point when nothing is hit. */
+	FVector FindAimPoint(float Range) const;
+
+	/** Broadcasts the owner's UGBEquipmentComponent::OnEquipmentChanged (ammo and reload changes). */
+	void NotifyEquipmentChanged() const;
+
+	bool bTriggerHeld = false;
+	bool bAttackQueued = false;
+	FRandomStream Random;
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Root;
 

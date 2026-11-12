@@ -1,0 +1,266 @@
+{
+	"Spells": [
+		{
+			"Id": "Fireball",
+			"DisplayName": "Fireball",
+			"Description": "A ball of fire that explodes on impact and sets enemies alight.",
+			"Element": "Fire",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
+			"bStartsKnown": true,
+			"UnlockGroup": "Fire",
+			"Params": {
+				"ManaCost":        { "Base": 15,   "Min": 15,   "Max": 15,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 1.0,  "Min": 1.0,  "Max": 1.0,  "ScaledBy": "None" },
+				"Damage":          { "Base": 40,   "Min": 20,   "Max": 60,   "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 0.5,  "Max": 1.5,  "ScaledBy": "Power" },
+				"ExplosionRadius": { "Base": 200,  "Min": 100,  "Max": 300,  "ScaledBy": "Reach" },
+				"Range":           { "Base": 5000, "Min": 3000, "Max": 7000, "ScaledBy": "Reach" },
+				"Speed":           { "Base": 2500, "Min": 2500, "Max": 2500, "ScaledBy": "None" },
+				"Radius":          { "Base": 15,   "Min": 15,   "Max": 15,   "ScaledBy": "None" },
+				"ProjectileGravity": { "Base": 0,  "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"VisualScale":     { "Base": 2.0,  "Min": 2.0,  "Max": 2.0,  "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "fireball", "Color": "#FF7A1A", "OnHitEffect": "Burn" }
+		},
+		{
+			"Id": "FireWall",
+			"DisplayName": "Fire Wall",
+			"Description": "Raises a wall of flames that burns every enemy who crosses it.",
+			"Element": "Fire",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Wall",
+			"UnlockGroup": "Fire",
+			"Params": {
+				"ManaCost":        { "Base": 25,   "Min": 25,   "Max": 25,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 8,    "Min": 8,    "Max": 8,    "ScaledBy": "None" },
+				"Duration":        { "Base": 6,    "Min": 4,    "Max": 8,    "ScaledBy": "Power" },
+				"DamagePerSecond": { "Base": 20,   "Min": 10,   "Max": 30,   "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 0.5,  "Max": 1.5,  "ScaledBy": "Power" },
+				"Width":           { "Base": 400,  "Min": 250,  "Max": 600,  "ScaledBy": "Reach" },
+				"Height":          { "Base": 200,  "Min": 150,  "Max": 250,  "ScaledBy": "Reach" },
+				"Thickness":       { "Base": 60,   "Min": 60,   "Max": 60,   "ScaledBy": "None" },
+				"Distance":        { "Base": 400,  "Min": 400,  "Max": 400,  "ScaledBy": "None" },
+				"TickInterval":    { "Base": 0.5,  "Min": 0.5,  "Max": 0.5,  "ScaledBy": "None" },
+				"Blocking":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "fire_wall", "Color": "#FF5A1A", "OnHitEffect": "Burn" }
+		},
+		{
+			"Id": "Flamethrower",
+			"DisplayName": "Flamethrower",
+			"Description": "A stream of fire from your hand. Cast again to stop it.",
+			"Element": "Fire",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
+			"bSustained": true,
+			"UnlockGroup": "Fire",
+			"Params": {
+				"ManaCost":        { "Base": 20,   "Min": 20,   "Max": 20,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 6,    "Min": 6,    "Max": 6,    "ScaledBy": "None" },
+				"Duration":        { "Base": 4,    "Min": 2.5,  "Max": 5.5,  "ScaledBy": "Power" },
+				"DamagePerSecond": { "Base": 40,   "Min": 25,   "Max": 55,   "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 0.5,  "Min": 0.5,  "Max": 0.5,  "ScaledBy": "None" },
+				"Range":           { "Base": 700,  "Min": 450,  "Max": 950,  "ScaledBy": "Reach" },
+				"ConeAngle":       { "Base": 20,   "Min": 12,   "Max": 28,   "ScaledBy": "Reach" },
+				"TickInterval":    { "Base": 0.2,  "Min": 0.2,  "Max": 0.2,  "ScaledBy": "None" },
+				"ManaPerSecond":   { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"SpriteSize":      { "Base": 40,   "Min": 40,   "Max": 40,   "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "flame", "Color": "#FF8C1A", "OnHitEffect": "Burn" }
+		},
+		{
+			"Id": "LightningBolt",
+			"DisplayName": "Lightning Bolt",
+			"Description": "A fast bolt that goes through every enemy in its path.",
+			"Element": "Lightning",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
+			"bStartsKnown": true,
+			"UnlockGroup": "Lightning",
+			"Params": {
+				"ManaCost":        { "Base": 10,   "Min": 10,   "Max": 10,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 0.6,  "Min": 0.6,  "Max": 0.6,  "ScaledBy": "None" },
+				"Damage":          { "Base": 30,   "Min": 15,   "Max": 45,   "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 0.5,  "Max": 1.5,  "ScaledBy": "Power" },
+				"Range":           { "Base": 6000, "Min": 4000, "Max": 8000, "ScaledBy": "Reach" },
+				"Speed":           { "Base": 6000, "Min": 6000, "Max": 6000, "ScaledBy": "None" },
+				"Radius":          { "Base": 10,   "Min": 10,   "Max": 10,   "ScaledBy": "None" },
+				"ExplosionRadius": { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"Pierce":          { "Base": 1,    "Min": 1,    "Max": 1,    "ScaledBy": "None" },
+				"VisualScale":     { "Base": 2.0,  "Min": 2.0,  "Max": 2.0,  "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "lightning_bolt", "Color": "#FFE84A", "OnHitEffect": "Shock" }
+		},
+		{
+			"Id": "LightningRune",
+			"DisplayName": "Lightning Rune",
+			"Description": "A rune on the ground that explodes when an enemy steps on it.",
+			"Element": "Lightning",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Trap",
+			"UnlockGroup": "Lightning",
+			"Params": {
+				"ManaCost":        { "Base": 20,   "Min": 20,   "Max": 20,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 5,    "Min": 5,    "Max": 5,    "ScaledBy": "None" },
+				"Damage":          { "Base": 70,   "Min": 40,   "Max": 100,  "ScaledBy": "Power" },
+				"Duration":        { "Base": 20,   "Min": 15,   "Max": 25,   "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 0.5,  "Max": 1.5,  "ScaledBy": "Power" },
+				"Range":           { "Base": 1500, "Min": 1000, "Max": 2000, "ScaledBy": "Reach" },
+				"TriggerRadius":   { "Base": 150,  "Min": 100,  "Max": 200,  "ScaledBy": "Reach" },
+				"Radius":          { "Base": 300,  "Min": 200,  "Max": 400,  "ScaledBy": "Reach" },
+				"ArmTime":         { "Base": 0.75, "Min": 0.75, "Max": 0.75, "ScaledBy": "None" },
+				"Height":          { "Base": 200,  "Min": 200,  "Max": 200,  "ScaledBy": "None" },
+				"BlastHeight":     { "Base": 50,   "Min": 50,   "Max": 50,   "ScaledBy": "None" },
+				"Falloff":         { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"SpriteSize":      { "Base": 50,   "Min": 50,   "Max": 50,   "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "rune_lightning", "Color": "#FFE84A", "OnHitEffect": "Shock" }
+		},
+		{
+			"Id": "StaticOrb",
+			"DisplayName": "Static Orb",
+			"Description": "A slow ball of static electricity that shocks every enemy around it.",
+			"Element": "Lightning",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Orb",
+			"UnlockGroup": "Lightning",
+			"Params": {
+				"ManaCost":        { "Base": 25,   "Min": 25,   "Max": 25,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 7,    "Min": 7,    "Max": 7,    "ScaledBy": "None" },
+				"Duration":        { "Base": 6,    "Min": 4,    "Max": 8,    "ScaledBy": "Power" },
+				"DamagePerSecond": { "Base": 25,   "Min": 15,   "Max": 35,   "ScaledBy": "Power" },
+				"Range":           { "Base": 2000, "Min": 1200, "Max": 2800, "ScaledBy": "Reach" },
+				"Radius":          { "Base": 250,  "Min": 150,  "Max": 350,  "ScaledBy": "Reach" },
+				"Speed":           { "Base": 400,  "Min": 400,  "Max": 400,  "ScaledBy": "None" },
+				"TickInterval":    { "Base": 0.5,  "Min": 0.5,  "Max": 0.5,  "ScaledBy": "None" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 1.0,  "Max": 1.0,  "ScaledBy": "None" },
+				"ShowArea":        { "Base": 1,    "Min": 1,    "Max": 1,    "ScaledBy": "None" },
+				"SpriteSize":      { "Base": 60,   "Min": 60,   "Max": 60,   "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "static_orb", "Color": "#CFE8FF", "OnHitEffect": "Shock" }
+		},
+		{
+			"Id": "IceWall",
+			"DisplayName": "Ice Wall",
+			"Description": "Raises a wall of ice that stops enemies and shots until it breaks or melts.",
+			"Element": "Ice",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Wall",
+			"bStartsKnown": true,
+			"UnlockGroup": "Ice",
+			"Params": {
+				"ManaCost":        { "Base": 20,   "Min": 20,   "Max": 20,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 6,    "Min": 6,    "Max": 6,    "ScaledBy": "None" },
+				"Duration":        { "Base": 8,    "Min": 5,    "Max": 11,   "ScaledBy": "Power" },
+				"Health":          { "Base": 300,  "Min": 150,  "Max": 450,  "ScaledBy": "Power" },
+				"Width":           { "Base": 400,  "Min": 250,  "Max": 600,  "ScaledBy": "Reach" },
+				"Height":          { "Base": 250,  "Min": 180,  "Max": 320,  "ScaledBy": "Reach" },
+				"Thickness":       { "Base": 50,   "Min": 50,   "Max": 50,   "ScaledBy": "None" },
+				"Distance":        { "Base": 350,  "Min": 350,  "Max": 350,  "ScaledBy": "None" },
+				"Blocking":        { "Base": 1,    "Min": 1,    "Max": 1,    "ScaledBy": "None" },
+				"DamageTaken":     { "Base": 1,    "Min": 1,    "Max": 1,    "ScaledBy": "None" },
+				"DamagePerSecond": { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "ice_wall", "Color": "#7FE0FF" }
+		},
+		{
+			"Id": "IceShield",
+			"DisplayName": "Ice Shield",
+			"Description": "Hold a shield of ice that blocks hits from the front. Cast again to lower it.",
+			"Element": "Ice",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Shield",
+			"bSustained": true,
+			"UnlockGroup": "Ice",
+			"Params": {
+				"ManaCost":        { "Base": 15,   "Min": 15,   "Max": 15,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 8,    "Min": 8,    "Max": 8,    "ScaledBy": "None" },
+				"Duration":        { "Base": 5,    "Min": 3,    "Max": 7,    "ScaledBy": "Power" },
+				"Health":          { "Base": 150,  "Min": 80,   "Max": 220,  "ScaledBy": "Power" },
+				"BlockFraction":   { "Base": 0.75, "Min": 0.5,  "Max": 1.0,  "ScaledBy": "Reach" },
+				"Distance":        { "Base": 80,   "Min": 80,   "Max": 80,   "ScaledBy": "None" },
+				"SpriteSize":      { "Base": 45,   "Min": 45,   "Max": 45,   "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "ice_shield", "Color": "#9FEFFF" }
+		},
+		{
+			"Id": "IceFloor",
+			"DisplayName": "Ice Floor",
+			"Description": "Freezes the ground; enemies on it are slowed.",
+			"Element": "Ice",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Zone",
+			"UnlockGroup": "Ice",
+			"Params": {
+				"ManaCost":        { "Base": 20,   "Min": 20,   "Max": 20,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 8,    "Min": 8,    "Max": 8,    "ScaledBy": "None" },
+				"Duration":        { "Base": 6,    "Min": 4,    "Max": 8,    "ScaledBy": "Power" },
+				"EffectStrength":  { "Base": 1.0,  "Min": 0.7,  "Max": 1.3,  "ScaledBy": "Power" },
+				"EffectDuration":  { "Base": 1.0,  "Min": 1.0,  "Max": 1.0,  "ScaledBy": "None" },
+				"Range":           { "Base": 1200, "Min": 800,  "Max": 1600, "ScaledBy": "Reach" },
+				"Radius":          { "Base": 300,  "Min": 200,  "Max": 450,  "ScaledBy": "Reach" },
+				"Height":          { "Base": 200,  "Min": 200,  "Max": 200,  "ScaledBy": "None" },
+				"TickInterval":    { "Base": 0.5,  "Min": 0.5,  "Max": 0.5,  "ScaledBy": "None" },
+				"DamagePerSecond": { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"SpriteSize":      { "Base": 60,   "Min": 60,   "Max": 60,   "ScaledBy": "None" }
+			},
+			"Strings": { "Sprite": "ice_floor", "Color": "#9FEFFF", "OnHitEffect": "Slow" }
+		},
+		{
+			"Id": "Air_DoubleJump",
+			"DisplayName": "Double Jump",
+			"Description": "Passive: jump again in mid-air.",
+			"Element": "Air",
+			"ActorClass": "",
+			"bPassive": true,
+			"UnlockGroup": "Air",
+			"Params": {
+				"ManaCost":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"Cooldown":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" }
+			},
+			"PassiveModifiers": [
+				{ "Stat": "MaxJumps", "Op": "Add", "Value": 1 }
+			]
+		},
+		{
+			"Id": "Air_Dash",
+			"DisplayName": "Improved Dash",
+			"Description": "Passive: your dash goes farther and recovers faster.",
+			"Element": "Air",
+			"ActorClass": "",
+			"bPassive": true,
+			"UnlockGroup": "Air",
+			"Params": {
+				"ManaCost":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"Cooldown":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" }
+			},
+			"PassiveModifiers": [
+				{ "Stat": "DashDistance", "Op": "Multiply", "Value": 1.4 },
+				{ "Stat": "DashCooldown", "Op": "Multiply", "Value": 0.7 }
+			]
+		},
+		{
+			"Id": "Air_Speed",
+			"DisplayName": "Swiftness",
+			"Description": "Passive: you move faster.",
+			"Element": "Air",
+			"ActorClass": "",
+			"bPassive": true,
+			"UnlockGroup": "Air",
+			"Params": {
+				"ManaCost":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" },
+				"Cooldown":        { "Base": 0,    "Min": 0,    "Max": 0,    "ScaledBy": "None" }
+			},
+			"PassiveModifiers": [
+				{ "Stat": "MoveSpeed", "Op": "Multiply", "Value": 1.2 }
+			]
+		},
+		{
+			"Id": "WeaponEnchant",
+			"DisplayName": "Weapon Enchant",
+			"Description": "Draw a glyph over your gun to charge its shots with the chosen element for a while.",
+			"Element": "Fire",
+			"ActorClass": "/Script/Glyphbound.GBSpell_Enchant",
+			"bRequiresGun": true,
+			"Params": {
+				"ManaCost":        { "Base": 20,   "Min": 20,   "Max": 20,   "ScaledBy": "None" },
+				"Cooldown":        { "Base": 15,   "Min": 15,   "Max": 15,   "ScaledBy": "None" },
+				"Duration":        { "Base": 15,   "Min": 8,    "Max": 22,   "ScaledBy": "Power" },
+				"EffectStrength":  { "Base": 1.0,  "Min": 0.6,  "Max": 1.4,  "ScaledBy": "Reach" }
+			},
+			"Strings": { "EffectPrefix": "Enchant_" }
+		}
+	]
+}

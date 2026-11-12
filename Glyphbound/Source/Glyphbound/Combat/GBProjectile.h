@@ -10,6 +10,7 @@ class USphereComponent;
 class UProjectileMovementComponent;
 class UBillboardComponent;
 class UStaticMeshComponent;
+class UPrimitiveComponent;
 
 /** Everything a projectile needs; filled from weapon stats, spell params or item stats by whoever fires it. */
 USTRUCT(BlueprintType)
@@ -70,8 +71,23 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	void InitProjectile(const FGBProjectileConfig& InConfig, const FVector& Direction, AActor* InInstigator);
+
+	UFUNCTION()
+	void OnCollisionHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION()
+	void OnCollisionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	/** True if Other is something this projectile should damage now (hostile, alive, has attributes, not hit before). */
+	bool IsValidTarget(const AActor* Other) const;
+	/** Damages (or explodes on) a valid target, then finishes unless it pierces. */
+	void HitTarget(AActor* Other, const FVector& ImpactPoint);
+	void Explode(const FVector& Origin);
+	/** Broadcasts OnImpact once and destroys the projectile. */
+	void Finish(AActor* HitActor, const FVector& Location);
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USphereComponent> Collision;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UProjectileMovementComponent> Movement;
@@ -81,4 +97,6 @@ protected:
 	UPROPERTY() FGBProjectileConfig Config;
 	FVector StartLocation = FVector::ZeroVector;
 	bool bFinished = false;
+	/** Actors already damaged (pierce: each one is hit once). */
+	TArray<TWeakObjectPtr<AActor>> DamagedActors;
 };

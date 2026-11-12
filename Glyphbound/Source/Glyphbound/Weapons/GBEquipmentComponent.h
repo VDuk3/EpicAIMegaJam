@@ -58,6 +58,14 @@ public:
 	FSimpleMulticastDelegate OnEquipmentChanged;
 
 protected:
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/** Spawns, attaches, initializes and hides an item (guns full of ammo). Not added to Items. Null if the id is unknown. */
+	AGBHeldItem* SpawnItem(FName WeaponId);
+	/** Puts the current item away and brings up the one in Slot, ignoring the lock. Cancels a sustained spell. */
+	void EquipSlot(EGBHeldSlot Slot);
+	void DestroyAllItems();
+
 	UPROPERTY() TMap<EGBHeldSlot, TObjectPtr<AGBHeldItem>> Items;
 	EGBHeldSlot ActiveSlot = EGBHeldSlot::Staff;
 	bool bSwitchLocked = false;

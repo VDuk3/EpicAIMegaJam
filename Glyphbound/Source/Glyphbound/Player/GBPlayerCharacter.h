@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Core/GBTypes.h"
+#include "QTE/GBQTELogic.h"
 #include "GBPlayerCharacter.generated.h"
 
 class UCameraComponent;
@@ -84,6 +85,8 @@ public:
 	/** Stops input-driven actions and hides the held item (death, cutscene). */
 	void SetControlEnabled(bool bEnabled);
 	bool IsControlEnabled() const { return bControlEnabled; }
+	/** Releases everything held down (fire, aim, held movement). Called when a menu opens or control is lost. */
+	void ReleaseHeldInputs();
 
 	/** Whole-player snapshot: transform, era, attributes, plus every component's part. */
 	void SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const;
@@ -94,16 +97,33 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Reads the movement stats into the character movement component. Bound to OnStatsChanged. */
 	void ApplyMovementStats();
 	void HandleDeath(const FGBDamageInfo& KillingBlow);
 	void UpdateFocusedInteractable();
+	void HandleDataReloaded();
+
+	/** Stat with modifiers; warns once if the base value is missing from Player.json. */
+	float ReadStat(FName Stat, float DefaultValue) const;
+	bool CanUseGameplayInput() const;
+	bool IsQTEActive() const;
+	/** Movement input (x = right, y = forward) relative to the view yaw. */
+	void ApplyMoveInput(const FVector2D& Input);
+	/** Turns the view (degrees). Positive pitch looks up. */
+	void AddLookDelta(float YawDegrees, float PitchDegrees);
+	void UpdateWalkSpeed();
+	void EndDash();
+	void TickRecoil(float DeltaSeconds);
 
 	// Input handlers (bound to the actions of UGBInputSet)
 	void InputMove(const FInputActionValue& Value);
 	void InputMoveCompleted(const FInputActionValue& Value);
 	void InputLook(const FInputActionValue& Value);
+	void InputLookStick(const FInputActionValue& Value);
+	/** Gamepad face button: QTE key, L2 + face = spell slots 2-5 with the staff, or jump / dash / reload / interact. */
+	void InputFace(EGBQTEKey Key);
 	void InputJump();
 	void InputJumpReleased();
 	void InputDash();
@@ -144,6 +164,11 @@ protected:
 	float MoveSpeedScale = 1.f;
 	/** Last movement input (x = right, y = forward), held during the QTE. */
 	FVector2D LastMoveInput = FVector2D::ZeroVector;
+	/** Frame of the last Move event outside the QTE; LastMoveInput is cleared when it gets stale. */
+	uint64 LastMoveInputFrame = 0;
+	/** Secondary (right click / L2) is held: on gamepad with the staff, L2 + face button casts slots 2-5. */
+	bool bSecondaryHeld = false;
+	FDelegateHandle DataReloadedHandle;
 	/** Recoil still to be recovered (degrees) and its recovery speed. */
 	FRotator PendingRecoil = FRotator::ZeroRotator;
 	float RecoilRecoverSpeed = 0.f;

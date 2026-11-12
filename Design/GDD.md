@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.12, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.13, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.13 (2026-11-12): architect's day-1 technical decisions recorded in 0.1 (C++ only, no GAS, JSON data, code-built test arena, canvas HUD); new section 18 lists every provisional rule and number the architect had to pick. Code structure in `Design/ARCHITECTURE.md`.
 - v0.12 (2026-11-12): architect autonomy on every technical decision; iteration time is a priority (see `CLAUDE.md`).
 - v0.11 (2026-11-12): the 3 s QTE limit covers the whole QTE.
 - v0.10 (2026-11-12): QTE lasts 3 s and the player keeps moving in the direction they were moving; CENTRAL has an NVIDIA RTX 4080 Laptop GPU, so DLSS can be tested here.
@@ -26,7 +27,9 @@ At its core this is a **classic first-person RPG plus a classic first-person sho
 - **Engine:** Unreal Engine 5.9.0, pinned until submission. **Single player only.**
 - **Architect autonomy:** nobody on the team is a programmer. **Every technical and engineering decision is the architect's**, taken without asking the owner: code architecture, C++ vs. Blueprints, plugins, tools, data formats, optimization. Decide, build, and log the decision and its reason in the dev log. When a design detail is missing, pick a reasonable provisional value, mark it provisional here, and keep going; ask the owner only when the game's vision would change.
 - **Time first:** iteration speed matters more than elegance. Unused plugins off, Live Coding for `.cpp` changes, only the touched tests on each change, the full suite (under 30 s) once before the daily package. Rules in `CLAUDE.md` ("Tiempo de iteración").
-- **Code:** C++ suggested for the core systems (AI agents handle code better than Blueprint graphs), with data assets / data tables for tuning. Final call: the architect.
+- **Code (decided by the architect, 2026-11-12):** C++ only, one module, no Blueprint graphs; structure in `Design/ARCHITECTURE.md`. **Unreal's Gameplay Ability System is not used**: a small stat-and-modifier system, one damage function and one status-effect component cover the same needs with far less setup.
+- **Tuning data (decided by the architect):** every gameplay number lives in text files, `Glyphbound/Content/Data/*.json` (spells, weapons, enemies, items, skills, player, QTE...). They ship as loose files: the owner can change numbers in a packaged build with a text editor, and `gb.ReloadData` in the console reloads them while playing. This replaces the data tables suggested earlier (git only carries text in this team, and AI agents edit text reliably).
+- **Test level (decided by the architect):** the day-1 test arena is built in code on the engine's empty map, so no binary map asset is needed yet. Real levels come later from the level designers.
 - **Placeholders first:** pixel art and 3D models are made by other team members on machines on the local network. **The architect never waits for art:** it uses quickly generated placeholders and swaps them later.
 - **Placeholder numbers:** the architect puts provisional values (damage, mana, cooldowns, QTE length and time limit…) in data tables; the owner tunes them later.
 - **PIE is human-only:** Play In Editor is always run by a person. AI agents do not run PIE; they compile, package and run tests, then ask a human to play-test. (Also in `CLAUDE.md`.)

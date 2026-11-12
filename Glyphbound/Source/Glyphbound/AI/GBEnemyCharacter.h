@@ -26,6 +26,16 @@ enum class EGBEnemyState : uint8
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnEnemyDied, class AGBEnemyCharacter* /*Enemy*/);
 
+/** Data keys used by enemies besides GBStat / GBString. */
+namespace GBEnemyKey
+{
+	// Game.json "Values"
+	inline const FName CorpseTime(TEXT("CorpseTime"));                         // seconds the corpse stays after death
+	inline const FName MeleeReachTolerance(TEXT("EnemyMeleeReachTolerance"));  // melee hit lands within AttackRange * this
+	// Enemies.json "Strings"
+	inline const FName ProjectileColor(TEXT("ProjectileColor"));               // "#RRGGBB", 3D projectiles of ranged enemies
+}
+
 /**
  * Built from a FGBEnemyDefinition (Enemies.json): stats, attack mode ("Melee" / "Ranged"), look, drops.
  * Simple state machine in C++ (no behavior tree assets): Idle until the player is within AggroRange and
@@ -78,6 +88,20 @@ protected:
 	void ApplyMovementStats();
 	AActor* FindTarget() const;
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	void HandleDamaged(const FGBDamageInfo& Info, float ActualDamage);
+	void HandlePresenceChanged();
+	void HandleDataReloaded();
+	void MoveTowards(AActor* Goal, float DeltaSeconds);
+	void StopMoving();
+	void FaceTowards(const AActor* Goal);
+	bool HasLineOfSight(const AActor* Goal) const;
+	FVector GetChestLocation() const;
+	bool IsRanged() const;
+	/** Windup telegraph: brighter tint (3D) or a slightly bigger sprite (pixel art). */
+	void SetTelegraph(bool bOn);
+
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatsComponent> Stats;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBAttributeComponent> Attributes;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatusEffectComponent> StatusEffects;
@@ -89,4 +113,14 @@ protected:
 	EGBEnemyState State = EGBEnemyState::Idle;
 	float StateTime = 0.f;
 	TWeakObjectPtr<AActor> Target;
+
+	bool bInitialized = false;
+	/** Took damage: chases even outside AggroRange. */
+	bool bProvoked = false;
+	bool bPixelArtLook = true;
+	FString AttackModeName;
+	/** After a failed navmesh move request, steer straight until this reaches 0. */
+	float NavRetryTimer = 0.f;
+	FLinearColor BodyColor = FLinearColor::Gray;
+	FVector SpriteBaseScale = FVector::OneVector;
 };

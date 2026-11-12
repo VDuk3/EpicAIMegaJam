@@ -47,7 +47,13 @@ public:
 
 	class UGBEraComponent* GetEraComponent() const { return EraComponent; }
 
+	/** Only while present in the current era (subclasses add their own conditions and call this). */
+	virtual bool CanInteract(const AGBPlayerCharacter* Player) const override;
+
 protected:
+	/** Solid things (chests) block the player with their placeholder box; pickups and portals do not. Set in the constructor. */
+	bool bSolid = false;
+
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Root;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Mesh;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UBillboardComponent> Sprite;

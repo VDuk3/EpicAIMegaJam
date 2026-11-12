@@ -50,6 +50,12 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	void ApplyPresence(bool bNewPresent);
+	void HandleEraChanged(EGBEra NewEra);
+	void HandleFlagChanged(FName Flag);
+
+	FDelegateHandle EraChangedHandle;
+	FDelegateHandle FlagChangedHandle;
+	bool bSavedHidden = false;
 
 	bool bPresent = true;
 	/** The owner's own collision / tick settings, remembered so presence can be restored exactly. */

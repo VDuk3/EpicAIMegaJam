@@ -8,6 +8,14 @@
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnEraChanged, EGBEra /*NewEra*/);
 
+/** Keys of Game.json "Values" read by the era travel (seconds, real time). */
+namespace GBGameValue
+{
+	inline const FName EraFadeOutTime(TEXT("EraFadeOutTime"));
+	inline const FName EraHoldTime(TEXT("EraHoldTime"));
+	inline const FName EraFadeInTime(TEXT("EraFadeInTime"));
+}
+
 /**
  * One map, two times (GDD 4). The swap is done two ways at once, so level design can use either:
  *  - actors with a UGBEraComponent appear / disappear with their era;
@@ -53,9 +61,18 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
+	/** Applies the starting era to the "_Past" / "_Future" sub-levels. */
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
 protected:
 	void ApplyEra();
+	/** The moment the screen is fully covered: swap era, teleport, restore and save. */
+	void PerformSwap();
+	void FinishTravel();
+	/** Fade durations from Game.json, read when the travel starts. */
+	float FadeOutTime = 0.f;
+	float HoldTime = 0.f;
+	float FadeInTime = 0.f;
 
 	EGBEra CurrentEra = EGBEra::Past;
 	bool bTravelling = false;

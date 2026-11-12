@@ -1,0 +1,106 @@
+{
+	"Enemies": [
+		{
+			"Id": "Orc_Past",
+			"DisplayName": "Castle Orc",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 60,
+				"MoveSpeed": 420,
+				"AttackDamage": 12,
+				"AttackRange": 150,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.45,
+				"AggroRange": 2200,
+				"HeadFraction": 0.25,
+				"CapsuleRadius": 40,
+				"CapsuleHalfHeight": 95
+			},
+			"Strings": {
+				"Sprite": "orc_past"
+			},
+			"Drops": [
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.15 },
+				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.15 }
+			]
+		},
+		{
+			"Id": "Orc_Past_Brute",
+			"DisplayName": "Orc Brute",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 320,
+				"MoveSpeed": 320,
+				"AttackDamage": 28,
+				"AttackRange": 210,
+				"AttackInterval": 1.6,
+				"AttackWindup": 0.7,
+				"AggroRange": 2400,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 60,
+				"CapsuleHalfHeight": 135
+			},
+			"Strings": {
+				"Sprite": "orc_boss"
+			},
+			"Drops": [
+				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Orc_Future",
+			"DisplayName": "Armored Orc",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 70,
+				"MoveSpeed": 380,
+				"AttackDamage": 9,
+				"AttackRange": 1600,
+				"AttackInterval": 1.4,
+				"AttackWindup": 0.5,
+				"AggroRange": 2600,
+				"ProjectileSpeed": 2600,
+				"ProjectileRadius": 10,
+				"HeadFraction": 0.22,
+				"CapsuleRadius": 42,
+				"CapsuleHalfHeight": 96
+			},
+			"Strings": {
+				"Color": "#4A6A7A",
+				"ProjectileColor": "#FF5A3A"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.6 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.15 },
+				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.1 }
+			]
+		},
+		{
+			"Id": "TrainingDummy",
+			"DisplayName": "Training Dummy",
+			"AttackMode": "None",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 100000,
+				"HealthRegen": 5000,
+				"HealthRegenDelay": 1.5,
+				"MoveSpeed": 0,
+				"AggroRange": 0,
+				"HeadFraction": 0.25,
+				"CapsuleRadius": 40,
+				"CapsuleHalfHeight": 95
+			},
+			"Strings": {
+				"Color": "#B0B0B0"
+			},
+			"Drops": []
+		}
+	]
+}

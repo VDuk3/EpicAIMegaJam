@@ -1,0 +1,10 @@
+{
+	"Values": {
+		"EraFadeOutTime": 0.35,
+		"EraHoldTime": 0.25,
+		"EraFadeInTime": 0.45,
+		"RespawnDelay": 2.5
+	},
+	"Strings": {
+	}
+}

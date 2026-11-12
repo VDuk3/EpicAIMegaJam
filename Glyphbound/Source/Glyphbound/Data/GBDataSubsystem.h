@@ -88,4 +88,21 @@ protected:
 	UPROPERTY() FGBPlayerDefinition Player;
 	UPROPERTY() FGBQTEDefinition QTE;
 	UPROPERTY() FGBGameDefinition Game;
+
+private:
+	/** Reads every file and rebuilds the indices (no broadcast). */
+	void LoadAll();
+
+	// Id -> position in the matching array, rebuilt by LoadAll().
+	TMap<FName, int32> SpellIndex;
+	TMap<FName, int32> WeaponIndex;
+	TMap<FName, int32> StatusEffectIndex;
+	TMap<FName, int32> ItemIndex;
+	TMap<FName, int32> EnemyIndex;
+	TMap<FName, int32> EncounterIndex;
+	TMap<FName, int32> SkillNodeIndex;
+	TMap<FName, int32> SpriteIndex;
+
+	/** Game.json keys already reported as missing, so a per-frame read warns only once. */
+	mutable TSet<FName> WarnedGameKeys;
 };

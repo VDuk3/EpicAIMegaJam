@@ -28,9 +28,10 @@ public:
 	UPROPERTY() TObjectPtr<UInputMappingContext> GameplayContext;
 	UPROPERTY() TObjectPtr<UInputMappingContext> MenuContext;
 
-	// Axis2D
+	// Axis2D (x = right, y = forward / up)
 	UPROPERTY() TObjectPtr<UInputAction> Move;
-	UPROPERTY() TObjectPtr<UInputAction> Look;
+	UPROPERTY() TObjectPtr<UInputAction> Look;         // mouse: per-frame delta
+	UPROPERTY() TObjectPtr<UInputAction> LookStick;    // right stick: a rate, scaled per second by the character
 	// Axis1D (+1 next, -1 previous)
 	UPROPERTY() TObjectPtr<UInputAction> SwitchWeapon;
 	UPROPERTY() TObjectPtr<UInputAction> CycleQuickUse;
@@ -57,9 +58,14 @@ public:
 	UPROPERTY() TObjectPtr<UInputAction> FaceLeft;
 	UPROPERTY() TObjectPtr<UInputAction> FaceDown;
 	UPROPERTY() TObjectPtr<UInputAction> FaceRight;
+	// QTE part 1 on keyboard: W A S D (also mapped to Move; the character uses one or the other)
+	UPROPERTY() TObjectPtr<UInputAction> QTEUp;
+	UPROPERTY() TObjectPtr<UInputAction> QTELeft;
+	UPROPERTY() TObjectPtr<UInputAction> QTEDown;
+	UPROPERTY() TObjectPtr<UInputAction> QTERight;
 	// Menus
 	UPROPERTY() TObjectPtr<UInputAction> MenuNavigate; // Axis2D: arrows / WASD / D-pad / left stick
 	UPROPERTY() TObjectPtr<UInputAction> MenuConfirm;  // Enter / Space / Cross (A)
-	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Circle (B)
+	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Tab / Circle (B)
 	UPROPERTY() TObjectPtr<UInputAction> MenuTab;      // Axis1D: Q-E / L1-R1, switches menu page
 };

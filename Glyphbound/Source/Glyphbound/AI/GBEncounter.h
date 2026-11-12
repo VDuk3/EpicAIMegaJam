@@ -21,6 +21,12 @@ enum class EGBEncounterState : uint8
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnEncounterEvent, class AGBEncounter* /*Encounter*/);
 
+/** Game.json "Values" keys used by encounters. */
+namespace GBEncounterKey
+{
+	inline const FName SpawnRingRadius(TEXT("EncounterSpawnRingRadius"));  // cm, ring used when an encounter has no SpawnPoints
+}
+
 /**
  * Placed in the level (or spawned by the test arena) with an EncounterId from Encounters.json.
  * Starts when the player enters its trigger box in the right era; spawns each wave at its spawn points
@@ -82,6 +88,19 @@ protected:
 	void HandleEnemyDied(AGBEnemyCharacter* Enemy);
 	void Clear();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	void HandleEraChanged(EGBEra NewEra);
+	/** Starts the encounter if it is Waiting, not cleared, in the right era and the living player is inside the trigger. */
+	void TryStartFromTrigger(bool bPlayerKnownInside = false);
+	/** Not kept across frames (data can be reloaded). */
+	const FGBEncounterDefinition* FindDefinition() const;
+	/** Called when the current wave has no living enemy left: schedules the next wave or clears. */
+	void HandleWaveDefeated();
+	/** Cleared flag already set (enemies never respawn): go straight to Cleared without rewards. */
+	void ApplyClearedFlagIfSet();
+
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Trigger;
 
 	EGBEncounterState State = EGBEncounterState::Waiting;
@@ -89,4 +108,5 @@ protected:
 	/** Seconds until the next wave spawns; < 0 = not waiting. */
 	float NextWaveTimer = -1.f;
 	UPROPERTY() TArray<TObjectPtr<AGBEnemyCharacter>> AliveEnemies;
+	bool bLoggedMissingDefinition = false;
 };

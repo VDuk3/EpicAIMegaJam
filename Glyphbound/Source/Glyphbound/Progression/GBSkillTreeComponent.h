@@ -55,6 +55,19 @@ protected:
 	/** Re-applies the modifiers of every owned node (after load or data reload). */
 	void ReapplyAllModifiers();
 
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/** "Skill.<NodeId>" */
+	static FName ModifierSource(FName NodeId);
+	/** Sets the node's modifiers on the owner's stats for its current rank (removes them at rank 0 or unknown node). */
+	void ApplyNodeModifiers(FName NodeId);
+	/** Removes the modifiers of every owned node. */
+	void RemoveAllModifiers();
+	void HandleDataReloaded();
+
 	UPROPERTY() int32 Points = 0;
 	UPROPERTY() TMap<FName, int32> Ranks;
+
+	FDelegateHandle DataReloadedHandle;
 };

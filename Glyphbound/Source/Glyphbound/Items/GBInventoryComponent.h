@@ -9,6 +9,12 @@
 
 struct FGBPlayerSnapshot;
 
+/** Item stat keys (Items.json "Stats") that are not shared with weapons or spells. */
+namespace GBItemStat
+{
+	inline const FName ThrowPitch(TEXT("ThrowPitch"));   // degrees added above the aim direction when throwing
+}
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FGBOnItemCountChanged, FName /*ItemId*/, int32 /*NewCount*/);
 
 /**
@@ -69,7 +75,22 @@ public:
 	FSimpleMulticastDelegate OnInventoryChanged;
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/** First owned bQuickUse item after From in Items.json order (Direction +1 / -1, wrapping; From itself last). */
+	FName FindQuickUseFrom(FName From, int32 Direction) const;
+	/** Removes the "Armor" modifier source and re-adds the equipped armor's modifiers (equip, load, data reload). */
+	void ApplyArmorModifiers();
+	/** Called when an item's count reaches 0: moves the quick slot and unequips the armor if needed. */
+	void HandleStackEmptied(FName ItemId);
+	bool UseThrowable(const FGBItemDefinition& Def);
+	void HandleDataReloaded();
+	void ShowHudMessage(const FString& Text) const;
+
 	UPROPERTY() TMap<FName, int32> Items;
 	UPROPERTY() FName QuickUseItem = NAME_None;
 	UPROPERTY() FName EquippedArmor = NAME_None;
+
+	FDelegateHandle DataReloadedHandle;
 };

@@ -1,0 +1,163 @@
+{
+	"Weapons": [
+		{
+			"Id": "Staff_Apprentice",
+			"DisplayName": "Apprentice Staff",
+			"Slot": "Staff",
+			"Element": "Arcane",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 12,
+				"FireInterval": 0.35,
+				"ProjectileSpeed": 3500,
+				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0
+			},
+			"Strings": {
+				"Sprite": "staff_apprentice",
+				"ProjectileSprite": "bolt_arcane"
+			}
+		},
+		{
+			"Id": "Staff_Ember",
+			"DisplayName": "Ember Staff",
+			"Slot": "Staff",
+			"Element": "Fire",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 22,
+				"FireInterval": 0.6,
+				"ProjectileSpeed": 2800,
+				"ProjectileRadius": 14,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0
+			},
+			"Strings": {
+				"Sprite": "staff_ember",
+				"ProjectileSprite": "fireball",
+				"OnHitEffect": "Burn"
+			}
+		},
+		{
+			"Id": "Pistol",
+			"DisplayName": "Pistol",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"FireMode": "Hitscan",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 18,
+				"FireInterval": 0.22,
+				"MagazineSize": 12,
+				"SpareMagazines": 4,
+				"ReloadTime": 1.2,
+				"Range": 8000,
+				"Spread": 1.2,
+				"AimSpread": 0.25,
+				"RecoilPitch": 0.9,
+				"RecoilYaw": 0.4,
+				"RecoilRecovery": 9,
+				"Pellets": 1,
+				"FalloffStart": 2000,
+				"FalloffEnd": 5000,
+				"FalloffNearMult": 1,
+				"FalloffFarMult": 0.6,
+				"HeadshotMult": 2,
+				"AimFOV": 70,
+				"AimMoveSpeedMult": 0.7,
+				"AimTime": 0.15
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "Shotgun",
+			"DisplayName": "Shotgun",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"FireMode": "Hitscan",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 10,
+				"FireInterval": 0.85,
+				"MagazineSize": 6,
+				"SpareMagazines": 4,
+				"ReloadTime": 2.0,
+				"Range": 3000,
+				"Spread": 6,
+				"AimSpread": 4.5,
+				"RecoilPitch": 3.5,
+				"RecoilYaw": 1.2,
+				"RecoilRecovery": 12,
+				"Pellets": 8,
+				"FalloffStart": 600,
+				"FalloffEnd": 1800,
+				"FalloffNearMult": 1,
+				"FalloffFarMult": 0.2,
+				"HeadshotMult": 1.5,
+				"AimFOV": 75,
+				"AimMoveSpeedMult": 0.75,
+				"AimTime": 0.18
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "Rifle",
+			"DisplayName": "Assault Rifle",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"FireMode": "Hitscan",
+			"bAutomatic": true,
+			"Stats": {
+				"Damage": 14,
+				"FireInterval": 0.1,
+				"MagazineSize": 30,
+				"SpareMagazines": 4,
+				"ReloadTime": 1.8,
+				"Range": 12000,
+				"Spread": 1.8,
+				"AimSpread": 0.35,
+				"RecoilPitch": 0.6,
+				"RecoilYaw": 0.35,
+				"RecoilRecovery": 10,
+				"Pellets": 1,
+				"FalloffStart": 1500,
+				"FalloffEnd": 4000,
+				"FalloffNearMult": 0.8,
+				"FalloffFarMult": 1.15,
+				"HeadshotMult": 2,
+				"AimFOV": 60,
+				"AimMoveSpeedMult": 0.65,
+				"AimTime": 0.2
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "ElementalSword",
+			"DisplayName": "Elemental Sword",
+			"Slot": "Sword",
+			"Element": "Fire",
+			"ActorClass": "",
+			"FireMode": "Melee",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 45,
+				"FireInterval": 0.5,
+				"MeleeRange": 260,
+				"MeleeArc": 90
+			},
+			"Strings": {
+				"Sprite": "sword_blade"
+			}
+		}
+	]
+}

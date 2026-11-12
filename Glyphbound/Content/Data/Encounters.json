@@ -1,0 +1,45 @@
+{
+	"Encounters": [
+		{
+			"Id": "Test_PastWave",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Brute", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 2,
+			"Rewards": []
+		},
+		{
+			"Id": "Test_FutureWave",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 }
+					]
+				}
+			],
+			"SkillPoints": 2,
+			"Rewards": [
+				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+			]
+		}
+	]
+}

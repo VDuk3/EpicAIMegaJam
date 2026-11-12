@@ -7,6 +7,11 @@
 #include "GBSpellbookComponent.generated.h"
 
 class AGBSpellActor;
+class AGBHeldItem;
+class UGBStatsComponent;
+class UGBAttributeComponent;
+class UGBEquipmentComponent;
+class UGBQTEComponent;
 struct FGBPlayerSnapshot;
 struct FGBQTEResult;
 
@@ -77,8 +82,39 @@ public:
 	FSimpleMulticastDelegate OnLoadoutChanged;
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	bool BeginCast(FName SpellId);
 	void FinishCast(FName SpellId, const FGBQTEResult& Result);
+
+	/** QTE delegate target: delegate payloads come after the delegate's own params, so this forwards to FinishCast. */
+	void HandleQTEFinished(const FGBQTEResult& Result, FName SpellId);
+	/** Common path of TryCastSlot / TryCastEnchant: checks, broadcasts the failure reason, or begins the cast. */
+	bool TryCastSpell(FName SpellId);
+	void HandleSustainedEnded();
+	void HandleActiveItemChanged(AGBHeldItem* NewItem);
+	void HandleOwnerDeath(const FGBDamageInfo& KillingBlow);
+
+	bool LearnSpellInternal(FName SpellId, bool bAutoEquip);
+	/** Known, defined, castable, not passive, not the enchant. */
+	bool IsEquippable(FName SpellId) const;
+	void StartCooldown(FName SpellId, float Seconds);
+
+	static FName PassiveSource(FName SpellId);
+	void ApplyPassive(FName SpellId);
+	void RemoveAllPassives();
+	void ReapplyPassives();
+
+	UGBStatsComponent* GetOwnerStats() const;
+	UGBAttributeComponent* GetOwnerAttributes() const;
+	UGBEquipmentComponent* GetOwnerEquipment() const;
+	UGBQTEComponent* GetOwnerQTE() const;
+	double GetNow() const;
+
+	FDelegateHandle DataReloadedHandle;
+	FDelegateHandle ActiveItemChangedHandle;
+	FDelegateHandle DeathHandle;
 
 	UPROPERTY() TArray<FName> KnownSpells;
 	UPROPERTY() TArray<FName> Loadout;

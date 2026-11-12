@@ -57,6 +57,16 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
+	virtual void BeginPlay() override;
+
+	void HandleOwnerDeath(const FGBDamageInfo& KillingBlow);
+	/** Instant or per-tick health / mana on the owner. Negative health is damage through UGBCombatLibrary::DealDamage. */
+	void ApplyHealthAndMana(FName EffectId, float HealthAmount, float ManaAmount, EGBElement Element, AActor* EffectInstigator);
+	/** Restarts an entry's timer (and keeps the larger strength). */
+	void RefreshEntry(int32 Index, float Duration, float StrengthScale, AActor* EffectInstigator);
+	/** Keeps FGBActiveStatusEffect::Stacks equal to the number of entries of that id. */
+	void UpdateStackCount(FName EffectId);
+
 	TArray<FGBActiveStatusEffect> ActiveEffects;
 	int32 NextEffectSerial = 1;
 };
