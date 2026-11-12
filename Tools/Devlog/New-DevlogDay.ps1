@@ -108,6 +108,36 @@ foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory 
             }
         }
     }
+    # transcripts\claude-<sesion>.jsonl SIN hook (claude-<sesion>.jsonl en la carpeta del dia):
+    # sesiones de Claude Code de maquinas sin repo, recogidas por Collect-OtherAgents.ps1.
+    # Los de subagentes (claude-<sesion>-<agente>.jsonl) no aportan prompts del equipo.
+    if (Test-Path $tdir) {
+        foreach ($f in Get-ChildItem $tdir -File -Filter 'claude-*.jsonl') {
+            if ($f.BaseName -notmatch '^claude-([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$') { continue }
+            $sid = $Matches[1]
+            if (Test-Path (Join-Path $dayDir "claude-$sid.jsonl")) { continue }
+            $sessions["claude-code/$($machineDir.Name)/$sid"] = 'claude-code'
+            foreach ($line in [IO.File]::ReadAllLines($f.FullName, $utf8)) {
+                try { $o = $line | ConvertFrom-Json } catch { continue }
+                if ($o.type -eq 'user' -and -not $o.isMeta -and $o.message) {
+                    $texts = @()
+                    if ($o.message.content -is [string]) { $texts = @($o.message.content) }
+                    else { $texts = @($o.message.content | Where-Object { $_.type -eq 'text' } | ForEach-Object { [string]$_.text }) }
+                    foreach ($t in $texts) {
+                        if (-not $t -or $t -match '^\s*<') { if ($t -match '^\s*<(task-notification|system-reminder|side-sessions-event|ci-monitor-event)\b') { $harnessNotices++ }; continue }
+                        $prompts.Add([pscustomobject]@{ ts = [string]$o.timestamp; machine = "$($machineDir.Name), Claude Code"; text = (Redact $t) })
+                    }
+                } elseif ($o.type -eq 'assistant' -and $o.message) {
+                    foreach ($c in @($o.message.content)) {
+                        if ($c.type -eq 'tool_use') { $k = [string]$c.name; if ($toolCount.ContainsKey($k)) { $toolCount[$k]++ } else { $toolCount[$k] = 1 } }
+                    }
+                }
+            }
+        }
+    }
+    # gemini\: chats de Gemini CLI (Collect-OtherAgents.ps1); solo se cuentan los archivos
+    $gdir = Join-Path $dayDir 'gemini'
+    if (Test-Path $gdir) { foreach ($g in Get-ChildItem $gdir -Recurse -File -Filter 'session-*.json') { $sessions["gemini/$($machineDir.Name)/$($g.BaseName)"] = 'gemini' } }
     $aj = Join-Path $dayDir 'agents.jsonl'
     if (Test-Path $aj) {
         foreach ($line in [IO.File]::ReadAllLines($aj, $utf8)) {
@@ -135,6 +165,7 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine("- Claude Code sessions: $(@($sessions.Values | Where-Object { $_ -eq 'claude-code' }).Count)")
 [void]$sb.AppendLine("- Cursor conversations: $(@($sessions.Values | Where-Object { $_ -eq 'cursor' }).Count)")
 [void]$sb.AppendLine("- Codex sessions (desktop or IDE, collected): $(@($sessions.Values | Where-Object { $_ -eq 'codex' }).Count)")
+[void]$sb.AppendLine("- Gemini CLI sessions (collected): $(@($sessions.Values | Where-Object { $_ -eq 'gemini' }).Count)")
 [void]$sb.AppendLine("- Team prompts to agents: $($prompts.Count) (automatic harness notices left out: $harnessNotices)")
 [void]$sb.AppendLine("- External agent runs: $(@($agentRuns | Where-Object event -eq 'start').Count)")
 [void]$sb.AppendLine("- MCP calls inside Unreal: $mcpCalls")

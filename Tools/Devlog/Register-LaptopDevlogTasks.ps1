@@ -18,6 +18,7 @@ param(
     [string]$BinDir = 'C:\JamLog\bin',
     [string]$RawDir = 'C:\JamLog\raw',
     [string]$Dest = '\\192.168.31.188\Incoming\LAPTOP\_devlog_raw',
+    [string]$ExtraSource = '',   # p. ej. D:\MegaJam\Devlog\raw en ASSETS (ver Sync-DevlogToCentral.ps1)
     [switch]$Unregister
 )
 $ErrorActionPreference = 'Stop'
@@ -31,7 +32,7 @@ if (-not (Test-Path $sync)) { throw "No existe $sync" }
 [void][IO.Directory]::CreateDirectory($BinDir)
 if ((Resolve-Path $PSScriptRoot).Path -ne (Resolve-Path $BinDir).Path) {
     Copy-Item -LiteralPath $sync -Destination $BinDir -Force
-    Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'Collect-*.ps1' -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $BinDir -Force }
+    Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File | Where-Object { @('Collect-CodexSessions.ps1', 'Collect-CursorTranscripts.ps1', 'Collect-OtherAgents.ps1', 'JamLogCopy.ps1') -contains $_.Name } | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $BinDir -Force }
 }
 $syncBin = Join-Path $BinDir 'Sync-DevlogToCentral.ps1'
 
@@ -53,7 +54,9 @@ if ([DateTime]::UtcNow -lt $jamStartUtc.AddMinutes(-10)) {
 } else { Write-Host 'JamDevlogPreJamCleanup: omitida (la jam ya empezo)' }
 
 # Sincronizacion cada 10 minutos
-$a2 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$syncBin`" -Dest `"$Dest`""
+$args2 = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$syncBin`" -Dest `"$Dest`""
+if ($ExtraSource) { $args2 += " -ExtraSource `"$ExtraSource`"" }
+$a2 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $args2
 $t2 = New-ScheduledTaskTrigger -Once -At ($jamStartUtc.AddMinutes(5).ToLocalTime()) -RepetitionInterval (New-TimeSpan -Minutes 10) -RepetitionDuration (New-TimeSpan -Days 6)
 $s2 = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
 Register-ScheduledTask -TaskName 'JamDevlogSync' -Action $a2 -Trigger $t2 -Settings $s2 -Principal $principal | Out-Null

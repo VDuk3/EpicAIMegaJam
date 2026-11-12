@@ -15,6 +15,7 @@ param(
     [string]$LogRoot = 'C:\JamLog\raw',
     [string]$Since = '2026-11-12T05:00:00Z'
 )
+. (Join-Path $PSScriptRoot 'JamLogCopy.ps1')
 $sinceUtc = [DateTime]::Parse($Since).ToUniversalTime()
 $machine = $env:JAM_MACHINE
 if (-not $machine) { $machine = [Environment]::GetEnvironmentVariable('JAM_MACHINE', 'User') }
@@ -29,18 +30,9 @@ foreach ($sub in 'sessions', 'archived_sessions') {
         if ($created -lt $sinceUtc) { $created = $sinceUtc }
         $destDir = Join-Path $LogRoot ("$machine\" + $created.ToString('yyyy-MM-dd'))
         $dest = Join-Path $destDir ('codex-' + $f.Name)
-        if (Test-Path -LiteralPath $dest) {
-            $d = Get-Item -LiteralPath $dest
-            if ($d.Length -eq $f.Length -and $d.LastWriteTimeUtc -ge $f.LastWriteTimeUtc) { continue }
-        }
+        if (Test-JamLogCurrent $f $dest) { continue }
         try {
-            [void][IO.Directory]::CreateDirectory($destDir)
-            # Codex puede estar escribiendo: se lee con FileShare.ReadWrite.
-            $src = New-Object IO.FileStream($f.FullName, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
-            try {
-                $dst = New-Object IO.FileStream($dest, [IO.FileMode]::Create, [IO.FileAccess]::Write, [IO.FileShare]::Read)
-                try { $src.CopyTo($dst) } finally { $dst.Dispose() }
-            } finally { $src.Dispose() }
+            Copy-JamLogSlim $f.FullName $dest   # sin imagenes base64 (JamLogCopy.ps1)
             $n++
         } catch { Write-Warning "No se pudo copiar $($f.FullName): $($_.Exception.Message)" }
     }

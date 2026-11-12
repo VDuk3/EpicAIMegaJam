@@ -33,9 +33,14 @@ $rc = 0
 foreach ($m in $Machines) {
     $src = Join-Path $JamRoot "Incoming\$m\_devlog_raw"
     if (-not (Test-Path -LiteralPath $src)) { continue }
-    & robocopy $src (Join-Path $JamRoot 'Devlog\raw') /E /R:1 /W:2 /NP /NJH /NJS /NDL /NFL | Out-Null
+    # /MAX: nada de mas de 50 MB entra en Devlog\raw (va al repo; GitHub rechaza > 100 MB). Los
+    # recolectores ya quitan las imagenes base64; si aun asi llega uno grande, queda anotado.
+    & robocopy $src (Join-Path $JamRoot 'Devlog\raw') /E /R:1 /W:2 /NP /NJH /NJS /NDL /NFL /XF *.part /MAX:52428800 | Out-Null
     $code = $LASTEXITCODE
     Add-Content -LiteralPath $log -Value ("{0}Z {1} robocopy={2}" -f [DateTime]::UtcNow.ToString('s'), $m, $code)
+    foreach ($big in Get-ChildItem -LiteralPath $src -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 52428800 }) {
+        Add-Content -LiteralPath $log -Value ("{0}Z {1} OMITIDO por tamano ({2} MB): {3}" -f [DateTime]::UtcNow.ToString('s'), $m, [math]::Round($big.Length / 1MB, 1), $big.FullName)
+    }
     if ($code -ge 8) { $rc = 2 }
 }
 exit $rc
