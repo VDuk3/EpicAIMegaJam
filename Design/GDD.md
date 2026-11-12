@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.29, 2026-11-12** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.30, 2026-11-12** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.30 (2026-11-12): owner: the pistol's energy bar must match the enchant's duration; the weak-point light lasts half as long.
 - v0.29 (2026-11-12): owner, after reading the balance suggestions: Long Shot goes from +0.15x to +0.2x per rank (the rifle perk now matches Point Blank); the free skill reset will not be in the final version.
 - v0.28 (2026-11-12): owner asked the architect to balance every number of the game with maths (the skill-tree percentages stay as they are) and to leave no hardcoded value. New §19 "Balance": the method, the enemy templates (swarm, soldier, elite, slow tank, sub-boss, the two Valkyries, the Entity), resistances and weaknesses, the ammo and mana economy, and a budget of 36 skill points. The numbers in §18 are updated. The last gameplay numbers that lived in code moved to the data files. A calculator, `Tools/Balance/balance_model.js`, prints every table from the data. Reviewed by a second model before the first build.
 - v0.27 (2026-11-12): owner: the spell tree is reorganized in four columns (fire, lightning, ice, casting) with only two links kept; Precision Recovery costs 2 points per rank. See §18 "Spell tree".
@@ -250,7 +251,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - With a gun in hand: **primary fire = shoot**, **secondary = aim**.
 - **Moving costs accuracy (owner, 2026-11-12):** shots spread more while the player moves than while standing still; the crosshair opens to show it. See §18.
 - **Magazines and reload**, like any shooter.
-- **Gun models (v0.25):** the pistol is the first real 3D model (made with Tripo on ASSETS, finished in Blender on CENTRAL); the shotgun and rifle keep placeholder shapes until their models exist. The pistol's trigger moves on each shot and its magazine slides out and back in during the reload. **Glow (provisional, architect):** the gun's glowing parts show its own green when not enchanted; while the enchant runs they take the element's colour, and the energy bar on the side shows the enchant time left (full when cast, empty when it ends).
+- **Gun models (v0.25):** the pistol is the first real 3D model (made with Tripo on ASSETS, finished in Blender on CENTRAL); the shotgun and rifle keep placeholder shapes until their models exist. The pistol's trigger moves on each shot and its magazine slides out and back in during the reload. **Glow (provisional, architect):** the gun's glowing parts show its own green when not enchanted; while the enchant runs they take the element's colour, and the energy bar on the side shows the enchant time left (full when cast, empty when it ends). **Owner, v0.30:** the bar's 13 cells show the time left rounded up, so the last cell goes dark exactly when the enchant ends (before, it went dark half a cell early); the weak-point light is half as long as before: full for 0.06 s, then a 0.15 s fade (`PistolWeakPointFlashHold` / `PistolWeakPointFlashFade` in `Game.json`).
 - **Ammo works like classic tactical shooters:** each gun has a fixed number of spare magazines, and each magazine a fixed number of bullets.
 - **All ammo refills completely every time the player travels between eras.**
 - Between refills, ammo is **picked up from the floor** where enemies drop it.

@@ -63,6 +63,8 @@
 		"PrecisionRecoveryCooldownBase": 7,
 		"PrecisionRecoveryCooldownPerRank": 1,
 		"PrecisionRecoveryCooldownMin": 1,
+		"PistolWeakPointFlashHold": 0.06,
+		"PistolWeakPointFlashFade": 0.15,
 		"FrostSlowMax": 0.95,
 		"KnockbackMinLift": 0.35,
 		"ProjectileMaxLifetime": 10,

@@ -12,6 +12,7 @@
 #include "Combat/GBStatusEffectComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -40,12 +41,14 @@ namespace
 	// Material parameters set by the game on every pistol slot.
 	const FName ElementColorParam(TEXT("ElementColor"));
 	const FName ImbueRemainingParam(TEXT("ImbueRemaining"));
+	// Cells on SM_Pistol_EnergyBar (asset geometry, Tools/Jam/import_pistol.py ENERGY_CELLS).
+	constexpr float PistolEnergyCells = 13.f;
 	const FName FlashParam(TEXT("Flash"));
 	const FName DisplayTextureParam(TEXT("DisplayTexture"));
-	// Weak-point light: full glow for WeakPointFlashHold seconds after a weak-point hit, then a linear fade over
-	// WeakPointFlashFade seconds. Provisional, owner's note 3.
-	constexpr float WeakPointFlashHold = 0.12f;
-	constexpr float WeakPointFlashFade = 0.3f;
+	// Weak-point light: full glow for PistolWeakPointFlashHold seconds after a weak-point hit, then a linear fade over
+	// PistolWeakPointFlashFade seconds (Game.json; halved by the owner, GDD v0.30).
+	const FName WeakPointFlashHoldKey(TEXT("PistolWeakPointFlashHold"));
+	const FName WeakPointFlashFadeKey(TEXT("PistolWeakPointFlashFade"));
 	// Holographic ammo display: render target size in pixels and the share of its height the digits fill.
 	// Provisional, owner's note 1.
 	constexpr int32 AmmoDisplayWidth = 256;
@@ -301,9 +304,13 @@ void AGBGun::UpdatePistolViewModel(float DeltaSeconds)
 				{
 					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
 					{
-						Imbue = Active.TotalDuration > KINDA_SMALL_NUMBER
+						const float Left = Active.TotalDuration > KINDA_SMALL_NUMBER
 							? FMath::Clamp(Active.TimeRemaining / Active.TotalDuration, 0.f, 1.f)
 							: 1.f;
+						// The material lights a cell while 1 - ImbueU < ImbueRemaining, with ImbueU at the cell
+						// centres ((i + 0.5) / cells). Adding half a cell lights ceil(Left x cells) cells, so the
+						// last cell goes dark exactly when the enchant ends (owner, GDD v0.30), not half a cell early.
+						Imbue = Left > 0.f ? FMath::Min(1.f, Left + 0.5f / PistolEnergyCells) : 0.f;
 						break;
 					}
 				}
@@ -331,6 +338,9 @@ void AGBGun::UpdatePistolViewModel(float DeltaSeconds)
 	float Flash = 0.f;
 	if (WeakPointFlashElapsed >= 0.f)
 	{
+		const UGBDataSubsystem* FlashData = UGBDataSubsystem::Get(this);
+		const float WeakPointFlashHold = FMath::Max(0.f, FlashData ? FlashData->GetGameValue(WeakPointFlashHoldKey, 0.06f) : 0.06f);
+		const float WeakPointFlashFade = FMath::Max(0.01f, FlashData ? FlashData->GetGameValue(WeakPointFlashFadeKey, 0.15f) : 0.15f);
 		WeakPointFlashElapsed += DeltaSeconds;
 		if (!bEquipped || WeakPointFlashElapsed >= WeakPointFlashHold + WeakPointFlashFade)
 		{
