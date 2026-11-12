@@ -39,3 +39,6 @@ You are the integration implementer for **Glyphbound** (Unreal Engine 5.9.0, C++
 2. What you fixed, grouped by kind (missing includes, wrong engine API, mismatched signatures between modules, unresolved externals, logic bugs found by tests), with file names.
 3. Anything you stubbed or could not make work.
 4. Anything that looks wrong at runtime even though it compiles (things a human should check while playing).
+
+## Also part of this task (after the first green build)
+Apply every item marked **ARCHITECT DECISION** or **REQUIRED** in `Prompts/day1_integration_notes.md` (Neutral targets damageable through a new `UGBCombatLibrary::CanDamage`; `"PickupLook": "3D"` on four items; the three `Game.json` values asked by the AI module; the stick gesture scale read from `QTE->GetStickGestureScale()` with the undilated delta), and check the items marked **CHECK** there. Then build and test again.
