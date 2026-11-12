@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/GBTypes.h"
 
 namespace GBStat
 {
@@ -90,6 +91,18 @@ namespace GBStat
 
 	/** "Weapon.<WeaponId>.<Stat>" */
 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
+	/** "Weapon.Staff.<Stat>", "Weapon.Gun.<Stat>" or "Weapon.Sword.<Stat>" */
+	inline FName WeaponSlotKey(EGBHeldSlot Slot, FName Stat)
+	{
+		const TCHAR* SlotName = TEXT("Gun");
+		switch (Slot)
+		{
+		case EGBHeldSlot::Staff: SlotName = TEXT("Staff"); break;
+		case EGBHeldSlot::Gun:   SlotName = TEXT("Gun"); break;
+		case EGBHeldSlot::Sword:  SlotName = TEXT("Sword"); break;
+		}
+		return FName(*FString::Printf(TEXT("Weapon.%s.%s"), SlotName, *Stat.ToString()));
+	}
 	/** "Weapon.All.<Stat>" */
 	inline FName WeaponAllKey(FName Stat) { return FName(*FString::Printf(TEXT("Weapon.All.%s"), *Stat.ToString())); }
 	/** "Spell.<SpellId>.<Param>" */

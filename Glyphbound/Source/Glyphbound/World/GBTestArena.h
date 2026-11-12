@@ -13,6 +13,7 @@ class APointLight;
 class ADirectionalLight;
 class ASkyLight;
 class AExponentialHeightFog;
+class APlayerStart;
 
 /**
  * Spawned by AGBGameMode::InitGame when the map has no PlayerStart.
@@ -35,6 +36,8 @@ public:
 	void BuildStatic();
 
 	const FTransform& GetPlayerStartTransform() const { return PlayerStartTransform; }
+	/** The APlayerStart created by BuildStatic (null until built). */
+	APlayerStart* GetPlayerStartActor() const { return PlayerStartActor; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -74,6 +77,7 @@ protected:
 	UPROPERTY() TObjectPtr<AExponentialHeightFog> Fog;
 
 	FTransform PlayerStartTransform;
+	TObjectPtr<APlayerStart> PlayerStartActor = nullptr;
 	bool bStaticBuilt = false;
 	bool bGameplayBuilt = false;
 	FDelegateHandle EraChangedHandle;

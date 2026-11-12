@@ -66,7 +66,7 @@ public:
 
 protected:
 	void ApplyEra();
-	/** The moment the screen is fully covered: swap era, teleport, restore and save. */
+	/** The moment the screen is fully covered: swap era, teleport, restore and save. A dead traveller undoes the travel instead (stays in the current era, no teleport / restore / save). */
 	void PerformSwap();
 	void FinishTravel();
 	/** Fade durations from Game.json, read when the travel starts. */

@@ -7,6 +7,7 @@
 #include "GBGameMode.generated.h"
 
 class AGBPlayerCharacter;
+class APlayerStart;
 
 /** Keys of Game.json "Values" read by the game mode. */
 namespace GBGameValue
@@ -23,8 +24,9 @@ class GLYPHBOUND_API UGBGameInstance : public UGameInstance
 
 /**
  * - Default pawn AGBPlayerCharacter, controller AGBPlayerController, HUD AGBHUD.
- * - If the map has no PlayerStart (the engine's empty Entry map is the default map), it spawns AGBTestArena,
- *   which builds the whole test level in code, before the player is spawned.
+ * - If the world has no AGBTestArena yet and the map has no PlayerStart (or is an engine map like the
+ *   default empty Entry map), it spawns AGBTestArena, which builds the whole test level in code, and uses
+ *   the APlayerStart the arena created.
  * - Player death (checkpoints only, GDD 10): shows the death screen, then after Game.json "RespawnDelay"
  *   restores the last checkpoint (or restarts the map if there is none) and resets running encounters.
  */
@@ -60,4 +62,6 @@ protected:
 	/** Where the test arena wants the player to start, when it was built. */
 	FTransform ArenaStart;
 	bool bHasArenaStart = false;
+	/** The APlayerStart the test arena created (returned by ChoosePlayerStart when set). */
+	TWeakObjectPtr<APlayerStart> ArenaPlayerStart;
 };

@@ -36,7 +36,7 @@ Includes are relative to the module root: `#include "Stats/GBStatsComponent.h"`.
 ## Data files (`Glyphbound/Content/Data`)
 `Player.json`, `QTE.json`, `Game.json`, `Spells.json`, `Weapons.json`, `StatusEffects.json`, `Items.json` (items + recipes), `Enemies.json`, `Encounters.json`, `Skills.json`, `Sprites.json`. Schemas are the structs in `Data/GBDataTypes.h` (field name = JSON key). Stat and parameter names are the constants in `Core/GBStatNames.h`.
 
-Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
+Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.<Slot>.<Stat>` (`Weapon.Staff`, `Weapon.Gun`, `Weapon.Sword`), `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
 
 Standard status effect ids (defined in `StatusEffects.json`, referenced from other files): `Burn`, `Shock`, `Slow`, `Chill`, `HealthPotion`, `ManaPotion`, `HealthInjection`, `Enchant_Fire`, `Enchant_Lightning`, `Enchant_Ice`.
 

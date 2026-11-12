@@ -91,6 +91,11 @@ public:
 	/** Whole-player snapshot: transform, era, attributes, plus every component's part. */
 	void SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const;
 	void LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot);
+	/**
+	 * Death respawn at the checkpoint's place and era with full health, mana and ammo. Everything else
+	 * owned (items, weapons, spells, skill points, armor) is kept as it is now: dying never rolls it back.
+	 */
+	void RespawnAt(const FGBPlayerSnapshot& Snapshot);
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;

@@ -330,7 +330,7 @@ void AGBTestArena::BuildStatic()
 
 	// ---- Player start ----
 	PlayerStartTransform = FTransform(FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArena::PlayerStart);
-	World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), GBArena::PlayerStart, FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArenaIds::AlwaysSpawnParams());
+	PlayerStartActor = World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), GBArena::PlayerStart, FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArenaIds::AlwaysSpawnParams());
 }
 
 void AGBTestArena::ApplyEraLighting(EGBEra Era)

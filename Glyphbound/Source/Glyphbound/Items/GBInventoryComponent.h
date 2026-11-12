@@ -39,7 +39,8 @@ public:
 
 	/** Adds up to Count (limited by MaxStack). Ammo items go straight to the gun. Returns how many were really taken. */
 	int32 AddItem(FName ItemId, int32 Count = 1);
-	/** Returns false (and removes nothing) if there are fewer than Count. */
+	/** How many ammo items AddedMagazines pays for at MagazinesPerItem each, rounded up (a partly-filled gun keeps the remainder on the pickup). Pure helper. */
+	static int32 UsedAmmoItems(int32 AddedMagazines, int32 MagazinesPerItem);	/** Returns false (and removes nothing) if there are fewer than Count. */
 	bool RemoveItem(FName ItemId, int32 Count = 1);
 	int32 GetCount(FName ItemId) const;
 	bool HasItem(FName ItemId) const { return GetCount(ItemId) > 0; }

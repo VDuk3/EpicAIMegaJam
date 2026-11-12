@@ -8,6 +8,7 @@
 #include "GameFramework/MovementComponent.h"
 #include "Data/GBDataSubsystem.h"
 #include "Player/GBPlayerCharacter.h"
+#include "Stats/GBAttributeComponent.h"
 #include "World/GBProgressSubsystem.h"
 
 namespace GBEraSubsystemLocal
@@ -136,6 +137,23 @@ void UGBEraSubsystem::Tick(float DeltaTime)
 
 void UGBEraSubsystem::PerformSwap()
 {
+	// The traveller died while the screen was covered: undo the travel and fade back in (no teleport,
+	// no restore, no checkpoint for a dead player).
+	bool bTravellerDead = false;
+	if (AGBPlayerCharacter* DeadPlayer = Cast<AGBPlayerCharacter>(PendingTraveller.Get()))
+	{
+		bTravellerDead = DeadPlayer->IsDead();
+	}
+	else if (const UGBAttributeComponent* DeadAttributes = UGBAttributeComponent::Find(PendingTraveller.Get()))
+	{
+		bTravellerDead = DeadAttributes->IsDead();
+	}
+	if (bTravellerDead)
+	{
+		PendingEra = CurrentEra;
+		return;
+	}
+
 	CurrentEra = PendingEra;
 	ApplyEra();
 
@@ -172,10 +190,14 @@ void UGBEraSubsystem::PerformSwap()
 	if (AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Traveller))
 	{
 		// GDD 4: era travel restores health, mana and ammo; portals are the checkpoints of the map.
-		Player->RestoreAll();
-		if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
+		// Never for a dead player (death undoes the travel before this point).
+		if (!Player->IsDead())
 		{
-			Progress->SaveCheckpoint(Player);
+			Player->RestoreAll();
+			if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
+			{
+				Progress->SaveCheckpoint(Player);
+			}
 		}
 	}
 }

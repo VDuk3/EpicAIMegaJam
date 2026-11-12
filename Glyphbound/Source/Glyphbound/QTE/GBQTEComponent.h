@@ -73,11 +73,12 @@ protected:
 	FGBQTESession Session;
 	FGBQTEResult LastResult;
 	/** Read at StartQTE so gear changes apply to the next QTE. */
-	float GestureIdleSubmitTime = 0.f;
-	float LineSubmitLengthMult = 0.f;
+	float GestureIdleSubmitTime = 0.f;	float LineSubmitLengthMult = 0.f;
 	FGBOnQTEFinished FinishedDelegate;
 	FName ActiveSpellId = NAME_None;
 	bool bActive = false;
+	/** The next Finish ends a CancelQTE: its result is forced to unsuccessful, whatever the score so far. */
+	bool bForceFailResult = false;
 	/** Real seconds without gesture input, to auto-submit a stroke when the hand pauses. */
 	float GestureIdleTime = 0.f;
 	FRandomStream Random;

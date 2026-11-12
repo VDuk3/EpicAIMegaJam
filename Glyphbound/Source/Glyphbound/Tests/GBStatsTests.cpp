@@ -1,6 +1,8 @@
 // Pure-logic tests of the stat math: modifier order, source scaling, regen steps and QTE-scaled params.
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
+#include "Core/GBStatNames.h"
+#include "Core/GBTypes.h"
 #include "Data/GBDataTypes.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
@@ -114,6 +116,20 @@ bool FGBStatsScaledParamTest::RunTest(const FString& Parameters)
 
 	const FGBScaledParam Fixed = Param(10.f, 4.f, 20.f, EGBScaleSource::None);
 	TestNearlyEqual(TEXT("Untagged stays at Base with the QTE on"), Fixed.Resolve(1.f, 1.f, true), 10.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsWeaponSlotKeyTest, "Glyphbound.Stats.WeaponSlotKeys",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBStatsWeaponSlotKeyTest::RunTest(const FString& Parameters)
+{
+	// The slot-wide modifier key names one slot only: a gun enchant must not buff staffs or swords.
+	TestEqual(TEXT("Staff slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Staff, GBStat::Damage).ToString(), TEXT("Weapon.Staff.Damage"));
+	TestEqual(TEXT("Gun slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::Damage).ToString(), TEXT("Weapon.Gun.Damage"));
+	TestEqual(TEXT("Sword slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Sword, GBStat::Damage).ToString(), TEXT("Weapon.Sword.Damage"));
+	TestEqual(TEXT("Slot key keeps the stat name"), GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::FireInterval).ToString(), TEXT("Weapon.Gun.FireInterval"));
+	TestFalse(TEXT("Gun key differs from the all-weapons key"),
+		GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::Damage) == GBStat::WeaponAllKey(GBStat::Damage));
 	return true;
 }
 

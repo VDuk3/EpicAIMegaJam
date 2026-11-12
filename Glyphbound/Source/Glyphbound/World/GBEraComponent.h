@@ -62,4 +62,6 @@ protected:
 	bool bSavedCollision = true;
 	bool bSavedTick = true;
 	bool bHasSaved = false;
+	/** Owner components whose tick was enabled when presence was lost (attributes, status effects...): re-enabled exactly on return, so nothing simulates in the other era. */
+	TArray<TWeakObjectPtr<UActorComponent>> SavedTickComponents;
 };

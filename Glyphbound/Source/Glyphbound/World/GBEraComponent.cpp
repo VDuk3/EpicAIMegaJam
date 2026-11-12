@@ -103,6 +103,19 @@ void UGBEraComponent::ApplyPresence(bool bNewPresent)
 		bSavedTick = Owner->IsActorTickEnabled();
 		bHasSaved = true;
 
+		// Remember every ticking component first (movement included), so the other era simulates nothing.
+		SavedTickComponents.Reset();
+		TArray<UActorComponent*> Components;
+		Owner->GetComponents<UActorComponent>(Components);
+		for (UActorComponent* Comp : Components)
+		{
+			if (Comp && Comp != this && Comp->IsComponentTickEnabled())
+			{
+				SavedTickComponents.Add(Comp);
+				Comp->SetComponentTickEnabled(false);
+			}
+		}
+
 		Owner->SetActorHiddenInGame(true);
 		Owner->SetActorEnableCollision(false);
 		Owner->SetActorTickEnabled(false);
@@ -118,7 +131,16 @@ void UGBEraComponent::ApplyPresence(bool bNewPresent)
 		Owner->SetActorHiddenInGame(bHasSaved ? bSavedHidden : false);
 		Owner->SetActorEnableCollision(bHasSaved ? bSavedCollision : true);
 		Owner->SetActorTickEnabled(bHasSaved ? bSavedTick : true);
-		if (Movement)
+		// Re-enable exactly the components that were ticking (a burning enemy keeps burning on return).
+		for (TWeakObjectPtr<UActorComponent>& Saved : SavedTickComponents)
+		{
+			if (UActorComponent* Comp = Saved.Get())
+			{
+				Comp->SetComponentTickEnabled(true);
+			}
+		}
+		SavedTickComponents.Reset();
+		if (Movement && !bHasSaved)
 		{
 			Movement->SetComponentTickEnabled(true);
 		}

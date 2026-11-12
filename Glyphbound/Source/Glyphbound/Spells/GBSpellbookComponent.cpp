@@ -473,6 +473,21 @@ void UGBSpellbookComponent::FinishCast(FName SpellId, const FGBQTEResult& Result
 		Equipment->SetSwitchLocked(false);
 	}
 
+	// The owner died while the QTE was running (or the cast outlived it): never spawn from a dead caster.
+	bool bOwnerDead = false;
+	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetOwner()))
+	{
+		bOwnerDead = Player->IsDead();
+	}
+	else if (const UGBAttributeComponent* Attributes = GetOwnerAttributes())
+	{
+		bOwnerDead = Attributes->IsDead();
+	}
+	if (bOwnerDead)
+	{
+		return;
+	}
+
 	UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const FGBSpellDefinition* Definition = Data ? Data->FindSpell(SpellId) : nullptr;
 	if (!Definition)

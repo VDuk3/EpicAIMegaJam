@@ -38,7 +38,7 @@ struct GLYPHBOUND_API FGBModifierDef
 {
 	GENERATED_BODY()
 
-	/** Stat key: an actor stat ("MoveSpeed"), "Weapon.<Id>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>", "QTE.TimeDilation"... */
+	/** Stat key: an actor stat ("MoveSpeed"), "Weapon.<Id>.<Stat>", "Weapon.<Slot>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>", "QTE.TimeDilation"... */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FName Stat = NAME_None;
 
@@ -439,7 +439,7 @@ struct GLYPHBOUND_API FGBSpriteDefinition
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FName Id = NAME_None;
 
-	/** One-character key -> "#RRGGBB" or "#RRGGBBAA". */
+	/** One-character key -> "#RRGGBB" or "#RRGGBBAA". Keys ignore case (Unreal string keys do): never use both 's' and 'S' in one palette; use digits for extra colors. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TMap<FString, FString> Palette;
 

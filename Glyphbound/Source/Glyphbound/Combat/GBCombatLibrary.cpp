@@ -9,6 +9,12 @@
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
 
+namespace GBCombatLocal
+{
+	/** The obstruction trace starts this far above the explosion origin, so the floor under it does not block it. */
+	constexpr float RadialTraceLiftCm = 5.f;
+}
+
 float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bool bAllowFriendlyFire)
 {
 	if (!IsValid(Target))
@@ -126,6 +132,24 @@ int32 UGBCombatLibrary::DealRadialDamage(const UObject* WorldContextObject, cons
 		const FVector TargetLocation = Target->GetActorLocation();
 		const float Distance = FVector::Dist(TargetLocation, Origin);
 		if (Distance > Radius)
+		{
+			continue;
+		}
+
+		// Solid geometry between the blast and the target blocks the damage.
+		FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(GBRadialObstruction), true);
+		TraceParams.AddIgnoredActor(Target);
+		for (AActor* Ignored : IgnoreActors)
+		{
+			if (Ignored)
+			{
+				TraceParams.AddIgnoredActor(Ignored);
+			}
+		}
+		FHitResult Obstruction;
+		const FVector TraceStart = Origin + FVector(0.f, 0.f, GBCombatLocal::RadialTraceLiftCm);
+		if (World->LineTraceSingleByChannel(Obstruction, TraceStart, TargetLocation, ECC_Visibility, TraceParams)
+			&& Obstruction.bBlockingHit && Obstruction.GetActor() && Obstruction.GetActor() != Target)
 		{
 			continue;
 		}

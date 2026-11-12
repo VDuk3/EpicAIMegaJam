@@ -56,8 +56,9 @@ float AGBHeldItem::GetStat(FName Stat, float DefaultValue) const
 
 	if (const UGBStatsComponent* Stats = GetOwnerStats())
 	{
-		TArray<FName, TInlineAllocator<2>> Keys;
+		TArray<FName, TInlineAllocator<3>> Keys;
 		Keys.Add(GBStat::WeaponKey(WeaponId, Stat));
+		Keys.Add(GBStat::WeaponSlotKey(Slot, Stat));
 		Keys.Add(GBStat::WeaponAllKey(Stat));
 		return Stats->EvaluateKeys(Keys, Base);
 	}
@@ -157,7 +158,7 @@ FGBDamageInfo AGBHeldItem::MakeDamageInfo() const
 		}
 	}
 
-	// The enchant's damage multiplier arrives by itself through its "Weapon.All.Damage" modifier.
+	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" modifier.
 	EGBElement EnchantElement = EGBElement::Physical;
 	FName EnchantEffect = NAME_None;
 	if (AcceptsEnchant() && GetActiveEnchant(EnchantElement, EnchantEffect))

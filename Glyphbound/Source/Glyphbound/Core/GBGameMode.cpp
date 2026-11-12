@@ -53,7 +53,30 @@ void AGBGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 		bHasPlayerStart = true;
 		break;
 	}
-	if (bHasPlayerStart)
+
+	AGBTestArena* ExistingArena = nullptr;
+	for (TActorIterator<AGBTestArena> It(World); It; ++It)
+	{
+		ExistingArena = *It;
+		break;
+	}
+
+	// The default map is the engine's empty Entry map (it has a PlayerStart but no floor): the test level
+	// is built in code whenever the map is an engine map or has no PlayerStart of its own.
+	const FString PackageName = UWorld::RemovePIEPrefix(World->GetPackage()->GetName());
+	const bool bEngineMap = PackageName.StartsWith(TEXT("/Engine/"));
+
+	if (ExistingArena)
+	{
+		ArenaPlayerStart = ExistingArena->GetPlayerStartActor();
+		bHasArenaStart = ArenaPlayerStart.IsValid();
+		if (bHasArenaStart)
+		{
+			ArenaStart = ArenaPlayerStart->GetActorTransform();
+		}
+		return;
+	}
+	if (bHasPlayerStart && !bEngineMap)
 	{
 		return;
 	}
@@ -70,11 +93,16 @@ void AGBGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 	Arena->BuildStatic();
 	ArenaStart = Arena->GetPlayerStartTransform();
 	bHasArenaStart = true;
+	ArenaPlayerStart = Arena->GetPlayerStartActor();
 }
 
 AActor* AGBGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	// The arena spawned a real APlayerStart, so the engine's choice already finds it.
+	// The arena built a real APlayerStart: use it, not the one that came with an engine map.
+	if (APlayerStart* Start = ArenaPlayerStart.Get())
+	{
+		return Start;
+	}
 	return Super::ChoosePlayerStart_Implementation(Player);
 }
 

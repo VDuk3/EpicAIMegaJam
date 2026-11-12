@@ -138,6 +138,8 @@ void UGBQTEComponent::CancelQTE()
 		return;
 	}
 	Session.Phase = EGBQTEPhase::Finished;
+	// A cancelled QTE never casts: the result is unsuccessful even if some steps were right.
+	bForceFailResult = true;
 	Finish();
 }
 
@@ -218,7 +220,13 @@ void UGBQTEComponent::Finish()
 	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
 	bActive = false;
 	SetComponentTickEnabled(false);
-	const FGBQTEResult Result = Session.GetResult();
+	FGBQTEResult Result = Session.GetResult();
+	if (bForceFailResult)
+	{
+		Result.bSuccess = false;
+		Result.bUsedQTE = true;
+	}
+	bForceFailResult = false;
 	LastResult = Result;
 	ActiveSpellId = NAME_None;
 

@@ -45,7 +45,7 @@ struct GLYPHBOUND_API FGBAmmoState
 /**
  * A held item is an actor attached to the player's view. It is created from a FGBWeaponDefinition (Weapons.json)
  * by UGBEquipmentComponent and reads every number through GetStat(), so skill-tree and enchant modifiers apply
- * (keys "Weapon.<Id>.<Stat>" and "Weapon.All.<Stat>" on the owner's UGBStatsComponent).
+ * (keys "Weapon.<Id>.<Stat>", "Weapon.<Slot>.<Stat>" and "Weapon.All.<Stat>" on the owner's UGBStatsComponent).
  * Subclasses: AGBStaff (basic magic attack), AGBGun (shoot, aim, reload), AGBSword (melee).
  */
 UCLASS(Abstract)

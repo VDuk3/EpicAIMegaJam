@@ -474,7 +474,7 @@ void AGBEnemyCharacter::PerformAttack()
 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 		const float Tolerance = Data ? Data->GetGameValue(GBEnemyKey::MeleeReachTolerance, 1.2f) : 1.2f;
 		const FVector ToGoal = Goal->GetActorLocation() - GetActorLocation();
-		if (ToGoal.Size() <= AttackRange * Tolerance)
+		if (ToGoal.Size() <= AttackRange * Tolerance && HasLineOfSight(Goal))
 		{
 			Info.HitLocation = Goal->GetActorLocation();
 			Info.HitDirection = ToGoal.GetSafeNormal();

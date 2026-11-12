@@ -72,7 +72,7 @@ bool UGBProgressSubsystem::RestoreCheckpoint(AGBPlayerCharacter* Player)
 	{
 		return false;
 	}
-	Player->LoadFromSnapshot(Checkpoint);
+	Player->RespawnAt(Checkpoint);
 	return true;
 }
 

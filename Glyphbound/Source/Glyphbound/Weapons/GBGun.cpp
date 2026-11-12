@@ -46,28 +46,34 @@ UStaticMeshComponent* AGBGun::AddPart(FName Name, EGBShape Shape, const FVector&
 void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
 {
 	// Placeholder viewmodel (art rule: guns are 3D). Sizes in cm are purely visual; X = forward, Z = up.
+	// The parts sit forward of the held-item anchor so the whole gun reads as one small pistol in the
+	// lower right of the view, roughly 25-35 cm long, pointing forward.
 	const float* PelletStat = Definition.Stats.Find(GBStat::Pellets);
 	const bool bShotgun = PelletStat && *PelletStat > 1.f;
 	const bool bAutomaticLook = Definition.bAutomatic;
 
-	const float BodyLength = bShotgun ? 22.f : (bAutomaticLook ? 26.f : 16.f);
-	const float BarrelLength = bShotgun ? 18.f : (bAutomaticLook ? 16.f : 6.f);
-	const float BarrelThickness = bShotgun ? 4.f : 2.5f;
+	const float BodyLength = bShotgun ? 24.f : (bAutomaticLook ? 26.f : 20.f);
+	const float BarrelLength = bShotgun ? 16.f : (bAutomaticLook ? 14.f : 9.f);
+	const float BarrelThickness = bShotgun ? 4.f : 3.f;
+	constexpr float BodyForward = 8.f;
 
 	const FLinearColor BodyColor(0.08f, 0.08f, 0.10f);
 	const FLinearColor BarrelColor(0.03f, 0.03f, 0.035f);
 	const FLinearColor GripColor(0.12f, 0.10f, 0.10f);
 	const FLinearColor NeonColor(0.0f, 0.9f, 1.0f);
 
-	AddPart(TEXT("Body"), EGBShape::Cube, FVector::ZeroVector, FVector(BodyLength, 4.f, 7.f), BodyColor, false);
-	AddPart(TEXT("Barrel"), EGBShape::Cube, FVector(BodyLength * 0.5f + BarrelLength * 0.5f, 0.f, 1.5f),
+	AddPart(TEXT("Body"), EGBShape::Cube, FVector(BodyForward, 0.f, 0.f), FVector(BodyLength, 5.f, 7.5f), BodyColor, false);
+	AddPart(TEXT("Barrel"), EGBShape::Cube, FVector(BodyForward + BodyLength * 0.5f + BarrelLength * 0.5f, 0.f, 1.5f),
 		FVector(BarrelLength, BarrelThickness, BarrelThickness), BarrelColor, false);
-	AddPart(TEXT("Grip"), EGBShape::Cube, FVector(-BodyLength * 0.5f + 3.f, 0.f, -6.f), FVector(3.5f, 3.5f, 8.f), GripColor, false);
+	AddPart(TEXT("Grip"), EGBShape::Cube, FVector(BodyForward - BodyLength * 0.5f + 2.5f, 0.f, -7.f), FVector(4.f, 4.f, 9.f), GripColor, false);
 	if (bAutomaticLook)
 	{
-		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyLength * 0.15f, 0.f, -6.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
+		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyForward + 2.f, 0.f, -7.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
 	}
-	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(0.f, 2.1f, 1.f), FVector(BodyLength * 0.8f, 0.3f, 0.6f), NeonColor, true);
+	// Neon on the camera-facing side (the anchor sits right of the view, so +Y faces away).
+	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, -2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
+	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
+	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
 }
 
 // ---- Ammo ----

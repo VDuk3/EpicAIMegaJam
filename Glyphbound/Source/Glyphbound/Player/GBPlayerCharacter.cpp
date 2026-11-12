@@ -520,8 +520,7 @@ void AGBPlayerCharacter::SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const
 }
 
 void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
-{
-	if (QTE->IsActive())
+{	if (QTE->IsActive())
 	{
 		QTE->CancelQTE();
 	}
@@ -555,6 +554,52 @@ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	LastMoveInput = FVector2D::ZeroVector;
 	SetControlEnabled(true);
 	ApplyMovementStats();
+
+	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
+	{
+		if (PC->GetOpenMenu() == EGBMenu::Death)
+		{
+			PC->SetMenu(EGBMenu::None);
+		}
+	}
+}
+
+void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
+{
+	// Death never rolls back what the player owns: only place, era and resources are restored.
+	if (QTE && QTE->IsActive())
+	{
+		QTE->CancelQTE();
+	}
+	if (Spellbook)
+	{
+		Spellbook->CancelSustained();
+	}
+	EndDash();
+
+	SetActorTransform(Snapshot.Transform, false, nullptr, ETeleportType::TeleportPhysics);
+	if (Controller)
+	{
+		Controller->SetControlRotation(Snapshot.ControlRotation);
+	}
+	if (UGBEraSubsystem* Era = UGBEraSubsystem::Get(this))
+	{
+		Era->SetEraImmediate(Snapshot.Era);
+	}
+
+	if (StatusEffects)
+	{
+		StatusEffects->RemoveAllEffects();
+	}
+	RestoreAll();
+
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+	}
+	PendingRecoil = FRotator::ZeroRotator;
+	LastMoveInput = FVector2D::ZeroVector;
+	SetControlEnabled(true);
 
 	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
 	{

@@ -10,8 +10,10 @@
 class AGBPlayerCharacter;
 
 /**
- * Everything of the player that a checkpoint (or a map change to the final-boss dimension) must bring back.
- * Each player component fills / reads its own part with SaveToSnapshot / LoadFromSnapshot.
+ * What the full player state looked like at the last checkpoint. Each player component fills / reads
+ * its own part with SaveToSnapshot / LoadFromSnapshot; those parts travel with the player to the
+ * final-boss map. Death respawns (RestoreCheckpoint) only use Transform, ControlRotation and Era plus
+ * a full restore of health, mana and ammo: everything else owned is kept as it is, never rolled back.
  */
 USTRUCT()
 struct GLYPHBOUND_API FGBPlayerSnapshot
@@ -75,7 +77,11 @@ public:
 	void SaveCheckpoint(AGBPlayerCharacter* Player);
 	bool HasCheckpoint() const { return Checkpoint.bValid; }
 	const FGBPlayerSnapshot& GetCheckpoint() const { return Checkpoint; }
-	/** Puts the player back to the checkpoint state (also revives and switches era, no fade). False if there is none. */
+	/**
+	 * Respawns the player at the checkpoint's place and era with full health, mana and ammo (also revives,
+	 * no fade). Items, weapons, spells, skill points and armor are kept as they are now, not restored.
+	 * False if there is none.
+	 */
 	bool RestoreCheckpoint(AGBPlayerCharacter* Player);
 
 	/** New run: clears flags and the checkpoint. */

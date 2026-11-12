@@ -78,6 +78,8 @@ void AGBSpell_Wall::StartSpell()
 	if (bBlocking)
 	{
 		Box->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
+		// Projectiles only overlap WorldDynamic: without this they pass through the wall untouched.
+		Box->SetGenerateOverlapEvents(true);
 		SetupHealth(ReadParam(GBStat::Health, 100.f));
 	}
 

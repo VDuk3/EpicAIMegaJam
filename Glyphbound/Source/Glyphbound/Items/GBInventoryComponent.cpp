@@ -111,9 +111,11 @@ int32 UGBInventoryComponent::AddItem(FName ItemId, int32 Count)
 			return 0;
 		}
 		const float* PerItem = Def->Stats.Find(GBStat::SpareMagazines);
-		const int32 Magazines = Count * (PerItem ? FMath::RoundToInt(*PerItem) : 1);
-		// A full gun takes nothing, so the pickup stays on the floor.
-		return (Magazines > 0 && Equipment->AddSpareMagazines(Magazines) > 0) ? Count : 0;
+		const int32 MagazinesPerItem = FMath::Max(1, PerItem ? FMath::RoundToInt(*PerItem) : 1);
+		const int32 Magazines = Count * MagazinesPerItem;
+		// A full gun takes nothing, so the pickup stays on the floor; a nearly-full one keeps the remainder.
+		const int32 Added = (Magazines > 0) ? Equipment->AddSpareMagazines(Magazines) : 0;
+		return UsedAmmoItems(Added, MagazinesPerItem);
 	}
 
 	if (Def->MaxStack <= 0)
@@ -168,11 +170,19 @@ bool UGBInventoryComponent::RemoveItem(FName ItemId, int32 Count)
 	return true;
 }
 
+int32 UGBInventoryComponent::UsedAmmoItems(int32 AddedMagazines, int32 MagazinesPerItem)
+{
+	if (AddedMagazines <= 0 || MagazinesPerItem <= 0)
+	{
+		return 0;
+	}
+	return (AddedMagazines + MagazinesPerItem - 1) / MagazinesPerItem;
+}
+
 int32 UGBInventoryComponent::GetCount(FName ItemId) const
 {
 	return Items.FindRef(ItemId);
 }
-
 void UGBInventoryComponent::HandleStackEmptied(FName ItemId)
 {
 	if (QuickUseItem == ItemId)
