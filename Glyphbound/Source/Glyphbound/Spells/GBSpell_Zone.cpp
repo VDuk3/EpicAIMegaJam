@@ -7,9 +7,8 @@
 
 namespace
 {
-	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
-	// disc thickness when the spell has no sprite.
-	constexpr float ZoneFigureLiftCm = 3.f;
+	// Visual only: the fallback disc thickness when the spell has no sprite. The lift above
+	// the ground and the per-layer step come from Game.json (GroundFigureLift/LayerStep).
 	constexpr float ZoneDiscThicknessCm = 4.f;
 	const FName FigureGlowParam(TEXT("FigureGlow"));
 }
@@ -37,16 +36,18 @@ void AGBSpell_Zone::StartSpell()
 	const FLinearColor Tint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
 	const float Glow = SpellCast.Get(FigureGlowParam, 1.f);
 
-	Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm));
 	const FName SpriteId = GetSpriteId();
 	if (SpriteId.IsNone())
 	{
-		Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm + ZoneDiscThicknessCm * 0.5f));
 		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(ZoneRadius * 2.f, ZoneRadius * 2.f, ZoneDiscThicknessCm), GetSpellColor(), true);
+		PlaceGroundFigure(Figure, ZoneRadius);
+		Figure->AddWorldOffset(FVector(0.f, 0.f, ZoneDiscThicknessCm * 0.5f));
+		GroundFigureZ = Figure->GetComponentLocation().Z;
 	}
 	else
 	{
 		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, ZoneRadius * 2.f, Tint, Glow);
+		PlaceGroundFigure(Figure, ZoneRadius);
 	}
 
 	if (SpellCast.GetString(GBString::OnHitEffect).IsEmpty() && DamagePerTick <= 0.f)

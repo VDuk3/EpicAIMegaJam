@@ -7,7 +7,16 @@
 #include "GBSpellActor.generated.h"
 
 class UBillboardComponent;
+class UStaticMeshComponent;
 struct FCollisionShape;
+
+/** Keys of Game.json "Values" that control how ground spell figures stack (GDD 18). */
+namespace GBGroundFigure
+{
+	inline const FName Lift(TEXT("GroundFigureLift"));               // cm above the ground for a figure with no overlap
+	inline const FName LayerStep(TEXT("GroundFigureLayerStep"));     // cm per overlapping figure placed earlier
+	inline const FName LayerMaxRise(TEXT("GroundFigureLayerMaxRise")); // cm: figures farther above/below the ground point are ignored
+}
 
 /**
  * Spell parameter names that are not in GBStat (Core/GBStatNames.h). Shared ones live here; the ones only one
@@ -56,6 +65,19 @@ public:
 
 	/** True while a sustained spell is running (the spellbook keeps a reference and blocks other casts). */
 	virtual bool IsSustaining() const { return false; }
+
+	/**
+	 * World Z for a new ground figure (GDD 18): above the ground point, and above every
+	 * overlapping live figure. Existing entries are (center X, center Y, figure world Z, radius).
+	 * Overlap = horizontal center distance < sum of radii, and the existing figure Z within
+	 * MaxRise above or below GroundPoint. Returns max(GroundPoint.Z + Lift, highest overlap + LayerStep).
+	 */
+	static float ComputeGroundFigureZ(const FVector& GroundPoint, float Radius, const TArray<FVector4>& Existing, float Lift, float LayerStep, float MaxRise);
+
+	/** True when this actor placed a ground figure with PlaceGroundFigure and has not ended. */
+	bool HasGroundFigure() const { return bHasGroundFigure; }
+	float GetGroundFigureRadius() const { return GroundFigureRadius; }
+	float GetGroundFigureWorldZ() const { return GroundFigureZ; }
 
 	const FGBSpellCast& GetSpellCast() const { return SpellCast; }
 	AActor* GetCaster() const { return SpellCast.Caster; }
@@ -120,6 +142,13 @@ protected:
 	/** Clamps a tick interval read from data so a 0 or negative value cannot flood the timer. */
 	static float SafeInterval(float Interval);
 
+	/**
+	 * Places a ground figure (trap, zone): the figure keeps the actor's X/Y and its world Z
+	 * comes from ComputeGroundFigureZ over the live ground figures in the world. Marks this
+	 * actor as a live ground figure with Radius until it ends.
+	 */
+	void PlaceGroundFigure(UStaticMeshComponent* Figure, float Radius);
+
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Root;
 
 	/** Named SpellCast, not Cast: a member called Cast would hide the engine Cast<T>() template. */
@@ -127,6 +156,11 @@ protected:
 	bool bEnded = false;
 	bool bSpellInitialized = false;
 	bool bSpellStarted = false;
+
+	/** Ground figure state for layering (GDD 18): set by PlaceGroundFigure, live until the spell ends. */
+	bool bHasGroundFigure = false;
+	float GroundFigureRadius = 0.f;
+	float GroundFigureZ = 0.f;
 
 private:
 	void TryStartSpell();

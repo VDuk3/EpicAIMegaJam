@@ -2,11 +2,13 @@
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Components/BillboardComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
 #include "Data/GBDataSubsystem.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
@@ -344,4 +346,64 @@ void AGBSpellActor::ApplyOnHitEffect(AActor* Target) const
 float AGBSpellActor::SafeInterval(float Interval)
 {
 	return FMath::Max(Interval, SpellActorMinTickInterval);
+}
+
+float AGBSpellActor::ComputeGroundFigureZ(const FVector& GroundPoint, float Radius, const TArray<FVector4>& Existing, float Lift, float LayerStep, float MaxRise)
+{
+	float Top = GroundPoint.Z + Lift;
+	for (const FVector4& Entry : Existing)
+	{
+		const float Dx = Entry.X - GroundPoint.X;
+		const float Dy = Entry.Y - GroundPoint.Y;
+		if (FMath::Sqrt(Dx * Dx + Dy * Dy) >= Radius + Entry.W)
+		{
+			continue;
+		}
+		if (FMath::Abs(Entry.Z - GroundPoint.Z) > MaxRise)
+		{
+			continue;
+		}
+		Top = FMath::Max(Top, Entry.Z + LayerStep);
+	}
+	return Top;
+}
+
+void AGBSpellActor::PlaceGroundFigure(UStaticMeshComponent* Figure, float Radius)
+{
+	if (!Figure)
+	{
+		return;
+	}
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+	UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const float Lift = Data ? Data->GetGameValue(GBGroundFigure::Lift, 3.f) : 3.f;
+	const float LayerStep = Data ? Data->GetGameValue(GBGroundFigure::LayerStep, 1.5f) : 1.5f;
+	const float MaxRise = Data ? Data->GetGameValue(GBGroundFigure::LayerMaxRise, 60.f) : 60.f;
+
+	const FVector GroundPoint = GetActorLocation();
+	TArray<FVector4> Existing;
+	for (TActorIterator<AGBSpellActor> It(World); It; ++It)
+	{
+		AGBSpellActor* Other = *It;
+		if (!Other || Other == this || !Other->bHasGroundFigure || Other->bEnded)
+		{
+			continue;
+		}
+		if (Other->IsPendingKillPending())
+		{
+			continue;
+		}
+		Existing.Add(FVector4(Other->GetActorLocation().X, Other->GetActorLocation().Y, Other->GroundFigureZ, Other->GroundFigureRadius));
+	}
+
+	const float FigureZ = ComputeGroundFigureZ(GroundPoint, Radius, Existing, Lift, LayerStep, MaxRise);
+	Figure->SetWorldLocation(FVector(GroundPoint.X, GroundPoint.Y, FigureZ));
+
+	GroundFigureRadius = FMath::Max(1.f, Radius);
+	GroundFigureZ = FigureZ;
+	bHasGroundFigure = true;
 }

@@ -8,9 +8,8 @@
 
 namespace
 {
-	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
-	// disc thickness when the spell has no sprite.
-	constexpr float TrapFigureLiftCm = 3.f;
+	// Visual only: the fallback disc thickness when the spell has no sprite. The lift above
+	// the ground and the per-layer step come from Game.json (GroundFigureLift/LayerStep).
 	constexpr float TrapDiscThicknessCm = 3.f;
 	/** Glow brightness of the trigger area while the rune is not armed yet. */
 	constexpr float TrapUnarmedBrightness = 0.3f;
@@ -41,19 +40,21 @@ void AGBSpell_Trap::StartSpell()
 	FigureTint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
 	FigureGlowValue = SpellCast.Get(GBSpellParam::FigureGlow, 1.f);
 
-	Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm));
 	const FName SpriteId = GetSpriteId();
 	if (SpriteId.IsNone())
 	{
-		Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm + TrapDiscThicknessCm * 0.5f));
 		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(TriggerRadius * 2.f, TriggerRadius * 2.f, TrapDiscThicknessCm),
 			GetSpellColor() * TrapUnarmedBrightness, true);
+		PlaceGroundFigure(Figure, TriggerRadius);
+		Figure->AddWorldOffset(FVector(0.f, 0.f, TrapDiscThicknessCm * 0.5f));
+		GroundFigureZ = Figure->GetComponentLocation().Z;
 	}
 	else
 	{
 		FLinearColor Dimmed = FigureTint * TrapUnarmedBrightness;
 		Dimmed.A = 1.f;
 		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, TriggerRadius * 2.f, Dimmed, FigureGlowValue * TrapUnarmedBrightness);
+		PlaceGroundFigure(Figure, TriggerRadius);
 	}
 
 	if (ArmTime > 0.f)

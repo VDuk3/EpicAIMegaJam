@@ -1,6 +1,7 @@
 // Pure-logic tests of spell cast resolution (no world, no data files).
 #include "Misc/AutomationTest.h"
 #include "Core/GBStatNames.h"
+#include "Spells/GBSpellActor.h"
 #include "Spells/GBSpellTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -98,6 +99,53 @@ bool FGBSpellDamageInfoTest::RunTest(const FString& Parameters)
 
 	const FGBDamageInfo Other = SpellCast.MakeDamageInfo(GBStat::Radius);
 	TestEqual(TEXT("Amount follows the asked param"), Other.Amount, 170.f, 0.001f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellGroundFigureLayeringTest, "Glyphbound.Spells.GroundFigureLayering",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBSpellGroundFigureLayeringTest::RunTest(const FString& Parameters)
+{
+	const float Lift = 3.f;
+	const float Step = 1.5f;
+	const float MaxRise = 60.f;
+	const FVector Ground(100.f, 200.f, 50.f);
+	const float Radius = 150.f;
+
+	// No existing figures: ground + lift.
+	TestEqual(TEXT("Empty world puts the figure at ground plus lift"),
+		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, {}, Lift, Step, MaxRise), 53.f, 0.001f);
+
+	// One overlapping figure at ground + lift: exactly one step above it.
+	const TArray<FVector4> One = { FVector4(100.f, 200.f, 53.f, 150.f) };
+	TestEqual(TEXT("One overlapping figure lifts the new one by a single step"),
+		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, One, Lift, Step, MaxRise), 54.5f, 0.001f);
+
+	// Two overlapping figures stacked: above the higher one.
+	const TArray<FVector4> Two = { FVector4(100.f, 200.f, 53.f, 150.f), FVector4(100.f, 200.f, 54.5f, 300.f) };
+	TestEqual(TEXT("Two stacked figures put the new one above the higher figure"),
+		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Two, Lift, Step, MaxRise), 56.f, 0.001f);
+
+	// A figure far away (beyond the summed radii) is ignored.
+	const TArray<FVector4> Far = { FVector4(1000.f, 200.f, 53.f, 150.f) };
+	TestEqual(TEXT("A distant figure does not lift the new one"),
+		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Far, Lift, Step, MaxRise), 53.f, 0.001f);
+
+	// A figure on a floor far above (more than MaxRise) is ignored.
+	const TArray<FVector4> HighFloor = { FVector4(100.f, 200.f, 53.f + MaxRise + 10.f, 150.f) };
+	TestEqual(TEXT("A figure more than MaxRise above the ground point is ignored"),
+		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, HighFloor, Lift, Step, MaxRise), 53.f, 0.001f);
+
+	// The newest is always strictly above everything it overlaps.
+	const TArray<FVector4> Mixed = {
+		FVector4(120.f, 210.f, 53.f, 100.f),
+		FVector4(90.f, 190.f, 58.f, 200.f),
+		FVector4(5000.f, 5000.f, 200.f, 500.f),
+		FVector4(110.f, 205.f, 53.f + MaxRise + 5.f, 400.f)
+	};
+	const float Layered = AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Mixed, Lift, Step, MaxRise);
+	TestTrue(TEXT("The layered figure ends strictly above each overlapping figure"), Layered > 58.f);
+	TestEqual(TEXT("The layered figure sits one step above the highest overlap"), Layered, 59.5f, 0.001f);
 	return true;
 }
 

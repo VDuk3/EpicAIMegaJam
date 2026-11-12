@@ -505,11 +505,11 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the lightning rune actor did not spawn (ok=%d runes=%d)"), bOk ? 1 : 0, Runes);
 			}
 		});
-		Add(33.7f + S, TEXT("ground spells: cast the ice floor farther out"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(33.7f + S, TEXT("ground spells: cast the ice floor overlapping about half the rune"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
-				PC->SetControlRotation(FRotator(-10.f, PC->GetControlRotation().Yaw, 0.f));
+				PC->SetControlRotation(FRotator(-17.f, PC->GetControlRotation().Yaw, 0.f));
 			}
 			const bool bOk = Player->GetSpellbook()->TryCastSlot(1);
 			int32 Floors = 0;
@@ -522,12 +522,46 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the ice floor actor did not spawn (ok=%d floors=%d)"), bOk ? 1 : 0, Floors);
 			}
+			float RuneZ = 0.f;
+			bool bHasRune = false;
+			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)
+			{
+				if (It->HasGroundFigure())
+				{
+					RuneZ = It->GetGroundFigureWorldZ();
+					bHasRune = true;
+					break;
+				}
+			}
+			float FloorZ = 0.f;
+			bool bHasFloor = false;
+			for (TActorIterator<AGBSpell_Zone> It(World); It; ++It)
+			{
+				if (It->HasGroundFigure())
+				{
+					FloorZ = It->GetGroundFigureWorldZ();
+					bHasFloor = true;
+					break;
+				}
+			}
+			if (bHasRune && bHasFloor)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE ground layers runeZ=%.1f floorZ=%.1f"), RuneZ, FloorZ);
+				if (!(FloorZ > RuneZ))
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE ground layers: the ice floor (%.1f) is not above the rune (%.1f)"), FloorZ, RuneZ);
+				}
+			}
+			else
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ground layers: missing figure (rune=%d floor=%d)"), bHasRune ? 1 : 0, bHasFloor ? 1 : 0);
+			}
 		});
-		Add(36.2f + S, TEXT("screenshot: ground spells"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(34.7f + S, TEXT("screenshot: ground spells"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
-				PC->SetControlRotation(FRotator(-20.f, PC->GetControlRotation().Yaw, 0.f));
+				PC->SetControlRotation(FRotator(-22.f, PC->GetControlRotation().Yaw, 0.f));
 			}
 			int32 Runes = 0;
 			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)

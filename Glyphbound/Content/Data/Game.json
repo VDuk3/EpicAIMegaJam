@@ -26,7 +26,10 @@
 		"DamageNumberBigHealthFraction": 0.25,
 		"DamageNumberFadeStart": 0.6,
 		"DamageNumberMaxAlive": 40,
-		"DamageNumberMergeWindow": 0.08
+		"DamageNumberMergeWindow": 0.08,
+		"GroundFigureLift": 3,
+		"GroundFigureLayerStep": 1.5,
+		"GroundFigureLayerMaxRise": 60
 	},
 	"Strings": {}
 }
