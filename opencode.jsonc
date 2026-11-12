@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Implementer model for this project: Muse Spark 1.3 Contributor (OpenCode Go), High.
+  // Launch OpenCode only through Tools/Devlog/Invoke-LoggedAgent.ps1 so the Glass Box log captures it.
+  "default_agent": "build",
+  "agents": {
+    "build": {
+      "model": "opencode-go/muse-spark-1.3-contributor#high",
+    },
+  },
+}

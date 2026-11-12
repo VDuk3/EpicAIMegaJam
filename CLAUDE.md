@@ -1,6 +1,6 @@
 # CLAUDE.md (proyecto de la Epic AI MegaJam 2026)
 
-Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La jam va del 12 nov 00:00 EST al **15 nov 20:59 EST**; pasada esa hora no se aceptan entregas. El tema se anuncia el 11 nov.
+Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La jam va del 12 nov 00:00 EST al **15 nov 20:59 EST**; pasada esa hora no se aceptan entregas. **Tema (anunciado el 11 nov): DIRECTOR'S CUT** — "Your vision, your edits, your final cut": la mecánica que quedó fuera del alcance, la idea archivada; y dirigir agentes de IA también cuenta (fijar la visión, delegar, decidir qué entra al corte final).
 
 ## Reglas duras
 - **La bitácora lo es todo** (objetivo: el premio Glass Box). Lee `Devlog/README.md` antes de trabajar.
@@ -27,6 +27,7 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
   - Recién abierto, el Editor responde "slow task" durante un rato: espera y reintenta.
 - **MCP de Unreal:** descubrimiento progresivo (`list_toolsets` → `describe_toolsets` → `call_tool`). No inventes nombres de tools.
 - **Commits** pequeños y frecuentes, con mensajes claros: el borrador del día los lista.
+- **Implementador:** por defecto, la implementación la hace **Muse Spark 1.3 Contributor en High** a través de OpenCode (`opencode-go/muse-spark-1.3-contributor#high`, ya fijado en `opencode.jsonc`). Excepciones solo por decisión del arquitecto o de quien esté de turno: cambios pequeños que haga directamente el orquestador, o una tarea demasiado compleja para Muse que se le da a Opus u otro modelo. Si se hace una excepción, se anota el motivo en la entrada del día. OpenCode se lanza SOLO con `Tools/Devlog/Invoke-LoggedAgent.ps1`.
 
 ## Tests y verificación
 Reglas que salen de lo que nos costó horas en el proyecto anterior. El porqué y las cifras están en `Devlog/PREJAM_PREP.md`, sección "Lessons from our previous project: tests and verification time"; léela antes de escribir un test o una herramienta de Editor.
@@ -47,3 +48,5 @@ Scripts de un solo uso: en un archivo, no en línea dentro de un comando; en ASC
 - Link a la bitácora en inglés (Glass Box), entregado junto con el juego **antes del cierre**.
 - Nombre del equipo, nombre del juego, y nombre completo y email de la cuenta de Epic de cada miembro (uno es el Team Owner).
 - Assets de terceros listados y trabajo previo declarado.
+- Campo **"Tools you used"** del envío: listar todas las herramientas usadas (algunos premios de socios dependen de él: Hyper3D/Rodin y NVIDIA RTX Award). Llevar la lista al día en la bitácora.
+- Si se compite por el NVIDIA RTX Award: el juego debe usar al menos una función de NvRTX, NVIDIA DLSS o NVIDIA ACE, y se responden las preguntas de NVIDIA al enviar.
