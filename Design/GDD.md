@@ -1,10 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.8, 2026-11-12** — owner's vision plus seven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
-> Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
+> Status: **v0.9, 2026-11-12** — owner's vision plus eight rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
+> Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.9 (2026-11-12): code name Glyphbound; pixel-art look defined (3D geometry with low-res textures, 8-angle sprites); new §0.1 technical direction (C++, placeholders, PIE rule, data tables, travel fade, checkpoint-only saving, single player, size budget, NVIDIA award); camera locked during the QTE.
 - v0.8 (2026-11-12): enemies do not respawn; provisional game order; story questions parked; open questions narrowed to what the prototype and base systems need.
 - v0.7 (2026-11-12): full story (the entity, the false voice, the Valkyrie); elemental zones in the castle unlock the rest of each element; air passives learned the same way; shotgun and rifle dropped by enemies; era travel restores everything (bonfire-like); remaining keys confirmed.
 - v0.6 (2026-11-12): art rule clarified for characters (style of the world they belong to); story premise; opening sequence with the first gun; starting spells; enchant only with a gun in hand; key changes (F quick-use, G interact, L1 enchant on gamepad); counter-style ammo refilled on era travel; automatic checkpoints; no sprint; one full-armor slot.
@@ -17,10 +19,22 @@
 ## 0. Baseline
 At its core this is a **classic first-person RPG plus a classic first-person shooter**. Anything not stated here behaves as players expect from those two genres (magazines and reload, ammo pickups, standard shooter gamepad layout, etc.). This document only lists what is specific to our game.
 
+## 0.1 Technical direction
+- **Engine:** Unreal Engine 5.9.0, pinned until submission. **Single player only.**
+- **Code:** C++ suggested for the core systems (AI agents handle code better than Blueprint graphs), with data assets / data tables for tuning. Final call: the architect.
+- **Placeholders first:** pixel art and 3D models are made by other team members on machines on the local network. **The architect never waits for art:** it uses quickly generated placeholders and swaps them later.
+- **Placeholder numbers:** the architect puts provisional values (damage, mana, cooldowns, QTE length and time limit…) in data tables; the owner tunes them later.
+- **PIE is human-only:** Play In Editor is always run by a person. AI agents do not run PIE; they compile, package and run tests, then ask a human to play-test. (Also in `CLAUDE.md`.)
+- **Era travel:** a fade with an effect when crossing a portal; the transition hides loading the other era's version of the map.
+- **Saving:** checkpoints only. No save to disk between sessions.
+- **Size:** the jam page says "keep it under 1 GB" for desktop zips, but **bigger builds are allowed** if uploaded with butler (installed on CENTRAL) or Blendo Itch Uploader. The Official Rules PDF sets no size limit. So 1 GB is a target, not a hard limit.
+- **NVIDIA RTX Award:** we intend to compete. It is the "best Render Royalty entry built in Unreal Engine" that uses at least one of: an NvRTX feature (RTX Mega Geometry, RTX Direct Illumination, ReSTIR GI, ReSTIR PT path tracing, LSS Hair), **DLSS 4.5 (Unreal Engine)**, or NVIDIA ACE; plus the NVIDIA questions at submission and listing the tool in "Tools you used".
+- **Modifier rule (Official Rules §10):** a team can win **only one modifier** (Glass Box, Render Royalty, Best Team…) unless no other eligible winner remains. We still enter all that apply.
+
 ## 1. One-line pitch
 A fast first-person **shooter/RPG hybrid**: the player, a medieval mage, jumps through fixed portals between a **pixel-art medieval past** full of magic and a **3D cyberpunk future** full of guns, on the same map in two times, and wins by **mixing spells and firearms** rather than sticking to one style.
 
-Working title: **TBD**.
+Working title: **TBD**. Project code name: **Glyphbound**.
 
 ## 2. Pillars
 1. **Two eras, one fight.** Past = magic, pixel art. Future = guns, 3D cyberpunk. Both feed the same character.
@@ -35,6 +49,12 @@ Working title: **TBD**.
 - **Characters take the style of the world they belong to.** An orc of the castle is a classic pixel-art fantasy orc (80s, 90s, early 2000s games). An orc of the future is a 3D, heavily armored sci-fi orc. They are different enemies, not the same orc in two styles.
 - **The player is a medieval mage, so the player is always pixel art, hands included.** In first person, the hands are always pixel art, even when they hold a 3D gun.
 - No exceptions.
+
+### The pixel-art look
+- **Visual reference:** retro first-person fantasy shooters with modern lighting (the owner's reference: *Wizordum*). Reference only, nothing copied.
+- **Pixel-art environments are 3D geometry with low-resolution pixel textures** (nearest filtering, no smoothing), not flat 2D.
+- **Pixel-art characters are sprites that always face the camera.** Target: **8 view angles**; fewer if time runs short.
+- **Headshots on sprites:** the head is the top part of the sprite.
 
 ## 4. World and travel
 - **One map, two times** (past and future). The player travels between them **only through predefined portals** placed on the map.
@@ -153,6 +173,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 ### Requirements for the architect
 - **Every spell parameter is data, not code**, and every one can be tagged as scaled by part 1, part 2, or neither. Each spell defines its own min/max per parameter.
 - The **time-slow amount is configurable** and can be modified by gear (e.g. some armor). Armor/gear as a system is otherwise **TBD**.
+- **The camera is locked during the QTE** (the mouse / right stick draws the gesture).
 
 ## 8. Weapons and items
 
@@ -317,19 +338,11 @@ Not decisions, just the list of systems the design implies:
 - Input for keyboard & mouse and gamepad (layout in §9).
 
 ## 17. Open questions
-Answers get folded into the sections above as they come.
+Answers get folded into the sections above as they come. The prototype questions of 2026-11-12 are answered (see §0.1 and §3).
 
-### For the prototype and base systems (asked 2026-11-12)
-1. **Project name:** there is no `.uproject` yet. What name do we give the project / folder (a code name is fine; the game title can come later)?
-2. **Blueprints or C++:** core systems in C++ with tuning in Blueprints/data, mostly Blueprints, or the architect decides?
-3. **Pixel-art world in first person:** is the castle **3D geometry with low-res pixel textures** (retro 3D shooter look), or flat 2D? And are pixel-art characters (orcs, the player's hands) **sprites that always face the camera**, with how many view angles (1, or 8 like classic shooters)?
-4. **Headshots on pixel-art enemies:** the weapon tree has headshot damage, so sprite enemies need a head hit zone. OK to define it as the top part of the sprite?
-5. **Art delivery:** who makes the pixel art and the 3D models, and in what format (PNG sprite sheets at what pixel size, FBX)? Until then, is greybox + placeholders OK for the prototype?
-6. **Placeholder numbers:** OK for the architect to put placeholder values (damage, mana, cooldowns, QTE sequence length and time limit) in data tables, for the owner to tune later?
-7. **QTE and the camera:** the mouse draws the gesture in part 2, so the camera has to **lock during the QTE**. Confirm. Does the player character also stay still while time is slowed?
-8. **Era travel transition:** is a short fade / effect when crossing a portal OK (it lets us load the other era's version of the map)?
-9. **Saving:** only checkpoints inside one play session, or must progress also be **saved to disk** to continue after closing the game?
-10. **Performance target:** which PC should it run well on (the team's weakest machine?) and at what fps? Single-player only (assumed yes)?
+### Still open for the base systems
+1. **NVIDIA feature and hardware:** which feature (DLSS 4.5 is the simplest)? The main machine (CENTRAL) has an **AMD** GPU, where DLSS does not run; does someone on the team have an NVIDIA RTX card to test it? Is there a DLSS plugin for UE 5.9.0 (to be checked by the architect)?
+2. **QTE and movement:** the camera is locked; can the player still move while time is slowed, or does the character stand still?
 
 ### Content questions (parked by the owner, 2026-11-12)
 Not needed for the prototype; to be answered later.
