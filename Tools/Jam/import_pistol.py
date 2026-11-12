@@ -2,7 +2,7 @@
 # materials. Content/ is not in git, so this script plus the source files on CENTRAL are the source of the assets.
 # Run it through Tools/Jam/Import-Pistol.ps1 (UnrealEditor-Cmd -run=pythonscript), Editor closed.
 #
-# Inputs (CENTRAL only, outside git): Glyphbound/SourceArt/Weapons/Pistol/
+# Inputs, in the temporary folder GB_PISTOL_STAGE, made from Glyphbound/SourceArt/Weapons/Pistol/Pistol.blend:
 #   Export/SM_Pistol_{Body,Trigger,Magazine,EnergyBar}.fbx  (Tools/Blender/pistol_export_fbx.py)
 #   Textures/T_Pistol_{BaseColor,ORM,Normal,EmissiveMask}.png (Tools/Blender/pistol_prepare_ue.py)
 # Output: /Game/Glyphbound/Weapons/Pistol/ (meshes, textures, materials, instances). Parameters the game sets
@@ -16,7 +16,9 @@ import re
 import unreal
 
 MESH_DIR = "/Game/Glyphbound/Weapons/Pistol"
-SOURCE_DIR = os.path.normpath(os.path.join(unreal.Paths.project_dir(), "SourceArt", "Weapons", "Pistol"))
+# Import-Pistol.ps1 bakes the textures and exports the FBX files from Pistol.blend into a temporary folder and passes
+# it here; the project keeps only Pistol.blend as the source and the Unreal assets as the result (owner's rule).
+SOURCE_DIR = os.environ.get("GB_PISTOL_STAGE", "")
 MESHES = ["SM_Pistol_Body", "SM_Pistol_Trigger", "SM_Pistol_Magazine", "SM_Pistol_EnergyBar"]
 TEXTURES = {
     # name: (compression, sRGB)
@@ -368,6 +370,8 @@ def assign(meshes, masters):
 
 
 def main():
+    if not SOURCE_DIR or not os.path.isdir(SOURCE_DIR):
+        fail("GB_PISTOL_STAGE is not set or missing; run Tools/Jam/Import-Pistol.ps1")
     if not EAL.does_directory_exist(MESH_DIR):
         EAL.make_directory(MESH_DIR)
     textures = import_textures()

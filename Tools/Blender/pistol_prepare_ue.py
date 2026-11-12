@@ -8,7 +8,7 @@
 #       (Blender rule: m = min(G, B); glow = 0.65 if m > 1.35 R and m > 0.12).
 #  2. Adds a second UV map "ImbueU" to the energy bar: U goes 0..1 along X like the Generated X the Blender
 #     material used, so the UE material can light cells where U < ImbueRemaining.
-#  3. Saves the .blend in place.
+#  3. Saves the .blend in place, only when it had to add the UV map.
 # Usage: blender -b <cleaned.blend> --python pistol_prepare_ue.py -- <export_dir>
 import bpy, sys, os
 import numpy as np
@@ -73,6 +73,7 @@ save("T_Pistol_Normal", nrm, "Non-Color")
 # second UV map on the energy bar: U = position along X (0 = muzzle end, 1 = grip end), V = 0.5
 bar = bpy.data.objects["V4_energy_cells"]
 me = bar.data
+created = me.uv_layers.get("ImbueU") is None
 uv = me.uv_layers.get("ImbueU") or me.uv_layers.new(name="ImbueU")
 xs = [v.co.x for v in me.vertices]
 x0, x1 = min(xs), max(xs)
@@ -81,5 +82,6 @@ for loop in me.loops:
     uv.data[loop.index].uv = ((x - x0) / (x1 - x0), 0.5)
 print("IMBUE_UV", bar.name, "x range", round(x0, 4), round(x1, 4), "uv layers", [l.name for l in me.uv_layers])
 
-bpy.ops.wm.save_mainfile(compress=True)
-print("SAVED", bpy.data.filepath)
+if created:  # the master only changes the first time; later runs just bake the textures again
+    bpy.ops.wm.save_mainfile(compress=True)
+    print("SAVED", bpy.data.filepath)

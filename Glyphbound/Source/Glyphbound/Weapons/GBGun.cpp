@@ -17,7 +17,7 @@
 
 namespace
 {
-	// Art tuning from Glyphbound/SourceArt/Weapons/Pistol/Export/export_report.json, made by Tools/Blender/pistol_export_fbx.py.
+	// Art tuning from Glyphbound/SourceArt/Weapons/Pistol/export_report.json, made by Tools/Blender/pistol_export_fbx.py.
 	// Viewmodel downscale of the real-size (~1 m) source model.
 	constexpr float PistolViewScale = 0.3f;
 	// Trigger hinge offset, in cm in the body's unscaled frame (the body's scale applies through attachment).

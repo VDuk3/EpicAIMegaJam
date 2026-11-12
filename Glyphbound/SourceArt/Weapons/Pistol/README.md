@@ -7,7 +7,7 @@ ninth block). Older versions were deleted on CENTRAL; ASSETS keeps its own origi
 - `Pistol.blend` — SHA-256 `D571FE3E7EE13AEC8F69868F209489ED674A5AB4974AF218416A14803C5D3F81` (Blender 5.3.0).
   52,893 triangles. 0.97 m long in Blender units: scale on export. Muzzle points to -X; the energy bar is on -Y.
   Trigger: `Trigger_pivot_trial`, frames 1-16. Magazine: `TRIAL_Magazine_Control`, frames 24-72.
-- `Textures/` — baked for Unreal by `pistol_prepare_ue.py`: `T_Pistol_BaseColor` (sRGB), `T_Pistol_ORM`
+- Textures in Unreal, baked by `pistol_prepare_ue.py`: `T_Pistol_BaseColor` (sRGB), `T_Pistol_ORM`
   (R = AO, G = roughness, B = metallic), `T_Pistol_Normal` (DirectX), `T_Pistol_EmissiveMask` (where the body glows
   in the element colour).
 - Energy bar `V4_energy_cells`: UV map `ImbueU`, U = 0 at the muzzle end, 1 at the grip end; light cells where
@@ -16,11 +16,12 @@ ninth block). Older versions were deleted on CENTRAL; ASSETS keeps its own origi
   (linear). The purple .blend was the same file with the other value and was not kept.
 - `clean_log.txt` — the regions removed from the atlas and the donor offset of each.
 
-- `Export/` — `pistol_export_fbx.py` writes `SM_Pistol_{Body,Trigger,Magazine,EnergyBar}.fbx` (rest pose, muzzle +X,
-  bar on -Y in Unreal, body origin at the hand point, trigger and magazine at their pivots) and `export_report.json`
-  (offsets and motion the game code uses). The old lens faces (`Optic_OriginalLens_Invisible`) are dropped.
-- Into Unreal: `Tools/Jam/Import-Pistol.ps1` (Editor closed) imports them to `/Game/Glyphbound/Weapons/Pistol` with
-  their textures and materials. Re-run it after any export.
+- **One pistol, one source** (owner, 2026-11-12): `Pistol.blend` is the only source file and
+  `/Game/Glyphbound/Weapons/Pistol` the only result. No FBX or PNG copies are kept. `Tools/Jam/Import-Pistol.ps1`
+  (Editor closed) bakes the textures (`pistol_prepare_ue.py`) and exports the four FBX parts (`pistol_export_fbx.py`:
+  rest pose, muzzle +X, bar on -Y in Unreal, body origin at the hand point, trigger and magazine at their pivots, old
+  lens faces dropped) into a temporary folder under `Saved/`, imports them with their materials, and deletes the folder.
+- `export_report.json` — written by each import: the offsets and motion the game code uses (`AGBGun`).
 
 Still to do: lens and reticle rebuild; check the moving parts from the real game camera (the trigger's saw teeth are
 accepted only if the player cannot see them).
