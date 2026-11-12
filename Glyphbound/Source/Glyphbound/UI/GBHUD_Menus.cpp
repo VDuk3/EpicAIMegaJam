@@ -251,8 +251,10 @@ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
 	case EMenuHitKind::SkillNode:
 		MenuState.SkillCursor = Hit.Id;
 		break;
+	case EMenuHitKind::Tab:
+	case EMenuHitKind::SkillReset:
 	default:
-		// Tabs and the death screen only react to clicks.
+		// Tabs, the skill reset button and the death screen only react to clicks.
 		break;
 	}
 }
@@ -293,6 +295,9 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 	case EMenuHitKind::SkillNode:
 		MenuState.SkillCursor = Hit.Id;
 		ConfirmSkill(Player);
+		break;
+	case EMenuHitKind::SkillReset:
+		ResetSkills(Player);
 		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
@@ -792,6 +797,35 @@ void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
 	}
 }
 
+void AGBHUD::ResetSkills(AGBPlayerCharacter* Player)
+{
+	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+	if (!SkillTree)
+	{
+		return;
+	}
+	const int32 Refunded = SkillTree->ResetAll();
+	if (Refunded > 0)
+	{
+		ShowMessage(FString::Printf(TEXT("Skills reset: %d points refunded"), Refunded), 2.f);
+	}
+	else
+	{
+		ShowMessage(TEXT("No skills to reset"), 1.5f);
+	}
+}
+
+void AGBHUD::MenuReset()
+{
+	const EGBMenu Menu = GetOpenMenu();
+	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
+	if (!bShowsSkills)
+	{
+		return;
+	}
+	ResetSkills(GetPlayer());
+}
+
 // ======================================================================== drawing
 
 float AGBHUD::DrawWrapped(const FString& Text, const FLinearColor& Color, float X, float Y, float MaxWidth, float SizePx, bool bShadow)
@@ -851,7 +885,7 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 		{
 			DrawSkillTrees(Player, Canvas->ClipY * 0.1f);
 		}
-		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   Esc: close"), GBHudMenuLocal::MenuWhite,
+		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   R: reset skills   Esc: close"), GBHudMenuLocal::MenuWhite,
 			Canvas->ClipX * 0.5f, Canvas->ClipY - 40.f * S, 16.f, 0.5f);
 		break;
 	}
@@ -1298,6 +1332,24 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
 
 	DrawLabel(FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints()), MenuWhite, W * 0.5f, Top, 22.f, 0.5f, true, true);
+	// Skill reset button, just right of the Skill points label (same row, above the tree panels).
+	{
+		const int32 Spent = SkillTree->GetPointsSpent();
+		const FString PointsText = FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints());
+		const FVector2D PointsSize = MeasureLabel(PointsText, 22.f, true);
+		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d pt)"), Spent);
+		const FVector2D ResetSize = MeasureLabel(ResetText, 16.f);
+		const float BtnX = W * 0.5f + PointsSize.X * 0.5f + 24.f * S;
+		const float BtnY = Top;
+		const float BtnW = ResetSize.X + 20.f * S;
+		const float BtnH = ResetSize.Y + 10.f * S;
+		const bool bActive = Spent > 0;
+		const FLinearColor BtnColor = bActive ? MenuWhite : MenuGrey;
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), BtnX, BtnY, BtnW, BtnH);
+		DrawOutline(BtnX, BtnY, BtnW, BtnH, BtnColor, 1.f * S);
+		AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
+		DrawLabel(ResetText, BtnColor, BtnX + BtnW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
+	}
 	if (Nodes.Num() == 0)
 	{
 		DrawLabel(TEXT("No skills defined (Skills.json)."), MenuWhite, W * 0.5f, Top + 50.f * S, 20.f, 0.5f);

@@ -68,6 +68,10 @@ public:
 	bool MenuBack();
 	/** Switches page inside a menu (inventory tabs). */
 	void MenuTab(int32 Direction);
+	/** Keyboard / gamepad shortcut for the skill reset button (R / top face button). */
+	void MenuReset();
+	/** Refunds every owned skill node (see UGBSkillTreeComponent::ResetAll). The cursor stays on its node. */
+	void ResetSkills(AGBPlayerCharacter* Player);
 	/**
 	 * Mouse in menus: the cursor is visible while a menu is open, the entry under it is highlighted (the HUD
 	 * reads the mouse position itself while drawing), and a left click on an entry does what confirm does there
@@ -140,6 +144,7 @@ protected:
 		SpellSlot,
 		SpellChoice,
 		SkillNode,
+		SkillReset,
 		DeathScreen
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */

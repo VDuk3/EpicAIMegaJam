@@ -38,10 +38,18 @@ public:
 	int32 GetPoints() const { return Points; }
 	void AddPoints(int32 Amount);
 
+	int32 GetPointsSpent() const { return PointsSpent; }
+
 	int32 GetRank(FName NodeId) const;
 	EGBSkillUnlockResult CanUnlock(FName NodeId) const;
 	/** Spends the points and applies the modifiers. */
 	EGBSkillUnlockResult Unlock(FName NodeId);
+	/**
+	 * Free, any time (GDD 18, provisional): removes every owned node and refunds exactly what was paid
+	 * for them (the tracked PointsSpent, not the current Skills.json costs: costs may change while
+	 * testing via gb.ReloadData). Returns the refunded points (0 when nothing was owned).
+	 */
+	int32 ResetAll();
 
 	/** Pure rule, also used by the tests. Ranks = node id -> owned rank. */
 	static EGBSkillUnlockResult EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& Ranks, int32 AvailablePoints);
@@ -67,6 +75,7 @@ protected:
 	void HandleDataReloaded();
 
 	UPROPERTY() int32 Points = 0;
+	UPROPERTY() int32 PointsSpent = 0;
 	UPROPERTY() TMap<FName, int32> Ranks;
 
 	FDelegateHandle DataReloadedHandle;

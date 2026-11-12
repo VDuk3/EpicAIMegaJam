@@ -61,6 +61,8 @@ namespace GBSmokeRun
 	static float PathStartDistance = 0.f;
 	static bool bPathOrcSpawned = false;
 	static const FName PathOrcId(TEXT("Orc_Past"));
+	static FName SmokeSkillNode = NAME_None;
+	static int32 SmokeSkillPointsBefore = 0;
 
 	static void Shot(const TCHAR* Name)
 	{
@@ -349,18 +351,33 @@ namespace GBSmokeRun
 			{
 				PC->SetMenu(EGBMenu::SkillTrees);
 			}
+			SmokeSkillNode = NAME_None;
+			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
 			{
 				if (Data->GetSkillNodes().Num() > 0)
 				{
 					const FName Node = Data->GetSkillNodes()[0].Id;
+					SmokeSkillNode = Node;
 					const EGBSkillUnlockResult Result = Player->GetSkillTree()->Unlock(Node);
 					UE_LOG(LogGB, Display, TEXT("SMOKE unlock %s result=%d rank=%d points=%d"), *Node.ToString(), static_cast<int32>(Result), Player->GetSkillTree()->GetRank(Node), Player->GetSkillTree()->GetPoints());
 				}
 			}
 		});
 		Add(13.9f + S, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
-		Add(15.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(14.9f + S, TEXT("reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			const int32 Refunded = Player->GetSkillTree()->ResetAll();
+			const int32 Points = Player->GetSkillTree()->GetPoints();
+			const int32 Rank = SmokeSkillNode == NAME_None ? 0 : Player->GetSkillTree()->GetRank(SmokeSkillNode);
+			UE_LOG(LogGB, Display, TEXT("SMOKE skill reset refunded=%d points=%d rank=%d"), Refunded, Points, Rank);
+			if (Points != SmokeSkillPointsBefore || Rank != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE skill reset FAILED: points=%d (expected %d) rank=%d (expected 0)"), Points, SmokeSkillPointsBefore, Rank);
+			}
+		});
+		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+		Add(17.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
@@ -372,15 +389,15 @@ namespace GBSmokeRun
 			const bool bOk = Player->GetSpellbook()->TryCastSlot(3);
 			UE_LOG(LogGB, Display, TEXT("SMOKE cast slot3 (%s) with QTE ok=%d qteActive=%d"), *Player->GetSpellbook()->GetSlotSpell(3).ToString(), bOk ? 1 : 0, Player->GetQTE()->IsActive() ? 1 : 0);
 		});
-		Add(15.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(17.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
 			{
 				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
 			}
 		});
-		Add(15.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
-		Add(19.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(17.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
+		Add(21.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			// 4.8 s after the cast with the QTE on (the limit is 4 s of real time): it must be over by now.
 			const FGBQTEResult& Result = Player->GetQTE()->GetLastResult();
@@ -388,22 +405,22 @@ namespace GBSmokeRun
 				Player->GetQTE()->IsActive() ? 1 : 0, Result.Power, Result.Reach, Result.bSuccess ? 1 : 0, Result.bTimedOut ? 1 : 0,
 				World->GetWorldSettings() ? World->GetWorldSettings()->GetEffectiveTimeDilation() : -1.f);
 		});
-		Add(20.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(22.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			FGBDamageInfo Info;
 			Info.Amount = 10000000.f;
 			UGBCombatLibrary::DealDamage(Player, Info, true);
 			UE_LOG(LogGB, Display, TEXT("SMOKE player dead=%d"), Player->IsDead() ? 1 : 0);
 		});
-		Add(21.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
-		Add(24.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(23.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+		Add(26.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			LogState(World, Player, TEXT("after respawn"));
 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
 			Shot(TEXT("8_respawn"));
 		});
-		Add(25.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
 			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
@@ -418,7 +435,7 @@ namespace GBSmokeRun
 				InSlotAfter ? *InSlotAfter->GetWeaponId().ToString() : TEXT("none"),
 				Equipment->IsWeaponEquipped(TEXT("Staff_Ember")) ? 1 : 0);
 		});
-		Add(26.4f + S, TEXT("summon the ice shield and raise it"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(28.4f + S, TEXT("summon the ice shield and raise it"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			SetQTEEnabled(false);
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
@@ -434,15 +451,15 @@ namespace GBSmokeRun
 				Player->GetSpellbook()->HasShield() ? 1 : 0,
 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
 		});
-		Add(27.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
-		Add(28.1f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(29.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
+		Add(30.1f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetSpellbook()->SetBlockHeld(false);
 			UE_LOG(LogGB, Display, TEXT("SMOKE shield lowered hasShield=%d raised=%d"),
 				Player->GetSpellbook()->HasShield() ? 1 : 0,
 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
 		});
-		Add(29.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(31.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

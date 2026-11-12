@@ -34,6 +34,7 @@ void UGBSkillTreeComponent::InitializeFromData()
 {
 	RemoveAllModifiers();
 	Ranks.Reset();
+	PointsSpent = 0;
 
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	if (!Data)
@@ -87,10 +88,26 @@ EGBSkillUnlockResult UGBSkillTreeComponent::Unlock(FName NodeId)
 	}
 
 	Points -= FMath::Max(0, Node->Cost);
+	PointsSpent += FMath::Max(0, Node->Cost);
 	Ranks.FindOrAdd(NodeId) += 1;
 	ApplyNodeModifiers(NodeId);
 	OnSkillsChanged.Broadcast();
 	return EGBSkillUnlockResult::Ok;
+}
+
+int32 UGBSkillTreeComponent::ResetAll()
+{
+	if (Ranks.Num() == 0)
+	{
+		return 0;
+	}
+	RemoveAllModifiers();
+	const int32 Refunded = PointsSpent;
+	Points += PointsSpent;
+	PointsSpent = 0;
+	Ranks.Reset();
+	OnSkillsChanged.Broadcast();
+	return Refunded;
 }
 
 EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints)
@@ -168,6 +185,7 @@ void UGBSkillTreeComponent::ReapplyAllModifiers()
 void UGBSkillTreeComponent::SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const
 {
 	Snapshot.SkillPoints = Points;
+	Snapshot.SkillPointsSpent = PointsSpent;
 	Snapshot.SkillRanks = Ranks;
 }
 
@@ -176,6 +194,7 @@ void UGBSkillTreeComponent::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	RemoveAllModifiers();
 
 	Points = FMath::Max(0, Snapshot.SkillPoints);
+	PointsSpent = FMath::Max(0, Snapshot.SkillPointsSpent);
 	Ranks.Reset();
 	for (const TPair<FName, int32>& Pair : Snapshot.SkillRanks)
 	{

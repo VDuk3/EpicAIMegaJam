@@ -140,6 +140,7 @@ void UGBInputSet::Build()
 	MenuBack = MakeAction(this, TEXT("IA_MenuBack"), EType::Boolean, true);
 	MenuTab = MakeAction(this, TEXT("IA_MenuTab"), EType::Axis1D, true);
 	MenuClick = MakeAction(this, TEXT("IA_MenuClick"), EType::Boolean, true);
+	MenuReset = MakeAction(this, TEXT("IA_MenuReset"), EType::Boolean, true);
 
 	// ---- Gameplay context (GDD 9) ----
 	GameplayContext = NewObject<UInputMappingContext>(this, MakeUniqueObjectName(this, UInputMappingContext::StaticClass(), TEXT("IMC_Gameplay")));
@@ -230,6 +231,12 @@ void UGBInputSet::Build()
 	MapAxis1D(M, MenuTab, EKeys::Gamepad_RightShoulder);
 
 	MapButton(M, MenuClick, EKeys::LeftMouseButton);
+
+	// Skill reset shortcut (menu context only): R and the gamepad top face button. Neither is mapped
+	// to another menu action (R is Reload only in the gameplay context; the top face button is only
+	// a raw FaceUp gameplay input), so no existing menu binding is changed.
+	MapButton(M, MenuReset, EKeys::R);
+	MapButton(M, MenuReset, EKeys::Gamepad_FaceButton_Top);
 
 	// Inside menus: the gamepad Menu / View buttons and K still toggle their screens (Esc and Tab are "back" here).
 	MapButton(M, Pause, EKeys::Gamepad_Special_Right);

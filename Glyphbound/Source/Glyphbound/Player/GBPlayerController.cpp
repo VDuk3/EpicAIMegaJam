@@ -130,6 +130,7 @@ void AGBPlayerController::SetupInput(UGBInputSet* InInputSet)
 	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
 	EIC->BindAction(InputSet->MenuBack, ETriggerEvent::Started, this, &ThisClass::InputMenuBack);
 	EIC->BindAction(InputSet->MenuTab, ETriggerEvent::Started, this, &ThisClass::InputMenuTab);
+	EIC->BindAction(InputSet->MenuReset, ETriggerEvent::Started, this, &ThisClass::InputMenuReset);
 	EIC->BindAction(InputSet->MenuClick, ETriggerEvent::Started, this, &ThisClass::InputMenuClick);
 }
 
@@ -297,6 +298,18 @@ void AGBPlayerController::InputMenuTab(const FInputActionValue& Value)
 	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
 	{
 		HUD->MenuTab(Axis > 0.f ? 1 : -1);
+	}
+}
+
+void AGBPlayerController::InputMenuReset()
+{
+	if (OpenMenu == EGBMenu::None || OpenMenu == EGBMenu::Death)
+	{
+		return;
+	}
+	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+	{
+		HUD->MenuReset();
 	}
 }
 

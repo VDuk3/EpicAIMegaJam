@@ -48,6 +48,7 @@ struct GLYPHBOUND_API FGBPlayerSnapshot
 
 	// Skill trees
 	UPROPERTY() int32 SkillPoints = 0;
+	UPROPERTY() int32 SkillPointsSpent = 0;
 	UPROPERTY() TMap<FName, int32> SkillRanks;
 };
 

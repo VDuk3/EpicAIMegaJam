@@ -70,4 +70,5 @@ public:
 	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Tab / Circle (B)
 	UPROPERTY() TObjectPtr<UInputAction> MenuTab;      // Axis1D: Q-E / L1-R1, switches menu page
 	UPROPERTY() TObjectPtr<UInputAction> MenuClick;    // left mouse button (menu context only)
+	UPROPERTY() TObjectPtr<UInputAction> MenuReset;    // R / gamepad top face button (menu context only): reset skills
 };
