@@ -63,6 +63,13 @@ uint8 FGBBuildUpMeter::Advance(float DeltaTime, const FGBBuildUpConfig& Config)
 			{
 				Phase = EGBBuildUpPhase::Immune;
 				PhaseTimeRemaining = Config.ImmunityDuration + PhaseTimeRemaining;
+				// A long step can also use up the whole immunity: end it in the same step.
+				if (PhaseTimeRemaining <= BuildUpFullTolerance)
+				{
+					Phase = EGBBuildUpPhase::Building;
+					PhaseTimeRemaining = 0.f;
+					Events |= static_cast<uint8>(EGBBuildUpEvent::ImmunityEnded);
+				}
 			}
 			else
 			{

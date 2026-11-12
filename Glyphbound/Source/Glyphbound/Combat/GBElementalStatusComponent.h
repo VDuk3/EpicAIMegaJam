@@ -63,4 +63,12 @@ private:
 	mutable TSet<FName> WarnedDefaults;
 
 	FDelegateHandle DeathHandle;
+
+	/**
+	 * Game time (dilated, so the QTE slow-down applies) the meters were last advanced to; -1 when idle.
+	 * The component keeps its own clock instead of trusting the tick's DeltaTime, so a hit between two
+	 * ticks starts its status (or its decay delay) at the hit, not at the previous tick.
+	 */
+	double LastAdvanceTime = -1.0;
+	double GetGameTime() const;
 };

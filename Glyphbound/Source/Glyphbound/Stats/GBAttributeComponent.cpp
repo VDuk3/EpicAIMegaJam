@@ -1,6 +1,7 @@
 #include "Stats/GBAttributeComponent.h"
 
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "GameFramework/Actor.h"
 #include "Stats/GBStatsComponent.h"
 
@@ -13,6 +14,20 @@ namespace GBAttributePrivate
 	float ReadStat(const UGBStatsComponent* Stats, FName Stat, float DefaultValue)
 	{
 		return Stats ? Stats->GetStat(Stat, DefaultValue) : DefaultValue;
+	}
+
+	/** <E>DamageTaken for a Fire / Lightning / Ice hit: the actor's stat, else Game.json ElementalDefault.<E>DamageTaken, else 1. */
+	float ReadElementDamageTaken(const UObject* Context, const UGBStatsComponent* Stats, EGBElement Element)
+	{
+		const int32 Index = GBElemental::ElementIndex(Element);
+		if (Index < 0)
+		{
+			return 1.f;
+		}
+		const FName Key = GBElemental::DamageTakenKey(Index);
+		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(Context);
+		const float Default = Data ? Data->GetGameValue(GBElemental::DefaultKey(Key), 1.f) : 1.f;
+		return ReadStat(Stats, Key, Default);
 	}
 }
 
@@ -94,9 +109,7 @@ float UGBAttributeComponent::ApplyDamage(const FGBDamageInfo& Info)
 	OnModifyIncomingDamage.Broadcast(Hit);
 
 	const float Amount = FMath::Max(0.f, Hit.Amount * GBAttributePrivate::ReadStat(GetStats(), GBStat::DamageTaken, 1.f)
-		* (GBElemental::ElementIndex(Hit.Element) >= 0
-			? GBAttributePrivate::ReadStat(GetStats(), GBElemental::DamageTakenKey(GBElemental::ElementIndex(Hit.Element)), 1.f)
-			: 1.f));
+		* GBAttributePrivate::ReadElementDamageTaken(this, GetStats(), Hit.Element));
 	if (Amount <= 0.f)
 	{
 		// Fully blocked or cancelled: not a hit, so no damage events and the regen delay keeps running.

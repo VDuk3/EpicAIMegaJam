@@ -7,6 +7,7 @@
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
+#include "Engine/World.h"
 
 namespace
 {
@@ -50,7 +51,7 @@ void UGBElementalStatusComponent::BeginPlay()
 
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const float Interval = Data ? Data->GetGameValue(ElementalTickIntervalKey, DefaultTickInterval) : DefaultTickInterval;
-	PrimaryComponentTick.TickInterval = FMath::Max(0.01f, Interval);
+	SetComponentTickInterval(FMath::Max(0.01f, Interval));
 	SetComponentTickEnabled(false);
 
 	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
@@ -190,6 +191,14 @@ bool UGBElementalStatusComponent::AddBuildUp(EGBElement Element, float Amount, i
 		return false;
 	}
 
+	// Time since the meters were last advanced: the hit happened now, not at the last tick.
+	const double Now = GetGameTime();
+	if (!IsComponentTickEnabled() || LastAdvanceTime < 0.0)
+	{
+		LastAdvanceTime = Now;
+	}
+	const float Lag = FMath::Max(0.f, static_cast<float>(Now - LastAdvanceTime));
+
 	float ToAdd = Amount;
 	if (EventId != 0)
 	{
@@ -200,7 +209,18 @@ bool UGBElementalStatusComponent::AddBuildUp(EGBElement Element, float Amount, i
 		}
 	}
 
+	const float ValueBefore = Meters[Index].Value;
 	const bool bTriggered = Meters[Index].Add(ToAdd, Config);
+	if (bTriggered)
+	{
+		// The next Advance covers Lag seconds from before the hit: give them back.
+		Meters[Index].PhaseTimeRemaining += Lag;
+	}
+	else if (Meters[Index].Value != ValueBefore)
+	{
+		// Same for the decay delay, which restarts at the hit.
+		Meters[Index].TimeSinceBuildUp = -Lag;
+	}
 	UpdateTickEnabled();
 	if (bTriggered)
 	{
@@ -308,14 +328,9 @@ void UGBElementalStatusComponent::StartStatus(int32 Index, const FGBBuildUpConfi
 void UGBElementalStatusComponent::EndStatus(int32 Index)
 {
 	const EGBElement Element = GBElemental::IndexToElement(Index);
-	if (Index == 0)
-	{
-		if (UGBStatusEffectComponent* Effects = UGBStatusEffectComponent::Find(GetOwner()))
-		{
-			Effects->RemoveEffect(GBElemental::IgniteEffect);
-		}
-	}
-	else if (Index == 2)
+	// Fire: the Ignite effect runs out by itself (its duration is the status duration, scaled in StartStatus),
+	// so its last damage tick is never cut; death clears it through UGBStatusEffectComponent.
+	if (Index == 2)
 	{
 		if (UGBStatsComponent* Stats = UGBStatsComponent::Find(GetOwner()))
 		{
@@ -390,11 +405,18 @@ void UGBElementalStatusComponent::ClearAll()
 		Meters[i].TimeSinceBuildUp = 0.f;
 	}
 	EventLog = FGBBuildUpEventLog();
+	LastAdvanceTime = -1.0;
 	if (UGBStatsComponent* Stats = UGBStatsComponent::Find(GetOwner()))
 	{
 		Stats->RemoveModifiers(GBElemental::FrostSource);
 	}
 	UpdateTickEnabled();
+}
+
+double UGBElementalStatusComponent::GetGameTime() const
+{
+	const UWorld* World = GetWorld();
+	return World ? World->GetTimeSeconds() : 0.0;
 }
 
 void UGBElementalStatusComponent::UpdateTickEnabled()
@@ -415,6 +437,12 @@ void UGBElementalStatusComponent::TickComponent(float DeltaTime, ELevelTick Tick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	const double Now = GetGameTime();
+	if (LastAdvanceTime >= 0.0)
+	{
+		DeltaTime = static_cast<float>(Now - LastAdvanceTime);
+	}
+	LastAdvanceTime = Now;
 	if (DeltaTime <= 0.f)
 	{
 		return;

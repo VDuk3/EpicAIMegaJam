@@ -50,6 +50,16 @@ bool FGBElementalMeterThresholdTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("StatusEnded"), (Events & static_cast<uint8>(EGBBuildUpEvent::StatusEnded)) != 0);
 	TestTrue(TEXT("Straight back to Building"), Meter2.Phase == EGBBuildUpPhase::Building);
 
+	// One long step (a hitch) past status + immunity ends both at once: the next hit counts.
+	FGBBuildUpMeter Meter3;
+	TestTrue(TEXT("Triggers before the hitch"), Meter3.Add(100.f, Config));
+	Events = Meter3.Advance(7.5f, Config);
+	TestTrue(TEXT("Hitch ends the status"), (Events & static_cast<uint8>(EGBBuildUpEvent::StatusEnded)) != 0);
+	TestTrue(TEXT("Hitch ends the immunity too"), (Events & static_cast<uint8>(EGBBuildUpEvent::ImmunityEnded)) != 0);
+	TestTrue(TEXT("Building right after the hitch"), Meter3.Phase == EGBBuildUpPhase::Building);
+	Meter3.Add(10.f, Config);
+	TestNearlyEqual(TEXT("Hit after the hitch counts"), Meter3.Value, 10.f);
+
 	// Two configs need different numbers of the same add to trigger.
 	FGBBuildUpConfig ConfigA;
 	ConfigA.Threshold = 100.f;
