@@ -22,6 +22,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -1062,6 +1063,52 @@ void AGBPlayerCharacter::InputEnchant()
 		return;
 	}
 	Spellbook->TryCastEnchant();
+}
+
+bool AGBPlayerCharacter::IsSpellInputHeld(FName SpellId) const
+{
+	if (!Spellbook || SpellId.IsNone() || !InputSet)
+	{
+		return true;
+	}
+	int32 Slot = INDEX_NONE;
+	for (int32 Index = 0; Index < UGBSpellbookComponent::NumSlots; ++Index)
+	{
+		if (Spellbook->GetSlotSpell(Index) == SpellId)
+		{
+			Slot = Index;
+			break;
+		}
+	}
+	if (Slot == INDEX_NONE)
+	{
+		return true;
+	}
+	const UInputAction* SlotActions[UGBSpellbookComponent::NumSlots] = {
+		InputSet->SpellSlot1, InputSet->SpellSlot2, InputSet->SpellSlot3, InputSet->SpellSlot4, InputSet->SpellSlot5
+	};
+	const UInputAction* SlotAction = SlotActions[Slot];
+	const APlayerController* PC = Cast<APlayerController>(GetController());
+	const UEnhancedPlayerInput* EI = PC ? Cast<UEnhancedPlayerInput>(PC->PlayerInput) : nullptr;
+	if (!EI || !SlotAction)
+	{
+		return true;
+	}
+	if (EI->GetActionValue(SlotAction).Get<bool>())
+	{
+		return true;
+	}
+	// Gamepad chord for slots 2-5 (see InputFace): L2 held plus the face button of that slot.
+	if (Slot >= 1 && Slot <= 4 && InputSet->Secondary)
+	{
+		const UInputAction* FaceActions[4] = { InputSet->FaceDown, InputSet->FaceRight, InputSet->FaceLeft, InputSet->FaceUp };
+		const UInputAction* FaceAction = FaceActions[Slot - 1];
+		if (FaceAction && EI->GetActionValue(InputSet->Secondary).Get<bool>() && EI->GetActionValue(FaceAction).Get<bool>())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool AGBPlayerCharacter::IsBlocking() const

@@ -69,6 +69,13 @@ public:
 	FVector GetMuzzleLocation() const;
 	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
 	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
+	/**
+	 * True while the input action of the loadout slot holding SpellId is currently held
+	 * (slot 1 = right click / L1, slots 2-5 = keys 1-4, gamepad L2 + face button).
+	 * A caster that is not this player, or a spell that is not in the loadout, counts as
+	 * held (then a sustained spell only ends by mana, death, switch or its duration rules).
+	 */
+	bool IsSpellInputHeld(FName SpellId) const;
 
 	// ---- Movement state ----
 	bool IsDashing() const { return bDashing; }

@@ -93,6 +93,9 @@ private:
 	/** Reads every file and rebuilds the indices (no broadcast). */
 	void LoadAll();
 
+	/** Warns about "Spell.<Id>.<Param>" / "Weapon.<Scope>.<Stat>" modifier keys that name nothing, so a typo can never silently do nothing. */
+	void ValidateModifierKeys() const;
+
 	// Id -> position in the matching array, rebuilt by LoadAll().
 	TMap<FName, int32> SpellIndex;
 	TMap<FName, int32> WeaponIndex;

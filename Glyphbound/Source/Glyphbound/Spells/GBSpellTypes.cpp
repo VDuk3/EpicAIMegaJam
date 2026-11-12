@@ -51,6 +51,12 @@ namespace GBSpell
 		return Stats->EvaluateKeys(Keys, Value);
 	}
 
+	/** Upper limit applied after QTE scaling AND modifiers. Cap <= 0 = no cap. */
+	static float ApplyParamCap(const FGBScaledParam& Scaled, float Value)
+	{
+		return Scaled.Cap > 0.f ? FMath::Min(Value, Scaled.Cap) : Value;
+	}
+
 	FGBSpellCast ResolveCast(const FGBSpellDefinition& Definition, float Power, float Reach, bool bUseQTE, const UGBStatsComponent* Stats)
 	{
 		FGBSpellCast Result;
@@ -64,7 +70,7 @@ namespace GBSpell
 		for (const TPair<FName, FGBScaledParam>& Pair : Definition.Params)
 		{
 			const float Value = Pair.Value.Resolve(Power, Reach, bUseQTE);
-			Result.Values.Add(Pair.Key, ApplySpellModifiers(Definition.Id, Pair.Key, Value, Stats));
+			Result.Values.Add(Pair.Key, ApplyParamCap(Pair.Value, ApplySpellModifiers(Definition.Id, Pair.Key, Value, Stats)));
 		}
 		return Result;
 	}
@@ -76,6 +82,6 @@ namespace GBSpell
 		{
 			return DefaultValue;
 		}
-		return ApplySpellModifiers(Definition.Id, Param, Scaled->Resolve(Power, Reach, bUseQTE), Stats);
+		return ApplyParamCap(*Scaled, ApplySpellModifiers(Definition.Id, Param, Scaled->Resolve(Power, Reach, bUseQTE), Stats));
 	}
 }

@@ -27,6 +27,7 @@
 #include "Player/GBPlayerController.h"
 #include "Progression/GBSkillTreeComponent.h"
 #include "QTE/GBQTEComponent.h"
+#include "Spells/GBSpell_Beam.h"
 #include "Spells/GBSpell_Trap.h"
 #include "Spells/GBSpell_Zone.h"
 #include "Spells/GBSpellbookComponent.h"
@@ -357,6 +358,11 @@ namespace GBSmokeRun
 			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
 			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
+				if (Data->GetSkillNodes().Num() != 18)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 18 skill nodes, found %d"), Data->GetSkillNodes().Num());
+				}
 				if (Data->GetSkillNodes().Num() > 0)
 				{
 					const FName Node = Data->GetSkillNodes()[0].Id;
@@ -583,6 +589,43 @@ namespace GBSmokeRun
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE ground spells runes=%d floors=%d"), Runes, Floors);
 			Shot(TEXT("10_ground_spells"));
+		});
+		Add(35.4f + S, TEXT("flamethrower: cast with the QTE off and no key held"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			// The automated run holds no key, so the hold-to-sustain beam must stop after MinDuration.
+			SetQTEEnabled(false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			if (!Player->GetSpellbook()->KnowsSpell(TEXT("Flamethrower")))
+			{
+				Player->GetSpellbook()->LearnSpell(TEXT("Flamethrower"));
+			}
+			Player->GetSpellbook()->EquipSpell(2, TEXT("Flamethrower"));
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(2);
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower started=%d"), (bOk && Beams > 0) ? 1 : 0);
+			if (!bOk || Beams == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower: the beam actor did not spawn (ok=%d beams=%d)"), bOk ? 1 : 0, Beams);
+			}
+		});
+		Add(36.9f + S, TEXT("flamethrower: it must have stopped after MinDuration"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			const double Elapsed = FPlatformTime::Seconds() - StartSeconds;
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower after=%.2fs alive=%d"), Elapsed - (35.4 + PathCheckShift), Beams);
+			if (Beams != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower: the beam is still alive with no key held (beams=%d)"), Beams);
+			}
 		});
 		Add(37.7f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{

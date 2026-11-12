@@ -139,6 +139,72 @@
 			"ModifiersPerRank": [ { "Stat": "Spell.All.Cooldown", "Op": "Multiply", "Value": 0.9 } ],
 			"Column": 1,
 			"Row": 2
+		},
+		{
+			"Id": "Spell_FireWallDuration",
+			"Tree": "Spell",
+			"DisplayName": "Lingering Flames",
+			"Description": "+15% fire wall duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.FireWall.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
+			"Id": "Spell_FlamethrowerDamage",
+			"Tree": "Spell",
+			"DisplayName": "Intense Heat",
+			"Description": "+12% flamethrower damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.Flamethrower.DamagePerSecond", "Op": "Multiply", "Value": 1.12 } ],
+			"Column": 0,
+			"Row": 3
+		},
+		{
+			"Id": "Spell_RuneRadius",
+			"Tree": "Spell",
+			"DisplayName": "Expanded Sigil",
+			"Description": "+10% lightning rune blast radius per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.LightningRune.Radius", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 1,
+			"Row": 3
+		},
+		{
+			"Id": "Spell_OrbDuration",
+			"Tree": "Spell",
+			"DisplayName": "Persistent Charge",
+			"Description": "+15% static orb duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.StaticOrb.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 1,
+			"Row": 4
+		},
+		{
+			"Id": "Spell_ShieldDuration",
+			"Tree": "Spell",
+			"DisplayName": "Enduring Guard",
+			"Description": "+15% ice shield duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceShield.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_IceFloorSlow",
+			"Tree": "Spell",
+			"DisplayName": "Deep Freeze",
+			"Description": "Ice floor slows 5 points more per rank (up to 80%).",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceFloor.EffectStrength", "Op": "Add", "Value": 0.1 } ],
+			"Column": 2,
+			"Row": 2
 		}
 	]
 }

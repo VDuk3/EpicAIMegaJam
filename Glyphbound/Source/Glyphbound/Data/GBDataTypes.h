@@ -28,6 +28,10 @@ struct GLYPHBOUND_API FGBScaledParam
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	EGBScaleSource ScaledBy = EGBScaleSource::None;
 
+	/** Upper limit applied after QTE scaling AND modifiers. 0 = no cap. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	float Cap = 0.f;
+
 	/** bUseQTE false = fixed default strength (Base). Power and Reach are clamped to 0..1. */
 	float Resolve(float Power, float Reach, bool bUseQTE) const;
 };

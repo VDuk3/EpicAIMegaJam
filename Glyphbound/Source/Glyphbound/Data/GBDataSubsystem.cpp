@@ -186,6 +186,8 @@ void UGBDataSubsystem::LoadAll()
 	BuildIndex(Recipes, RecipeIndex, TEXT("Items.json (Recipes)"));
 
 	WarnedGameKeys.Reset();
+
+	ValidateModifierKeys();
 }
 
 const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }
@@ -196,6 +198,117 @@ const FGBEnemyDefinition* UGBDataSubsystem::FindEnemy(FName Id) const { return G
 const FGBEncounterDefinition* UGBDataSubsystem::FindEncounter(FName Id) const { return GBDataPrivate::FindIn(Encounters, EncounterIndex, Id); }
 const FGBSkillNodeDefinition* UGBDataSubsystem::FindSkillNode(FName Id) const { return GBDataPrivate::FindIn(SkillNodes, SkillNodeIndex, Id); }
 const FGBSpriteDefinition* UGBDataSubsystem::FindSprite(FName Id) const { return GBDataPrivate::FindIn(Sprites, SpriteIndex, Id); }
+
+void UGBDataSubsystem::ValidateModifierKeys() const
+{
+	auto SpellParamExists = [this](const FName& SpellId, const FName& Param) -> bool
+	{
+		if (SpellId == FName(TEXT("All")))
+		{
+			for (const FGBSpellDefinition& Definition : Spells)
+			{
+				if (Definition.Params.Contains(Param))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		const FGBSpellDefinition* Definition = FindSpell(SpellId);
+		return Definition && Definition->Params.Contains(Param);
+	};
+
+	auto WeaponStatExists = [this](const FString& Scope, const FName& Stat) -> bool
+	{
+		// The weapon stat names are the "Stats" keys of Weapons.json; "All" and the slot
+		// names ("Staff", "Gun", "Sword") match when at least one weapon has the stat.
+		if (Scope == TEXT("All") || Scope == TEXT("Staff") || Scope == TEXT("Gun") || Scope == TEXT("Sword"))
+		{
+			for (const FGBWeaponDefinition& Definition : Weapons)
+			{
+				if (Scope != TEXT("All"))
+				{
+					const TCHAR* SlotName = TEXT("");
+					switch (Definition.Slot)
+					{
+					case EGBHeldSlot::Staff: SlotName = TEXT("Staff"); break;
+					case EGBHeldSlot::Gun:   SlotName = TEXT("Gun"); break;
+					case EGBHeldSlot::Sword:  SlotName = TEXT("Sword"); break;
+					}
+					if (Scope != SlotName)
+					{
+						continue;
+					}
+				}
+				if (Definition.Stats.Contains(Stat))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		const FGBWeaponDefinition* Definition = FindWeapon(FName(*Scope));
+		return Definition && Definition->Stats.Contains(Stat);
+	};
+
+	auto CheckKey = [&](const FString& Context, const FGBModifierDef& Modifier)
+	{
+		const FString Key = Modifier.Stat.ToString();
+		TArray<FString> Parts;
+		if (Key.StartsWith(TEXT("Spell.")))
+		{
+			Key.ParseIntoArray(Parts, TEXT("."), true);
+			if (Parts.Num() != 3 || Parts[1].IsEmpty() || Parts[2].IsEmpty() ||
+				!SpellParamExists(FName(*Parts[1]), FName(*Parts[2])))
+			{
+				UE_LOG(LogGB, Warning, TEXT("Data: %s has unknown spell modifier key '%s'."), *Context, *Key);
+			}
+		}
+		else if (Key.StartsWith(TEXT("Weapon.")))
+		{
+			Key.ParseIntoArray(Parts, TEXT("."), true);
+			if (Parts.Num() != 3 || Parts[1].IsEmpty() || Parts[2].IsEmpty() ||
+				!WeaponStatExists(Parts[1], FName(*Parts[2])))
+			{
+				UE_LOG(LogGB, Warning, TEXT("Data: %s has unknown weapon modifier key '%s'."), *Context, *Key);
+			}
+		}
+		// Anything else (actor stats like "MoveSpeed", "QTE.*"...) is not a data id lookup: skip.
+	};
+
+	for (const FGBSkillNodeDefinition& Node : SkillNodes)
+	{
+		const FString Context = FString::Printf(TEXT("skill node '%s'"), *Node.Id.ToString());
+		for (const FGBModifierDef& Modifier : Node.ModifiersPerRank)
+		{
+			CheckKey(Context, Modifier);
+		}
+	}
+	for (const FGBItemDefinition& Item : Items)
+	{
+		const FString Context = FString::Printf(TEXT("item '%s'"), *Item.Id.ToString());
+		for (const FGBModifierDef& Modifier : Item.Modifiers)
+		{
+			CheckKey(Context, Modifier);
+		}
+	}
+	for (const FGBStatusEffectDefinition& Effect : StatusEffects)
+	{
+		const FString Context = FString::Printf(TEXT("status effect '%s'"), *Effect.Id.ToString());
+		for (const FGBModifierDef& Modifier : Effect.Modifiers)
+		{
+			CheckKey(Context, Modifier);
+		}
+	}
+	for (const FGBSpellDefinition& Spell : Spells)
+	{
+		const FString Context = FString::Printf(TEXT("passive spell '%s'"), *Spell.Id.ToString());
+		for (const FGBModifierDef& Modifier : Spell.PassiveModifiers)
+		{
+			CheckKey(Context, Modifier);
+		}
+	}
+}
 
 float UGBDataSubsystem::GetGameValue(FName Key, float DefaultValue) const
 {

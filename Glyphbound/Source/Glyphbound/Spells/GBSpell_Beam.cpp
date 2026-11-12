@@ -24,7 +24,11 @@ void AGBSpell_Beam::StartSpell()
 {
 	BeamRange = FMath::Max(1.f, ReadParam(GBStat::Range, 600.f));
 	ConeHalfAngleDeg = FMath::Clamp(ReadParam(GBSpellParam::ConeAngle, 20.f), 1.f, 89.f);
-	const float Duration = ReadParam(GBStat::Duration, 4.f);
+	// Duration <= 0 (or missing) = no time limit: Get, not ReadParam, so no warning is logged.
+	BeamMaxDuration = FMath::Max(0.f, SpellCast.Get(GBStat::Duration, 0.f));
+	BeamMinDuration = FMath::Max(0.f, SpellCast.Get(GBSpellParam::MinDuration, 0.f));
+	bHoldToSustain = SpellCast.Get(GBSpellParam::HoldToSustain, 0.f) > 0.5f;
+	BeamStartTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 	const float Interval = SafeInterval(ReadParam(GBStat::TickInterval, 0.2f));
 	DamagePerTick = FMath::Max(0.f, ReadParam(GBStat::DamagePerSecond, 30.f)) * Interval;
 	ManaPerTick = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ManaPerSecond, 0.f)) * Interval;
@@ -52,7 +56,42 @@ void AGBSpell_Beam::StartSpell()
 	FollowAim();
 	SetActorTickEnabled(true);
 	GetWorldTimerManager().SetTimer(TickTimer, this, &AGBSpell_Beam::DamageTick, Interval, true, 0.f);
-	EndSpellAfter(Duration);
+	if (BeamMaxDuration > 0.f)
+	{
+		EndSpellAfter(BeamMaxDuration);
+	}
+}
+
+bool AGBSpell_Beam::ShouldBeamContinue(bool bHoldToSustain, bool bKeyHeld, float Elapsed, float MinDuration, float MaxDuration)
+{
+	if (MaxDuration > 0.f && Elapsed >= MaxDuration)
+	{
+		return false;
+	}
+	if (Elapsed < MinDuration)
+	{
+		return true;
+	}
+	return !bHoldToSustain || bKeyHeld;
+}
+
+void AGBSpell_Beam::CheckSustain()
+{
+	if (bEnded)
+	{
+		return;
+	}
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : BeamStartTime;
+	const float Elapsed = static_cast<float>(Now - BeamStartTime);
+	bool bKeyHeld = true;
+	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetCaster()))
+	{
+		bKeyHeld = Player->IsSpellInputHeld(SpellCast.SpellId);
+	}
+	if (!ShouldBeamContinue(bHoldToSustain, bKeyHeld, Elapsed, BeamMinDuration, BeamMaxDuration))
+	{
+		EndSpell();
+	}
 }
 
 void AGBSpell_Beam::Tick(float DeltaSeconds)
@@ -61,6 +100,7 @@ void AGBSpell_Beam::Tick(float DeltaSeconds)
 	if (!bEnded)
 	{
 		FollowAim();
+		CheckSustain();
 	}
 }
 
@@ -83,6 +123,11 @@ void AGBSpell_Beam::DamageTick()
 	if (!Caster || !UGBCombatLibrary::IsAlive(Caster))
 	{
 		EndSpell();
+		return;
+	}
+	CheckSustain();
+	if (bEnded)
+	{
 		return;
 	}
 	if (ManaPerTick > 0.f)

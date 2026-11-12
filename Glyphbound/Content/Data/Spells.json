@@ -172,16 +172,16 @@
 		{
 			"Id": "Flamethrower",
 			"DisplayName": "Flamethrower",
-			"Description": "A stream of fire from your hand. Cast again to stop it.",
+			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana.",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
 			"bSustained": true,
 			"UnlockGroup": "Fire",
 			"Params": {
 				"ManaCost": {
-					"Base": 20,
-					"Min": 20,
-					"Max": 20,
+					"Base": 10,
+					"Min": 10,
+					"Max": 10,
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
@@ -190,11 +190,17 @@
 					"Max": 6,
 					"ScaledBy": "None"
 				},
-				"Duration": {
-					"Base": 4,
-					"Min": 2.5,
-					"Max": 5.5,
-					"ScaledBy": "Power"
+				"HoldToSustain": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
+					"ScaledBy": "None"
+				},
+				"MinDuration": {
+					"Base": 0.75,
+					"Min": 0.75,
+					"Max": 0.75,
+					"ScaledBy": "None"
 				},
 				"DamagePerSecond": {
 					"Base": 40,
@@ -227,9 +233,9 @@
 					"ScaledBy": "None"
 				},
 				"ManaPerSecond": {
-					"Base": 0,
-					"Min": 0,
-					"Max": 0,
+					"Base": 15,
+					"Min": 15,
+					"Max": 15,
 					"ScaledBy": "None"
 				},
 				"SpriteSize": {
@@ -663,7 +669,8 @@
 					"Base": 1,
 					"Min": 0.7,
 					"Max": 1.3,
-					"ScaledBy": "Power"
+					"ScaledBy": "Power",
+					"Cap": 1.6
 				},
 				"EffectDuration": {
 					"Base": 1,

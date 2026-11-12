@@ -1,6 +1,7 @@
 // Pure-logic tests of spell cast resolution (no world, no data files).
 #include "Misc/AutomationTest.h"
 #include "Core/GBStatNames.h"
+#include "Spells/GBSpell_Beam.h"
 #include "Spells/GBSpellActor.h"
 #include "Spells/GBSpellTypes.h"
 
@@ -146,6 +147,58 @@ bool FGBSpellGroundFigureLayeringTest::RunTest(const FString& Parameters)
 	const float Layered = AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Mixed, Lift, Step, MaxRise);
 	TestTrue(TEXT("The layered figure ends strictly above each overlapping figure"), Layered > 58.f);
 	TestEqual(TEXT("The layered figure sits one step above the highest overlap"), Layered, 59.5f, 0.001f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellParamCapTest, "Glyphbound.Spells.ParamCap",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBSpellParamCapTest::RunTest(const FString& Parameters)
+{
+	FGBSpellDefinition Definition = GBSpellTestUtil::MakeDefinition();
+	FGBScaledParam Capped = GBSpellTestUtil::MakeParam(10.f, 0.f, 100.f, EGBScaleSource::Power);
+	Capped.Cap = 5.f;
+	Definition.Params.Add(TEXT("CappedParam"), Capped);
+
+	// Power 1 lerps to Max (100), which is above the cap: the resolved value is capped.
+	const FGBSpellCast CappedCast = GBSpell::ResolveCast(Definition, 1.f, 0.f, true, nullptr);
+	TestEqual(TEXT("A value above the cap is clamped"), CappedCast.Get(TEXT("CappedParam")), 5.f, 0.001f);
+	TestEqual(TEXT("ResolveParam agrees with ResolveCast on the cap"),
+		GBSpell::ResolveParam(Definition, TEXT("CappedParam"), 1.f, 0.f, true, nullptr), 5.f, 0.001f);
+
+	// Power 0 lerps to Min (0), below the cap: unchanged.
+	const FGBSpellCast BelowCast = GBSpell::ResolveCast(Definition, 0.f, 0.f, true, nullptr);
+	TestEqual(TEXT("A value below the cap is unchanged"), BelowCast.Get(TEXT("CappedParam")), 0.f, 0.001f);
+
+	// Cap 0 means no cap: a large value passes through.
+	FGBScaledParam Uncapped = GBSpellTestUtil::MakeParam(10.f, 0.f, 100.f, EGBScaleSource::Power);
+	Uncapped.Cap = 0.f;
+	Definition.Params.Add(TEXT("UncappedParam"), Uncapped);
+	const FGBSpellCast UncappedCast = GBSpell::ResolveCast(Definition, 1.f, 0.f, true, nullptr);
+	TestEqual(TEXT("Cap 0 means no cap"), UncappedCast.Get(TEXT("UncappedParam")), 100.f, 0.001f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellBeamHoldTest, "Glyphbound.Spells.BeamHold",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBSpellBeamHoldTest::RunTest(const FString& Parameters)
+{
+	// Hold mode, key held, no time limit: keeps going.
+	TestTrue(TEXT("Held keeps going"),
+		AGBSpell_Beam::ShouldBeamContinue(true, true, 5.f, 0.75f, 0.f));
+	// Hold mode, key released after the minimum: stops.
+	TestFalse(TEXT("Released after the minimum stops"),
+		AGBSpell_Beam::ShouldBeamContinue(true, false, 1.f, 0.75f, 0.f));
+	// Hold mode, key released before the minimum: keeps going.
+	TestTrue(TEXT("Released before the minimum keeps going"),
+		AGBSpell_Beam::ShouldBeamContinue(true, false, 0.5f, 0.75f, 0.f));
+	// The time limit stops the beam even while the key is held.
+	TestFalse(TEXT("Max duration stops the beam even if held"),
+		AGBSpell_Beam::ShouldBeamContinue(true, true, 10.f, 0.75f, 4.f));
+	// Hold mode off: the key is ignored (only the time limit ends it).
+	TestTrue(TEXT("Hold mode off ignores the key"),
+		AGBSpell_Beam::ShouldBeamContinue(false, false, 5.f, 0.f, 0.f));
+	TestFalse(TEXT("Hold mode off still ends at the time limit"),
+		AGBSpell_Beam::ShouldBeamContinue(false, false, 5.f, 0.f, 4.f));
 	return true;
 }
 
