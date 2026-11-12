@@ -1,0 +1,1484 @@
+[0m
+> build · muse-spark-1.3-contributor
+Fixing the 10 review and smoke defects — starting with the architecture and rules.
+[0m→ [0mRead . 
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound 
+> build · muse-spark-1.3-contributor
+[0m$ [0mls Glyphbound/Source/Glyphbound/*/*.{h,cpp} | head -n 100; echo ---; cat Tools/Jam/Smoke-Jam.ps1 | head -n 200
+At line:1 char:39
++ ls Glyphbound/Source/Glyphbound/*/*.{h,cpp} | head -n 100; echo ---;  ...
++                                       ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Get-ChildItem Glyphbound/Source/Glyphbound -Recurse -Include *.h,*.cpp | Select-Object -ExpandProperty FullName"
+C:\GameJam\Glyphbound\Source\Glyphbound\AI\GBEncounter.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\AI\GBEncounter.h
+C:\GameJam\Glyphbound\Source\Glyphbound\AI\GBEnemyCharacter.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\AI\GBEnemyCharacter.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBCombatLibrary.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBCombatLibrary.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBProjectile.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBProjectile.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBStatusEffectComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBStatusEffectComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBDevCommands.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBGameMode.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBGameMode.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBPlaceholder.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBPlaceholder.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBStatNames.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBTypes.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Data\GBDataSubsystem.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Data\GBDataSubsystem.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Data\GBDataTypes.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Data\GBDataTypes.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Items\GBInventoryComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Items\GBInventoryComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBInputSet.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBInputSet.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerController.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerController.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Progression\GBSkillTreeComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Progression\GBSkillTreeComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\QTE\GBQTEComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\QTE\GBQTEComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\QTE\GBQTELogic.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\QTE\GBQTELogic.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellActor.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellActor.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellbookComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellbookComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellTypes.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpellTypes.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Beam.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Beam.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Enchant.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Enchant.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Orb.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Orb.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Projectile.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Projectile.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Shield.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Shield.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Trap.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Trap.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Wall.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Wall.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Zone.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Zone.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Stats\GBAttributeComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Stats\GBAttributeComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Stats\GBStatsComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Stats\GBStatsComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBEraTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBProgressionTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBQTETests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBSpellTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBSpriteTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBStatsTests.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBHUD.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBHUD.h
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBHUDShared.h
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBHUD_Menus.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBPixelSpriteLibrary.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBPixelSpriteLibrary.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBEquipmentComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBEquipmentComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBGun.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBGun.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBHeldItem.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBHeldItem.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBStaff.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBStaff.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBSword.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBSword.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBCheckpointVolume.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBCheckpointVolume.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBChest.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBChest.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBEraComponent.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBEraComponent.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBEraSubsystem.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBEraSubsystem.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBInteractable.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBInteractable.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBPickup.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBPickup.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBPortal.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBPortal.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBProgressSubsystem.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBProgressSubsystem.h
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBTestArena.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\World\GBTestArena.h
+C:\GameJam\Glyphbound\Source\Glyphbound\Glyphbound.cpp
+C:\GameJam\Glyphbound\Source\Glyphbound\Glyphbound.h
+> build · muse-spark-1.3-contributor
+I've mapped the codebase — now digging into each defect.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBGameMode.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBTestArena.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/StatusEffects.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBTestArena.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h 
+> build · muse-spark-1.3-contributor
+I've reviewed the core gameplay systems — now examining the remaining pieces for the other fixes.
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTELogic.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTELogic.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBQTETests.cpp 
+> build · muse-spark-1.3-contributor
+Now let me look at the remaining pieces: placeholder shapes, spell types, pickups, and the build/test scripts.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBPlaceholder.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBPickup.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.h 
+[0m✱ [0mGrep "Glyphbound\.[A-Za-z.]+" [90min Glyphbound/Source/Glyphbound/Tests · 20 matches[0m
+> build · muse-spark-1.3-contributor
+I have the full picture now. Let me check a few remaining usages before editing.
+[0m✱ [0mGrep "ArenaStart|GetPlayerStartTransform|RemoveAllEffects|HasLineOfSight" [90min Glyphbound/Source/Glyphbound · 11 matches[0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBEraTests.cpp 
+> build · muse-spark-1.3-contributor
+All context gathered. Now implementing the fixes, starting with the stat keys, inventory ammo, and QTE/spellbook.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -5,8 +5,9 @@
+ // Adding a stat: add the constant here, read it where it is used, and put its value in the JSON.
+ #pragma once
+ 
+ #include "CoreMinimal.h"
++#include "Core/GBTypes.h"
+ 
+ namespace GBStat
+ {
+ 	// ---- Actor stats (Player.json "Stats", Enemies.json "Stats") ----
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -90,8 +90,20 @@
+ 	inline const FName QTEGestureCount(TEXT("QTE.GestureCount"));
+ 
+ 	/** "Weapon.<WeaponId>.<Stat>" */
+ 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
++	/** "Weapon.Staff.<Stat>", "Weapon.Gun.<Stat>" or "Weapon.Sword.<Stat>" */
++	inline FName WeaponSlotKey(EGBHeldSlot Slot, FName Stat)
++	{
++		const TCHAR* SlotName = TEXT("Gun");
++		switch (Slot)
++		{
++		case EGBHeldSlot::Staff: SlotName = TEXT("Staff"); break;
++		case EGBHeldSlot::Gun:   SlotName = TEXT("Gun"); break;
++		case EGBHeldSlot::Sword:  SlotName = TEXT("Sword"); break;
++		}
++		return FName(*FString::Printf(TEXT("Weapon.%s.%s"), SlotName, *Stat.ToString()));
++	}
+ 	/** "Weapon.All.<Stat>" */
+ 	inline FName WeaponAllKey(FName Stat) { return FName(*FString::Printf(TEXT("Weapon.All.%s"), *Stat.ToString())); }
+ 	/** "Spell.<SpellId>.<Param>" */
+ 	inline FName SpellKey(FName SpellId, FName Param) { return FName(*FString::Printf(TEXT("Spell.%s.%s"), *SpellId.ToString(), *Param.ToString())); }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -110,11 +110,13 @@
+ 		{
+ 			return 0;
+ 		}
+ 		const float* PerItem = Def->Stats.Find(GBStat::SpareMagazines);
+-		const int32 Magazines = Count * (PerItem ? FMath::RoundToInt(*PerItem) : 1);
+-		// A full gun takes nothing, so the pickup stays on the floor.
+-		return (Magazines > 0 && Equipment->AddSpareMagazines(Magazines) > 0) ? Count : 0;
++		const int32 MagazinesPerItem = FMath::Max(1, PerItem ? FMath::RoundToInt(*PerItem) : 1);
++		const int32 Magazines = Count * MagazinesPerItem;
++		// A full gun takes nothing, so the pickup stays on the floor; a nearly-full one keeps the remainder.
++		const int32 Added = (Magazines > 0) ? Equipment->AddSpareMagazines(Magazines) : 0;
++		return UsedAmmoItems(Added, MagazinesPerItem);
+ 	}
+ 
+ 	if (Def->MaxStack <= 0)
+ 	{
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+@@ -37,10 +37,9 @@
+ 	/** Gives the starting items from Player.json. Called by the player on BeginPlay. */
+ 	void InitializeFromData();
+ 
+ 	/** Adds up to Count (limited by MaxStack). Ammo items go straight to the gun. Returns how many were really taken. */
+-	int32 AddItem(FName ItemId, int32 Count = 1);
+-	/** Returns false (and removes nothing) if there are fewer than Count. */
++	int32 AddItem(FName ItemId, int32 Count = 1);	/** Returns false (and removes nothing) if there are fewer than Count. */
+ 	bool RemoveItem(FName ItemId, int32 Count = 1);
+ 	int32 GetCount(FName ItemId) const;
+ 	bool HasItem(FName ItemId) const { return GetCount(ItemId) > 0; }
+ 	/** Item id -> count, only items with count > 0. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+@@ -37,9 +37,11 @@
+ 	/** Gives the starting items from Player.json. Called by the player on BeginPlay. */
+ 	void InitializeFromData();
+ 
+ 	/** Adds up to Count (limited by MaxStack). Ammo items go straight to the gun. Returns how many were really taken. */
+-	int32 AddItem(FName ItemId, int32 Count = 1);	/** Returns false (and removes nothing) if there are fewer than Count. */
++	int32 AddItem(FName ItemId, int32 Count = 1);
++	/** How many ammo items AddedMagazines pays for at MagazinesPerItem each, rounded up (a partly-filled gun keeps the remainder on the pickup). Pure helper. */
++	static int32 UsedAmmoItems(int32 AddedMagazines, int32 MagazinesPerItem);	/** Returns false (and removes nothing) if there are fewer than Count. */
+ 	bool RemoveItem(FName ItemId, int32 Count = 1);
+ 	int32 GetCount(FName ItemId) const;
+ 	bool HasItem(FName ItemId) const { return GetCount(ItemId) > 0; }
+ 	/** Item id -> count, only items with count > 0. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -173,9 +173,8 @@
+ int32 UGBInventoryComponent::GetCount(FName ItemId) const
+ {
+ 	return Items.FindRef(ItemId);
+ }
+-
+ void UGBInventoryComponent::HandleStackEmptied(FName ItemId)
+ {
+ 	if (QuickUseItem == ItemId)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -169,8 +169,17 @@
+ 	OnInventoryChanged.Broadcast();
+ 	return true;
+ }
+ 
++int32 UGBInventoryComponent::UsedAmmoItems(int32 AddedMagazines, int32 MagazinesPerItem)
++{
++	if (AddedMagazines <= 0 || MagazinesPerItem <= 0)
++	{
++		return 0;
++	}
++	return (AddedMagazines + MagazinesPerItem - 1) / MagazinesPerItem;
++}
++
+ int32 UGBInventoryComponent::GetCount(FName ItemId) const
+ {
+ 	return Items.FindRef(ItemId);
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+@@ -72,10 +72,9 @@
+ 
+ 	FGBQTESession Session;
+ 	FGBQTEResult LastResult;
+ 	/** Read at StartQTE so gear changes apply to the next QTE. */
+-	float GestureIdleSubmitTime = 0.f;
+-	float LineSubmitLengthMult = 0.f;
++	float GestureIdleSubmitTime = 0.f;	float LineSubmitLengthMult = 0.f;
+ 	FGBOnQTEFinished FinishedDelegate;
+ 	FName ActiveSpellId = NAME_None;
+ 	bool bActive = false;
+ 	/** Real seconds without gesture input, to auto-submit a stroke when the hand pauses. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+@@ -76,8 +76,10 @@
+ 	float GestureIdleSubmitTime = 0.f;	float LineSubmitLengthMult = 0.f;
+ 	FGBOnQTEFinished FinishedDelegate;
+ 	FName ActiveSpellId = NAME_None;
+ 	bool bActive = false;
++	/** The next Finish ends a CancelQTE: its result is forced to unsuccessful, whatever the score so far. */
++	bool bForceFailResult = false;
+ 	/** Real seconds without gesture input, to auto-submit a stroke when the hand pauses. */
+ 	float GestureIdleTime = 0.f;
+ 	FRandomStream Random;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+@@ -137,8 +137,10 @@
+ 	{
+ 		return;
+ 	}
+ 	Session.Phase = EGBQTEPhase::Finished;
++	// A cancelled QTE never casts: the result is unsuccessful even if some steps were right.
++	bForceFailResult = true;
+ 	Finish();
+ }
+ 
+ void UGBQTEComponent::HandleKey(EGBQTEKey Key)
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+@@ -219,9 +219,15 @@
+ 	}
+ 	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
+ 	bActive = false;
+ 	SetComponentTickEnabled(false);
+-	const FGBQTEResult Result = Session.GetResult();
++	FGBQTEResult Result = Session.GetResult();
++	if (bForceFailResult)
++	{
++		Result.bSuccess = false;
++		Result.bUsedQTE = true;
++	}
++	bForceFailResult = false;
+ 	LastResult = Result;
+ 	ActiveSpellId = NAME_None;
+ 
+ 	// Copy first: the callback may start a new QTE, which overwrites FinishedDelegate (and LastResult).
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the FinishCast dead check:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+@@ -472,8 +472,23 @@
+ 	{
+ 		Equipment->SetSwitchLocked(false);
+ 	}
+ 
++	// The owner died while the QTE was running (or the cast outlived it): never spawn from a dead caster.
++	bool bOwnerDead = false;
++	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetOwner()))
++	{
++		bOwnerDead = Player->IsDead();
++	}
++	else if (const UGBAttributeComponent* Attributes = GetOwnerAttributes())
++	{
++		bOwnerDead = Attributes->IsDead();
++	}
++	if (bOwnerDead)
++	{
++		return;
++	}
++
+ 	UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+ 	const FGBSpellDefinition* Definition = Data ? Data->FindSpell(SpellId) : nullptr;
+ 	if (!Definition)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now fix 1 — RespawnAt on the player:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -90,8 +90,13 @@
+ 
+ 	/** Whole-player snapshot: transform, era, attributes, plus every component's part. */
+ 	void SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const;
+ 	void LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot);
++	/**
++	 * Death respawn at the checkpoint's place and era with full health, mana and ammo. Everything else
++	 * owned (items, weapons, spells, skill points, armor) is kept as it is now: dying never rolls it back.
++	 */
++	void RespawnAt(const FGBPlayerSnapshot& Snapshot);
+ 
+ 	virtual void Tick(float DeltaSeconds) override;
+ 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -519,10 +519,9 @@
+ 	SkillTree->SaveToSnapshot(Snapshot);
+ }
+ 
+ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
+-{
+-	if (QTE->IsActive())
++{	if (QTE->IsActive())
+ 	{
+ 		QTE->CancelQTE();
+ 	}
+ 	EndDash();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -563,8 +563,54 @@
+ 		}
+ 	}
+ }
+ 
++void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
++{
++	// Death never rolls back what the player owns: only place, era and resources are restored.
++	if (QTE && QTE->IsActive())
++	{
++		QTE->CancelQTE();
++	}
++	if (Spellbook)
++	{
++		Spellbook->CancelSustained();
++	}
++	EndDash();
++
++	SetActorTransform(Snapshot.Transform, false, nullptr, ETeleportType::TeleportPhysics);
++	if (Controller)
++	{
++		Controller->SetControlRotation(Snapshot.ControlRotation);
++	}
++	if (UGBEraSubsystem* Era = UGBEraSubsystem::Get(this))
++	{
++		Era->SetEraImmediate(Snapshot.Era);
++	}
++
++	if (StatusEffects)
++	{
++		StatusEffects->RemoveAllEffects();
++	}
++	RestoreAll();
++
++	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
++	{
++		MoveComp->StopMovementImmediately();
++	}
++	PendingRecoil = FRotator::ZeroRotator;
++	LastMoveInput = FVector2D::ZeroVector;
++	SetControlEnabled(true);
++
++	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
++	{
++		if (PC->GetOpenMenu() == EGBMenu::Death)
++		{
++			PC->SetMenu(EGBMenu::None);
++		}
++	}
++}
++
+ // ---------------------------------------------------------------------------------------------------------------
+ // Input
+ 
+ void AGBPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now update the progress subsystem to use RespawnAt:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+Index: Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
++++ Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+@@ -9,10 +9,12 @@
+ 
+ class AGBPlayerCharacter;
+ 
+ /**
+- * Everything of the player that a checkpoint (or a map change to the final-boss dimension) must bring back.
+- * Each player component fills / reads its own part with SaveToSnapshot / LoadFromSnapshot.
++ * What the full player state looked like at the last checkpoint. Each player component fills / reads
++ * its own part with SaveToSnapshot / LoadFromSnapshot; those parts travel with the player to the
++ * final-boss map. Death respawns (RestoreCheckpoint) only use Transform, ControlRotation and Era plus
++ * a full restore of health, mana and ammo: everything else owned is kept as it is, never rolled back.
+  */
+ USTRUCT()
+ struct GLYPHBOUND_API FGBPlayerSnapshot
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.cpp
+@@ -71,9 +71,9 @@
+ 	if (!Player || !Checkpoint.bValid)
+ 	{
+ 		return false;
+ 	}
+-	Player->LoadFromSnapshot(Checkpoint);
++	Player->RespawnAt(Checkpoint);
+ 	return true;
+ }
+ 
+ void UGBProgressSubsystem::ResetProgress()
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+Index: Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
++++ Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+@@ -76,9 +76,13 @@
+ 	/** Takes a snapshot of the player (all components + transform + era). */
+ 	void SaveCheckpoint(AGBPlayerCharacter* Player);
+ 	bool HasCheckpoint() const { return Checkpoint.bValid; }
+ 	const FGBPlayerSnapshot& GetCheckpoint() const { return Checkpoint; }
+-	/** Puts the player back to the checkpoint state (also revives and switches era, no fade). False if there is none. */
++	/**
++	 * Respawns the player at the checkpoint's place and era with full health, mana and ammo (also revives,
++	 * no fade). Items, weapons, spells, skill points and armor are kept as they are now, not restored.
++	 * False if there is none.
++	 */
+ 	bool RestoreCheckpoint(AGBPlayerCharacter* Player);
+ 
+ 	/** New run: clears flags and the checkpoint. */
+ 	void ResetProgress();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Fixes 2, 4, 5 — wall overlap, era-travel-while-dying, era component ticks:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+@@ -77,8 +77,10 @@
+ 
+ 	if (bBlocking)
+ 	{
+ 		Box->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
++		// Projectiles only overlap WorldDynamic: without this they pass through the wall untouched.
++		Box->SetGenerateOverlapEvents(true);
+ 		SetupHealth(ReadParam(GBStat::Health, 100.f));
+ 	}
+ 
+ 	const float DamagePerSecond = SpellCast.Get(GBStat::DamagePerSecond, 0.f);
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+@@ -65,9 +65,9 @@
+ 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+ 
+ protected:
+ 	void ApplyEra();
+-	/** The moment the screen is fully covered: swap era, teleport, restore and save. */
++	/** The moment the screen is fully covered: swap era, teleport, restore and save. A dead traveller undoes the travel instead (stays in the current era, no teleport / restore / save). */
+ 	void PerformSwap();
+ 	void FinishTravel();
+ 	/** Fade durations from Game.json, read when the travel starts. */
+ 	float FadeOutTime = 0.f;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+@@ -135,8 +135,25 @@
+ }
+ 
+ void UGBEraSubsystem::PerformSwap()
+ {
++	// The traveller died while the screen was covered: undo the travel and fade back in (no teleport,
++	// no restore, no checkpoint for a dead player).
++	bool bTravellerDead = false;
++	if (AGBPlayerCharacter* DeadPlayer = Cast<AGBPlayerCharacter>(PendingTraveller.Get()))
++	{
++		bTravellerDead = DeadPlayer->IsDead();
++	}
++	else if (const UGBAttributeComponent* DeadAttributes = UGBAttributeComponent::Find(PendingTraveller.Get()))
++	{
++		bTravellerDead = DeadAttributes->IsDead();
++	}
++	if (bTravellerDead)
++	{
++		PendingEra = CurrentEra;
++		return;
++	}
++
+ 	CurrentEra = PendingEra;
+ 	ApplyEra();
+ 
+ 	AActor* Traveller = PendingTraveller.Get();
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+@@ -188,12 +188,16 @@
+ 
+ 	if (AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Traveller))
+ 	{
+ 		// GDD 4: era travel restores health, mana and ammo; portals are the checkpoints of the map.
+-		Player->RestoreAll();
+-		if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
++		// Never for a dead player (death undoes the travel before this point).
++		if (!Player->IsDead())
+ 		{
+-			Progress->SaveCheckpoint(Player);
++			Player->RestoreAll();
++			if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
++			{
++				Progress->SaveCheckpoint(Player);
++			}
+ 		}
+ 	}
+ }
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+@@ -7,8 +7,9 @@
+ #include "GameFramework/Pawn.h"
+ #include "GameFramework/MovementComponent.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Player/GBPlayerCharacter.h"
++#include "Stats/GBAttributeComponent.h"
+ #include "World/GBProgressSubsystem.h"
+ 
+ namespace GBEraSubsystemLocal
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraComponent.h
+Index: Glyphbound/Source/Glyphbound/World/GBEraComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraComponent.h
++++ Glyphbound/Source/Glyphbound/World/GBEraComponent.h
+@@ -61,5 +61,7 @@
+ 	/** The owner's own collision / tick settings, remembered so presence can be restored exactly. */
+ 	bool bSavedCollision = true;
+ 	bool bSavedTick = true;
+ 	bool bHasSaved = false;
++	/** Owner components whose tick was enabled when presence was lost (attributes, status effects...): re-enabled exactly on return, so nothing simulates in the other era. */
++	TArray<TWeakObjectPtr<UActorComponent>> SavedTickComponents;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraComponent.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBEraComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraComponent.cpp
++++ Glyphbound/Source/Glyphbound/World/GBEraComponent.cpp
+@@ -102,8 +102,21 @@
+ 		bSavedCollision = Owner->GetActorEnableCollision();
+ 		bSavedTick = Owner->IsActorTickEnabled();
+ 		bHasSaved = true;
+ 
++		// Remember every ticking component first (movement included), so the other era simulates nothing.
++		SavedTickComponents.Reset();
++		TArray<UActorComponent*> Components;
++		Owner->GetComponents<UActorComponent>(Components);
++		for (UActorComponent* Comp : Components)
++		{
++			if (Comp && Comp != this && Comp->IsComponentTickEnabled())
++			{
++				SavedTickComponents.Add(Comp);
++				Comp->SetComponentTickEnabled(false);
++			}
++		}
++
+ 		Owner->SetActorHiddenInGame(true);
+ 		Owner->SetActorEnableCollision(false);
+ 		Owner->SetActorTickEnabled(false);
+ 		// An enemy of the other era must neither fall (its collision is off) nor walk.
+@@ -117,10 +130,19 @@
+ 	{
+ 		Owner->SetActorHiddenInGame(bHasSaved ? bSavedHidden : false);
+ 		Owner->SetActorEnableCollision(bHasSaved ? bSavedCollision : true);
+ 		Owner->SetActorTickEnabled(bHasSaved ? bSavedTick : true);
+-		if (Movement)
++		// Re-enable exactly the components that were ticking (a burning enemy keeps burning on return).
++		for (TWeakObjectPtr<UActorComponent>& Saved : SavedTickComponents)
+ 		{
++			if (UActorComponent* Comp = Saved.Get())
++			{
++				Comp->SetComponentTickEnabled(true);
++			}
++		}
++		SavedTickComponents.Reset();
++		if (Movement && !bHasSaved)
++		{
+ 			Movement->SetComponentTickEnabled(true);
+ 		}
+ 	}
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Fixes 6, 7, 8 — radial obstruction, melee line-of-sight, slot modifiers:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -8,8 +8,14 @@
+ #include "Engine/OverlapResult.h"
+ #include "Engine/World.h"
+ #include "CollisionQueryParams.h"
+ 
++namespace GBCombatLocal
++{
++	/** The obstruction trace starts this far above the explosion origin, so the floor under it does not block it. */
++	constexpr float RadialTraceLiftCm = 5.f;
++}
++
+ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bool bAllowFriendlyFire)
+ {
+ 	if (!IsValid(Target))
+ 	{
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -473,9 +473,9 @@
+ 	{
+ 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+ 		const float Tolerance = Data ? Data->GetGameValue(GBEnemyKey::MeleeReachTolerance, 1.2f) : 1.2f;
+ 		const FVector ToGoal = Goal->GetActorLocation() - GetActorLocation();
+-		if (ToGoal.Size() <= AttackRange * Tolerance)
++		if (ToGoal.Size() <= AttackRange * Tolerance && HasLineOfSight(Goal))
+ 		{
+ 			Info.HitLocation = Goal->GetActorLocation();
+ 			Info.HitDirection = ToGoal.GetSafeNormal();
+ 			UGBCombatLibrary::DealDamage(Goal, Info);
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -135,8 +135,26 @@
+ 		{
+ 			continue;
+ 		}
+ 
++		// Solid geometry between the blast and the target blocks the damage.
++		FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(GBRadialObstruction), true);
++		TraceParams.AddIgnoredActor(Target);
++		for (AActor* Ignored : IgnoreActors)
++		{
++			if (Ignored)
++			{
++				TraceParams.AddIgnoredActor(Ignored);
++			}
++		}
++		FHitResult Obstruction;
++		const FVector TraceStart = Origin + FVector(0.f, 0.f, GBCombatLocal::RadialTraceLiftCm);
++		if (World->LineTraceSingleByChannel(Obstruction, TraceStart, TargetLocation, ECC_Visibility, TraceParams)
++			&& Obstruction.bBlockingHit && Obstruction.GetActor() && Obstruction.GetActor() != Target)
++		{
++			continue;
++		}
++
+ 		FGBDamageInfo TargetInfo = Info;
+ 		TargetInfo.HitLocation = TargetLocation;
+ 		TargetInfo.HitDirection = (TargetLocation - Origin).GetSafeNormal();
+ 		if (bLinearFalloff)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+Index: Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
++++ Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+@@ -37,9 +37,9 @@
+ struct GLYPHBOUND_API FGBModifierDef
+ {
+ 	GENERATED_BODY()
+ 
+-	/** Stat key: an actor stat ("MoveSpeed"), "Weapon.<Id>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>", "QTE.TimeDilation"... */
++	/** Stat key: an actor stat ("MoveSpeed"), "Weapon.<Id>.<Stat>", "Weapon.<Slot>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>", "QTE.TimeDilation"... */
+ 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+ 	FName Stat = NAME_None;
+ 
+ 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+@@ -44,9 +44,9 @@
+ 
+ /**
+  * A held item is an actor attached to the player's view. It is created from a FGBWeaponDefinition (Weapons.json)
+  * by UGBEquipmentComponent and reads every number through GetStat(), so skill-tree and enchant modifiers apply
+- * (keys "Weapon.<Id>.<Stat>" and "Weapon.All.<Stat>" on the owner's UGBStatsComponent).
++ * (keys "Weapon.<Id>.<Stat>", "Weapon.<Slot>.<Stat>" and "Weapon.All.<Stat>" on the owner's UGBStatsComponent).
+  * Subclasses: AGBStaff (basic magic attack), AGBGun (shoot, aim, reload), AGBSword (melee).
+  */
+ UCLASS(Abstract)
+ class GLYPHBOUND_API AGBHeldItem : public AActor
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+@@ -55,10 +55,11 @@
+ 	}
+ 
+ 	if (const UGBStatsComponent* Stats = GetOwnerStats())
+ 	{
+-		TArray<FName, TInlineAllocator<2>> Keys;
++		TArray<FName, TInlineAllocator<3>> Keys;
+ 		Keys.Add(GBStat::WeaponKey(WeaponId, Stat));
++		Keys.Add(GBStat::WeaponSlotKey(Slot, Stat));
+ 		Keys.Add(GBStat::WeaponAllKey(Stat));
+ 		return Stats->EvaluateKeys(Keys, Base);
+ 	}
+ 	return Base;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+@@ -157,9 +157,9 @@
+ 			}
+ 		}
+ 	}
+ 
+-	// The enchant's damage multiplier arrives by itself through its "Weapon.All.Damage" modifier.
++	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" modifier.
+ 	EGBElement EnchantElement = EGBElement::Physical;
+ 	FName EnchantEffect = NAME_None;
+ 	if (AcceptsEnchant() && GetActiveEnchant(EnchantElement, EnchantEffect))
+ 	{
+System.Management.Automation.RemoteException
+[0m← [0mEdit Design/ARCHITECTURE.md
+Index: Design/ARCHITECTURE.md
+===================================================================
+--- Design/ARCHITECTURE.md
++++ Design/ARCHITECTURE.md
+@@ -35,9 +35,9 @@
+ 
+ ## Data files (`Glyphbound/Content/Data`)
+ `Player.json`, `QTE.json`, `Game.json`, `Spells.json`, `Weapons.json`, `StatusEffects.json`, `Items.json` (items + recipes), `Enemies.json`, `Encounters.json`, `Skills.json`, `Sprites.json`. Schemas are the structs in `Data/GBDataTypes.h` (field name = JSON key). Stat and parameter names are the constants in `Core/GBStatNames.h`.
+ 
+-Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
++Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.<Slot>.<Stat>` (`Weapon.Staff`, `Weapon.Gun`, `Weapon.Sword`), `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
+ 
+ Standard status effect ids (defined in `StatusEffects.json`, referenced from other files): `Burn`, `Shock`, `Slow`, `Chill`, `HealthPotion`, `ManaPotion`, `HealthInjection`, `Enchant_Fire`, `Enchant_Lightning`, `Enchant_Ice`.
+ 
+ ## How the main flows run
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "(Get-Content Glyphbound/Content/Data/StatusEffects.json -Raw) -replace 'Weapon\.All\.Damage','Weapon.Gun.Damage' | Set-Content Glyphbound/Content/Data/StatusEffects.json -NoNewline; Select-String -Path Glyphbound/Content/Data/StatusEffects.json -Pattern 'Weapon\.[A-Za-z]+\.Damage'"
+Glyphbound\Content\Data\StatusEffects.json:83:				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+Glyphbound\Content\Data\StatusEffects.json:95:				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+Glyphbound\Content\Data\StatusEffects.json:107:				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+> build · muse-spark-1.3-contributor
+Now fix 10a — arena building and player start:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+Index: Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBGameMode.h
++++ Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+@@ -6,8 +6,9 @@
+ #include "Engine/GameInstance.h"
+ #include "GBGameMode.generated.h"
+ 
+ class AGBPlayerCharacter;
++class APlayerStart;
+ 
+ /** Keys of Game.json "Values" read by the game mode. */
+ namespace GBGameValue
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBTestArena.h
+Index: Glyphbound/Source/Glyphbound/World/GBTestArena.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBTestArena.h
++++ Glyphbound/Source/Glyphbound/World/GBTestArena.h
+@@ -12,8 +12,9 @@
+ class APointLight;
+ class ADirectionalLight;
+ class ASkyLight;
+ class AExponentialHeightFog;
++class APlayerStart;
+ 
+ /**
+  * Spawned by AGBGameMode::InitGame when the map has no PlayerStart.
+  *  - BuildStatic() (called from InitGame, before the player exists): lights, sky, fog, floor, walls, the movement
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+Index: Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBGameMode.h
++++ Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+@@ -60,5 +60,7 @@
+ 	FTimerHandle RespawnTimer;
+ 	/** Where the test arena wants the player to start, when it was built. */
+ 	FTransform ArenaStart;
+ 	bool bHasArenaStart = false;
++	/** The APlayerStart the test arena created (returned by ChoosePlayerStart when set). */
++	TWeakObjectPtr<APlayerStart> ArenaPlayerStart;
+ };
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBTestArena.h
+Index: Glyphbound/Source/Glyphbound/World/GBTestArena.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBTestArena.h
++++ Glyphbound/Source/Glyphbound/World/GBTestArena.h
+@@ -35,8 +35,10 @@
+ 	/** Geometry, lighting and the PlayerStart. Safe to call once; BeginPlay calls it if nobody did. */
+ 	void BuildStatic();
+ 
+ 	const FTransform& GetPlayerStartTransform() const { return PlayerStartTransform; }
++	/** The APlayerStart created by BuildStatic (null until built). */
++	APlayerStart* GetPlayerStartActor() const { return PlayerStartActor; }
+ 
+ protected:
+ 	virtual void BeginPlay() override;
+ 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBTestArena.h
+Index: Glyphbound/Source/Glyphbound/World/GBTestArena.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBTestArena.h
++++ Glyphbound/Source/Glyphbound/World/GBTestArena.h
+@@ -76,8 +76,9 @@
+ 	UPROPERTY() TObjectPtr<ASkyLight> SkyLight;
+ 	UPROPERTY() TObjectPtr<AExponentialHeightFog> Fog;
+ 
+ 	FTransform PlayerStartTransform;
++	TObjectPtr<APlayerStart> PlayerStartActor = nullptr;
+ 	bool bStaticBuilt = false;
+ 	bool bGameplayBuilt = false;
+ 	FDelegateHandle EraChangedHandle;
+ };
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBTestArena.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBTestArena.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBTestArena.cpp
++++ Glyphbound/Source/Glyphbound/World/GBTestArena.cpp
+@@ -329,9 +329,9 @@
+ 	SpawnBlock(FVector(DoorEastX + EastSegment * 0.5f, GBArena::RoomNorthY, GBArena::WallHeight * 0.5f), FVector(EastSegment, GBArena::WallThickness, GBArena::WallHeight), GBArena::Wall);
+ 
+ 	// ---- Player start ----
+ 	PlayerStartTransform = FTransform(FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArena::PlayerStart);
+-	World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), GBArena::PlayerStart, FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArenaIds::AlwaysSpawnParams());
++	PlayerStartActor = World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), GBArena::PlayerStart, FRotator(0.f, GBArena::PlayerStartYaw, 0.f), GBArenaIds::AlwaysSpawnParams());
+ }
+ 
+ void AGBTestArena::ApplyEraLighting(EGBEra Era)
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp
+@@ -52,12 +52,35 @@
+ 	{
+ 		bHasPlayerStart = true;
+ 		break;
+ 	}
+-	if (bHasPlayerStart)
++
++	AGBTestArena* ExistingArena = nullptr;
++	for (TActorIterator<AGBTestArena> It(World); It; ++It)
+ 	{
++		ExistingArena = *It;
++		break;
++	}
++
++	// The default map is the engine's empty Entry map (it has a PlayerStart but no floor): the test level
++	// is built in code whenever the map is an engine map or has no PlayerStart of its own.
++	const FString PackageName = UWorld::RemovePIEPrefix(World->GetPackage()->GetName());
++	const bool bEngineMap = PackageName.StartsWith(TEXT("/Engine/"));
++
++	if (ExistingArena)
++	{
++		ArenaPlayerStart = ExistingArena->GetPlayerStartActor();
++		bHasArenaStart = ArenaPlayerStart.IsValid();
++		if (bHasArenaStart)
++		{
++			ArenaStart = ArenaPlayerStart->GetActorTransform();
++		}
+ 		return;
+ 	}
++	if (bHasPlayerStart && !bEngineMap)
++	{
++		return;
++	}
+ 
+ 	// The default map is the engine's empty Entry map: build the test level in code before the player spawns.
+ 	FActorSpawnParameters Params;
+ 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+@@ -69,13 +92,18 @@
+ 	}
+ 	Arena->BuildStatic();
+ 	ArenaStart = Arena->GetPlayerStartTransform();
+ 	bHasArenaStart = true;
++	ArenaPlayerStart = Arena->GetPlayerStartActor();
+ }
+ 
+ AActor* AGBGameMode::ChoosePlayerStart_Implementation(AController* Player)
+ {
+-	// The arena spawned a real APlayerStart, so the engine's choice already finds it.
++	// The arena built a real APlayerStart: use it, not the one that came with an engine map.
++	if (APlayerStart* Start = ArenaPlayerStart.Get())
++	{
++		return Start;
++	}
+ 	return Super::ChoosePlayerStart_Implementation(Player);
+ }
+ 
+ void AGBGameMode::HandlePlayerDeath(AGBPlayerCharacter* Player)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+Index: Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBGameMode.h
++++ Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+@@ -23,10 +23,11 @@
+ };
+ 
+ /**
+  * - Default pawn AGBPlayerCharacter, controller AGBPlayerController, HUD AGBHUD.
+- * - If the map has no PlayerStart (the engine's empty Entry map is the default map), it spawns AGBTestArena,
+- *   which builds the whole test level in code, before the player is spawned.
++ * - If the world has no AGBTestArena yet and the map has no PlayerStart (or is an engine map like the
++ *   default empty Entry map), it spawns AGBTestArena, which builds the whole test level in code, and uses
++ *   the APlayerStart the arena created.
+  * - Player death (checkpoints only, GDD 10): shows the death screen, then after Game.json "RespawnDelay"
+  *   restores the last checkpoint (or restarts the map if there is none) and resets running encounters.
+  */
+ UCLASS()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now fix 10b. Let me check the staff/sword viewmodels first since they share the anchor:
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp 
+> build · muse-spark-1.3-contributor
+The staff has no 3D viewmodel and the sword hilt is tiny — the anchor mostly affects the gun. Reworking the gun viewmodel to a compact pistol:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -45,30 +45,33 @@
+ 
+ void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
+ {
+ 	// Placeholder viewmodel (art rule: guns are 3D). Sizes in cm are purely visual; X = forward, Z = up.
++	// The parts sit forward of the held-item anchor so the whole gun reads as one small pistol in the
++	// lower right of the view, roughly 25-35 cm long, pointing forward.
+ 	const float* PelletStat = Definition.Stats.Find(GBStat::Pellets);
+ 	const bool bShotgun = PelletStat && *PelletStat > 1.f;
+ 	const bool bAutomaticLook = Definition.bAutomatic;
+ 
+-	const float BodyLength = bShotgun ? 22.f : (bAutomaticLook ? 26.f : 16.f);
+-	const float BarrelLength = bShotgun ? 18.f : (bAutomaticLook ? 16.f : 6.f);
+-	const float BarrelThickness = bShotgun ? 4.f : 2.5f;
++	const float BodyLength = bShotgun ? 24.f : (bAutomaticLook ? 26.f : 20.f);
++	const float BarrelLength = bShotgun ? 16.f : (bAutomaticLook ? 14.f : 9.f);
++	const float BarrelThickness = bShotgun ? 4.f : 3.f;
++	constexpr float BodyForward = 8.f;
+ 
+ 	const FLinearColor BodyColor(0.08f, 0.08f, 0.10f);
+ 	const FLinearColor BarrelColor(0.03f, 0.03f, 0.035f);
+ 	const FLinearColor GripColor(0.12f, 0.10f, 0.10f);
+ 	const FLinearColor NeonColor(0.0f, 0.9f, 1.0f);
+ 
+-	AddPart(TEXT("Body"), EGBShape::Cube, FVector::ZeroVector, FVector(BodyLength, 4.f, 7.f), BodyColor, false);
+-	AddPart(TEXT("Barrel"), EGBShape::Cube, FVector(BodyLength * 0.5f + BarrelLength * 0.5f, 0.f, 1.5f),
++	AddPart(TEXT("Body"), EGBShape::Cube, FVector(BodyForward, 0.f, 0.f), FVector(BodyLength, 5.f, 7.5f), BodyColor, false);
++	AddPart(TEXT("Barrel"), EGBShape::Cube, FVector(BodyForward + BodyLength * 0.5f + BarrelLength * 0.5f, 0.f, 1.5f),
+ 		FVector(BarrelLength, BarrelThickness, BarrelThickness), BarrelColor, false);
+-	AddPart(TEXT("Grip"), EGBShape::Cube, FVector(-BodyLength * 0.5f + 3.f, 0.f, -6.f), FVector(3.5f, 3.5f, 8.f), GripColor, false);
++	AddPart(TEXT("Grip"), EGBShape::Cube, FVector(BodyForward - BodyLength * 0.5f + 2.5f, 0.f, -7.f), FVector(4.f, 4.f, 9.f), GripColor, false);
+ 	if (bAutomaticLook)
+ 	{
+-		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyLength * 0.15f, 0.f, -6.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
++		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyForward + 2.f, 0.f, -7.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
+ 	}
+-	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(0.f, 2.1f, 1.f), FVector(BodyLength * 0.8f, 0.3f, 0.6f), NeonColor, true);
++	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, 2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
+ }
+ 
+ // ---- Ammo ----
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the two pure-logic tests:
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Tests/GBInventoryTests.cpp
+Created file successfully: Glyphbound/Source/Glyphbound/Tests/GBInventoryTests.cpp
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+@@ -1,7 +1,9 @@
+ // Pure-logic tests of the stat math: modifier order, source scaling, regen steps and QTE-scaled params.
+ #include "CoreMinimal.h"
+ #include "Misc/AutomationTest.h"
++#include "Core/GBStatNames.h"
++#include "Core/GBTypes.h"
+ #include "Data/GBDataTypes.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "Stats/GBStatsComponent.h"
+ #include "UObject/Package.h"
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+@@ -118,5 +118,19 @@
+ 	TestNearlyEqual(TEXT("Untagged stays at Base with the QTE on"), Fixed.Resolve(1.f, 1.f, true), 10.f);
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsWeaponSlotKeyTest, "Glyphbound.Stats.WeaponSlotKeys",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++bool FGBStatsWeaponSlotKeyTest::RunTest(const FString& Parameters)
++{
++	// The slot-wide modifier key names one slot only: a gun enchant must not buff staffs or swords.
++	TestEqual(TEXT("Staff slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Staff, GBStat::Damage).ToString(), TEXT("Weapon.Staff.Damage"));
++	TestEqual(TEXT("Gun slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::Damage).ToString(), TEXT("Weapon.Gun.Damage"));
++	TestEqual(TEXT("Sword slot key"), GBStat::WeaponSlotKey(EGBHeldSlot::Sword, GBStat::Damage).ToString(), TEXT("Weapon.Sword.Damage"));
++	TestEqual(TEXT("Slot key keeps the stat name"), GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::FireInterval).ToString(), TEXT("Weapon.Gun.FireInterval"));
++	TestFalse(TEXT("Gun key differs from the all-weapons key"),
++		GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::Damage) == GBStat::WeaponAllKey(GBStat::Damage));
++	return true;
++}
++
+ #endif
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+All edits are in. Building the Editor target first:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 28 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+Editor build succeeded. Now the game target:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 26 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 20
+Tests: 22 run, 0 failed, test time 0.37 s, wall time 23 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-072347
+> build · muse-spark-1.3-contributor
+22 tests pass. Running the smoke test:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072413.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072413.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 25 steps
+LogGB: Display: SMOKE step 1/25 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=12 sprites=36 playerStats=20
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/25 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/25 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/25 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/25 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/25 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/25 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/25 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/25 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/25 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/25 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/25 (7.8 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 13/25 (10.5 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 14/25 (11.7 s): open the inventory
+LogGB: Display: SMOKE step 15/25 (12.2 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 16/25 (13.4 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 17/25 (13.9 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 18/25 (15.1 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 19/25 (15.5 s): QTE: press one key
+LogGB: Display: SMOKE step 20/25 (15.8 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 21/25 (19.0 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 22/25 (19.3 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 23/25 (20.0 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 24/25 (24.0 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 25/25 (25.5 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 2 ----
+LogInit: Error: RendererSettings failed to find console variable fx.GPUSimulationTextureSizeX for GPUSimulationTextureSizeX
+LogInit: Error: RendererSettings failed to find console variable fx.GPUSimulationTextureSizeY for GPUSimulationTextureSizeY
+---- screenshots: 8 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=41 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072413.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png 
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -69,9 +69,12 @@
+ 	if (bAutomaticLook)
+ 	{
+ 		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyForward + 2.f, 0.f, -7.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
+ 	}
+-	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, 2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
++	// Neon on the camera-facing side (the anchor sits right of the view, so +Y faces away).
++	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, -2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
++	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
++	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
+ }
+ 
+ // ---- Ammo ----
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 6 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072551.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072551.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 25 steps
+LogGB: Display: SMOKE step 1/25 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=12 sprites=36 playerStats=20
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/25 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/25 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/25 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/25 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/25 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/25 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/25 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/25 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/25 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/25 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/25 (7.8 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 13/25 (10.5 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 14/25 (11.7 s): open the inventory
+LogGB: Display: SMOKE step 15/25 (12.2 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 16/25 (13.4 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 17/25 (13.9 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 18/25 (15.1 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 19/25 (15.5 s): QTE: press one key
+LogGB: Display: SMOKE step 20/25 (15.8 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 21/25 (19.0 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 22/25 (19.3 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 23/25 (20.0 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 24/25 (24.0 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 25/25 (25.5 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 2 ----
+LogInit: Error: RendererSettings failed to find console variable fx.GPUSimulationTextureSizeX for GPUSimulationTextureSizeX
+LogInit: Error: RendererSettings failed to find console variable fx.GPUSimulationTextureSizeY for GPUSimulationTextureSizeY
+---- screenshots: 8 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=39 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072551.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/8_respawn.png 
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png 
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 12 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 20
+Tests: 22 run, 0 failed, test time 0.35 s, wall time 24 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-072713
+> build · muse-spark-1.3-contributor
+All four gates pass on the final code. Final report:
+
+1. Result lines (verbatim)
+- Editor build: `Result: Succeeded`
+- Game build: `Result: Succeeded`
+- Tests: `Tests: 22 run, 0 failed, test time 0.35 s, wall time 24 s, ensures in log: 0`
+- Smoke: `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=39 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-072551.log`
+
+2. Changes per fix
+1. Death keeps everything owned: added `AGBPlayerCharacter::RespawnAt` (`Player/GBPlayerCharacter.h/.cpp`) — ends dash/QTE/sustained spell, teleports to snapshot transform + control rotation, zeroes velocity, `SetEraImmediate`, removes all status effects, `RestoreAll`, re-enables control, closes death menu. `UGBProgressSubsystem::RestoreCheckpoint` now calls `RespawnAt`; header + `FGBPlayerSnapshot` comments updated (`World/GBProgressSubsystem.h/.cpp`). `SaveToSnapshot`/`LoadFromSnapshot` untouched.
+2. Ice wall stops projectiles: `Box->SetGenerateOverlapEvents(true)` in the blocking branch (`Spells/GBSpell_Wall.cpp`). `AGBProjectile` already damages Neutral targets with attributes and stops (both the sweep-hit and begin-overlap paths end in `HitTarget`).
+3. Cancelled QTE fails: `UGBQTEComponent::CancelQTE` now forces the finished result to `bSuccess=false, bUsedQTE=true` via a `bForceFailResult` flag consumed in `Finish` (`QTE/GBQTEComponent.h/.cpp`). `UGBSpellbookComponent::FinishCast` returns early when the owner is dead, after clearing pending state and unlocking weapon switching (`Spells/GBSpellbookComponent.cpp`).
+4. Era travel while dying: `PerformSwap` returns early when the traveller is dead (player or attribute check) — era unchanged, no teleport, no `RestoreAll`, no `SaveCheckpoint` (`World/GBEraSubsystem.cpp/.h`).
+5. Other-era simulation freeze: `UGBEraComponent::ApplyPresence` now disables tick on every ticking component of the owner (remembered in `SavedTickComponents`) and re-enables exactly those on return; movement tick is restored from the same saved set (`World/GBEraComponent.h/.cpp`).
+6. Explosions blocked by walls: `DealRadialDamage` traces `ECC_Visibility` from the origin lifted 5 cm to each target, ignoring the target and `IgnoreActors`; a blocking hit on another actor skips the target (`Combat/GBCombatLibrary.cpp`).
+7. Melee needs sight: melee branch of `PerformAttack` now requires `HasLineOfSight(Goal)` (`AI/GBEnemyCharacter.cpp`).
+8. Slot-wide gun enchant: added `GBStat::WeaponSlotKey` (`Core/GBStatNames.h`, includes `Core/GBTypes.h`); `AGBHeldItem::GetStat` evaluates `Weapon.<Id>`, `Weapon.<Slot>`, `Weapon.All` (`Weapons/GBHeldItem.cpp/.h`); the three `Enchant_*` effects use `Weapon.Gun.Damage` (`Content/Data/StatusEffects.json`); modifier-key docs updated (`Design/ARCHITECTURE.md`, `FGBModifierDef::Stat` in `Data/GBDataTypes.h`).
+9. Ammo remainder kept: `AddItem` (Ammo) returns `UsedAmmoItems(added, perItem)` (ceil division), new pure static helper on the component (`Items/GBInventoryComponent.h/.cpp`); `AGBPickup::GiveDrop` already keeps the remainder from the return value.
+10a. Arena always built: `InitGame` builds `AGBTestArena` when no arena exists AND (no `APlayerStart` OR package starts with `/Engine/`, via `RemovePIEPrefix`); arena stores its `APlayerStart` (new getter) and `ChoosePlayerStart_Implementation` returns it (`Core/GBGameMode.h/.cpp`, `World/GBTestArena.h/.cpp`).
+10b. Gun viewmodel: pistol parts moved forward of the anchor into a compact ~29 cm pistol (body 20, barrel 9), neon strip on the camera-facing (-Y) side, whole viewmodel yawed -6 deg toward view center (`Weapons/GBGun.cpp`). Screenshots `2_past_gun`/`3_future_gun` now show a dark pistol with cyan accent in the lower right, barrel toward the crosshair.
+10c. Smoke review: start enemies=2, Z=92.15 on the floor; `hit enemy TrainingDummy ... dead=1`; after travel era=Future with 100/100 HP and MP; after respawn alive in Future with 100/100, staff in hand and learned spells (FireWall, Flamethrower) still in the loadout, skill unlock kept.
+Tests: added `Glyphbound.Stats.WeaponSlotKeys` (slot-key naming, `Tests/GBStatsTests.cpp`) and `Glyphbound.Items.AmmoRemainder` (ceil-division helper, new `Tests/GBInventoryTests.cpp`). 22 tests, 0 failed.
+
+3. Unsure / not fully verifiable
+- Fixes 2, 4, 5, 7 involve world collision/AI and cannot be covered by pure-logic tests per the rules; verified by code reading and by the smoke run (which does not shoot walls, die mid-travel, strand burning enemies cross-era, or melee through walls). In particular fix 2 relies on the projectile's overlap response pairing with the wall's newly enabled overlap events; both the blocking-hit and overlap paths in `AGBProjectile` damage Neutral walls and stop, but I could not exercise it in-game.
+- `RespawnAt` intentionally does not clear spell cooldowns (the old `LoadFromSnapshot` path did); the decision did not mention cooldowns, so they now persist through death.
+- Fix 10b is aesthetic judgment; the result looks sane in screenshots but a person should glance at `2_past_gun.png` to confirm.

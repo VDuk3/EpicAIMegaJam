@@ -1,0 +1,13 @@
+ .../agents/070320-opencode-70cd5c/output.txt       |   591 +-
+ .../agents/070349-codex-e82670/output.txt          | 16594 ++++++++++++++++++-
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl |     5 +
+ ...aude-38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl |     1 +
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     |    83 +
+ Glyphbound/Content/Data/Game.json                  |     5 +-
+ Glyphbound/Content/Data/Items.json                 |     8 +-
+ .../Source/Glyphbound/AI/GBEnemyCharacter.cpp      |     3 +-
+ .../Source/Glyphbound/Combat/GBCombatLibrary.cpp   |    35 +-
+ .../Source/Glyphbound/Combat/GBCombatLibrary.h     |     3 +
+ .../Source/Glyphbound/Combat/GBProjectile.cpp      |    12 +-
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp |    14 +-
+ 12 files changed, 17325 insertions(+), 29 deletions(-)
