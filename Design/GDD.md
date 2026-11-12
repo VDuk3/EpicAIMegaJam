@@ -1,10 +1,11 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.5, 2026-11-12** — owner's vision plus four rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.6, 2026-11-12** — owner's vision plus five rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.6 (2026-11-12): art rule clarified for characters (style of the world they belong to); story premise; opening sequence with the first gun; starting spells; enchant only with a gun in hand; key changes (F quick-use, G interact, L1 enchant on gamepad); counter-style ammo refilled on era travel; automatic checkpoints; no sprint; one full-armor slot.
 - v0.5 (2026-11-12): sword is a third slot; magazines, reload, limited ammo dropped by enemies; health and mana regenerate, no stamina; state carries across eras; checkpoints; one skill point pool; controls filled in; opening sequence; armor from chests; difficulty = hard only for now.
 - v0.4 (2026-11-12): weapon skill tree contents; two held slots (one gun + one staff) and how to switch; no spells with a gun except the enchant; enchant key; air passives always on; ice shield QTE; staffs from chests; sword blade is pixel art with a medieval HUD; final boss mixes both styles.
 - v0.3 (2026-11-12): art rule follows the object; the player is always pixel art; 5-spell loadout and controls; staffs and basic magic attack; gun aim; enchant has a QTE, player-chosen element, not on the sword; QTE grading and mana; two UI styles (90s RPG vs. modern cyberpunk) for HUD and skill trees.
@@ -29,6 +30,7 @@ Working title: **TBD**.
 - **Everything medieval, wizards and magic is pixel art (2D).**
 - **Everything cyberpunk and futuristic is 3D.**
 - **The rule follows the object, not the era.** A 3D gun stays 3D in the past; a pixel-art fireball stays pixel art in the future.
+- **Characters take the style of the world they belong to.** An orc of the castle is a classic pixel-art fantasy orc (80s, 90s, early 2000s games). An orc of the future is a 3D, heavily armored sci-fi orc. They are different enemies, not the same orc in two styles.
 - **The player is a medieval mage, so the player is always pixel art, hands included.** In first person, the hands are always pixel art, even when they hold a 3D gun.
 - No exceptions.
 
@@ -39,15 +41,22 @@ Working title: **TBD**.
 - These interactions are few (short jam) but they exist and are part of level design.
 - **Nothing is lost when changing era.** Health, mana, ammo, inventory, spells and weapons all carry over. Mana exists and works in the future; guns work in the past.
 
-### Opening sequence
-1. The player starts in the **medieval castle** (past) with a **staff and spells**.
-2. Kills a **small group of orcs**.
-3. **Interacts with an object** → **short, simple cutscene #1**.
-4. Appears in the **future**.
-5. Fights **armed orcs**.
-6. **Short cutscene #2.**
-7. Rest of the game: **TBD**.
 - A third, separate map unlocks late: a **dimension between space and time** where the true final boss lives (see §11).
+
+### Story premise
+- The player is a **mage** who travels to the castle out of **curiosity**: he had heard it was a mysterious place.
+- On reaching the **seal** in the castle he is **trapped** and thrown into the future.
+- In the future he hears **a woman's voice asking for help**. That voice is his reason to fix the problem.
+- Cutscenes: **few and short**, each one written for its situation.
+
+### Opening sequence
+1. The player starts in the **medieval castle** (past) with a **staff and the starting spells** (§6).
+2. Kills a **small group of pixel-art orcs**.
+3. **Interacts with the seal** → **short cutscene #1** (trapped, sent forward in time).
+4. Appears in the **future**.
+5. Fights **3D armed orcs**. One of the first ones **drops the first gun**.
+6. The player **picks up the gun** → **short cutscene #2**. The player **cannot progress** without picking it up.
+7. Rest of the game: **TBD**.
 
 ## 5. Player progression
 - **No character levels / no XP leveling.**
@@ -73,11 +82,13 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 ### Spell loadout
 - The player has **5 spells equipped** at a time and can **equip and unequip** them freely.
 - **Air passives are always active**: they are not equipped and do not take a slot.
+- **Starting spells:** Fireball (very early tier), Lightning bolt (early tier), Ice wall. The other spells: see open questions.
 - **Spells can only be cast with the staff in hand.** With a gun in hand, the only spell available is the weapon enchant. To cast, the player switches to the staff mid-fight.
 - Keys: see §9.
 
 ### Weapon enchant (always equipped)
 - A spell that **cannot be unequipped**.
+- **Only usable with a gun in hand** (it enchants the gun).
 - Animation: the **left hand draws a magic glyph over the weapon held in the right hand**.
 - Effect: the weapon is **temporarily buffed with magic** of one element.
 - **Element:** chosen by the player when equipping the spell.
@@ -129,7 +140,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - The player carries **one gun and one staff.** Never two guns or two staffs.
 - Once obtained, the **elemental sword is a special third slot.**
 - Switch with the **mouse wheel or Alt**; on gamepad, with a **D-pad arrow** (which one: **TBD**).
-- Staff in hand: basic magic attack + the 5 spells + the enchant. Gun in hand: shoot + aim + reload + the enchant only.
+- Staff in hand: basic magic attack + the 5 spells. Gun in hand: shoot + aim + reload + the enchant.
 
 ### Staffs (medieval, pixel art)
 - With a staff in hand, **primary fire = basic magic attack**. The attack **depends on which staff** the player holds, so there is more than one staff.
@@ -140,12 +151,16 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - Pistol, shotgun, assault rifle.
 - With a gun in hand: **primary fire = shoot**, **secondary = aim**.
 - **Magazines and reload**, like any shooter.
-- **Limited ammo**, picked up from the floor where enemies drop it.
+- **Ammo works like classic tactical shooters:** each gun has a fixed number of spare magazines, and each magazine a fixed number of bullets.
+- **All ammo refills completely every time the player travels between eras.**
+- Between refills, ammo is **picked up from the floor** where enemies drop it.
+- Level design keeps ammo tight: never infinite, never starving.
 - **Electric grenade** (throwable).
 
 ### Armor
 - Found in **chests**, rarely.
-- Known effect: some armor changes the QTE time-slow amount (§7). Other stats, slots and how it is equipped: **TBD**.
+- **One armor slot = one full armor.** No separate helmet, arms or chest pieces.
+- Known effect: some armor changes the QTE time-slow amount (§7). Other stats: **TBD**.
 
 ### Chests
 - Contain **staffs**, and rarely **armor**. Other contents: **TBD**.
@@ -170,25 +185,27 @@ Weapon mechanics and spell mechanics combine. The weapon enchant (§6) is the fi
 |---|---|---|
 | Move | W A S D | Left stick |
 | Look | Mouse | Right stick |
-| Primary attack (staff: basic magic attack; gun: shoot) | Left click | **TBD** |
-| Aim (gun in hand) | Right click | **TBD** |
+| Primary attack (staff: basic magic attack; gun: shoot) | Left click | R2 / RT |
+| Aim (gun in hand) | Right click | L2 / LT |
 | Spell slot 1 (staff in hand) | Right click | L1 / LB |
 | Spell slots 2–5 (staff in hand) | 1, 2, 3, 4 | Hold L2 / LT + Cross, Circle, Square, Triangle (A, B, X, Y) |
 | Reload (gun) | R | Standard shooter layout |
-| Weapon enchant (any held weapon) | T (R is reload) | L2 + R2 together (LT + RT) — see open question 1 |
+| Weapon enchant (gun in hand only) | T (R is reload) | L1 / LB (free with a gun in hand) |
 | Switch staff ↔ gun (↔ sword) | Mouse wheel or Alt | D-pad arrow (**TBD** which) |
 | Jump | Space | Cross (A) |
 | Dash | Ctrl | Circle (B) |
-| Quick-use item (grenade / potion / injection share one slot) | **TBD** | **TBD** |
+| Quick-use item (grenade / potion / injection share one slot) | F | **TBD** |
 | Cycle the quick-use item | Shift | D-pad |
-| Interact (chests, portals, objects) | F | Triangle (Y) |
+| Interact (chests, portals, objects) | G | Triangle (Y) |
 | QTE part 1 | W A S D | Face buttons |
 | QTE part 2 | Mouse gesture | Right stick |
 | Inventory, skill trees, pause | **TBD** | **TBD** |
 
 Gun controls on gamepad follow the standard shooter layout.
 
-Right click means "spell slot 1" with the staff and "aim" with a gun; the two never clash because spells cannot be cast with a gun in hand.
+Right click / L1 change meaning with the held weapon and never clash: staff = spell slot 1; gun = aim (right click) and enchant (L1). L2 means "spell modifier" with the staff and "aim" with a gun.
+
+No sprint (the air speed passive covers movement speed).
 
 ## 10. Enemies and encounters
 - **Enemy waves (hordes).** Clearing a wave gives skill points.
@@ -199,7 +216,7 @@ Right click means "spell slot 1" with the staff and "aim" with a gun; the two ne
 - Enemies **drop ammo** on the floor.
 
 ### Death and difficulty
-- On death the player **returns to the last checkpoint**.
+- On death the player **returns to the last checkpoint**. Checkpoints are **automatic**.
 - **Difficulty: hard**, the only one for now. A separate normal mode is possible later (for example, the spell QTE only in hard); out of scope until the owner says otherwise.
 - No target length: we build as much as the time allows.
 
@@ -279,25 +296,24 @@ Not decisions, just the list of systems the design implies:
 Answers get folded into the sections above as they come.
 
 **Blocking (needed before the architect starts):**
-1. **Gamepad clash with a gun in hand:** standard layout is L2 = aim, R2 = shoot, but L2 + R2 together = enchant. Aiming and shooting at the same time would cast the enchant. Move the enchant (e.g. L1 with a gun in hand, since spell slot 1 is not available then), or another fix?
-2. **Quick-use key:** Shift and the D-pad cycle the item, but which key / button **uses** it (G? Q? R1?).
-3. **Starting spells:** which spells does the player start with, and how are the rest obtained (spell tree, chests, bosses)?
-4. **Armed orcs:** an orc is medieval (pixel art) and its gun is cyberpunk (3D). Pixel-art orc holding a 3D gun, like the player?
-5. **Where the first gun comes from:** found in the future after cutscene #1, dropped by the armed orcs, given in a cutscene?
+1. **The other 6 spells** (fire wall, flamethrower, rune trap, static ball, ice shield, ice floor): unlocked in the spell tree with skill points, found in chests, or given by bosses?
+2. **Air passives:** active from the very start, or unlocked during the game (e.g. double jump learned later)?
+3. **The other two guns** (the first one is dropped by an orc): where do the player get the second and third? And which gun is the first one (pistol?)
+4. **Remaining keys — proposal, confirm or change:**
+   - Use quick item on gamepad: **R1 / RB**.
+   - Switch weapon on gamepad: **D-pad up**; cycle quick item: **D-pad left/right**.
+   - Inventory: **Tab** / Options-View; skill trees: **K** (or a tab inside the inventory); pause: **Esc** / Start-Menu.
 
 **Can wait:**
-6. **Story:** who is the player, what is the object in the castle, why does the player travel? What do the two cutscenes show?
-7. **Checkpoints:** automatic (after each wave/zone) or a visible object the player activates?
-8. **Ammo:** one shared pool or per gun type?
-9. **Sprint:** is there one (no stamina), or does the speed passive cover it?
-10. **Armor:** one slot or several (helmet, chest…)? Which stats besides the QTE time slow?
-11. **Inventory, skill trees and pause:** which keys / buttons?
-12. **Staffs:** how many, and does each one's basic attack have an element?
-13. **Ice shield QTE:** which part scales duration and which scales block effectiveness?
-14. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
-15. Sub-bosses: how many, which era, what they are.
-16. Examples of era-gated zones and past→future unlocks.
-17. Other enemy types per era.
-18. The two quest items; how the final boss mixes both styles.
-19. QTE: time limit, sequence length per spell, does the camera slow too.
-20. Game and team name.
+5. **Story:** is the woman's voice the Valkyrie? If he frees her, why does he then have to fight her (corrupted, a test, a misunderstanding)?
+6. Does era travel also refill health and mana, or only ammo?
+7. **Staffs:** how many, and does each one's basic attack have an element?
+8. **Ice shield QTE:** which part scales duration and which scales block effectiveness?
+9. **Armor:** which stats besides the QTE time slow (defense, mana regen…)?
+10. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
+11. Sub-bosses: how many, which era, what they are.
+12. Examples of era-gated zones and past→future unlocks.
+13. Other enemy types per era.
+14. The two quest items; how the final boss mixes both styles.
+15. QTE: time limit, sequence length per spell, does the camera slow too.
+16. Game and team name.
