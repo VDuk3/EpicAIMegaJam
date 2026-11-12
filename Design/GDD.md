@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.19, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.20, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.20 (2026-11-12): owner: six new spell-tree perks (one per spell that had none); the flamethrower runs while its key is held, until the key is released or the mana runs out.
 - v0.19 (2026-11-12): owner: when ground spells overlap, the one placed last covers the others completely, and they never flicker.
 - v0.18 (2026-11-12): owner asked for a "+1 skill point" button on the skill tree screen, to test perks.
 - v0.17 (2026-11-12): owner, after playing: the pixel-art figure of the lightning rune and the ice floor must cover the whole area of the spell, lying on the ground, not a small sprite in the middle.
@@ -111,6 +112,16 @@ Steps 7–11 are **provisional** (owner, 2026-11-12).
 - **No character levels / no XP leveling.**
 - Progression is through **skill trees**: one for spells and one for weapons (see §13 for their look).
   - **Spell tree:** upgrades spells.
+  - New perks (owner, 2026-11-12), each **1 skill point per rank, 3 ranks**:
+
+    | Spell | Perk | Effect per rank |
+    |---|---|---|
+    | Fire wall | Lingering Flames | +15% wall duration |
+    | Flamethrower | Intense Heat | +12% damage |
+    | Lightning rune | Expanded Sigil | +10% blast radius |
+    | Static orb | Persistent Charge | +15% orb duration |
+    | Ice shield | Enduring Guard | +15% maximum shield duration (Glacier Wall stays the "toughness" perk) |
+    | Ice floor | Deep Freeze | +5 percentage points of slow, with a cap so enemies are never fully stopped |
   - **Weapon tree:** damage, fire rate, **recoil** (better aim), **damage by distance** (shotgun stronger up close, rifle stronger far away), **headshot damage**.
 - **One shared pool of skill points** for both trees.
 - **Perks can be reset** (owner, 2026-11-12, to test them): a "Reset skills" option on the skill tree screen removes every unlocked node and gives back all the points spent on them. Provisional details in section 18.
@@ -124,7 +135,7 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 
 | Element | 1 | 2 | 3 |
 |---|---|---|---|
-| **Fire** | Fireball (projectile; **always explodes with a shockwave**, on an enemy, on the world or at the end of its range) | Fire wall | Flamethrower (sustained DPS) |
+| **Fire** | Fireball (projectile; **always explodes with a shockwave**, on an enemy, on the world or at the end of its range) | Fire wall | Flamethrower (sustained DPS; **runs while the spell key is held**, until it is released or the mana runs out) |
 | **Lightning** | Lightning bolt (projectile) | Lightning rune trap on the ground; triggers when an enemy walks over it | Static-electricity ball: moves and damages every enemy around it |
 | **Ice** | Ice shield (**summoned by the spell, then raised by holding the Block key**, like the shield of a first-person RPG; it only protects while raised; cooldown and limits) | Ice wall | Ice floor: slows enemies, light crowd control |
 | **Air** (passives) | Double jump | Improved dash | Increased movement speed |
@@ -396,7 +407,8 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Dash:** available from the start (the air passive only improves it). It goes in the movement direction (forward when standing still), works in the air, gives no invulnerability, and does not refill jumps.
 - **Owning weapons:** decided by the owner for staffs (section 8): picked-up weapons go to the inventory and are equipped by hand. Provisional part: guns and the sword follow the same rule; each owned gun keeps its own ammo while stored.
 - **Reload:** the bullets left in the old magazine are lost (classic tactical style). A gun reloads by itself when its magazine runs dry. Ammo pickups give one spare magazine, up to the gun's maximum.
-- **Sustained spells (flamethrower):** after the QTE they run for their Duration, or until the same spell key is pressed again, the weapon is switched, or the player dies. Mana is paid once, at the start.
+- **Sustained spells (flamethrower), changed by the owner (2026-11-12):** after the QTE the flamethrower runs **while its spell key is held**, until the key is released or the mana runs out (also on weapon switch or death). No time limit. Provisional (architect): it pays a smaller cost at the start (10 mana, always spent, like every QTE spell) and then drains 15 mana per second; if the key was already released when the QTE ends, it still burns for a short minimum (0.75 s) so the cast is never wasted; the cooldown starts at the cast. All values in `Spells.json` (`ManaCost`, `ManaPerSecond`, `MinDuration`).
+- **New spell perks (owner's list, placement by the architect):** in the spell tree, each under its element's column (fire, lightning, ice), with no prerequisite so they can be tested right away. Deep Freeze: the ice floor slows by 50% at normal QTE power (the slow effect, `StatusEffects.json`), so +5 points per rank makes 55 / 60 / 65%; the cap is **80%** (also reached by a perfect QTE with 3 ranks). The cap is a general rule: any spell parameter can declare a `Cap` in `Spells.json`, applied after QTE scaling and perks.
 - **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.
 - **Modifier keys by weapon type:** besides one weapon (`Weapon.Pistol.Damage`) and all weapons (`Weapon.All.Damage`), a modifier can target a slot: `Weapon.Gun.*`, `Weapon.Staff.*`, `Weapon.Sword.*`. The enchant uses `Weapon.Gun.Damage`, so it never buffs the staff or the sword.
 - **Explosions and enemy melee need a clear line** to their target: no damage through walls or through the ice wall.
