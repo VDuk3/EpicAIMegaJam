@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.15, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.16, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.16 (2026-11-12): owner asked for a way to reset the perks from the skill tree screen, to test them better. All spent skill points come back.
 - v0.15 (2026-11-12): owner's second round of play-test notes. Jumps commit to their direction (no steering in the air; the second jump can pick a new direction and then commits too); the sword hits where the player aims, not the center of the target; sword hits and the staff's basic attack get the head / weak point bonus.
 - v0.14 (2026-11-12): owner's first play-test. Magic structures (ice wall) are 3D with pixel textures; the fireball always explodes with a shockwave; both jumps higher; picked-up staffs go to the inventory and are equipped by hand; the ice shield is summoned by the spell and raised with a Block key; enemies must path around obstacles; menus work with the mouse; falling out of the map kills; floating damage numbers.
 - v0.13 (2026-11-12): architect's day-1 technical decisions recorded in 0.1 (C++ only, no GAS, JSON data, code-built test arena, canvas HUD); new section 18 lists every provisional rule and number the architect had to pick. Code structure in `Design/ARCHITECTURE.md`.
@@ -108,6 +109,7 @@ Steps 7–11 are **provisional** (owner, 2026-11-12).
   - **Spell tree:** upgrades spells.
   - **Weapon tree:** damage, fire rate, **recoil** (better aim), **damage by distance** (shotgun stronger up close, rifle stronger far away), **headshot damage**.
 - **One shared pool of skill points** for both trees.
+- **Perks can be reset** (owner, 2026-11-12, to test them): a "Reset skills" option on the skill tree screen removes every unlocked node and gives back all the points spent on them. Provisional details in section 18.
 - **Skill points** are given at specific points, mainly for defeating enemies:
   - defeating each **sub-boss**;
   - defeating each **boss**;
@@ -401,6 +403,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Spell walls:** the fire wall does not block; it burns enemies that touch it. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
 - **QTE:** a wrong key consumes its step. A gesture is judged when the hand stops for a moment or the stroke is clearly complete. If both parts are fully missed the spell fizzles, and the mana is still spent and the cooldown still starts.
 - **New spells** go to the first free loadout slot.
+- **Skill reset (owner asked for it, details provisional):** a "Reset skills" button on the skill tree screen (K, and the Skills page of the inventory), also the R key (Y / Triangle on a gamepad) while that screen is open. Free, any time, no confirmation, refunds exactly the points that were spent (even if a node's cost changed in `Skills.json` since). Whether the final game keeps it free, limits it (for example only at portals) or keeps it only as a test option is open.
 - **Elemental sword:** the hilt and the gems are not consumed when forging, so the player re-forges from the inventory to switch element.
 - **Enemies:** once hit, an enemy chases the player from any distance. Enemies of the other era are frozen and hidden, not simulated.
 - **Encounters:** if the player dies during one, its living enemies are removed and it starts again from wave 1 on return. Progress flags are never rolled back.
