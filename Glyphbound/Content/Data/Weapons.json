@@ -78,6 +78,7 @@
 				"AimFOV": 70,
 				"AimMoveSpeedMult": 0.7,
 				"AimTime": 0.15,
+				"EnchantBuildUpMult": 1,
 				"FireBuildUp": 15,
 				"LightningBuildUp": 15,
 				"IceBuildUp": 15
@@ -115,6 +116,7 @@
 				"AimFOV": 75,
 				"AimMoveSpeedMult": 0.75,
 				"AimTime": 0.18,
+				"EnchantBuildUpMult": 1,
 				"FireBuildUp": 25,
 				"LightningBuildUp": 25,
 				"IceBuildUp": 25
@@ -152,6 +154,7 @@
 				"AimFOV": 60,
 				"AimMoveSpeedMult": 0.65,
 				"AimTime": 0.2,
+				"EnchantBuildUpMult": 1,
 				"FireBuildUp": 8,
 				"LightningBuildUp": 8,
 				"IceBuildUp": 8

@@ -138,4 +138,31 @@ bool FGBCombatMeleeAimPointTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatPrecisionRecoveryTest, "Glyphbound.Combat.PrecisionRecovery",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBCombatPrecisionRecoveryTest::RunTest(const FString& Parameters)
+{
+	// Cooldown = max(1, 7 - 1 * rank): 6 / 5 / 4 for ranks 1 / 2 / 3.
+	TestEqual(TEXT("Rank 1 cooldown is 6 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(1, 7.f, 1.f, 1.f), 6.f, 1.e-4f);
+	TestEqual(TEXT("Rank 2 cooldown is 5 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(2, 7.f, 1.f, 1.f), 5.f, 1.e-4f);
+	TestEqual(TEXT("Rank 3 cooldown is 4 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(3, 7.f, 1.f, 1.f), 4.f, 1.e-4f);
+	TestEqual(TEXT("Rank 0 is off"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(0, 7.f, 1.f, 1.f), 0.f);
+	TestEqual(TEXT("Negative rank is off"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(-2, 7.f, 1.f, 1.f), 0.f);
+	TestEqual(TEXT("Cooldown never goes below the minimum"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(9, 7.f, 1.f, 1.f), 1.f);
+
+	// A weak point killing blow by the player with the perk and the cooldown over heals.
+	TestTrue(TEXT("Weak point kill by the player after the cooldown"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 1, 6.f, 6.f));
+	TestTrue(TEXT("Weak point kill by the player past the cooldown"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 2, 12.f, 5.f));
+
+	// Each wrong condition blocks it on its own.
+	TestFalse(TEXT("Rank 0 never heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 0, 1000.f, 0.f));
+	TestFalse(TEXT("Body-shot kill never heals"), UGBCombatLibrary::ShouldPrecisionRecover(false, true, 3, 1000.f, 4.f));
+	TestFalse(TEXT("Another instigator never heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, false, 3, 1000.f, 4.f));
+	TestFalse(TEXT("Inside the cooldown no heal"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 1, 5.99f, 6.f));
+	TestTrue(TEXT("Exactly at the cooldown heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 3, 4.f, 4.f));
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

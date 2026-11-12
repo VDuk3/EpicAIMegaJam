@@ -353,3 +353,17 @@ FVector UGBCombatLibrary::ClosestBodyPointToAim(const FVector& AimOrigin, const 
 	FMath::SegmentDistToSegmentSafe(AimOrigin, AimEnd, BodyBottom, BodyTop, OutAimPoint, OutBodyPoint);
 	return OutBodyPoint;
 }
+
+float UGBCombatLibrary::ComputePrecisionRecoveryCooldown(int32 Rank, float Base, float PerRank, float MinCooldown)
+{
+	if (Rank <= 0)
+	{
+		return 0.f;
+	}
+	return FMath::Max(MinCooldown, Base - PerRank * static_cast<float>(Rank));
+}
+
+bool UGBCombatLibrary::ShouldPrecisionRecover(bool bKillingBlowWeakPoint, bool bInstigatorIsPlayer, int32 Rank, float TimeSinceLastHeal, float Cooldown)
+{
+	return bKillingBlowWeakPoint && bInstigatorIsPlayer && Rank > 0 && TimeSinceLastHeal >= Cooldown;
+}

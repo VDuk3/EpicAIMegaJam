@@ -361,9 +361,9 @@ namespace GBSmokeRun
 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
 			{
 				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
-				if (Data->GetSkillNodes().Num() != 18)
+				if (Data->GetSkillNodes().Num() != 22)
 				{
-					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 18 skill nodes, found %d"), Data->GetSkillNodes().Num());
+					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 22 skill nodes, found %d"), Data->GetSkillNodes().Num());
 				}
 				if (Data->GetSkillNodes().Num() > 0)
 				{
@@ -387,6 +387,131 @@ namespace GBSmokeRun
 			}
 		});
 		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+		Add(15.6f + S, TEXT("weapon perks: unlock the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			Skills->AddPoints(30);
+			auto UnlockRanks = [Skills](FName Node, int32 Ranks)
+			{
+				for (int32 i = 0; i < Ranks; ++i)
+				{
+					if (Skills->Unlock(Node) != EGBSkillUnlockResult::Ok)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks: could not unlock '%s' (rank %d)"), *Node.ToString(), Skills->GetRank(Node) + 1);
+					}
+				}
+			};
+			UnlockRanks(FName(TEXT("Weapon_Damage")), 1);
+			UnlockRanks(FName(TEXT("Weapon_FireRate")), 1);
+			UnlockRanks(FName(TEXT("Weapon_ReloadSpeed")), 3);
+			UnlockRanks(FName(TEXT("Weapon_Headshot")), 1);
+			UnlockRanks(FName(TEXT("Weapon_PrecisionRecovery")), 1);
+			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2);
+			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reload=%d precision=%d conduit=%d deadeye=%d points=%d"),
+				Skills->GetRank(FName(TEXT("Weapon_ReloadSpeed"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
+				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
+		});
+		Add(15.8f + S, TEXT("precision recovery: weak point kill heals, second kill is on cooldown"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			UGBAttributeComponent* Attributes = Player->GetAttributes();
+			const float MaxHealth = Attributes->GetMaxHealth();
+			Attributes->SetHealthAndMana(0.5f * MaxHealth, Attributes->GetMana());
+			auto KillWeakEnemy = [World, Player](bool bHeadshot) -> AGBEnemyCharacter*
+			{
+				const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+				AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+				if (!Enemy)
+				{
+					return nullptr;
+				}
+				FGBDamageInfo Info;
+				Info.Amount = 100000.f;
+				Info.Instigator = Player;
+				Info.bHeadshot = bHeadshot;
+				UGBCombatLibrary::DealDamage(Enemy, Info);
+				return Enemy;
+			};
+			const float Before = Attributes->GetHealth();
+			AGBEnemyCharacter* First = KillWeakEnemy(true);
+			const float Healed = Attributes->GetHealth() - Before;
+			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery healed=%.1f"), Healed);
+			if (!First || !First->IsDead())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery: the test orc did not die"));
+			}
+			else if (FMath::Abs(Healed - 0.03f * MaxHealth) > 0.5f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery FAILED: healed %.1f, expected %.1f (3%% of max health)"), Healed, 0.03f * MaxHealth);
+			}
+			const float BeforeSecond = Attributes->GetHealth();
+			AGBEnemyCharacter* Second = KillWeakEnemy(true);
+			const float HealedSecond = Attributes->GetHealth() - BeforeSecond;
+			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery cooldown healed=%.1f"), HealedSecond);
+			if (!Second || !Second->IsDead())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown: the second test orc did not die"));
+			}
+			else if (FMath::Abs(HealedSecond) > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown FAILED: healed %.1f right after the first kill"), HealedSecond);
+			}
+		});
+		Add(16.0f + S, TEXT("rapid reload: pistol reload time"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBHeldItem* Pistol = Player->GetEquipment()->GetItemInSlot(EGBHeldSlot::Gun);
+			if (!Pistol || Pistol->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload: the player has no pistol in the gun slot"));
+				return;
+			}
+			const float ReloadTime = Pistol->GetStat(GBStat::ReloadTime, 0.f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE rapid reload pistol=%.2f"), ReloadTime);
+			float Base = 0.f;
+			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+			{
+				if (const FGBWeaponDefinition* Def = Data->FindWeapon(Pistol->GetWeaponId()))
+				{
+					Base = Def->Stats.FindRef(GBStat::ReloadTime);
+				}
+			}
+			if (!FMath::IsNearlyEqual(ReloadTime, 0.7f * Base, 0.01f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.7 x base (%.2f s)"), ReloadTime, 0.7f * Base);
+			}
+		});
+		Add(16.4f + S, TEXT("screenshot: weapon tree with the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::SkillTrees);
+			}
+			Shot(TEXT("12_weapon_tree"));
+		});
+		Add(16.6f + S, TEXT("weapon perks: reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::None);
+			}
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			const int32 Refunded = Skills->ResetAll();
+			Skills->AddPoints(-30); // take back the test points added for this block
+			const int32 Points = Skills->GetPoints();
+			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reset refunded=%d points=%d"), Refunded, Points);
+			if (Points != SmokeSkillPointsBefore)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: points=%d (expected %d)"), Points, SmokeSkillPointsBefore);
+			}
+			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_FireRate")), FName(TEXT("Weapon_ReloadSpeed")),
+				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
+				FName(TEXT("Weapon_PistolHeadshot")) })
+			{
+				if (Skills->GetRank(Node) != 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: '%s' still at rank %d"), *Node.ToString(), Skills->GetRank(Node));
+				}
+			}
+		});
 		Add(17.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
@@ -429,6 +554,72 @@ namespace GBSmokeRun
 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
 			Shot(TEXT("8_respawn"));
+		});
+		Add(26.6f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			// The weapon enchant has a 15 s world-time cooldown and the smoke clock runs ahead of the
+			// world clock, so this runs after the respawn: the earlier cast is long over by now.
+			SetQTEEnabled(false);
+			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			const int32 PointsBefore = Skills->GetPoints();
+			Skills->AddPoints(8);
+			Equipment->SwitchTo(EGBHeldSlot::Gun);
+			UGBSpellbookComponent* Book = Player->GetSpellbook();
+			const FName EnchantId = Book->GetEnchantSpell();
+			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit diag holdingGun=%d busy=%d cd=%.1f mana=%.0f knows=%d cost=%.0f cancast=%d"),
+				Equipment->IsHoldingGun() ? 1 : 0, Book->IsBusy() ? 1 : 0, Book->GetCooldownRemaining(EnchantId),
+				Player->GetAttributes()->GetMana(), Book->KnowsSpell(EnchantId) ? 1 : 0, Book->GetManaCost(EnchantId),
+				static_cast<int32>(Book->CanCast(EnchantId)));
+			AGBHeldItem* Gun = nullptr;
+			float Before = 0.f;
+			if (!Book->TryCastEnchant())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
+			}
+			else if ((Gun = Equipment->GetActiveItem()) == nullptr || Gun->GetSlot() != EGBHeldSlot::Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: no gun in hand after SwitchTo"));
+				Gun = nullptr;
+			}
+			else
+			{
+				Before = Gun->MakeDamageInfo().BuildUp;
+			}
+			if (Gun && Before > 0.f)
+			{
+				Skills->Unlock(FName(TEXT("Weapon_Damage")));
+				Skills->Unlock(FName(TEXT("Weapon_Headshot")));
+				for (int32 i = 0; i < 3; ++i)
+				{
+					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
+				}
+				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
+				}
+				else
+				{
+					const float After = Gun->MakeDamageInfo().BuildUp;
+					UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit buildup=%.2f base=%.2f"), After, Before);
+					if (!FMath::IsNearlyEqual(After, 1.3f * Before, 0.01f))
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit FAILED: %.2f, expected 1.3 x base (%.2f)"), After, 1.3f * Before);
+					}
+				}
+			}
+			else if (Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: enchanted build-up is 0, the enchant is not active"));
+			}
+			Equipment->SwitchTo(EGBHeldSlot::Staff);
+			Skills->ResetAll();
+			Skills->AddPoints(-8); // take back the test points added for this step
+			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit reset FAILED: points=%d (expected %d)"), Skills->GetPoints(), PointsBefore);
+			}
+			SetQTEEnabled(true);
 		});
 		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{

@@ -101,4 +101,17 @@ public:
 	 * closest to the aim segment AimOrigin..AimOrigin + AimDirection * AimLength (FMath::SegmentDistToSegmentSafe).
 	 */
 	static FVector ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop);
+
+	/**
+	 * Precision Recovery cooldown (GDD 18, pure, tested): Max(MinCooldown, Base - PerRank * Rank).
+	 * Rank <= 0 returns 0 (the perk is off; callers check the rank first).
+	 */
+	static float ComputePrecisionRecoveryCooldown(int32 Rank, float Base, float PerRank, float MinCooldown);
+
+	/**
+	 * Precision Recovery decision (GDD 18, pure, tested): true when the killing blow was a weak point hit
+	 * by the player, the perk is owned, and its internal cooldown is over (TimeSinceLastHeal >= Cooldown,
+	 * so healing exactly at the cooldown is allowed).
+	 */
+	static bool ShouldPrecisionRecover(bool bKillingBlowWeakPoint, bool bInstigatorIsPlayer, int32 Rank, float TimeSinceLastHeal, float Cooldown);
 };

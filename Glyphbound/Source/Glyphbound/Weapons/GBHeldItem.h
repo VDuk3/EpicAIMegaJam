@@ -71,6 +71,13 @@ public:
 	/** Weapon stat with modifiers applied. */
 	float GetStat(FName Stat, float DefaultValue = 0.f) const;
 
+	/**
+	 * Builds the item's damage for one hit: Damage stat, element, instigator, SourceId = WeaponId,
+	 * OnHitEffect from Strings. When the hit's element comes from the weapon enchant, BuildUp is
+	 * multiplied by EnchantBuildUpMult (Arcane Conduit); the sword's own element is never an enchant.
+	 */
+	FGBDamageInfo MakeDamageInfo() const;
+
 	// ---- Input, routed by the player character ----
 	virtual void StartPrimary() {}
 	virtual void StopPrimary() {}
@@ -116,9 +123,6 @@ public:
 protected:
 	AGBPlayerCharacter* GetPlayerOwner() const { return PlayerOwner.Get(); }
 	UGBStatsComponent* GetOwnerStats() const;
-
-	/** Builds the item's damage for one hit: Damage stat, element, instigator, SourceId = WeaponId, OnHitEffect from Strings. */
-	FGBDamageInfo MakeDamageInfo() const;
 
 	/** True only for items the weapon enchant applies to (guns; never the sword, GDD 6). */
 	virtual bool AcceptsEnchant() const { return false; }

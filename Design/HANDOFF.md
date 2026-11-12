@@ -70,7 +70,7 @@
 powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
 powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
 powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 35          # whole suite (35 tests)
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 36          # whole suite (36 tests)
 powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
 powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
@@ -82,7 +82,8 @@ Codex (read-only review):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent codex -Model 'gpt-6.1-sol (medium)' -PromptFile Prompts\X.md -Purpose '...' -Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`
 A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
 
-## Right now (end of the eighth block, 2026-11-12)
+## Right now (end of the ninth block, 2026-11-12)
+- **Ninth block (GDD v0.24, owner's perk list):** weapon tree reorganized (Heavy Rounds on top, handling branch left, precision branch right, three weapon specializations on the bottom row) with four new perks: Rapid Reload (`Weapon.All.ReloadTime`), Precision Recovery (player stat `PrecisionRecovery` = rank; `AGBPlayerCharacter::HandlePrecisionRecovery` on `UGBCombatLibrary::OnDamageDealt`, heals 3% of max health on a weak-point killing blow, cooldown 6/5/4 s, `PrecisionRecovery*` in `Game.json`), Arcane Conduit (gun stat `EnchantBuildUpMult`, applied in `AGBHeldItem::MakeDamageInfo` only when the element comes from the enchant), Deadeye (`Weapon.Pistol.HeadshotMult`). Steady Grip now also lowers yaw recoil. Skill links that skip rows are drawn as elbows. 36 tests. Muse Spark batch `Prompts/feedback9_weapon_tree.md`, read by the architect. Not played yet.
 - **Eighth block (GDD v0.23, owner's note):** guns spread more while the player moves (`UGBCombatLibrary::ComputeMovementSpread`, `AGBGun::GetCurrentSpread`, used by the shots and the crosshair; stats `MoveSpread` / `AimMoveSpread` in `Weapons.json`, scaled by horizontal speed over the current walk speed). Small change made by the architect directly. 35 tests. Package 10. Not played yet.
 - **Seventh block (GDD v0.22, owner's spec `Prompts/feedback8_elemental_spec_owner.md`):** elemental build-up on every enemy (three bars, Ignite / Shock / Frost, per-enemy resistances and reactions, spell and weapon build-up, one count per event, weak-point bonus, `MultiplyMin` slows). The old per-hit Burn / Shock slow / Chill were removed (owner's answer). Debug: `gb.ShowElemental 1`, `gb.BuildUp <Element> <Amount>`. 34 tests; smoke fills each bar on a training dummy. Not played yet. Not reviewed by Codex (one Muse batch, read by the architect; one fix: spell projectiles no longer flag head hits as headshots).
 - Everything is committed on `main` (last commits: perks and flamethrower, beam interrupt, then the seventh package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
@@ -112,6 +113,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
+- Build 11 (weapon tree): the tree matches the owner's sketch and reads cleanly in both UI styles; Rapid Reload 3 makes the pistol reload in about 0.84 s with the bar following; Precision Recovery: a head-shot kill at half health shows "+N health" (3%), a second one inside the cooldown does not, a body-shot kill or a head hit that does not kill never heals, a shotgun kill heals once; Arcane Conduit 3 with an enchanted gun fills the elemental bars about 30% faster (`gb.ShowElemental 1`); Deadeye raises pistol head damage.
 - Build 10 (spread while moving): the crosshair opens while walking and closes when standing still, hip and aimed; shooting a far target while walking misses more than standing; the shotgun's pattern widens; aimed walking still spreads a little.
 - Build 8 (elemental): with `gb.ShowElemental 1`: fire spells fill the fire bar and Ignite burns 4 s then 3 s immune; a lightning bolt through a line of orcs gives each one build-up; a full lightning bar stuns an orc (stops, attack cancelled) but only interrupts the brute; the ice floor alone fills slowly and decays, an ice-enchanted gun finishes it; frozen orcs stop, the brute only slows; Frost on the ice floor does not slow more than the strongest of the two; a shotgun shot counts once; head shots fill faster; the flamethrower and the ice floor (Deep Freeze) feel the same as before.
 - Build 7: the six new perks (each at rank 3), the flamethrower held / released / out of mana, a strong hit interrupting it (shake, message, aim unchanged), a small hit not interrupting it, with the ice shield raised the blocked part not counting.

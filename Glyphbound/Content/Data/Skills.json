@@ -24,16 +24,28 @@
 			"Row": 1
 		},
 		{
+			"Id": "Weapon_ReloadSpeed",
+			"Tree": "Weapon",
+			"DisplayName": "Rapid Reload",
+			"Description": "10% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
 			"Id": "Weapon_Recoil",
 			"Tree": "Weapon",
 			"DisplayName": "Steady Grip",
 			"Description": "20% less recoil per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
-			"Requires": [ "Weapon_Damage" ],
-			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 } ],
-			"Column": 2,
-			"Row": 1
+			"Requires": [ "Weapon_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.All.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 0,
+			"Row": 3
 		},
 		{
 			"Id": "Weapon_Headshot",
@@ -42,10 +54,46 @@
 			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
 			"Cost": 2,
 			"MaxRank": 3,
-			"Requires": [ "Weapon_Recoil" ],
+			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
 			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_PrecisionRecovery",
+			"Tree": "Weapon",
+			"DisplayName": "Precision Recovery",
+			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Headshot" ],
+			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
+			"Column": 2,
 			"Row": 2
+		},
+		{
+			"Id": "Weapon_EnchantBuildUp",
+			"Tree": "Weapon",
+			"DisplayName": "Arcane Conduit",
+			"Description": "+10% elemental build-up from enchanted weapons per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Headshot" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 2,
+			"Row": 3
+		},
+		{
+			"Id": "Weapon_PistolHeadshot",
+			"Tree": "Weapon",
+			"DisplayName": "Deadeye",
+			"Description": "Pistol: +0.25x head / weak point damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 0,
+			"Row": 4
 		},
 		{
 			"Id": "Weapon_ShotgunClose",
@@ -54,10 +102,10 @@
 			"Description": "Shotgun: +0.2x damage up close per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
-			"Requires": [ "Weapon_FireRate" ],
+			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
-			"Column": 0,
-			"Row": 2
+			"Column": 1,
+			"Row": 4
 		},
 		{
 			"Id": "Weapon_RifleFar",
@@ -68,8 +116,8 @@
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.15 } ],
-			"Column": 1,
-			"Row": 2
+			"Column": 2,
+			"Row": 4
 		},
 		{
 			"Id": "Spell_FireballDamage",

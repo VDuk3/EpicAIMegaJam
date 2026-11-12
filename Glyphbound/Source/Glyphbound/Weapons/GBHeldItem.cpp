@@ -160,6 +160,7 @@ FGBDamageInfo AGBHeldItem::MakeDamageInfo() const
 	}
 
 	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" modifier.
+	bool bElementFromEnchant = false;
 	EGBElement EnchantElement = EGBElement::Physical;
 	FName EnchantEffect = NAME_None;
 	if (AcceptsEnchant() && GetActiveEnchant(EnchantElement, EnchantEffect))
@@ -169,12 +170,17 @@ FGBDamageInfo AGBHeldItem::MakeDamageInfo() const
 		{
 			Info.OnHitEffect = EnchantEffect;
 		}
+		bElementFromEnchant = true;
 	}
 
 	const int32 ElementIndex = GBElemental::ElementIndex(Info.Element);
 	if (ElementIndex >= 0)
 	{
 		Info.BuildUp = GetStat(GBElemental::WeaponBuildUpKey(ElementIndex), 0.f);
+		if (bElementFromEnchant)
+		{
+			Info.BuildUp *= GetStat(GBStat::EnchantBuildUpMult, 1.f);
+		}
 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 		const float DefaultMult = Data ? Data->GetGameValue(GBStat::WeakPointBuildUpMult, 1.f) : 1.f;
 		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);

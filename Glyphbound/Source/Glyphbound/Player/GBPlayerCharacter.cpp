@@ -2,12 +2,14 @@
 
 #include "Player/GBInputSet.h"
 #include "Player/GBPlayerController.h"
+#include "Combat/GBCombatLibrary.h"
 #include "Core/GBStatNames.h"
 #include "Core/GBGameMode.h"
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBStatsComponent.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
+#include "UI/GBHUD.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
 #include "Spells/GBSpellbookComponent.h"
@@ -145,6 +147,7 @@ void AGBPlayerCharacter::BeginPlay()
 
 	Stats->OnStatsChanged.AddUObject(this, &AGBPlayerCharacter::ApplyMovementStats);
 	Attributes->OnDeath.AddUObject(this, &AGBPlayerCharacter::HandleDeath);
+	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBPlayerCharacter::HandlePrecisionRecovery);
 	if (Data)
 	{
 		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &AGBPlayerCharacter::HandleDataReloaded);
@@ -164,6 +167,8 @@ void AGBPlayerCharacter::BeginPlay()
 
 void AGBPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
+	DamageDealtHandle.Reset();
 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
 	{
 		Data->OnDataReloaded.Remove(DataReloadedHandle);
@@ -616,6 +621,53 @@ void AGBPlayerCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 	else
 	{
 		UE_LOG(LogGB, Warning, TEXT("GBPlayerCharacter: died without an AGBGameMode, nothing will respawn the player."));
+	}
+}
+
+void AGBPlayerCharacter::HandlePrecisionRecovery(AActor* Target, const FGBDamageInfo& Info, float DamageDealt)
+{
+	(void)DamageDealt;
+	if (!IsValid(Target) || Target == this || !Info.bHeadshot || Info.Instigator.Get() != this)
+	{
+		return;
+	}
+	if (!Stats || !Attributes || IsDead())
+	{
+		return;
+	}
+	// Only a blow that killed counts: a head hit that does not kill never heals.
+	const UGBAttributeComponent* TargetAttributes = UGBAttributeComponent::Find(Target);
+	if (!TargetAttributes || !TargetAttributes->IsDead())
+	{
+		return;
+	}
+	const int32 Rank = FMath::Max(0, FMath::RoundToInt(Stats->GetStat(GBStat::PrecisionRecovery, 0.f)));
+	if (Rank <= 0)
+	{
+		return;
+	}
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const float HealFraction = Data ? Data->GetGameValue(GBRecovery::HealFraction, 0.03f) : 0.03f;
+	const float Cooldown = UGBCombatLibrary::ComputePrecisionRecoveryCooldown(Rank,
+		Data ? Data->GetGameValue(GBRecovery::CooldownBase, 7.f) : 7.f,
+		Data ? Data->GetGameValue(GBRecovery::CooldownPerRank, 1.f) : 1.f,
+		Data ? Data->GetGameValue(GBRecovery::CooldownMin, 1.f) : 1.f);
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+	if (!UGBCombatLibrary::ShouldPrecisionRecover(true, true, Rank, static_cast<float>(Now - LastPrecisionRecoveryTime), Cooldown))
+	{
+		return;
+	}
+	LastPrecisionRecoveryTime = Now;
+	const float Before = Attributes->GetHealth();
+	Attributes->Heal(HealFraction * Attributes->GetMaxHealth());
+	const float Healed = Attributes->GetHealth() - Before;
+	if (Healed >= 0.5f)
+	{
+		if (AGBHUD* Hud = AGBHUD::Get(this))
+		{
+			Hud->ShowMessage(FString::Printf(TEXT("+%d health"), FMath::RoundToInt(Healed)));
+		}
 	}
 }
 

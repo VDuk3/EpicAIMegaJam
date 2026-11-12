@@ -1441,7 +1441,20 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 					const FVector2D A = BoxPos(*ReqNode) + FVector2D(BoxW * 0.5f, BoxH);
 					const FVector2D B = BoxPos(Node) + FVector2D(BoxW * 0.5f, 0.f);
 					const bool bOwned = SkillTree->GetRank(Req) > 0;
-					DrawLine(A.X, A.Y, B.X, B.Y, bOwned ? Style.Accent : MenuGrey, 2.f * S);
+					const FLinearColor LinkColor = bOwned ? Style.Accent : MenuGrey;
+					if (Node.Row - ReqNode->Row > 1)
+					{
+						// Skips rows: go down the parent's column, then across in the gap just above the child,
+						// so the link never runs diagonally through the (translucent) boxes in between.
+						const float ElbowY = B.Y - (CellH - BoxH) * 0.5f;
+						DrawLine(A.X, A.Y, A.X, ElbowY, LinkColor, 2.f * S);
+						DrawLine(A.X, ElbowY, B.X, ElbowY, LinkColor, 2.f * S);
+						DrawLine(B.X, ElbowY, B.X, B.Y, LinkColor, 2.f * S);
+					}
+					else
+					{
+						DrawLine(A.X, A.Y, B.X, B.Y, LinkColor, 2.f * S);
+					}
 				}
 			}
 		}

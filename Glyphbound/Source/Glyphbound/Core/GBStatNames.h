@@ -33,6 +33,7 @@ namespace GBStat
 	inline const FName CapsuleRadius(TEXT("CapsuleRadius"));
 	inline const FName CapsuleHalfHeight(TEXT("CapsuleHalfHeight"));
 	inline const FName EyeHeight(TEXT("EyeHeight"));
+	inline const FName PrecisionRecovery(TEXT("PrecisionRecovery")); // owned rank of the weapon perk (skill modifier only, base 0)
 
 	// ---- Enemy stats (Enemies.json "Stats") ----
 	inline const FName AttackDamage(TEXT("AttackDamage"));
@@ -96,6 +97,7 @@ namespace GBStat
 	// ---- Elemental build-up (GDD 6): spell param / item stat, weapon stat ----
 	inline const FName BuildUp(TEXT("BuildUp"));                   // raw build-up per hit or per tick
 	inline const FName WeakPointBuildUpMult(TEXT("WeakPointBuildUpMult")); // weapon stat; multiplies BuildUp on weak point hits
+	inline const FName EnchantBuildUpMult(TEXT("EnchantBuildUpMult"));     // weapon stat; multiplies BuildUp when the hit's element comes from the weapon enchant
 
 	/** "Weapon.<WeaponId>.<Stat>" */
 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
@@ -117,6 +119,15 @@ namespace GBStat
 	inline FName SpellKey(FName SpellId, FName Param) { return FName(*FString::Printf(TEXT("Spell.%s.%s"), *SpellId.ToString(), *Param.ToString())); }
 	/** "Spell.All.<Param>" */
 	inline FName SpellAllKey(FName Param) { return FName(*FString::Printf(TEXT("Spell.All.%s"), *Param.ToString())); }
+}
+
+/** Game.json "Values" keys of Precision Recovery (GDD 18). */
+namespace GBRecovery
+{
+	inline const FName HealFraction(TEXT("PrecisionRecoveryHealFraction"));     // of max health per killing weak point hit
+	inline const FName CooldownBase(TEXT("PrecisionRecoveryCooldownBase"));      // seconds at rank 0
+	inline const FName CooldownPerRank(TEXT("PrecisionRecoveryCooldownPerRank")); // seconds less per rank
+	inline const FName CooldownMin(TEXT("PrecisionRecoveryCooldownMin"));        // lowest possible cooldown
 }
 
 /** Keys of the free-form "Strings" maps in the data files. */

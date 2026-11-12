@@ -58,7 +58,11 @@
 		"ElementalDefault.IceStatusImmunity": 5,
 		"ElementalDefault.IgniteDamageMult": 1,
 		"ElementalDefault.ShockDischargeDamage": 10,
-		"ElementalDefault.FrostSlow": 0.6
+		"ElementalDefault.FrostSlow": 0.6,
+		"PrecisionRecoveryHealFraction": 0.03,
+		"PrecisionRecoveryCooldownBase": 7,
+		"PrecisionRecoveryCooldownPerRank": 1,
+		"PrecisionRecoveryCooldownMin": 1
 	},
 	"Strings": {
 		"ElementalDefault.FireStatusReaction": "Ignite",

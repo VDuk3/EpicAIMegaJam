@@ -11,7 +11,7 @@ class UStaticMeshComponent;
 /**
  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
  * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
- * AimTime, and ProjectileSpeed / ProjectileRadius / ProjectileGravity for FireMode "Projectile".
+ * AimTime, EnchantBuildUpMult, and ProjectileSpeed / ProjectileRadius / ProjectileGravity for FireMode "Projectile".
  * Reload: consumes one spare magazine, fills the magazine; the rounds left in the old one are lost
  * (provisional, classic tactical style). Switching weapon cancels it.
  */

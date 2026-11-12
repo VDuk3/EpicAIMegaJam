@@ -145,6 +145,12 @@ protected:
 	/** Reads the movement stats into the character movement component. Bound to OnStatsChanged. */
 	void ApplyMovementStats();
 	void HandleDeath(const FGBDamageInfo& KillingBlow);
+	/**
+	 * Precision Recovery (GDD 18): bound to UGBCombatLibrary::OnDamageDealt. When anything dies from a
+	 * weak point killing blow by this player and the perk's cooldown is over, heals the perk's fraction
+	 * of max health. Once per death by construction: only a blow that really removed health fires the event.
+	 */
+	void HandlePrecisionRecovery(AActor* Target, const FGBDamageInfo& Info, float DamageDealt);
 	void UpdateFocusedInteractable();
 	void HandleDataReloaded();
 
@@ -224,6 +230,9 @@ protected:
 	uint64 LastMoveInputFrame = 0;
 	/** Secondary (right click / L2) is held: on gamepad with the staff, L2 + face button casts slots 2-5. */
 	bool bSecondaryHeld = false;
+	/** World time of the last Precision Recovery heal (a stamp, not a timer: no reset on death). */
+	double LastPrecisionRecoveryTime = -1000000.0;
+	FDelegateHandle DamageDealtHandle;
 	FDelegateHandle DataReloadedHandle;
 	/** Recoil still to be recovered (degrees) and its recovery speed. */
 	FRotator PendingRecoil = FRotator::ZeroRotator;
