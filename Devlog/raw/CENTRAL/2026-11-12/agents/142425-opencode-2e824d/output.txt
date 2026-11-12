@@ -1,0 +1,1659 @@
+[0m
+> build · muse-spark-1.3-contributor
+Fixing your jumps, weak-point bonus, and sword aim — first reading the project rules.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+[0m→ [0mRead Design/GDD.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Player.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp 
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBSword.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBStaff.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+[0m✱ [0mGrep "bHeadshot" [90min Glyphbound/Source/Glyphbound · 6 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests 
+[0m✱ [0mGrep "OnJumped|JumpCurrentCount|BrakingDecelerationFalling|FallingLateralFriction|AirControl" [90min Glyphbound/Source/Glyphbound · 7 matches[0m
+[0m✱ [0mGrep "IsHeadshotLocation" [90min Glyphbound/Source/Glyphbound/AI · 2 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp [90m[offset=770][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBTestArena.cpp 
+> build · muse-spark-1.3-contributor
+I've mapped the current jump, combat and weapon code — now digging into engine specifics and the remaining details.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBWeaponsTests.cpp 
+[0m✱ [0mGrep "HeadshotMult" [90min Glyphbound/Content/Data · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m$ [0mgrep -rn "CheckJumpInput" "C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Character.cpp" | head -20; echo ---; grep -n "JumpCurrentCount" "C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Character.cpp" | head -30
+grep : The term 'grep' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ grep -rn "CheckJumpInput" "C:\Program Files\Epic Games\UE_5.9\Engine\ ...
++ ~~~~
+    + CategoryInfo          : ObjectNotFound: (grep:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+---
+grep : The term 'grep' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:137
++ ... time\Engine\Private\Character.cpp" | head -20; echo ---; grep -n "Jum ...
++                                                              ~~~~
+    + CategoryInfo          : ObjectNotFound: (grep:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path "C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Character.cpp" -Pattern "CheckJumpInput|JumpCurrentCount" | Select-Object -First 40 | Format-Table LineNumber,Line -AutoSize -Wrap
+LineNumber Line                                                                                                        
+---------- ----                                                                                                        
+        51 		TEXT("Should CheckJumpInput call the legacy DoJump or the new DoJump. Default is true while we are still  
+           deprecating the old DoJump"),                                                                               
+        91     JumpCurrentCount = 0;                                                                                   
+        92 	JumpCurrentCountPreJump = 0;                                                                               
+       330 			if (JumpCurrentCount == 0 && CharacterMovement->IsFalling() && !CanJumpWhileFalling())                   
+       332 				bJumpIsAllowed = JumpCurrentCount + 1 < JumpMaxCount;                                                   
+       336 				bJumpIsAllowed = JumpCurrentCount < JumpMaxCount;                                                       
+       346 				((JumpCurrentCount < JumpMaxCount) || (bWasJumping && JumpCurrentCount == JumpMaxCount));               
+       377 		JumpCurrentCount = 0;                                                                                     
+       378 		JumpCurrentCountPreJump = 0;                                                                              
+      1386     JumpCurrentCount = 0;                                                                                   
+      1387 	JumpCurrentCountPreJump = 0;                                                                               
+      1582 void ACharacter::CheckJumpInput(float DeltaTime)                                                            
+      1584 	JumpCurrentCountPreJump = JumpCurrentCount;                                                                
+      1592 			const bool bFirstJump = JumpCurrentCount == 0;                                                           
+      1595 				JumpCurrentCount++;                                                                                     
+      1604 					JumpCurrentCount++;                                                                                    
+      2427 	Output.JumpCurrentCountPreJump = JumpCurrentCountPreJump;                                                  
+      2428 	Output.JumpCurrentCount = JumpCurrentCount;                                                                
+      2438 	JumpCurrentCountPreJump = Output.JumpCurrentCountPreJump;                                                  
+      2439 	JumpCurrentCount = Output.JumpCurrentCount;
+> build · muse-spark-1.3-contributor
+[0m$ [0msed -n '1570,1660p' "C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Character.cpp"
+sed : The term 'sed' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ sed -n '1570,1660p' "C:\Program Files\Epic Games\UE_5.9\Engine\Source ...
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (sed:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Get-Content 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Character.cpp' | Select-Object -Skip 1569 -First 100"
+void ACharacter::StopJumping()
+{
+	bPressedJump = false;
+	ResetJumpState();
+}
+System.Management.Automation.RemoteException
+bool ACharacter::CanJumpWhileFalling() const
+{
+	return false;
+}
+System.Management.Automation.RemoteException
+void ACharacter::CheckJumpInput(float DeltaTime)
+{
+	JumpCurrentCountPreJump = JumpCurrentCount;
+System.Management.Automation.RemoteException
+	if (CharacterMovement)
+	{
+		if (bPressedJump)
+		{
+			// If this is the first jump and we're already falling, normally we deny that first jump from happening (by skipping right to the second jump, if available)
+			// One exception is if our subclass overrides this to allow first jump to still happen while falling under circumstances they care about
+			const bool bFirstJump = JumpCurrentCount == 0;
+			if (bFirstJump && CharacterMovement->IsFalling() && !CanJumpWhileFalling())
+			{
+				JumpCurrentCount++;
+			}
+System.Management.Automation.RemoteException
+			const bool bDidJump = CanJump() && (CharacterCVars::UseLegacyDoJump)? CharacterMovement->DoJump(bClientUpdating) : CharacterMovement->DoJump(bClientUpdating, DeltaTime);
+			if (bDidJump)
+			{
+				// Transition from not (actively) jumping to jumping.
+				if (!bWasJumping)
+				{
+					JumpCurrentCount++;
+					JumpForceTimeRemaining = GetJumpMaxHoldTime();
+					OnJumped();
+				}
+			}
+System.Management.Automation.RemoteException
+			bWasJumping = bDidJump;
+		}
+	}
+}
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+void ACharacter::ClearJumpInput(float DeltaTime)
+{
+	if (bPressedJump)
+	{
+		JumpKeyHoldTime += DeltaTime;
+System.Management.Automation.RemoteException
+		// Don't disable bPressedJump right away if it's still held.
+		// Don't modify JumpForceTimeRemaining because a frame of update may be remaining.
+		if (JumpKeyHoldTime >= GetJumpMaxHoldTime())
+		{
+			bPressedJump = false;
+		}
+	}
+	else
+	{
+		JumpForceTimeRemaining = 0.0f;
+		bWasJumping = false;
+	}
+}
+System.Management.Automation.RemoteException
+float ACharacter::GetJumpMaxHoldTime() const
+{
+	return JumpMaxHoldTime;
+}
+System.Management.Automation.RemoteException
+//
+// Static variables for networking.
+//
+static uint8 SavedMovementMode;
+System.Management.Automation.RemoteException
+void ACharacter::PreNetReceive()
+{
+	SavedMovementMode = GetReplicatedMovementMode();
+	PreNetReceivedGravityDirection = GetReplicatedGravityDirection();
+	Super::PreNetReceive();
+}
+System.Management.Automation.RemoteException
+void ACharacter::PostNetReceive()
+{
+	if (GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		CharacterMovement->bNetworkGravityDirectionChanged = !PreNetReceivedGravityDirection.Equals(GetReplicatedGravityDirection());
+		CharacterMovement->bNetworkMovementModeChanged |= ((SavedMovementMode != GetReplicatedMovementMode()) || (CharacterMovement->PackNetworkMovementMode() != GetReplicatedMovementMode()));
+		CharacterMovement->bNetworkUpdateReceived |= CharacterMovement->bNetworkMovementModeChanged || CharacterMovement->bJustTeleported || CharacterMovement->bNetworkGravityDirectionChanged;
+	}
+System.Management.Automation.RemoteException
+	Super::PostNetReceive();
+}
+System.Management.Automation.RemoteException
+void ACharacter::OnRep_ReplicatedBasedMovement()
+{	
+	// Following the same pattern in AActor::OnRep_ReplicatedMovement() just in case...
+	if (!IsReplicatingMovement())
+	{
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Classes\GameFramework\Character.h' -Pattern 'OnJumped|JumpCurrentCount|CanJumpWhileFalling' | Select-Object -First 30 | Format-Table LineNumber,Line -AutoSize -Wrap"
+LineNumber Line                                                                                                   
+---------- ----                                                                                                   
+       749     int32 JumpCurrentCount;                                                                            
+       752 	 * Represents the current number of jumps performed before CheckJumpInput modifies JumpCurrentCount.  
+       753 	 * This is set in CheckJumpInput and is used in SetMoveFor and PrepMoveFor instead of JumpCurrentCount
+       754 	 * since CheckJumpInput can modify JumpCurrentCount.                                                  
+       759 	int32 JumpCurrentCountPreJump;                                                                        
+       916 	ENGINE_API void OnJumped();                                                                           
+       917 	ENGINE_API virtual void OnJumped_Implementation();                                                    
+      1101 	ENGINE_API virtual bool CanJumpWhileFalling() const;
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Get-Content 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Classes\GameFramework\Character.h' | Select-Object -Skip 700 -First 230"
+/** CharacterMovement MovementMode (and custom mode) replicated for simulated proxies. Use CharacterMovementComponent::UnpackNetworkMovementMode() to translate it. */
+	UPROPERTY(Replicated)
+	uint8 ReplicatedMovementMode;
+System.Management.Automation.RemoteException
+	/** Sets CharacterMovement MovementMode (and custom mode) replicated for simulated proxies. Use CharacterMovementComponent::UnpackNetworkMovementMode() to translate it. This function sets the compressed value of ReplicatedMovementMode.*/
+	ENGINE_API void SetReplicatedMovementMode(const uint8 InReplicatedMovementMode);
+System.Management.Automation.RemoteException
+public:
+	/** 
+	 * Jump key Held Time.
+	 * This is the time that the player has held the jump key, in seconds.
+	 */
+	UPROPERTY(Transient, BlueprintReadOnly, VisibleInstanceOnly, Category=Character)
+	float JumpKeyHoldTime;
+System.Management.Automation.RemoteException
+	/** Amount of jump force time remaining, if JumpMaxHoldTime > 0. */
+	UPROPERTY(Transient, BlueprintReadOnly, VisibleInstanceOnly, Category=Character)
+	float JumpForceTimeRemaining;
+System.Management.Automation.RemoteException
+	/** Track last time a jump force started for a proxy. */
+	UPROPERTY(Transient, BlueprintReadOnly, VisibleInstanceOnly, Category=Character)
+	float ProxyJumpForceStartedTime;
+System.Management.Automation.RemoteException
+	/** 
+	 * The max time the jump key can be held.
+	 * Note that if StopJumping() is not called before the max jump hold time is reached,
+	 * then the character will carry on receiving vertical velocity. Therefore it is usually 
+	 * best to call StopJumping() when jump input has ceased (such as a button up event).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category=Character, Meta=(ClampMin=0.0, UIMin=0.0))
+	float JumpMaxHoldTime;
+System.Management.Automation.RemoteException
+    /**
+     * The max number of jumps the character can perform.
+     * Note that if JumpMaxHoldTime is non zero and StopJumping is not called, the player
+     * may be able to perform and unlimited number of jumps. Therefore it is usually
+     * best to call StopJumping() when jump input has ceased (such as a button up event).
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category=Character)
+    int32 JumpMaxCount;
+System.Management.Automation.RemoteException
+    /**
+     * Tracks the current number of jumps performed.
+     * This is incremented in CheckJumpInput, used in CanJump_Implementation, and reset in OnMovementModeChanged.
+     * When providing overrides for these methods, it's recommended to either manually
+     * increment / reset this value, or call the Super:: method.
+     */
+    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category=Character)
+    int32 JumpCurrentCount;
+System.Management.Automation.RemoteException
+	/**
+	 * Represents the current number of jumps performed before CheckJumpInput modifies JumpCurrentCount.
+	 * This is set in CheckJumpInput and is used in SetMoveFor and PrepMoveFor instead of JumpCurrentCount
+	 * since CheckJumpInput can modify JumpCurrentCount.
+	 * When providing overrides for these methods, it's recommended to either manually
+	 * set this value, or call the Super:: method.
+	*/
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Character)
+	int32 JumpCurrentCountPreJump;
+System.Management.Automation.RemoteException
+	/** Incremented every time there is an Actor overlap event (start or stop) on this actor. */
+	uint32 NumActorOverlapEventsCounter;
+System.Management.Automation.RemoteException
+	//~ Begin UObject Interface.
+	ENGINE_API virtual void PostLoad() override;
+	//~ End UObject Interface
+System.Management.Automation.RemoteException
+	//~ Begin AActor Interface.
+	ENGINE_API virtual void BeginPlay() override;
+	ENGINE_API virtual void ClearCrossLevelReferences() override;
+	ENGINE_API virtual void PreNetReceive() override;
+	ENGINE_API virtual void PostNetReceive() override;
+	ENGINE_API virtual void GatherCurrentMovement() override;
+	ENGINE_API virtual void OnRep_ReplicatedMovement() override;
+	ENGINE_API virtual void PostNetReceiveLocationAndRotation() override;
+	ENGINE_API virtual void GetSimpleCollisionCylinder(float& CollisionRadius, float& CollisionHalfHeight) const override;
+	ENGINE_API virtual UActorComponent* FindComponentByClass(const TSubclassOf<UActorComponent> ComponentClass) const override;
+	ENGINE_API virtual void TornOff() override;
+	ENGINE_API virtual void NotifyActorBeginOverlap(AActor* OtherActor);
+	ENGINE_API virtual void NotifyActorEndOverlap(AActor* OtherActor);
+	//~ End AActor Interface
+System.Management.Automation.RemoteException
+	template<class T>
+	T* FindComponentByClass() const
+	{
+		return AActor::FindComponentByClass<T>();
+	}
+System.Management.Automation.RemoteException
+	//~ Begin INavAgentInterface Interface
+	ENGINE_API virtual FVector GetNavAgentLocation() const override;
+	//~ End INavAgentInterface Interface
+System.Management.Automation.RemoteException
+	//~ Begin APawn Interface.
+	ENGINE_API virtual void PostInitializeComponents() override;
+	ENGINE_API virtual UPawnMovementComponent* GetMovementComponent() const override;
+	
+	UE_DEPRECATED_OVERRIDE(5.8, "GetMovementBase is deprecated. Use GetMovementBaseObject or GetMovementBaseInterfaceData instead.")
+	virtual UPrimitiveComponent* GetMovementBase() const override final { return Cast<UPrimitiveComponent>(GetMovementBaseObject()); }
+	
+	virtual UObject* GetMovementBaseObject() const override final { return BasedMovement.MovementBaseInterfaceData.GetMovementBaseObject(); }
+	ENGINE_API virtual const FMovementBaseInterfaceData* GetMovementBaseInterfaceData() const override final;
+	ENGINE_API virtual FMovementBaseInterfaceData* GetMovementBaseInterfaceData_Mutable() override final;
+	
+	ENGINE_API virtual float GetDefaultHalfHeight() const override;
+	ENGINE_API virtual void TurnOff() override;
+	ENGINE_API virtual void Restart() override;
+	ENGINE_API virtual void PawnClientRestart() override;
+	ENGINE_API virtual void PossessedBy(AController* NewController) override;
+	ENGINE_API virtual void UnPossessed() override;
+	ENGINE_API virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	ENGINE_API virtual void DisplayDebug(class UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos) override;
+	ENGINE_API virtual void RecalculateBaseEyeHeight() override;
+	ENGINE_API virtual void UpdateNavigationRelevance() override;
+	//~ End APawn Interface
+System.Management.Automation.RemoteException
+	/** Apply momentum caused by damage. */
+	ENGINE_API virtual void ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser);
+System.Management.Automation.RemoteException
+	/** 
+	 * Make the character jump on the next update.	 
+	 * If you want your character to jump according to the time that the jump key is held,
+	 * then you can set JumpMaxHoldTime to some non-zero value. Make sure in this case to
+	 * call StopJumping() when you want the jump's z-velocity to stop being applied (such 
+	 * as on a button up event), otherwise the character will carry on receiving the 
+	 * velocity until JumpKeyHoldTime reaches JumpMaxHoldTime.
+	 */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	ENGINE_API virtual void Jump();
+System.Management.Automation.RemoteException
+	/** 
+	 * Stop the character from jumping on the next update. 
+	 * Call this from an input event (such as a button 'up' event) to cease applying
+	 * jump Z-velocity. If this is not called, then jump z-velocity will be applied
+	 * until JumpMaxHoldTime is reached.
+	 */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	ENGINE_API virtual void StopJumping();
+System.Management.Automation.RemoteException
+	/**
+	 * Check if the character can jump in the current state.
+	 *
+	 * The default implementation may be overridden or extended by implementing the custom CanJump event in Blueprints. 
+	 * 
+	 * @Return Whether the character can jump in the current state. 
+	 */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	ENGINE_API bool CanJump() const;
+System.Management.Automation.RemoteException
+	/** Indicates that this Character is currently under the force of a jump (if JumpMaxHoldTime is non-zero). IsJumpProvidingForce() handles this as well. This function returns bProxyIsJumpForceApplied */
+	inline bool GetProxyIsJumpForceApplied() const { return bProxyIsJumpForceApplied; }
+	/** Set to indicate that this Character is currently under the force of a jump (if JumpMaxHoldTime is non-zero). IsJumpProvidingForce() handles this as well. This function sets bProxyIsJumpForceApplied*/
+	ENGINE_API void SetProxyIsJumpForceApplied(const bool bInProxyIsJumpForceApplied);
+System.Management.Automation.RemoteException
+	/** Set by character movement to specify that this Character is currently crouched. This function returns bIsCrouched.*/
+	ENGINE_API bool IsCrouched() const;
+	/** Specifies whether this Character is currently crouched or not. This function sets bIsCrouched and marks property as dirty.*/
+	ENGINE_API void SetIsCrouched(const bool bInIsCrouched);
+System.Management.Automation.RemoteException
+protected:
+	/**
+	 * Customizable event to check if the character can jump in the current state.
+	 * Default implementation returns true if the character is on the ground and not crouching,
+	 * has a valid CharacterMovementComponent and CanEverJump() returns true.
+	 * Default implementation also allows for 'hold to jump higher' functionality: 
+	 * As well as returning true when on the ground, it also returns true when GetMaxJumpTime is more
+	 * than zero and IsJumping returns true.
+	 * 
+	 *
+	 * @Return Whether the character can jump in the current state. 
+	 */
+	UFUNCTION(BlueprintNativeEvent, Category=Character, meta=(DisplayName="CanJump"))
+	ENGINE_API bool CanJumpInternal() const;
+	ENGINE_API virtual bool CanJumpInternal_Implementation() const;
+	ENGINE_API bool JumpIsAllowedInternal() const;
+System.Management.Automation.RemoteException
+public:
+System.Management.Automation.RemoteException
+	/** Marks character as not trying to jump */
+	ENGINE_API virtual void ResetJumpState();
+System.Management.Automation.RemoteException
+	/**
+	 * True if jump is actively providing a force, such as when the jump key is held and the time it has been held is less than JumpMaxHoldTime.
+	 * @see CharacterMovement->IsFalling
+	 */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	ENGINE_API virtual bool IsJumpProvidingForce() const;
+System.Management.Automation.RemoteException
+	/** Play Animation Montage on the character mesh. Returns the length of the animation montage in seconds, or 0.f if failed to play. **/
+	UFUNCTION(BlueprintCallable, Category=Animation)
+	ENGINE_API virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None);
+System.Management.Automation.RemoteException
+	/** Stop Animation Montage. If nullptr, it will stop what's currently active. The Blend Out Time is taken from the montage asset that is being stopped. **/
+	UFUNCTION(BlueprintCallable, Category=Animation)
+	ENGINE_API virtual void StopAnimMontage(class UAnimMontage* AnimMontage = nullptr);
+System.Management.Automation.RemoteException
+	/** Return current playing Montage **/
+	UFUNCTION(BlueprintCallable, Category=Animation)
+	ENGINE_API class UAnimMontage* GetCurrentMontage() const;
+System.Management.Automation.RemoteException
+	/**
+	 * Set a pending launch velocity on the Character. This velocity will be processed on the next CharacterMovementComponent tick,
+	 * and will set it to the "falling" state. Triggers the OnLaunched event.
+	 * @PARAM LaunchVelocity is the velocity to impart to the Character
+	 * @PARAM bXYOverride if true replace the XY part of the Character's velocity instead of adding to it.
+	 * @PARAM bZOverride if true replace the Z component of the Character's velocity instead of adding to it.
+	 */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	ENGINE_API virtual void LaunchCharacter(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);
+System.Management.Automation.RemoteException
+	/** Let blueprint know that we were launched */
+	UFUNCTION(BlueprintImplementableEvent)
+	ENGINE_API void OnLaunched(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);
+System.Management.Automation.RemoteException
+	/** Event fired when the character has just started jumping */
+	UFUNCTION(BlueprintNativeEvent, Category=Character)
+	ENGINE_API void OnJumped();
+	ENGINE_API virtual void OnJumped_Implementation();
+System.Management.Automation.RemoteException
+	/** Called when the character's movement enters falling */
+	virtual void Falling() {}
+System.Management.Automation.RemoteException
+	/** Called when character's jump reaches Apex. Needs CharacterMovement->bNotifyApex = true */
+	ENGINE_API virtual void NotifyJumpApex();
+System.Management.Automation.RemoteException
+	/** Broadcast when Character's jump reaches its apex. Needs CharacterMovement->bNotifyApex = true */
+	UPROPERTY(BlueprintAssignable, Category=Character)
+	FCharacterReachedApexSignature OnReachedJumpApex;
+System.Management.Automation.RemoteException
+	/**
+	 * Called upon landing when falling, to perform actions based on the Hit result. Triggers the OnLanded event.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\CharacterMovementComponent.cpp' -Pattern 'BrakingDecelerationFalling|FallingLateralFriction' | Select-Object -First 20 | Format-Table LineNumber,Line -AutoSize -Wrap"
+Select-String : Cannot find path 'C:\Program Files\Epic 
+Games\UE_5.9\Engine\Source\Runtime\Engine\Private\CharacterMovementComponent.cpp' because it does not exist.
+At line:1 char:1
++ Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Program File...ntComponent.cpp:String) [Select-String], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SelectStringCommand
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Get-ChildItem 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine' -Recurse -Filter 'CharacterMovementComponent.*' | Select-Object FullName"
+FullName                                                                                                          
+--------                                                                                                          
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Classes\GameFramework\CharacterMovementComponent.h
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Components\CharacterMovementComponent.cpp
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Private\Components\CharacterMovementComponent.cpp' -Pattern 'BrakingDecelerationFalling\s*=|FallingLateralFriction\s*=' | Select-Object -First 20 | Format-Table LineNumber,Line -AutoSize -Wrap; Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Classes\GameFramework\CharacterMovementComponent.h' -Pattern 'BrakingDecelerationFalling|FallingLateralFriction' | Select-Object -First 20 | Format-Table LineNumber,Line -AutoSize -Wrap"
+LineNumber Line                                                                
+---------- ----                                                                
+       739 	FallingLateralFriction = 0.f;                                      
+       744 	BrakingDecelerationFalling = 0.f;                                  
+     13693 	AsyncInput.BrakingDecelerationFalling = BrakingDecelerationFalling;
+     13712 	AsyncInput.FallingLateralFriction = FallingLateralFriction;        
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+LineNumber Line                              
+---------- ----                              
+       339 	float BrakingDecelerationFalling;
+       382 	float FallingLateralFriction;
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\Math\UnrealMathUtility.h' -Pattern 'SegmentDistToSegment' | Select-Object -First 10 | Format-Table LineNumber,Line -AutoSize -Wrap"
+LineNumber Line                                                                                                        
+---------- ----                                                                                                        
+      2033 	 * If either segment may have a length of 0, use SegmentDistToSegmentSafe instance.                        
+      2040 	static CORE_API void SegmentDistToSegment(FVector A1, FVector B1, FVector A2, FVector B2, FVector& OutP1,  
+           FVector& OutP2);                                                                                            
+      2054 	static CORE_API void SegmentDistToSegmentSafe(UE::Math::TVector<T> A1, UE::Math::TVector<T> B1,            
+           UE::Math::TVector<T> A2, UE::Math::TVector<T> B2, UE::Math::TVector<T>& OutP1, UE::Math::TVector<T>& OutP2);
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Get-Content 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\Math\UnrealMathUtility.h' | Select-Object -Skip 2025 -First 40"
+* @return	square of the closest distance from Point to segment defined by (StartPoint, EndPoint).
+	 */
+	[[nodiscard]] static CORE_API float PointDistToSegmentSquared(const FVector &Point, const FVector &StartPoint, const FVector &EndPoint);
+System.Management.Automation.RemoteException
+	/** 
+	 * Find closest points between 2 segments.
+	 *
+	 * If either segment may have a length of 0, use SegmentDistToSegmentSafe instance.
+	 *
+	 * @param	(A1, B1)	defines the first segment.
+	 * @param	(A2, B2)	defines the second segment.
+	 * @param	OutP1		Closest point on segment 1 to segment 2.
+	 * @param	OutP2		Closest point on segment 2 to segment 1.
+	 */
+	static CORE_API void SegmentDistToSegment(FVector A1, FVector B1, FVector A2, FVector B2, FVector& OutP1, FVector& OutP2);
+System.Management.Automation.RemoteException
+	/** 
+	 * Find closest points between 2 segments.
+	 *
+	 * This is the safe version, and will check both segments' lengths.
+	 * Use this if either (or both) of the segments lengths may be 0.
+	 *
+	 * @param	(A1, B1)	defines the first segment.
+	 * @param	(A2, B2)	defines the second segment.
+	 * @param	OutP1		Closest point on segment 1 to segment 2.
+	 * @param	OutP2		Closest point on segment 2 to segment 1.
+	 */
+	template<typename T>
+	static CORE_API void SegmentDistToSegmentSafe(UE::Math::TVector<T> A1, UE::Math::TVector<T> B1, UE::Math::TVector<T> A2, UE::Math::TVector<T> B2, UE::Math::TVector<T>& OutP1, UE::Math::TVector<T>& OutP2);
+System.Management.Automation.RemoteException
+	/**
+	 * returns the time (t) of the intersection of the passed segment and a plane (could be <0 or >1)
+	 * @param StartPoint - start point of segment
+	 * @param EndPoint   - end point of segment
+	 * @param Plane		- plane to intersect with
+	 * @return time(T) of intersection
+	 */
+	[[nodiscard]] static CORE_API float GetTForSegmentPlaneIntersect(const FVector& StartPoint, const FVector& EndPoint, const FPlane& Plane);
+System.Management.Automation.RemoteException
+	/**
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json 
+[0m$ [0mpowershell -NoProfile -Command "Get-ChildItem C:\GameJam\Tools\Jam | Select-Object Name; Get-Content C:\GameJam\Tools\Jam\Test-Jam.ps1 | Select-Object -First 60"
+Name                      
+----                      
+Backup-Content.ps1        
+Build-Jam.ps1             
+fix_sprite_palette_case.js
+Make-Materials.ps1        
+make_materials.py         
+Measure-EditorBoot.ps1    
+Package-Jam.ps1           
+Setup-IncomingShare.ps1   
+Smoke-Jam.ps1             
+Start-EditorMcp.ps1       
+Stop-EditorMcp.ps1        
+Test-Jam.ps1              
+Test-UnrealMcp.ps1        
+trim_plugins.js           
+<#
+Test-Jam.ps1 - Runs the pure-logic automation tests headless and decides pass/fail from the report.
+Rules (Devlog/PREJAM_PREP.md, "Lessons from our previous project"):
+  - anchored filters: start with ^ and end with a dot; join several with + (one Editor boot);
+  - every run writes to its own new folder; the verdict comes from the report, not only the exit code;
+  - a run with fewer tests than -MinTests is a failure (guards against a typo in the filter);
+  - one build or test run at a time per machine; the Editor must be closed.
+System.Management.Automation.RemoteException
+Usage:
+  powershell -File Tools/Jam/Test-Jam.ps1                              # the whole suite: ^Glyphbound.
+  powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'   # only what was touched
+  powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.+^Glyphbound.Spells.'
+Exit code: 0 = every selected test passed and at least MinTests ran.
+#>
+param(
+    [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
+    [string]$Filter = '^Glyphbound.',
+    [int]$MinTests = 1,
+    [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
+    [int]$TimeoutSeconds = 600
+)
+$Project = (Resolve-Path $Project).Path
+$projDir = Split-Path $Project -Parent
+$stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
+$runDir = Join-Path $projDir "Saved\TestRuns\$stamp"
+[void][IO.Directory]::CreateDirectory($runDir)
+$log = Join-Path $runDir 'editor.log'
+$exe = Join-Path $EngineDir 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$argList = @(
+    "`"$Project`"",
+    "-ExecCmds=`"Automation RunTests $Filter; Quit`"",
+    '-TestExit="Automation Test Queue Empty"',
+    "-ReportExportPath=`"$runDir`"",
+    "-abslog=`"$log`"",
+    '-unattended', '-nopause', '-nosplash', '-NullRHI', '-nosound', '-nocrashreports'
+)
+$sw = [Diagnostics.Stopwatch]::StartNew()
+$p = Start-Process -FilePath $exe -ArgumentList $argList -PassThru -WindowStyle Hidden
+if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
+    Write-Host "TIMEOUT after $TimeoutSeconds s. The Editor process (PID $($p.Id)) is still running; log: $log"
+    exit 3
+}
+$sw.Stop()
+$index = Join-Path $runDir 'index.json'
+if (-not (Test-Path $index)) {
+    Write-Host "FAIL: no report was written (exit $($p.ExitCode)). Did the module load? Log: $log"
+    Select-String -Path $log -Pattern 'Error:|error:|No automation tests matched' -ErrorAction SilentlyContinue | Select-Object -First 15 | ForEach-Object { $_.Line }
+    exit 2
+}
+$report = Get-Content $index -Raw -Encoding UTF8 | ConvertFrom-Json
+$tests = @($report.tests)
+$failed = @($tests | Where-Object { $_.state -ne 'Success' })
+$testSeconds = 0.0
+foreach ($t in $tests) { $testSeconds += [double]$t.duration }
+foreach ($t in $failed) {
+    Write-Host "FAILED: $($t.fullTestPath) [$($t.state)]"
+    foreach ($e in @($t.entries)) { if ($e.event.type -eq 'Error') { Write-Host "   $($e.event.message)" } }
+}
+$ensures = @(Select-String -Path $log -Pattern 'Ensure condition failed' -ErrorAction SilentlyContinue).Count
+Write-Host ("Tests: {0} run, {1} failed, test time {2:N2} s, wall time {3:N0} s, ensures in log: {4}" -f $tests.Count, $failed.Count, $testSeconds, $sw.Elapsed.TotalSeconds, $ensures)
+> build · muse-spark-1.3-contributor
+I've got the full picture — now implementing the committed jumps, weak-point bonus and aimed sword hits.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp 
+[0m$ [0mpowershell -NoProfile -Command "Get-Content C:\GameJam\Tools\Jam\Build-Jam.ps1 | Select-Object -First 80; echo '---SMOKE---'; Get-Content C:\GameJam\Tools\Jam\Smoke-Jam.ps1 | Select-Object -First 100"
+<#
+Build-Jam.ps1 - Compiles the Glyphbound C++ module (Editor target by default) and prints only what matters.
+One build at a time per machine: do not run this while another build, a package or a test run is going.
+The Editor must be closed (a full build cannot link while the Editor holds the DLLs).
+System.Management.Automation.RemoteException
+Usage:
+  powershell -File Tools/Jam/Build-Jam.ps1                 # GlyphboundEditor Win64 Development
+  powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target
+System.Management.Automation.RemoteException
+Output: full log in Glyphbound/Saved/Logs/build_last.log; the console shows errors (first 60) and the result line.
+Exit code: 0 = Result: Succeeded.
+#>
+param(
+    [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
+    [string]$Target = 'GlyphboundEditor',
+    [string]$Config = 'Development',
+    [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
+    [int]$MaxErrors = 60
+)
+$Project = (Resolve-Path $Project).Path
+$projDir = Split-Path $Project -Parent
+$logDir = Join-Path $projDir 'Saved\Logs'
+[void][IO.Directory]::CreateDirectory($logDir)
+$log = Join-Path $logDir 'build_last.log'
+$bat = Join-Path $EngineDir 'Engine\Build\BatchFiles\Build.bat'
+$sw = [Diagnostics.Stopwatch]::StartNew()
+& cmd.exe /d /c "`"$bat`" $Target Win64 $Config -project=`"$Project`" -waitmutex > `"$log`" 2>&1"
+$code = $LASTEXITCODE
+$sw.Stop()
+$errors = Select-String -Path $log -Pattern '(: error |: fatal error |error LNK|Error: |ERROR: |UHT.*[Ee]rror)' | Select-Object -First $MaxErrors
+if ($errors) { $errors | ForEach-Object { $_.Line.Trim() } }
+$result = Select-String -Path $log -Pattern '^Result: ' | Select-Object -Last 1
+if ($result) { Write-Host $result.Line } else { Write-Host "No 'Result:' line found (exit $code). See $log" }
+Write-Host ("Build time: {0:N0} s  (exit {1})  log: {2}" -f $sw.Elapsed.TotalSeconds, $code, $log)
+exit $code
+---SMOKE---
+<#
+Smoke-Jam.ps1 - Runs the game by itself (console command "gb.Smoke": a scripted run of the main systems that
+takes screenshots and quits) and reports what happened. It is NOT Play In Editor and nobody plays: it only
+tells us whether the game starts, the systems run without crashing, and what the screen looks like.
+A person still has to play the build.
+System.Management.Automation.RemoteException
+Usage:
+  powershell -File Tools/Jam/Smoke-Jam.ps1              # uncooked game with the Editor binaries (-game)
+  powershell -File Tools/Jam/Smoke-Jam.ps1 -Packaged    # the packaged build in Glyphbound/Build/Windows
+Output: the SMOKE lines, errors and warnings of our log category, and the list of screenshots.
+Exit code: 0 = the script reached "SMOKE DONE" with no error lines and no crash.
+#>
+param(
+    [switch]$Packaged,
+    [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
+    [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
+    [int]$TimeoutSeconds = 180
+)
+$Project = (Resolve-Path $Project).Path
+$projDir = Split-Path $Project -Parent
+$stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
+$common = @('-windowed', '-ResX=1280', '-ResY=720', '-unattended', '-nosplash', '-nosound', '-ExecCmds="gb.Smoke"')
+if ($Packaged) {
+    $exe = Join-Path $projDir 'Build\Windows\Glyphbound.exe'
+    if (-not (Test-Path $exe)) { Write-Host "No packaged build at $exe"; exit 2 }
+    $shotDir = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Screenshots\Smoke'
+    $log = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Logs\Glyphbound.log'
+    $argList = $common
+} else {
+    $exe = Join-Path $EngineDir 'Engine\Binaries\Win64\UnrealEditor.exe'
+    $shotDir = Join-Path $projDir 'Saved\Screenshots\Smoke'
+    $log = Join-Path $projDir "Saved\Logs\smoke_$stamp.log"
+    $argList = @("`"$Project`"", '-game', "-abslog=`"$log`"") + $common
+}
+if (Test-Path $shotDir) { Remove-Item (Join-Path $shotDir '*.png') -Force -ErrorAction SilentlyContinue }
+$sw = [Diagnostics.Stopwatch]::StartNew()
+$p = Start-Process -FilePath $exe -ArgumentList $argList -PassThru
+$timedOut = -not $p.WaitForExit($TimeoutSeconds * 1000)
+if ($timedOut) {
+    # This is the game process, not the Editor: stopping it is safe.
+    Write-Host "TIMEOUT after $TimeoutSeconds s: stopping the game process."
+    Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+    Start-Sleep 2
+}
+$sw.Stop()
+if (-not (Test-Path $log)) { Write-Host "No log at $log (exit $($p.ExitCode))"; exit 2 }
+$lines = Get-Content $log -Encoding UTF8
+$smoke = @($lines | Where-Object { $_ -match 'SMOKE' })
+$bad = @($lines | Where-Object { $_ -match 'LogGB: (Error|Warning)|Fatal error|Unhandled Exception|Assertion failed|Ensure condition failed|appError' })
+$otherErrors = @($lines | Where-Object { $_ -match ': Error: ' -and $_ -notmatch 'LogGB' })
+$smoke | ForEach-Object { ($_ -replace '^\[[^\]]*\]\[[^\]]*\]', '').Trim() }
+Write-Host '---- problems in our code (LogGB warnings/errors, asserts, crashes) ----'
+if ($bad.Count -eq 0) { Write-Host '(none)' } else { $bad | Select-Object -First 40 | ForEach-Object { ($_ -replace '^\[[^\]]*\]\[[^\]]*\]', '').Trim() } }
+Write-Host "---- other engine errors: $($otherErrors.Count) ----"
+$otherErrors | Select-Object -First 10 | ForEach-Object { ($_ -replace '^\[[^\]]*\]\[[^\]]*\]', '').Trim() }
+$shots = @(Get-ChildItem $shotDir -Filter *.png -ErrorAction SilentlyContinue)
+Write-Host "---- screenshots: $($shots.Count) in $shotDir ----"
+$shots | ForEach-Object { Write-Host $_.Name }
+$done = @($smoke | Where-Object { $_ -match 'SMOKE DONE' }).Count -gt 0
+$crashed = @($bad | Where-Object { $_ -match 'Fatal error|Unhandled Exception|Assertion failed|appError' }).Count -gt 0
+$errorCount = @($bad | Where-Object { $_ -match 'LogGB: Error' }).Count
+Write-Host ("Smoke: done={0} crashed={1} LogGB errors={2} timedOut={3} wall={4:N0} s  log: {5}" -f $done, $crashed, $errorCount, $timedOut, $sw.Elapsed.TotalSeconds, $log)
+if ($done -and -not $crashed -and $errorCount -eq 0 -and -not $timedOut) { exit 0 } else { exit 1 }
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -19,9 +19,11 @@
+ 	inline const FName ManaRegenDelay(TEXT("ManaRegenDelay"));      // seconds after spending mana
+ 	inline const FName MoveSpeed(TEXT("MoveSpeed"));                // cm/s
+ 	inline const FName JumpVelocity(TEXT("JumpVelocity"));          // cm/s
+ 	inline const FName MaxJumps(TEXT("MaxJumps"));                  // 1 = single jump, 2 = double jump
+-	inline const FName AirControl(TEXT("AirControl"));
++	inline const FName AirControl(TEXT("AirControl"));              // 0 = jumps commit to their direction (GDD 18)
++	inline const FName JumpTakeoffMinSpeedMult(TEXT("JumpTakeoffMinSpeedMult")); // min takeoff speed as a fraction of MoveSpeed (ground jump)
++	inline const FName AirJumpMinSpeedMult(TEXT("AirJumpMinSpeedMult"));         // min takeoff speed as a fraction of MoveSpeed (air jump)
+ 	inline const FName GravityScale(TEXT("GravityScale"));
+ 	inline const FName DashDistance(TEXT("DashDistance"));          // cm
+ 	inline const FName DashDuration(TEXT("DashDuration"));          // seconds
+ 	inline const FName DashCooldown(TEXT("DashCooldown"));          // seconds
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Player.json
+Index: Glyphbound/Content/Data/Player.json
+===================================================================
+--- Glyphbound/Content/Data/Player.json
++++ Glyphbound/Content/Data/Player.json
+@@ -8,9 +8,11 @@
+ 		"ManaRegenDelay": 1.5,
+ 		"MoveSpeed": 750,
+ 		"JumpVelocity": 800,
+ 		"MaxJumps": 1,
+-		"AirControl": 0.6,
++		"AirControl": 0,
++		"JumpTakeoffMinSpeedMult": 0.6,
++		"AirJumpMinSpeedMult": 1.0,
+ 		"GravityScale": 1.6,
+ 		"DashDistance": 700,
+ 		"DashDuration": 0.18,
+ 		"DashCooldown": 1.2,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -31,8 +31,11 @@
+  *
+  * Movement (GDD 9): walk, jump, double jump (MaxJumps), dash (Ctrl / Circle) in the movement direction, no sprint.
+  * During the spell QTE: the camera is locked, W/A/S/D and the mouse go to the QTE, and the player keeps moving
+  * in the direction it was moving (the last movement input is held).
++ *
++ * Jumps commit to their direction (GDD 18): OnJumped sets the horizontal velocity from the movement input held
++ * at takeoff (AirControl stays 0, so the air applies no steering). The dash is the only steering in the air.
+  */
+ UCLASS()
+ class GLYPHBOUND_API AGBPlayerCharacter : public ACharacter
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -109,8 +109,23 @@
+ 	 * the fall stops until RespawnAt. Called every frame while below KillZ; only the first call kills.
+ 	 */
+ 	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
+ 
++	/**
++	 * Committed jump takeoff (GDD 18): inside OnJumped, JumpCurrentCount is 1 for a jump from the ground and
++	 * 2+ for a jump that starts in the air (the double jump, or the first jump after walking off a ledge:
++	 * CheckJumpInput pre-increments the count to 1 while falling, then the successful jump increments it to 2).
++	 */
++	virtual void OnJumped_Implementation() override;
++
++	/**
++	 * Horizontal velocity a committed jump takes off with (pure, tested).
++	 * InputDirection is the world-space movement direction held at takeoff (zero when none).
++	 * No input: returns CurrentVelocity unchanged (the jump keeps its drift). With input: the input direction
++	 * at max(CurrentSpeed, MaxWalkSpeed * MinSpeedMult).
++	 */
++	static FVector2D ComputeJumpHorizontalVelocity(const FVector2D& CurrentVelocity, const FVector2D& InputDirection, float MaxWalkSpeed, float MinSpeedMult);
++
+ protected:
+ 	virtual void BeginPlay() override;
+ 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -138,10 +138,10 @@
+ 	/** Stat with modifiers; warns once if the base value is missing from Player.json. */
+ 	float ReadStat(FName Stat, float DefaultValue) const;
+ 	bool CanUseGameplayInput() const;
+ 	bool IsQTEActive() const;
+-	/** Movement input (x = right, y = forward) relative to the view yaw. */
+-	void ApplyMoveInput(const FVector2D& Input);
++	/** World-space horizontal direction of a 2D movement input (x = right, y = forward) relative to the view yaw. Zero when there is no input. */
++	FVector GetMoveInputWorldDirection(const FVector2D& Input) const;
+ 	/** Turns the view (degrees). Positive pitch looks up. */
+ 	void AddLookDelta(float YawDegrees, float PitchDegrees);
+ 	void UpdateWalkSpeed();
+ 	void EndDash();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -140,8 +140,10 @@
+ 	bool CanUseGameplayInput() const;
+ 	bool IsQTEActive() const;
+ 	/** World-space horizontal direction of a 2D movement input (x = right, y = forward) relative to the view yaw. Zero when there is no input. */
+ 	FVector GetMoveInputWorldDirection(const FVector2D& Input) const;
++	/** Movement input (x = right, y = forward) relative to the view yaw. */
++	void ApplyMoveInput(const FVector2D& Input);
+ 	/** Turns the view (degrees). Positive pitch looks up. */
+ 	void AddLookDelta(float YawDegrees, float PitchDegrees);
+ 	void UpdateWalkSpeed();
+ 	void EndDash();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Base stats and headers are set — now wiring up the committed jump physics.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -241,10 +241,13 @@
+ 	}
+ 
+ 	UpdateWalkSpeed();
+ 	MoveComp->JumpZVelocity = FMath::Max(0.f, ReadStat(GBStat::JumpVelocity, 620.f));
+-	MoveComp->AirControl = FMath::Max(0.f, ReadStat(GBStat::AirControl, 0.6f));
++	MoveComp->AirControl = FMath::Max(0.f, ReadStat(GBStat::AirControl, 0.f));
+ 	MoveComp->GravityScale = ReadStat(GBStat::GravityScale, 1.6f);
++	// Committed jumps (GDD 18): no air steering, no air braking or lateral friction, so the takeoff keeps its speed.
++	MoveComp->BrakingDecelerationFalling = 0.f;
++	MoveComp->FallingLateralFriction = 0.f;
+ 	JumpMaxCount = FMath::Max(1, FMath::RoundToInt(ReadStat(GBStat::MaxJumps, 1.f)));
+ 
+ 	UCapsuleComponent* Capsule = GetCapsuleComponent();
+ 	const float Radius = FMath::Max(1.f, ReadStat(GBStat::CapsuleRadius, 38.f));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -295,8 +295,56 @@
+ 	AddMovementInput(YawMatrix.GetUnitAxis(EAxis::X), Input.Y);
+ 	AddMovementInput(YawMatrix.GetUnitAxis(EAxis::Y), Input.X);
+ }
+ 
++FVector AGBPlayerCharacter::GetMoveInputWorldDirection(const FVector2D& Input) const
++{
++	if (Input.IsNearlyZero())
++	{
++		return FVector::ZeroVector;
++	}
++	const FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
++	const FRotationMatrix YawMatrix(YawRotation);
++	FVector Direction = YawMatrix.GetUnitAxis(EAxis::X) * Input.Y + YawMatrix.GetUnitAxis(EAxis::Y) * Input.X;
++	Direction.Z = 0.f;
++	if (!Direction.Normalize())
++	{
++		return FVector::ZeroVector;
++	}
++	return Direction;
++}
++
++FVector2D AGBPlayerCharacter::ComputeJumpHorizontalVelocity(const FVector2D& CurrentVelocity, const FVector2D& InputDirection, float MaxWalkSpeed, float MinSpeedMult)
++{
++	if (InputDirection.IsNearlyZero())
++	{
++		return CurrentVelocity;
++	}
++	const FVector2D Direction = InputDirection.GetSafeNormal();
++	const float CurrentSpeed = CurrentVelocity.Size();
++	const float MinSpeed = FMath::Max(0.f, MaxWalkSpeed) * FMath::Max(0.f, MinSpeedMult);
++	return Direction * FMath::Max(CurrentSpeed, MinSpeed);
++}
++
++void AGBPlayerCharacter::OnJumped_Implementation()
++{
++	// JumpCurrentCount is 1 for a jump from the ground, 2+ for a jump that starts in the air
++	// (double jump, or the first jump after walking off a ledge: CheckJumpInput pre-increments while falling).
++	const bool bGroundJump = JumpCurrentCount <= 1;
++	const float MinSpeedMult = ReadStat(bGroundJump ? GBStat::JumpTakeoffMinSpeedMult : GBStat::AirJumpMinSpeedMult,
++		bGroundJump ? 0.6f : 1.0f);
++	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
++	{
++		const FVector2D CurrentVelocity(MoveComp->Velocity.X, MoveComp->Velocity.Y);
++		const FVector WorldDir = GetMoveInputWorldDirection(LastMoveInput);
++		const FVector2D NewHorizontal = ComputeJumpHorizontalVelocity(CurrentVelocity,
++			FVector2D(WorldDir.X, WorldDir.Y), MoveComp->MaxWalkSpeed, MinSpeedMult);
++		// The engine already set the vertical velocity; only the horizontal direction commits here.
++		MoveComp->Velocity.X = NewHorizontal.X;
++		MoveComp->Velocity.Y = NewHorizontal.Y;
++	}
++}
++
+ void AGBPlayerCharacter::AddLookDelta(float YawDegrees, float PitchDegrees)
+ {
+ 	if (!Controller)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -955,11 +955,10 @@
+ 	}
+ 
+ 	const FRotationMatrix YawMatrix(FRotator(0.f, GetControlRotation().Yaw, 0.f));
+ 	const FVector Forward = YawMatrix.GetUnitAxis(EAxis::X);
+-	FVector Direction = Forward * LastMoveInput.Y + YawMatrix.GetUnitAxis(EAxis::Y) * LastMoveInput.X;
+-	Direction.Z = 0.f;
+-	if (!Direction.Normalize())
++	FVector Direction = GetMoveInputWorldDirection(LastMoveInput);
++	if (Direction.IsNearlyZero())
+ 	{
+ 		Direction = Forward;
+ 	}
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBCombatLibrary.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+66: 	/** A random direction inside a cone of SpreadDegrees (full angle = 2 * half-angle... SpreadDegrees is the half-angle). */
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h [90m[offset=60][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+@@ -64,5 +64,20 @@
+ 	static bool IsHeadshot(float HitZ, float FeetZ, float BodyHeight, float HeadFraction);
+ 
+ 	/** A random direction inside a cone of SpreadDegrees (full angle = 2 * half-angle... SpreadDegrees is the half-angle). */
+ 	static FVector ApplySpread(const FVector& Direction, float SpreadHalfAngleDegrees, FRandomStream& Random);
++
++	/**
++	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
++	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
++	 * whose IsHeadshotLocation(Info.HitLocation) is true), multiplies Info.Amount by WeakPointMult,
++	 * sets Info.bHeadshot = true and returns true. Otherwise leaves Info alone (Info.bHeadshot = false)
++	 * and returns false.
++	 */
++	static bool ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult);
++
++	/**
++	 * Aimed melee point (pure, tested): the point of the body segment BodyBottom..BodyTop (feet to top of head)
++	 * closest to the aim segment AimOrigin..AimOrigin + AimDirection * AimLength (FMath::SegmentDistToSegmentSafe).
++	 */
++	static FVector ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop);
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -1,6 +1,7 @@
+ #include "Combat/GBCombatLibrary.h"
+ 
++#include "AI/GBEnemyCharacter.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Core/GBStatNames.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "Stats/GBStatsComponent.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -268,4 +268,30 @@
+ 		return Dir;
+ 	}
+ 	return Random.VRandCone(Dir, FMath::DegreesToRadians(SpreadHalfAngleDegrees));
+ }
++
++bool UGBCombatLibrary::ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult)
++{
++	Info.bHeadshot = false;
++	if (WeakPointMult <= 1.f)
++	{
++		return false;
++	}
++	const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target);
++	if (!Enemy || !Enemy->IsHeadshotLocation(Info.HitLocation))
++	{
++		return false;
++	}
++	Info.Amount *= WeakPointMult;
++	Info.bHeadshot = true;
++	return true;
++}
++
++FVector UGBCombatLibrary::ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop)
++{
++	const FVector AimEnd = AimOrigin + AimDirection * AimLength;
++	FVector OutAimPoint = AimOrigin;
++	FVector OutBodyPoint = BodyBottom;
++	FMath::SegmentDistToSegmentSafe(AimOrigin, AimEnd, BodyBottom, BodyTop, OutAimPoint, OutBodyPoint);
++	return OutBodyPoint;
++}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Jump and shared combat helpers done — now updating the gun, staff and projectiles to use the single weak-point rule.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -327,20 +327,12 @@
+ 
+ 		if (Target && UGBAttributeComponent::Find(Target))
+ 		{
+ 			FGBDamageInfo Info = BaseInfo;
+-			float Multiplier = UGBCombatLibrary::DistanceFalloffMultiplier(Hit.Distance, FalloffStart, FalloffEnd, NearMult, FarMult);
+-			if (const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target))
+-			{
+-				if (Enemy->IsHeadshotLocation(Hit.ImpactPoint))
+-				{
+-					Multiplier *= HeadshotMult;
+-					Info.bHeadshot = true;
+-				}
+-			}
+-			Info.Amount *= Multiplier;
+ 			Info.HitLocation = Hit.ImpactPoint;
+ 			Info.HitDirection = Direction;
++			Info.Amount *= UGBCombatLibrary::DistanceFalloffMultiplier(Hit.Distance, FalloffStart, FalloffEnd, NearMult, FarMult);
++			UGBCombatLibrary::ApplyWeakPointBonus(Target, Info, HeadshotMult);
+ 			UGBCombatLibrary::DealDamage(Target, Info);
+ 		}
+ 
+ #if !UE_BUILD_SHIPPING
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+@@ -20,8 +20,11 @@
+ 
+ 	/** The hit dealt on impact (Amount, Element, Instigator, SourceId, OnHitEffect...). Causer is set to the projectile. */
+ 	UPROPERTY() FGBDamageInfo Damage;
+ 
++	/** Weak point multiplier (GDD 3): 1 = no bonus. Applied to direct hits via UGBCombatLibrary::ApplyWeakPointBonus. */
++	UPROPERTY() float HeadshotMult = 1.f;
++
+ 	UPROPERTY() float Speed = 3000.f;
+ 	/** Collision radius, cm. */
+ 	UPROPERTY() float Radius = 12.f;
+ 	/** 0 = flies straight; 1 = normal gravity (grenades). */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -222,12 +222,9 @@
+ 		FGBDamageInfo Info = Config.Damage;
+ 		Info.Causer = this;
+ 		Info.HitLocation = ImpactPoint;
+ 		Info.HitDirection = Movement->Velocity.GetSafeNormal();
+-		if (const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Other))
+-		{
+-			Info.bHeadshot = Enemy->IsHeadshotLocation(ImpactPoint);
+-		}
++		UGBCombatLibrary::ApplyWeakPointBonus(Other, Info, Config.HeadshotMult);
+ 		UGBCombatLibrary::DealDamage(Other, Info);
+ 	}
+ 
+ 	// Neutral things with attributes (ice walls, destructibles) stop the shot even when it pierces.
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp
+@@ -34,8 +34,9 @@
+ 	}
+ 
+ 	FGBProjectileConfig Config;
+ 	Config.Damage = MakeDamageInfo();
++	Config.HeadshotMult = GetStat(GBStat::HeadshotMult, 1.f);
+ 	Config.Speed = GetStat(GBStat::ProjectileSpeed, 3000.f);
+ 	Config.Radius = GetStat(GBStat::ProjectileRadius, 10.f);
+ 	Config.GravityScale = GetStat(GBStat::ProjectileGravity, 0.f);
+ 	Config.MaxRange = Range;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBStaff.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBStaff.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBStaff.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBStaff.h
+@@ -6,9 +6,10 @@
+ #include "GBStaff.generated.h"
+ 
+ /**
+  * Primary = basic magic attack: an AGBProjectile from the muzzle towards the point the camera aims at.
+- * Stats: Damage, FireInterval, ProjectileSpeed, ProjectileRadius, ProjectileGravity, Range, ManaCost (0 = free).
++ * Stats: Damage, FireInterval, ProjectileSpeed, ProjectileRadius, ProjectileGravity, Range, ManaCost (0 = free),
++ * HeadshotMult (weak point multiplier, 1 = no bonus).
+  * Looks: pixel-art projectile, sprite from Strings["ProjectileSprite"]. Blocked while the spellbook is busy.
+  */
+ UCLASS()
+ class GLYPHBOUND_API AGBStaff : public AGBHeldItem
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Projectile.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+13: //   Pierce             optional; > 0.5 = flies through the actors it damages
+14: //   VisualScale        optional; sprite size relative to the collision radius (default 1)
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Projectile.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+13: //   Pierce             optional; > 0.5 = flies through the actors it damages
+14: //   VisualScale        optional; sprite size relative to the collision radius (default 1)
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h [90m[offset=1][0m
+> build · muse-spark-1.3-contributor
+Hit a formatting snag on the spell docs — working around it.
+[0m$ [0mpowershell -NoProfile -Command "$b=[System.IO.File]::ReadAllBytes('C:\GameJam\Glyphbound\Source\Glyphbound\Spells\GBSpell_Projectile.h'); $t=[System.Text.Encoding]::UTF8.GetString($b); $i=$t.IndexOf('Pierce'); Write-Host ($t.Substring($i-60,120) | Format-Hex | Out-String) "
+At line:1 char:145
++ ... pell_Projectile.h'); =[System.Text.Encoding]::UTF8.GetString(); =.Ind ...
++                                                                  ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
+Wrote file successfully: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+@@ -29,8 +29,9 @@
+ 	Config.ExplosionKnockback = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionKnockback, Config.ExplosionKnockback));
+ 	Config.ExplosionEffectTime = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionEffectTime, Config.ExplosionEffectTime));
+ 	Config.GravityScale = SpellCast.Get(GBStat::ProjectileGravity, 0.f);
+ 	Config.bPierce = SpellCast.Get(GBSpellParam::Pierce, 0.f) > 0.5f;
++	Config.HeadshotMult = SpellCast.Get(GBStat::HeadshotMult, 1.f);
+ 	Config.bPixelArt = true;
+ 	Config.SpriteId = GetSpriteId();
+ 	Config.Color = GetSpellColor();
+ 	Config.VisualScale = FMath::Max(0.01f, SpellCast.Get(GBSpellParam::VisualScale, 1.f));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -14,9 +14,10 @@
+ 				"ProjectileSpeed": 3500,
+ 				"ProjectileRadius": 10,
+ 				"ProjectileGravity": 0,
+ 				"Range": 6000,
+-				"ManaCost": 0
++				"ManaCost": 0,
++				"HeadshotMult": 1.5
+ 			},
+ 			"Strings": {
+ 				"Sprite": "staff_apprentice",
+ 				"ProjectileSprite": "bolt_arcane"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -37,9 +37,10 @@
+ 				"ProjectileSpeed": 2800,
+ 				"ProjectileRadius": 14,
+ 				"ProjectileGravity": 0,
+ 				"Range": 6000,
+-				"ManaCost": 0
++				"ManaCost": 0,
++				"HeadshotMult": 1.5
+ 			},
+ 			"Strings": {
+ 				"Sprite": "staff_ember",
+ 				"ProjectileSprite": "fireball",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -154,9 +154,10 @@
+ 			"Stats": {
+ 				"Damage": 45,
+ 				"FireInterval": 0.5,
+ 				"MeleeRange": 260,
+-				"MeleeArc": 90
++				"MeleeArc": 90,
++				"HeadshotMult": 1.5
+ 			},
+ 			"Strings": {
+ 				"Sprite": "sword_blade"
+ 			}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Weapon data updated — now reworking the sword for aim-based hits.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBSword.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Weapons/GBSword.h
+Wrote file successfully: Glyphbound/Source/Glyphbound/Weapons/GBSword.h
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
+Wrote file successfully: Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.h' -Pattern 'GetActorBounds' | Select-Object -First 5 | Format-Table LineNumber,Line -AutoSize -Wrap"
+LineNumber Line                                                                                                        
+---------- ----                                                                                                        
+      1611 	ENGINE_API virtual void GetActorBounds(bool bOnlyCollidingComponents, FVector& Origin, FVector& BoxExtent, 
+           bool bIncludeFromChildActors = false) const;                                                                
+      2541 	 * This function differs from GetActorBounds because it will return a valid origin and an empty extent if  
+           this actor                                                                                                  
+      2544 	 * @see GetActorBounds()                                                                                   
+      5068 	void GetActorBounds(bool bOnlyCollidingComponents, FVector& Origin, FVector& BoxExtent, bool               
+           bIncludeFromChildActors = false) const { return Super::GetActorBounds(bOnlyCollidingComponents, Origin,     
+           BoxExtent, bIncludeFromChildActors); } \
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBSword.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBSword.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBSword.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBSword.h
+@@ -30,9 +30,9 @@
+ protected:
+ 	virtual bool PerformAttack() override;
+ 
+ 	/** Body segment (feet to top) used for the aimed hit: capsule axis when the target has one, bounds otherwise. */
+-	static void GetBodySegment(const AActor* Target, FVector& OutBottom, FVector& OutTop);
++	static void GetBodySegment(AActor* Target, FVector& OutBottom, FVector& OutTop);
+ 
+ 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Grip;
+ 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Guard;
+ 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Gem;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp
+@@ -59,9 +59,9 @@
+ 	}
+ 	Super::Tick(DeltaSeconds);
+ }
+ 
+-void AGBSword::GetBodySegment(const AActor* Target, FVector& OutBottom, FVector& OutTop)
++void AGBSword::GetBodySegment(AActor* Target, FVector& OutBottom, FVector& OutTop)
+ {
+ 	if (const ACharacter* Character = Cast<ACharacter>(Target))
+ 	{
+ 		if (const UCapsuleComponent* Capsule = Character->GetCapsuleComponent())
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Core implementation done — now adding the pure-logic tests.
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path C:\GameJam\Glyphbound\Source\Glyphbound\Tests\*.cpp -Pattern 'IMPLEMENT_SIMPLE_AUTOMATION_TEST' | Format-Table Filename,Line -AutoSize"
+Filename               Line                                                                                            
+--------               ----                                                                                            
+GBAITests.cpp          IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBAISteerChoiceTest, "Glyphbound.AI.SteerChoice",             
+GBCombatTests.cpp      IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatDistanceFalloffTest, "Glyphbound.Combat.DistanceFal...
+GBCombatTests.cpp      IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatHeadshotTest, "Glyphbound.Combat.Headshot",           
+GBCombatTests.cpp      IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatTeamHostilityTest, "Glyphbound.Combat.TeamHostility", 
+GBEraTests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBEraPresenceRuleTest, "Glyphbound.Era.PresenceRule",         
+GBEraTests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBEraIsPresentInTest, "Glyphbound.Era.IsPresentIn",           
+GBInventoryTests.cpp   IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBItemsAmmoRemainderTest, "Glyphbound.Items.AmmoRemainder",   
+GBProgressionTests.cpp IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBProgressionUnlockRulesTest, "Glyphbound.Progression.Unloc...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTEGestureLineTest, "Glyphbound.QTE.GestureLine", EAutoma...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTEGestureCircleTest, "Glyphbound.QTE.GestureCircle", EAu...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTEGestureShortTest, "Glyphbound.QTE.GestureShort", EAuto...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTESessionScoreTest, "Glyphbound.QTE.SessionScore", EAuto...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTESessionAllMissedTest, "Glyphbound.QTE.SessionAllMissed...
+GBQTETests.cpp         IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTESessionTimeoutTest, "Glyphbound.QTE.SessionTimeout", E...
+GBSpellTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellResolveScalingTest, "Glyphbound.Spells.ResolveScaling",
+GBSpellTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellResolveNoQTETest, "Glyphbound.Spells.ResolveNoQTE",    
+GBSpellTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellDamageInfoTest, "Glyphbound.Spells.DamageInfo",        
+GBSpriteTests.cpp      IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpritePixelsTest, "Glyphbound.UI.SpritePixels",             
+GBStatsTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsModifierOrderTest, "Glyphbound.Stats.ModifierOrder",   
+GBStatsTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsModifierSourcesTest, "Glyphbound.Stats.ModifierSourc...
+GBStatsTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsRegenTest, "Glyphbound.Stats.Regen",                   
+GBStatsTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsScaledParamTest, "Glyphbound.Stats.ScaledParam",       
+GBStatsTests.cpp       IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsWeaponSlotKeyTest, "Glyphbound.Stats.WeaponSlotKeys",  
+GBWeaponsTests.cpp     IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBWeaponsSnapshotSlotsTest, "Glyphbound.Weapons.SnapshotSlo...
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+Created file successfully: Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp failed
+[91m[1mError: [0mNo changes to apply: oldString and newString are identical.
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp [90m[offset=55][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+@@ -71,5 +71,51 @@
+ 
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatMeleeAimPointTest, "Glyphbound.Combat.MeleeAimPoint",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++
++bool FGBCombatMeleeAimPointTest::RunTest(const FString& Parameters)
++{
++	const FVector BodyBottom(0.f, 0.f, 0.f);
++	const FVector BodyTop(0.f, 0.f, 180.f);
++
++	// Aiming level at head height returns a point at head height.
++	{
++		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
++			FVector(200.f, 0.f, 150.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
++		TestEqual(TEXT("Level aim at the head: X on the body"), Result.X, 0.f, 1.e-2f);
++		TestEqual(TEXT("Level aim at the head: Z at aim height"), Result.Z, 150.f, 1.e-2f);
++	}
++
++	// Aiming down at the feet returns a point near the bottom.
++	{
++		const FVector AimOrigin(200.f, 0.f, 150.f);
++		const FVector AimDir = (FVector(0.f, 0.f, 0.f) - AimOrigin).GetSafeNormal();
++		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(AimOrigin, AimDir, 1000.f, BodyBottom, BodyTop);
++		TestTrue(TEXT("Downward aim reaches the feet"), Result.Z < 20.f);
++		TestEqual(TEXT("Downward aim stays on the body axis X"), Result.X, 0.f, 1.e-2f);
++	}
++
++	// Aiming far above the head returns the top (clamped), not the aim height.
++	{
++		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
++			FVector(200.f, 0.f, 400.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
++		TestEqual(TEXT("High aim clamps to the top"), Result.Z, 180.f, 1.e-2f);
++		// A wrong implementation returning the aim height (400) or the center (90) fails here.
++		TestTrue(TEXT("High aim is above the center"), Result.Z > 100.f);
++	}
++
++	// An aim that passes beside the body still returns the height where it passes closest.
++	{
++		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
++			FVector(200.f, 50.f, 100.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
++		TestEqual(TEXT("Side pass keeps the pass height"), Result.Z, 100.f, 1.e-2f);
++		TestEqual(TEXT("Side pass is on the body axis"), Result.X, 0.f, 1.e-2f);
++		TestEqual(TEXT("Side pass is on the body axis Y"), Result.Y, 0.f, 1.e-2f);
++	}
++
++	return true;
++}
++
+ #endif // WITH_DEV_AUTOMATION_TESTS
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "bHeadshot" [90min Glyphbound/Source/Glyphbound · 7 matches[0m
+[0m$ [0mpowershell -NoProfile -Command "python -c \"import json; [json.load(open(f)) for f in ['C:/GameJam/Glyphbound/Content/Data/Player.json','C:/GameJam/Glyphbound/Content/Data/Weapons.json','C:/GameJam/Glyphbound/Content/Data/Spells.json']]; print('JSON OK')\""
+At line:1 char:69
++ ... ell -NoProfile -Command "python -c \"import json; [json.load(open(f)) ...
++                                                                  ~
+Missing closing ')' in expression.
+At line:1 char:76
++ ... rofile -Command "python -c \"import json; [json.load(open(f)) for f i ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+At line:1 char:81
++ ... le -Command "python -c \"import json; [json.load(open(f)) for f in [' ...
++                                                                  ~
+Missing opening '(' after keyword 'for'.
+At line:1 char:58
++ ... ell -NoProfile -Command "python -c \"import json; [json.load(open(f)) ...
++                                                       ~~~~~~~~~~~
+Unexpected attribute 'json.load'.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingEndParenthesisInExpression
+> build · muse-spark-1.3-contributor
+All manual headshot flags are consolidated — now verifying everything compiles.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(87,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(88,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(97,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(104,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(113,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(114,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp(115,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(15,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(16,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(24,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(25,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(32,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(33,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(37,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp(39,3): error C2666: 'FAutomationTestBase::TestEqual': overloaded functions have similar conversions
+Result: Failed (OtherCompilationError)
+Build time: 33 s  (exit 6)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp 
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+Wrote file successfully: Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp [90m[offset=75][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+@@ -79,41 +79,46 @@
+ {
+ 	const FVector BodyBottom(0.f, 0.f, 0.f);
+ 	const FVector BodyTop(0.f, 0.f, 180.f);
+ 
++	auto CheckNear = [&](const TCHAR* What, double Actual, double Expected, double Tolerance)
++	{
++		TestTrue(What, FMath::Abs(Actual - Expected) <= Tolerance);
++	};
++
+ 	// Aiming level at head height returns a point at head height.
+ 	{
+ 		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+ 			FVector(200.f, 0.f, 150.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+-		TestEqual(TEXT("Level aim at the head: X on the body"), Result.X, 0.f, 1.e-2f);
+-		TestEqual(TEXT("Level aim at the head: Z at aim height"), Result.Z, 150.f, 1.e-2f);
++		CheckNear(TEXT("Level aim at the head: X on the body"), Result.X, 0.0, 1.e-2);
++		CheckNear(TEXT("Level aim at the head: Z at aim height"), Result.Z, 150.0, 1.e-2);
+ 	}
+ 
+ 	// Aiming down at the feet returns a point near the bottom.
+ 	{
+ 		const FVector AimOrigin(200.f, 0.f, 150.f);
+ 		const FVector AimDir = (FVector(0.f, 0.f, 0.f) - AimOrigin).GetSafeNormal();
+ 		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(AimOrigin, AimDir, 1000.f, BodyBottom, BodyTop);
+-		TestTrue(TEXT("Downward aim reaches the feet"), Result.Z < 20.f);
+-		TestEqual(TEXT("Downward aim stays on the body axis X"), Result.X, 0.f, 1.e-2f);
++		TestTrue(TEXT("Downward aim reaches the feet"), Result.Z < 20.0);
++		CheckNear(TEXT("Downward aim stays on the body axis X"), Result.X, 0.0, 1.e-2);
+ 	}
+ 
+ 	// Aiming far above the head returns the top (clamped), not the aim height.
+ 	{
+ 		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+ 			FVector(200.f, 0.f, 400.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+-		TestEqual(TEXT("High aim clamps to the top"), Result.Z, 180.f, 1.e-2f);
++		CheckNear(TEXT("High aim clamps to the top"), Result.Z, 180.0, 1.e-2);
+ 		// A wrong implementation returning the aim height (400) or the center (90) fails here.
+-		TestTrue(TEXT("High aim is above the center"), Result.Z > 100.f);
++		TestTrue(TEXT("High aim is above the center"), Result.Z > 100.0);
+ 	}
+ 
+ 	// An aim that passes beside the body still returns the height where it passes closest.
+ 	{
+ 		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+ 			FVector(200.f, 50.f, 100.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+-		TestEqual(TEXT("Side pass keeps the pass height"), Result.Z, 100.f, 1.e-2f);
+-		TestEqual(TEXT("Side pass is on the body axis"), Result.X, 0.f, 1.e-2f);
+-		TestEqual(TEXT("Side pass is on the body axis Y"), Result.Y, 0.f, 1.e-2f);
++		CheckNear(TEXT("Side pass keeps the pass height"), Result.Z, 100.0, 1.e-2);
++		CheckNear(TEXT("Side pass is on the body axis"), Result.X, 0.0, 1.e-2);
++		CheckNear(TEXT("Side pass is on the body axis Y"), Result.Y, 0.0, 1.e-2);
+ 	}
+ 
+ 	return true;
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 7 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+Editor build passes — now running the full verification suite.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 36 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 26
+Tests: 26 run, 0 failed, test time 0.43 s, wall time 16 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-143118
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "Select-String -Path C:\GameJam\Glyphbound\Source\Glyphbound\Tests\*.cpp -Pattern 'Glyphbound\.[A-Za-z]+\.[A-Za-z]+' | ForEach-Object { $_.Line.Trim() }"
+At line:1 char:147
++ ...  'Glyphbound\.[A-Za-z]+\.[A-Za-z]+' | ForEach-Object { .Line.Trim() }
++                                                                       ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "Glyphbound\." [90min Glyphbound/Source/Glyphbound/Tests · 26 matches[0m
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-143151.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-143151.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 31 steps
+LogGB: Display: SMOKE step 1/31 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=12 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/31 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/31 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/31 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/31 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/31 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/31 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/31 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/31 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/31 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/31 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/31 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/31 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=148 (start 1550, needed <= 250) orc at V(X=-2454.43, Y=-141.06, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/31 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/31 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/31 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/31 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/31 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/31 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/31 (21.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 21/31 (21.9 s): QTE: press one key
+LogGB: Display: SMOKE step 22/31 (22.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 23/31 (26.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 24/31 (26.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 25/31 (27.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 26/31 (30.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 27/31 (31.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 28/31 (32.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 29/31 (33.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 30/31 (34.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 31/31 (35.7 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 9 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=48 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-143151.log
+> build · muse-spark-1.3-contributor
+Result lines (copied verbatim):
+1. `Result: Succeeded`
+2. `Result: Succeeded`
+3. `Tests: 26 run, 0 failed, test time 0.43 s, wall time 16 s, ensures in log: 0`
+4. `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=48 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-143151.log`
+
+What I changed, per item:
+
+1. Committed jumps — direction set at takeoff, no air steering:
+- `Glyphbound/Content/Data/Player.json`: `AirControl` 0.6 -> 0; added `JumpTakeoffMinSpeedMult` 0.6, `AirJumpMinSpeedMult` 1.0.
+- `Glyphbound/Source/Glyphbound/Core/GBStatNames.h`: added `JumpTakeoffMinSpeedMult`, `AirJumpMinSpeedMult` next to `AirControl` with comment.
+- `Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h`: added `OnJumped_Implementation` override, pure static `ComputeJumpHorizontalVelocity(CurrentVelocity, InputDirection, MaxWalkSpeed, MinSpeedMult)`, and `GetMoveInputWorldDirection` helper.
+- `Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp`: `OnJumped_Implementation` sets horizontal velocity from `LastMoveInput` (converted once via the helper, reused by the dash in `InputDash`); vertical velocity untouched. `ApplyMovementStats` sets `AirControl` from data (now 0), plus `BrakingDecelerationFalling = 0` and `FallingLateralFriction = 0` explicitly. Character adds no velocity in air itself (only `AddMovementInput`, which the engine ignores with AirControl 0; dash `Tick`/`EndDash` untouched).
+- JumpCurrentCount inside OnJumped: ground jump = 1, air jump = 2 or more. Reason: `ACharacter::CheckJumpInput` pre-increments 0->1 when falling before `DoJump`, then increments again on success before calling `OnJumped`. So ground takeoff (was standing, no pre-increment) arrives at 1; double jump (was falling with count 1) arrives at 2; first jump after walking off a ledge (count 0 + falling pre-increment to 1, then success) arrives at 2. Code tells them apart with `JumpCurrentCount <= 1` = ground (uses `JumpTakeoffMinSpeedMult`), else air (uses `AirJumpMinSpeedMult`).
+- Test arena (`GBTestArena.cpp`) untouched: its math uses only JumpVelocity, GravityScale, MoveSpeed, DashDistance — no AirControl.
+
+2. One weak-point rule for every weapon attack:
+- `Combat/GBCombatLibrary.h/.cpp`: added `ApplyWeakPointBonus(Target, Info, WeakPointMult)` (comment says it is the single place to extend when enemies get other weak points) and `ClosestBodyPointToAim` (item 3). Bonus only when mult > 1 and target is an `AGBEnemyCharacter` whose `IsHeadshotLocation(HitLocation)` is true; else sets `bHeadshot=false`, leaves Amount alone.
+- `Weapons/GBGun.cpp` (`FireHitscan`): sets `Info.HitLocation` first, applies falloff, then calls the helper (same numbers as before). Removed the hand-rolled check.
+- `Combat/GBProjectile.h/.cpp`: added `HeadshotMult = 1.f` to `FGBProjectileConfig`; `HitTarget` direct-hit path now calls the helper instead of setting `bHeadshot` by hand. Explosion path unchanged (no bonus).
+- `Weapons/GBStaff.cpp` + `GBStaff.h`: staff sets `Config.HeadshotMult = GetStat(HeadshotMult, 1.f)`; header stat list now includes HeadshotMult.
+- `Spells/GBSpell_Projectile.h/.cpp`: reads optional `HeadshotMult` param (default 1) into the config; documented in the header param list. No spell in `Spells.json` defines it.
+- `Glyphbound/Content/Data/Weapons.json`: added `HeadshotMult: 1.5` to `Staff_Apprentice`, `Staff_Ember`, `ElementalSword`. `GBSword.h` stat list now includes HeadshotMult (gun header already did). Verified no other `bHeadshot` writers remain (only the helper writes; HUD only reads).
+
+3. Sword hits where the player aims:
+- `Combat/GBCombatLibrary.h/.cpp`: added pure static `ClosestBodyPointToAim(AimOrigin, AimDirection, AimLength, BodyBottom, BodyTop)` using `FMath::SegmentDistToSegmentSafe`, returning the body point.
+- `Weapons/GBSword.h/.cpp` (`PerformAttack` + new `GetBodySegment`): arc/range selection unchanged (overlap sphere + cone test on target center, so nothing previously hit is missed). Body segment = capsule axis feet->top for `ACharacter` or any actor with a capsule root; otherwise actor bounds (center X/Y, bottom->top Z). `HitLocation` = closest body point to the aim segment; `HitDirection` stays player->target-center; wall trace goes to the aimed point; then `ApplyWeakPointBonus(Target, Info, GetStat(HeadshotMult, 1.f))` before `DealDamage`.
+
+4. Tests (pure logic):
+- `Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp` (new): `Glyphbound.Player.JumpDirection` — no input keeps velocity (incl. zero stays zero); slow + input gives input direction at Max*Mult (450 for 750*0.6); fast + input keeps speed but takes input direction, including opposite input reversing X.
+- `Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp`: `Glyphbound.Combat.MeleeAimPoint` — level aim at head height returns head height; downward aim at feet returns near bottom; far-above aim clamps to top; side-passing aim returns the pass height on the body axis. A center-always or aim-height implementation fails these.
+- Naming: no test name is a prefix of another.
+
+Anything not done as described, and why:
+- Nothing skipped. One judgment call: `GBSword.h` had no stat list (only prose), so I added an explicit `Stats:` line including HeadshotMult rather than editing a nonexistent list. `GBProjectile.cpp` still includes `AI/GBEnemyCharacter.h` (now unused after the helper move) — harmless, left to keep the diff small.
+
+What a person should check by playing:
+- Jump from standstill with a direction held: leaves at reduced speed and then cannot be steered mid-air; release input before takeoff and drift is kept. Double jump can pick a new direction and then commits too. Jump once after walking off a ledge: full-speed minimum, direction locked. Dash still works in air unchanged.
+- Sword: aim at head vs legs on a dummy/enemy — head hits show the bigger damage number and kill faster (1.5x); wall between player and the aimed point blocks; targets at the edge of range still get hit as before.
+- Staff basic attack headshots hit harder (1.5x); gun falloff + headshot feel unchanged; fireball/lightning spells unchanged (no bonus unless data adds one).

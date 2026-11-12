@@ -1,0 +1,27 @@
+ Design/GDD.md                                      |   4 +-
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   1 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl |  27 +++
+ ...aude-38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl |   1 +
+ ...aude-5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl |   8 +
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 206 +++++++++++++++++++++
+ .../38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl     |   3 +
+ .../5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl     |  38 ++++
+ Glyphbound/Content/Data/Player.json                |   4 +-
+ Glyphbound/Content/Data/Skills.json                |   2 +-
+ Glyphbound/Content/Data/Weapons.json               |   9 +-
+ .../Source/Glyphbound/Combat/GBCombatLibrary.cpp   |  27 +++
+ .../Source/Glyphbound/Combat/GBCombatLibrary.h     |  15 ++
+ .../Source/Glyphbound/Combat/GBProjectile.cpp      |   5 +-
+ Glyphbound/Source/Glyphbound/Combat/GBProjectile.h |   3 +
+ Glyphbound/Source/Glyphbound/Core/GBStatNames.h    |   4 +-
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp |  58 +++++-
+ .../Source/Glyphbound/Player/GBPlayerCharacter.h   |  20 ++
+ .../Glyphbound/Spells/GBSpell_Projectile.cpp       |   1 +
+ .../Source/Glyphbound/Spells/GBSpell_Projectile.h  |   1 +
+ .../Source/Glyphbound/Tests/GBCombatTests.cpp      |  51 +++++
+ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp     |  12 +-
+ Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp   |   1 +
+ Glyphbound/Source/Glyphbound/Weapons/GBStaff.h     |   3 +-
+ Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp   |  44 ++++-
+ Glyphbound/Source/Glyphbound/Weapons/GBSword.h     |   6 +
+ 26 files changed, 524 insertions(+), 30 deletions(-)

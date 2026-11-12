@@ -25,7 +25,7 @@
 powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
 powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
 powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 24          # whole suite (24 tests)
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 26          # whole suite (26 tests)
 powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
 powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
@@ -34,8 +34,9 @@ powershell -File Tools/Devlog/New-DevlogDay.ps1 -Date 2026-11-12
 Muse Spark: `Tools/Devlog/Invoke-LoggedAgent.ps1 -Agent opencode -Model 'opencode-go/muse-spark-1.3-contributor#high' -PromptFile Prompts\X.md -Purpose "..." -Command "opencode run --auto -m 'opencode-go/muse-spark-1.3-contributor#high' (Get-Content Prompts\X.md -Raw)"`.
 Codex: same wrapper with `-Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`.
 
-## Right now (end of the second block, 2026-11-12)
-- Editor build and game build green; 24 pure-logic tests pass; the scripted smoke run (`Tools/Jam/Smoke-Jam.ps1`, 31 steps) ends with no errors, also on the packaged exe.
+## Right now (end of the third block, 2026-11-12)
+- Third block (owner's second round of notes, GDD v0.15): jumps commit to their direction (`AGBPlayerCharacter::ComputeJumpHorizontalVelocity`, stats `AirControl` 0, `JumpTakeoffMinSpeedMult`, `AirJumpMinSpeedMult`), the sword hits where the player aims (`UGBCombatLibrary::ClosestBodyPointToAim`), one weak-point rule for every weapon (`UGBCombatLibrary::ApplyWeakPointBonus`; stat `HeadshotMult` per weapon, raised by the Marksman perk through `Weapon.All.HeadshotMult`). Not reviewed by Codex; not played yet.
+- Editor build and game build green; 26 pure-logic tests pass; the scripted smoke run (`Tools/Jam/Smoke-Jam.ps1`, 31 steps) ends with no errors, also on the packaged exe.
 - Codex reviewed the code twice (9 findings, then 4 on the play-test changes; all fixed). The fixes were verified by build, tests and smoke only.
 - The owner played the FIRST build and sent ten notes; all are implemented (table in the day entry). **Nobody has played the second build yet.** That is the next thing that must happen.
 - Provisional choices waiting for the owner's word (GDD 18 and section 6): Block on Q / L2; guns and the sword follow the staff rule (owned, equipped from the inventory); a "big" damage number is a headshot or a hit of at least 25% of the target's health.
@@ -56,7 +57,8 @@ Since the first play-test: weapons are owned (a pickup goes to the hands only if
 7. Real levels: the era system already supports sub-levels named `*_Past` / `*_Future` and per-actor `UGBEraComponent`.
 
 ## Things a human must check by playing (nobody has)
-- Second build first: mouse in every menu (do clicks work while the game is paused?), one click on the death screen respawns once, Block (Q) raises the shield only with staff or sword and slows the player, gamepad L2 as Block and as spell modifier, a second staff goes to the Weapons page and can be equipped there, enemies get around the low walls and pillars in both eras and do not jump off the ramp, falling off the map kills, damage numbers (size on headshots), fireball shockwave pushing orcs, jump heights against the course.
+- Third build: jumps (standing jump with a direction held, running jump, changing direction with the second jump, no steering in the air; is the jump course still doable?), sword hits on head vs legs, staff basic attack on the head (bigger number, x1.5).
+- Also still unplayed from the second build: mouse in every menu (do clicks work while the game is paused?), one click on the death screen respawns once, Block (Q) raises the shield only with staff or sword and slows the player, gamepad L2 as Block and as spell modifier, a second staff goes to the Weapons page and can be equipped there, enemies get around the low walls and pillars in both eras and do not jump off the ramp, falling off the map kills, damage numbers (size on headshots), fireball shockwave pushing orcs, jump heights against the course.
 - Movement feel: speed, jump height, double jump, dash distance and whether the dash should have a brief invulnerability.
 - Mouse look speed, and the QTE gesture sensitivity (the mouse-to-pixels conversion assumes the legacy 0.07 scale; if gestures are judged far too early or too late, the constant is in `Player/GBPlayerCharacter.cpp`).
 - The QTE itself: is 4 s enough for 4 keys and 1 gesture; do gestures get recognized.
