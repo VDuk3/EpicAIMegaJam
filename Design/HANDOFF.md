@@ -103,7 +103,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 4. DLSS plugin for UE 5.9.0 (NVIDIA award): not installed in the engine; needs a download, so ask the owner first.
 5. GDD day 2 list: QTE second version, enchant polish, both HUD skins with real art, consumables in play.
 6. Real levels: the era system supports sub-levels named `*_Past` / `*_Future` and per-actor `UGBEraComponent`; a placed navmesh works as is (`RuntimeGeneration=Dynamic` is the project default, can be Static per map).
-7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE.md` if there is one, or the shape of today's entry.
+7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
 - Build 3: jumps (standing jump with a direction held, running jump, changing direction with the second jump, no steering in the air; is the jump course still doable?), sword hits on head vs legs, staff basic attack on the head (bigger number, x1.5).
