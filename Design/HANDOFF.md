@@ -10,7 +10,7 @@
 - Looks do not matter yet; structure and function first. "A first-person RPG shooter that does not want to be too complicated."
 - Work routing: one code batch at a time -> Muse Spark through OpenCode (only one OpenCode session at once). Work that can really run in parallel -> Claude subagents (Opus / Sonnet / Haiku, never above effort High). Second opinions and important reviews -> Codex CLI, Sol 6.1 at Medium.
 - PIE is always run by a human. The content backup task stays off for now.
-- Always commit (English message). Never push unless asked. Answers to the team in Spanish; game content, dev log and commits in English.
+- Always commit (English message) and **push every commit to `origin main` right away, without asking** (owner, 2026-11-12: the agents on the other machines must always see the repo). Never force-push. Answers to the team in Spanish; game content, dev log and commits in English.
 
 ## How the owner works (what to expect)
 - He plays the packaged build and sends short notes in Spanish, several in one message, sometimes one more while the work is running. Each note is a design decision: write it into the GDD first (changelog line, the section it belongs to, and section 18 for any detail you had to invent), then implement.
@@ -82,7 +82,7 @@ Codex (read-only review):
 A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
 
 ## Right now (end of the fourth block, 2026-11-12)
-- Everything is committed on `main` (last commits: `e21b548` perk reset code, then the fourth package's docs). Nothing was pushed.
+- Everything is committed on `main` (last commits: `e21b548` perk reset code, then the fourth package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
 - Editor build and game build green; 26 pure-logic tests pass; the smoke run (33 steps, now with a skill reset check) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
 - Four blocks done today:
   1. The whole code base (ten parallel implementers, integration, Codex review with 9 findings fixed).

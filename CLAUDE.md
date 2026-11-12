@@ -28,6 +28,7 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
 - **PIE (Play In Editor) lo hace SIEMPRE un humano.** Los agentes de IA no lanzan PIE (trabajan muy mal con él): compilan, empaquetan o corren tests y luego piden a una persona que pruebe.
 - **MCP de Unreal:** descubrimiento progresivo (`list_toolsets` → `describe_toolsets` → `call_tool`). No inventes nombres de tools.
 - **Commits** pequeños y frecuentes, con mensajes claros: el borrador del día los lista.
+- **Push automático:** cada commit se sube enseguida a `origin main`, sin preguntar (dueño, 2026-11-12: los agentes de las otras máquinas tienen que ver la repo en todo momento). Esto prevalece sobre el "nunca push salvo que se pida" de la regla global. Nunca force-push.
 - **Implementador:** por defecto, la implementación la hace **Muse Spark 1.3 Contributor en High** a través de OpenCode (`opencode-go/muse-spark-1.3-contributor#high`, ya fijado en `opencode.jsonc`). Excepciones solo por decisión del arquitecto o de quien esté de turno: cambios pequeños que haga directamente el orquestador, o una tarea demasiado compleja para Muse que se le da a Opus u otro modelo. Si se hace una excepción, se anota el motivo en la entrada del día. OpenCode se lanza SOLO con `Tools/Devlog/Invoke-LoggedAgent.ps1`.
 
 ## Autonomía del arquitecto
