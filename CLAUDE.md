@@ -25,6 +25,7 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
   - probar con `Tools/Jam/Test-UnrealMcp.ps1`;
   - cerrar con `Tools/Jam/Stop-EditorMcp.ps1` (nunca matar el proceso).
   - Recién abierto, el Editor responde "slow task" durante un rato: espera y reintenta.
+- **PIE (Play In Editor) lo hace SIEMPRE un humano.** Los agentes de IA no lanzan PIE (trabajan muy mal con él): compilan, empaquetan o corren tests y luego piden a una persona que pruebe.
 - **MCP de Unreal:** descubrimiento progresivo (`list_toolsets` → `describe_toolsets` → `call_tool`). No inventes nombres de tools.
 - **Commits** pequeños y frecuentes, con mensajes claros: el borrador del día los lista.
 - **Implementador:** por defecto, la implementación la hace **Muse Spark 1.3 Contributor en High** a través de OpenCode (`opencode-go/muse-spark-1.3-contributor#high`, ya fijado en `opencode.jsonc`). Excepciones solo por decisión del arquitecto o de quien esté de turno: cambios pequeños que haga directamente el orquestador, o una tarea demasiado compleja para Muse que se le da a Opus u otro modelo. Si se hace una excepción, se anota el motivo en la entrada del día. OpenCode se lanza SOLO con `Tools/Devlog/Invoke-LoggedAgent.ps1`.
