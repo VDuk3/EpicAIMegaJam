@@ -135,7 +135,34 @@ Sources: the itch.io page and the Official Rules PDF (`2026_Epic_AI_MegaJam_Offi
 - **Scoring (1–5 each):** ambition and innovation, theme, fun, gameplay, visuals, level design and progression, audio. Ties are re-scored with fun counted double.
 - **Modifiers:** Glass Box (dev log; must be submitted **together with the game during the jam**), Solo Driver, Best Team, Render Royalty, Pocket Powerhouse (mobile), Walkie-Talkie (UEFN only). At most one main prize and one modifier per submission.
 - **Jurisdictions:** Iran, Iraq, North Korea, Somalia, Sudan, Syria, Crimea, Donetsk and Luhansk are excluded. Residents of Brazil do not receive cash prizes.
-- **Pending:** "AI tool credits", to be announced before kickoff per the page. Check the page on Nov 11.
+- **Resolved (2026-11-12):** the "AI tool credits" were announced in the itch.io email of Nov 11 (see the next section).
+
+## Theme and partner perks (itch.io email, 2026-11-11, read 2026-11-12)
+Source: "[itch.io] 2026 Epic AI MegaJam - Your Epic AI MegaJam perks + the theme reveal" (from the Epic Games jam account). Claim links and codes are for registered jammers only: do not share them outside the team. Using perks is optional and does not affect judging.
+
+**Theme: DIRECTOR'S CUT.** "Your vision, your edits, your final cut." The feature that did not make it, the mechanic scoped out at 2 AM, the shelved idea: build it now. "Using AI agents? You're directing those too. Set the vision, delegate tasks, and decide what makes the cut." The theme is scored (rules: 1–5), so the game must show it, and the dev log should show the directing/cutting decisions.
+
+| Perk | What | Deadline / notes |
+|---|---|---|
+| Anthropic | $25 Claude API credits (Console, not a Claude.ai subscription); last 90 days after claiming | Link opens Nov 12 00:00 PT, closes **Nov 27** 23:59 PT; first come, first served |
+| SpaceXSI | $50 credits across **Cursor** and Grok Bot; one claim per account; credits last **7 days** from claiming | Claim by **Nov 15**. Relevant: the art laptop uses Cursor |
+| Meshy | 1 free month of Meshy Pro, 1,000 credits (web or API) | New account by **Nov 17**; credit card required, auto-renews unless canceled |
+| Hyper3D | Rodin Business subscription, 208 credits; code in the email | Redeem by **Nov 16**, benefits expire Nov 20. **Hyper3D has a $10,000 cash pool for teams that used Rodin**, and it depends on listing the tool in "Tools you used" |
+| Tripo | 3,000 credits + 7 days of Tripo Pro | Valid Nov 11–17 PST; redeem the code by **Nov 16** |
+| fal | $30 credits | Claim by **Nov 30**; use the personal account, not a team |
+| PBRgen | Free access and credits, valid Nov 7–15 | Sign-up link in the email |
+| Diversion | 1 month of cloud version control | Code in the email, by Nov 22. We use git, so low priority |
+| Rokoko | 1 month of Rokoko Basic | Register first; a voucher arrives when the jam starts. Our main animation path is MetaHuman Animator (see above) |
+| Reallusion | Free iClone Personal (up to 30 exports) + Character Creator 5 discounts | — |
+| WeLoveIndies | Free sound and music, **non-commercial use only** | Account needed; check the license before using any track and list it as a sourced asset |
+| NetApp + AWS | After the jam closes: first 25 UE jammers who email get a free technical session (AWS Game Dev Toolkit, Horde) | Not needed for the jam |
+
+**Other points from the email**
+- **Submission deadline:** Nov 15, 5:59 PM PST = **8:59 PM EST** (matches what we already had).
+- **"Tools you used" field at submission:** list every tool we use. Partner prizes (Hyper3D's cash pool, the NVIDIA RTX Award) depend on it, so keep a running list in the dev log.
+- **NVIDIA RTX Award:** requires NvRTX (NVIDIA's Unreal branch), or at least one feature from NvRTX, DLSS or ACE in the game, plus the NVIDIA questions at submission. We are on stock UE 5.9.0 (CL 60351404) and the engine is pinned until delivery, so this needs an owner decision.
+- Questions and teammates: Unreal Engine Forums and the UEFN Discord. Kickoff replay is on Twitch, YouTube and X.
+- **Owner decisions pending:** which perks to claim (each needs an account, and some a credit card), and whether to use Rodin (the "Hyper3D Rodin" row above was marked pending). Every generated asset must be logged; AI-generated content is not a sourced asset, but perk-tool output still goes in "Tools you used".
 - **Kit changes:** the kit `CLAUDE.md` now covers mandatory English, 1080p video, Teen rating, no third-party logos, git history and no extra software. Decision (owner, 2026-11-10): the public dev log is written in English from the start; the templates are now in English.
 
 ## Idea: modular props from static meshes (2026-11-10)
