@@ -1,8 +1,11 @@
-# Exports the pistol as four static-mesh FBX files for Unreal (the game animates the moving parts in code):
+# Exports the pistol as six static-mesh FBX files for Unreal (the game animates the moving parts in code):
 #   SM_Pistol_Body      everything that does not move (optic pane, reticle, panels, vents, rails included)
 #   SM_Pistol_Trigger   pivot = Trigger_pivot_trial (Blender pulls it -8 deg around Y at frame 8)
 #   SM_Pistol_Magazine  pivot = TRIAL_Magazine_Control (Blender slides it out and back, frames 24-72)
-#   SM_Pistol_EnergyBar V4_energy_cells alone, so its second UV map (ImbueU) reaches UE as UV channel 1
+#   SM_Pistol_EnergyBar the 13 cells of V4_energy_cells, so its second UV map (ImbueU, one value per cell, 0 at the
+#                       muzzle end) reaches UE as UV channel 1
+#   SM_Pistol_WeakPointLight the separate light of V4_energy_cells next to the cells, towards the muzzle
+#   SM_Pistol_AmmoDisplay a quad just in front of the rear screen, for the holographic ammo count
 # Every part is taken at frame 1 (rest pose), in world space, then moved so that:
 #   - the hand point HAND (top of the grip, under the slide) is the origin of the body,
 #   - each moving part has its pivot at its own origin,
@@ -35,10 +38,12 @@ HAND = Vector((mag_pivot.x, 0.0, trig_pivot.z))
 TURN = Matrix.Rotation(3.141592653589793, 4, "Z")
 
 
-def build(name, sources, pivot):
-    """One new mesh object = the sources in world space, with pivot at the origin, turned to face +X."""
+def build(name, sources, pivot, keep_face=None, material=None, extra=None):
+    """One new mesh object = the sources in world space, with pivot at the origin, turned to face +X.
+    keep_face(world-space face centre) -> bool keeps only some faces; material replaces every slot by one material;
+    extra(bm) adds world-space geometry before the turn."""
     bm = bmesh.new()
-    materials = []
+    materials = [material] if material is not None else []
     depsgraph = bpy.context.evaluated_depsgraph_get()
     for src_name in sources:
         src = bpy.data.objects[src_name]
@@ -52,13 +57,17 @@ def build(name, sources, pivot):
             if mat is None or mat.name in DROP_MATERIALS:
                 remap.append(-1)
                 continue
+            if material is not None:
+                remap.append(0)
+                continue
             if mat not in materials:
                 materials.append(mat)
             remap.append(materials.index(mat))
         tmp = bmesh.new()
         tmp.from_mesh(me)
         ev.to_mesh_clear()
-        drop = [f for f in tmp.faces if remap and remap[f.material_index] < 0]
+        drop = [f for f in tmp.faces if (remap and remap[f.material_index] < 0)
+                or (keep_face is not None and not keep_face(f.calc_center_median()))]
         bmesh.ops.delete(tmp, geom=drop, context="FACES")
         for f in tmp.faces:
             f.material_index = remap[f.material_index] if remap else 0
@@ -67,6 +76,8 @@ def build(name, sources, pivot):
         tmp.free()
         bm.from_mesh(tmp_me)
         bpy.data.meshes.remove(tmp_me)
+    if extra is not None:
+        extra(bm)
     bm.transform(TURN @ Matrix.Translation(-pivot))
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
@@ -97,12 +108,70 @@ def export(ob):
     print("WROTE", path)
 
 
+def cell_imbue_u(ob):
+    """ImbueU per whole cell of the energy bar: each connected cell gets one U = (i + 0.5) / n, i = 0 at the muzzle end
+    (largest X after the turn), so the material lights or darkens whole cells (owner: drain left to right)."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    uv = bm.loops.layers.uv.get("ImbueU")
+    seen, cells = set(), []
+    for f in bm.faces:
+        if f.index in seen:
+            continue
+        stack, comp = [f], []
+        seen.add(f.index)
+        while stack:
+            a = stack.pop()
+            comp.append(a)
+            for e in a.edges:
+                for b in e.link_faces:
+                    if b.index not in seen:
+                        seen.add(b.index)
+                        stack.append(b)
+        cells.append(comp)
+    cells.sort(key=lambda c: -sum(f.calc_center_median().x for f in c) / len(c))
+    for i, comp in enumerate(cells):
+        for f in comp:
+            for loop in f.loops:
+                loop[uv].uv = ((i + 0.5) / len(cells), 0.5)
+    bm.to_mesh(ob.data)
+    bm.free()
+    print("CELLS", ob.name, len(cells))
+    return len(cells)
+
+
+def add_display_plane(bm):
+    """The holographic ammo display: one quad 2.5 mm in front of the rear screen (Panel_Finish_Illuminated, a plane at
+    Blender X = 0.437 facing +X, towards the player), covering the screen. UV: U to the viewer's right (+Y seen from
+    behind), V downwards, so a texture reads upright."""
+    x, y0, y1, z0, z1 = 0.4395, -0.055, 0.055, 0.199, 0.257
+    uv = bm.loops.layers.uv.get("UVMap") or bm.loops.layers.uv.new("UVMap")
+    vs = [bm.verts.new((x, y, z)) for y, z in [(y0, z0), (y1, z0), (y1, z1), (y0, z1)]]
+    face = bm.faces.new(vs)  # counter-clockwise seen from +X: normal +X
+    face.normal_update()
+    if face.normal.x < 0:
+        face.normal_flip()
+    for loop in face.loops:
+        co = loop.vert.co
+        loop[uv].uv = ((co.y - y0) / (y1 - y0), 1.0 - (z1 - co.z) / (z1 - z0))
+
+
+# Materials the Blender file does not have: they only name the slots for import_pistol.py.
+holo_material = bpy.data.materials.new("Holo_AmmoDisplay")
+indicator_material = bpy.data.materials.new("WeakPoint_Indicator")
+BULB_X = -0.24  # Blender world X: the bar's first piece (-0.3135 .. -0.2465) is the light next to the 13 cells
+
 report = {"hand_point_blender": [round(v, 4) for v in HAND], "parts": {}}
-for name, sources, pivot in [("SM_Pistol_Body", BODY, HAND),
-                             ("SM_Pistol_Trigger", TRIGGER, trig_pivot),
-                             ("SM_Pistol_Magazine", MAGAZINE, mag_pivot),
-                             ("SM_Pistol_EnergyBar", ENERGY, HAND)]:
-    ob, info = build(name, sources, pivot)
+for name, sources, pivot, kwargs in [
+        ("SM_Pistol_Body", BODY, HAND, {}),
+        ("SM_Pistol_Trigger", TRIGGER, trig_pivot, {}),
+        ("SM_Pistol_Magazine", MAGAZINE, mag_pivot, {}),
+        ("SM_Pistol_EnergyBar", ENERGY, HAND, {"keep_face": lambda c: c.x > BULB_X}),
+        ("SM_Pistol_WeakPointLight", ENERGY, HAND, {"keep_face": lambda c: c.x <= BULB_X, "material": indicator_material}),
+        ("SM_Pistol_AmmoDisplay", [], HAND, {"extra": add_display_plane, "material": holo_material})]:
+    ob, info = build(name, sources, pivot, **kwargs)
+    if name == "SM_Pistol_EnergyBar":
+        info["cells"] = cell_imbue_u(ob)
     # where the part's origin sits relative to the body origin, in the exported (turned) frame, metres
     offset = TURN @ (pivot - HAND)
     info["offset_from_body"] = [round(v, 4) for v in offset]

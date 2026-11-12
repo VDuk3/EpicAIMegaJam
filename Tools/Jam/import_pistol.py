@@ -8,7 +8,11 @@
 # Output: /Game/Glyphbound/Weapons/Pistol/ (meshes, textures, materials, instances). Parameters the game sets
 # (keep in sync with AGBGun, Source/Glyphbound/Weapons/GBGun.cpp):
 #   ElementColor   (vector) the glow colour: the enchant element, or the gun's own colour when not enchanted
-#   ImbueRemaining (scalar) M_GunEnergy only: cells with ImbueU < ImbueRemaining light up (0 = bar dark, 1 = full)
+#   ImbueRemaining (scalar) M_GunEnergy only: 0 = bar dark, 1 = full. Each of the 13 cells has one ImbueU value
+#                  (0 at the muzzle end); a cell is lit while 1 - ImbueU < ImbueRemaining, so as the enchant runs out
+#                  the cells go dark from the muzzle end towards the grip (left to right on screen, owner).
+#   Flash          (scalar) M_GunIndicator only: the weak-point light, 0 = off, 1 = full glow
+#   DisplayTexture (texture) M_GunHolo only: what the ammo display shows (white on black, the R channel glows)
 # Every material slot of every mesh must get a material from SLOT_MATERIALS, or the script fails.
 
 import os
@@ -19,7 +23,9 @@ MESH_DIR = "/Game/Glyphbound/Weapons/Pistol"
 # Import-Pistol.ps1 bakes the textures and exports the FBX files from Pistol.blend into a temporary folder and passes
 # it here; the project keeps only Pistol.blend as the source and the Unreal assets as the result (owner's rule).
 SOURCE_DIR = os.environ.get("GB_PISTOL_STAGE", "")
-MESHES = ["SM_Pistol_Body", "SM_Pistol_Trigger", "SM_Pistol_Magazine", "SM_Pistol_EnergyBar"]
+MESHES = ["SM_Pistol_Body", "SM_Pistol_Trigger", "SM_Pistol_Magazine", "SM_Pistol_EnergyBar",
+          "SM_Pistol_WeakPointLight", "SM_Pistol_AmmoDisplay"]
+ENERGY_CELLS = 13
 TEXTURES = {
     # name: (compression, sRGB)
     "T_Pistol_BaseColor": (unreal.TextureCompressionSettings.TC_DEFAULT, True),
@@ -50,6 +56,8 @@ SLOT_MATERIALS = {
     "Refined_vent_recess": (SOLID, {"BaseColor": (0.008, 0.01, 0.014), "Metallic": 0.45, "Roughness": 0.42}),
     "Refined_satin_silver": (SOLID, {"BaseColor": (0.63, 0.66, 0.69), "Metallic": 0.8, "Roughness": 0.28}),
     "V4_element_emission": ("M_GunEnergy", {}),
+    "WeakPoint_Indicator": ("M_GunIndicator", {}),
+    "Holo_AmmoDisplay": ("M_GunHolo", {}),
 }
 
 MEL = unreal.MaterialEditingLibrary
@@ -277,9 +285,11 @@ def build_energy():
                  constant=unreal.LinearColor(0.027, 0.03, 0.038, 1.0)), "", unreal.MaterialProperty.MP_BASE_COLOR)
     g.out(g.node(unreal.MaterialExpressionConstant, -600, -300, r=0.75), "", unreal.MaterialProperty.MP_METALLIC)
     g.out(g.node(unreal.MaterialExpressionConstant, -600, -220, r=0.34), "", unreal.MaterialProperty.MP_ROUGHNESS)
-    uv = g.node(unreal.MaterialExpressionTextureCoordinate, -1200, 0, coordinate_index=1)
-    u = g.node(unreal.MaterialExpressionComponentMask, -1000, 0, r=True, g=False, b=False, a=False)
-    g.connect(uv, "", u, ["", "Input"])
+    uv = g.node(unreal.MaterialExpressionTextureCoordinate, -1400, 0, coordinate_index=1)
+    u_raw = g.node(unreal.MaterialExpressionComponentMask, -1200, 0, r=True, g=False, b=False, a=False)
+    g.connect(uv, "", u_raw, ["", "Input"])
+    u = g.node(unreal.MaterialExpressionOneMinus, -1000, 0)  # the grip-end cell stays lit longest
+    g.connect(u_raw, "", u, ["", "Input"])
     remaining = g.scalar("ImbueRemaining", -1000, 120, 1.0)
     one = g.node(unreal.MaterialExpressionConstant, -1000, 240, r=1.0)
     zero = g.node(unreal.MaterialExpressionConstant, -1000, 320, r=0.0)
@@ -292,6 +302,73 @@ def build_energy():
     glow = element_glow(g, -1000, 450, 7.0)
     g.out(g.mul(lit, glow, -400, 200), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     finish(m, "M_GunEnergy")
+    return m
+
+
+def build_indicator():
+    # The weak-point light next to the energy bar: dark metal like the bar, glows in the element colour with Flash.
+    m = get_or_create_material("M_GunIndicator")
+    opaque(m)
+    g = Graph(m)
+    g.out(g.node(unreal.MaterialExpressionConstant3Vector, -600, -400,
+                 constant=unreal.LinearColor(0.027, 0.03, 0.038, 1.0)), "", unreal.MaterialProperty.MP_BASE_COLOR)
+    g.out(g.node(unreal.MaterialExpressionConstant, -600, -300, r=0.75), "", unreal.MaterialProperty.MP_METALLIC)
+    g.out(g.node(unreal.MaterialExpressionConstant, -600, -220, r=0.34), "", unreal.MaterialProperty.MP_ROUGHNESS)
+    glow = element_glow(g, -1000, 100, 10.0)
+    g.out(g.mul(glow, g.scalar("Flash", -600, 300, 0.0), -300, 200), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(m, "M_GunIndicator")
+    return m
+
+
+def black_texture():
+    for path in ["/Engine/EngineResources/Black.Black", "/Engine/EngineMaterials/BlackSquareTexture.BlackSquareTexture",
+                 "/Engine/EngineMaterials/DefaultBlackTexture.DefaultBlackTexture"]:
+        texture = unreal.load_asset(path)
+        if texture is not None:
+            return texture
+    fail("no black engine texture found for the M_GunHolo default")
+
+
+def build_holo():
+    # Holographic ammo display: additive, unlit. The game draws the number white on black into a render target and
+    # passes it as DisplayTexture; it glows in the element colour, with scanlines, a slow flicker and a faint tint
+    # over the whole pane so it reads as a projected screen.
+    m = get_or_create_material("M_GunHolo")
+    m.set_editor_property("blend_mode", unreal.BlendMode.BLEND_ADDITIVE)
+    m.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    m.set_editor_property("two_sided", False)
+    g = Graph(m)
+    texture = g.node(unreal.MaterialExpressionTextureSampleParameter2D, -1400, -300, parameter_name="DisplayTexture",
+                     texture=black_texture(), sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+    tint = g.scalar("PaneTint", -1400, -50, 0.04)
+    ink = g.node(unreal.MaterialExpressionAdd, -1150, -200)
+    g.connect(texture, "R", ink, "A")
+    g.connect(tint, "", ink, "B")
+    # scanlines: 0.7 + 0.3 * sin(2 pi * 48 * V)
+    uv = g.node(unreal.MaterialExpressionTextureCoordinate, -1600, 200, coordinate_index=0)
+    v = g.node(unreal.MaterialExpressionComponentMask, -1400, 200, r=False, g=True, b=False, a=False)
+    g.connect(uv, "", v, ["", "Input"])
+    lines = g.node(unreal.MaterialExpressionMultiply, -1250, 200, const_b=48.0)
+    g.connect(v, "", lines, "A")
+    wave = g.node(unreal.MaterialExpressionSine, -1100, 200, period=1.0)
+    g.connect(lines, "", wave, ["", "Input"])
+    scan = g.node(unreal.MaterialExpressionMultiply, -950, 200, const_b=0.3)
+    g.connect(wave, "", scan, "A")
+    scan_lit = g.node(unreal.MaterialExpressionAdd, -800, 200, const_b=0.7)
+    g.connect(scan, "", scan_lit, "A")
+    # flicker: 0.93 + 0.07 * sin(2 pi * 7 * time)
+    time = g.node(unreal.MaterialExpressionTime, -1400, 400)
+    fast = g.node(unreal.MaterialExpressionMultiply, -1250, 400, const_b=7.0)
+    g.connect(time, "", fast, "A")
+    flick = g.node(unreal.MaterialExpressionSine, -1100, 400, period=1.0)
+    g.connect(fast, "", flick, ["", "Input"])
+    flick_amp = g.node(unreal.MaterialExpressionMultiply, -950, 400, const_b=0.07)
+    g.connect(flick, "", flick_amp, "A")
+    flick_lit = g.node(unreal.MaterialExpressionAdd, -800, 400, const_b=0.93)
+    g.connect(flick_amp, "", flick_lit, "A")
+    shade = g.mul(ink, g.mul(scan_lit, flick_lit, -650, 300), -500, 0)
+    g.out(g.mul(shade, element_glow(g, -900, 600, 4.0), -300, 100), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(m, "M_GunHolo")
     return m
 
 
@@ -337,11 +414,11 @@ def imbue_u_range(mesh):
     description = mesh.get_static_mesh_description(0)
     count = description.get_vertex_instance_count()
     us = []
-    for i in range(0, count, max(1, count // 400)):
+    for i in range(count):
         vid = unreal.VertexInstanceID()
         vid.set_editor_property("id_value", i)
-        us.append(description.get_vertex_instance_uv(vid, 1).x)
-    return min(us), max(us), count
+        us.append(round(description.get_vertex_instance_uv(vid, 1).x, 3))
+    return min(us), max(us), count, len(set(us))
 
 
 def assign(meshes, masters):
@@ -363,10 +440,11 @@ def assign(meshes, masters):
         log("mesh %s slots=%d tris=%d bounds min=(%.1f, %.1f, %.1f) max=(%.1f, %.1f, %.1f)" % (
             name, len(slots), mesh.get_num_triangles(0),
             box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z))
-    u_min, u_max, count = imbue_u_range(meshes["SM_Pistol_EnergyBar"])
-    log("energy bar ImbueU (UV 1) over %d vertex instances: %.3f .. %.3f" % (count, u_min, u_max))
-    if u_min > 0.05 or u_max < 0.95:
-        fail("SM_Pistol_EnergyBar UV channel 1 is not ImbueU (expected about 0..1)")
+    u_min, u_max, count, distinct = imbue_u_range(meshes["SM_Pistol_EnergyBar"])
+    log("energy bar ImbueU (UV 1) over %d vertex instances: %.3f .. %.3f, %d distinct values" % (
+        count, u_min, u_max, distinct))
+    if distinct != ENERGY_CELLS or u_min > 0.5 / ENERGY_CELLS + 0.01 or u_max < 1 - 0.5 / ENERGY_CELLS - 0.01:
+        fail("SM_Pistol_EnergyBar UV channel 1 is not one ImbueU value per cell (expected %d)" % ENERGY_CELLS)
 
 
 def main():
@@ -377,7 +455,7 @@ def main():
     textures = import_textures()
     meshes = import_meshes()
     masters = {SOLID: build_solid(), "M_PistolAtlas": build_atlas(textures), "M_GunEnergy": build_energy(),
-               "M_GunGlass": build_glass()}
+               "M_GunGlass": build_glass(), "M_GunIndicator": build_indicator(), "M_GunHolo": build_holo()}
     assign(meshes, masters)
     if not EAL.save_directory(MESH_DIR, only_if_is_dirty=False, recursive=True):
         fail("could not save %s" % MESH_DIR)
