@@ -1,7 +1,7 @@
 # Handoff between architect chats
 
-> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.18) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
-> Last update: 2026-11-12 (day 1, fifth block: ground spell figures, +1 skill point), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
+> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.19) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
+> Last update: 2026-11-12 (day 1, fifth block and its follow-up: ground spell figures and their layering, +1 skill point), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
 
 ## Standing instructions from the owner (2026-11-12)
 - Do not stop to ask for go-aheads or yes/no questions. Decide, do, log. If the architect stops, the project stops.
@@ -69,7 +69,7 @@
 powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
 powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
 powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 26          # whole suite (26 tests)
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 27          # whole suite (27 tests)
 powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
 powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
@@ -83,14 +83,14 @@ A data-only change (JSON) needs no build: run the tests and the smoke script, th
 
 ## Right now (end of the fifth block, 2026-11-12)
 - Everything is committed on `main` (last commits: ground spell figures and the +1 skill point button, then the fifth package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
-- Editor build and game build green; 26 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
+- Editor build and game build green; 27 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
 - Five blocks done today:
   1. The whole code base (ten parallel implementers, integration, Codex review with 9 findings fixed).
   2. The owner's first ten play-test notes, GDD v0.14 (pixel-textured 3D structures, fireball shockwave, higher jumps, owned weapons and the Weapons page, held ice shield on Block, enemy pathing, mouse in menus, kill height, damage numbers, QTE 4 s); Codex review with 4 findings fixed.
-  5. GDD v0.17-v0.18: the lightning rune and the ice floor draw their sprite flat over the whole area (`SetupFlatSprite`, `M_PixelDecal`, sprites redrawn top-down 32x32; param `FigureGlow`); a "+1 skill point" test button on the skill tree screen (`AGBHUD::AddTestSkillPoint`; **remove or hide it before submission**). Not played yet.
+  5. GDD v0.17-v0.18: the lightning rune and the ice floor draw their sprite flat over the whole area (`SetupFlatSprite`, `M_PixelDecal`, sprites redrawn top-down 32x32; param `FigureGlow`); overlapping figures stack, the last placed on top (`AGBSpellActor::PlaceGroundFigure` / `ComputeGroundFigureZ`, keys `GroundFigure*` in `Game.json`, test `Glyphbound.Spells.GroundFigureLayering`); a "+1 skill point" test button on the skill tree screen (`AGBHUD::AddTestSkillPoint`; **remove or hide it before submission**). Not played yet.
   4. Perk reset, GDD v0.16 (by the second architect chat): `UGBSkillTreeComponent::ResetAll` refunds the tracked `PointsSpent` (saved in the checkpoint snapshot); a "Reset skills (+N pt)" button next to the skill points on both skill tree screens, plus R / gamepad Y there (`MenuReset` input action, menu context only). The smoke run checks the refund. Not played yet.
   3. The owner's second round, GDD v0.15: jumps commit to their direction (`AGBPlayerCharacter::ComputeJumpHorizontalVelocity`; stats `AirControl` 0, `JumpTakeoffMinSpeedMult` 0.6, `AirJumpMinSpeedMult` 1.0), the sword hits where the player aims (`UGBCombatLibrary::ClosestBodyPointToAim`), one weak-point rule for gun, staff and sword (`ApplyWeakPointBonus`; `HeadshotMult` pistol 2, everything else 1.5, raised by the Marksman perk through `Weapon.All.HeadshotMult`). **Not reviewed by Codex. Not played yet.**
-- The owner has played builds 1 and 2. Builds 3 and 4 were never played as such; build 5 (the current zip: everything above) is waiting for him.
+- The owner has played builds 1 and 2. Builds 3 and 4 were never played as such; build 6 (the current zip: everything above, including the ground layering) is waiting for him; he played build 5 and sent the layering note.
 - Provisional choices waiting for the owner's word (GDD 18 and section 6): the skill reset is free, any time, without confirmation; the +1 skill point button is a test option; Block on Q / L2; guns and the sword follow the staff rule (owned, equipped from the inventory); a "big" damage number is a headshot or a hit of at least 25% of the target's health; staff / sword / rifle head bonus numbers; a standing jump with a direction held leaves at 60% of walking speed.
 
 ## What the game does today
@@ -108,6 +108,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
+- Build 6: overlapping rune and ice floor in both orders (the last one fully on top, no flicker, also while moving).
 - Build 5: the rune and ice floor figures (full area, flat, sharp, floor visible through them, rune dim until armed), the +1 skill point button.
 - Build 4 (perk reset): the button and R on the K screen and the inventory Skills page, that stats really go back to base after a reset.
 - Build 3: jumps (standing jump with a direction held, running jump, changing direction with the second jump, no steering in the air; is the jump course still doable?), sword hits on head vs legs, staff basic attack on the head (bigger number, x1.5).

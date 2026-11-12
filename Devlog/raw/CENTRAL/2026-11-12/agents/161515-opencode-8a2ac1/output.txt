@@ -1,0 +1,742 @@
+[0m
+> build · muse-spark-1.3-contributor
+Fixing overlapping ground spell flicker — setting up layered heights.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+[0m→ [0mRead Glyphbound/Content/Data/Game.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBPlaceholder.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h 
+[0m✱ [0mGlob "Tests/*.cpp" [90m0 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h 
+[0m✱ [0mGlob "Tests/**/*" [90min Glyphbound/Source/Glyphbound · 11 matches[0m
+[0m✱ [0mGrep "Game\.json|GetGame|Values" [90min Glyphbound/Source/Glyphbound/Data · 14 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp [90m[offset=195][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Design/GDD.md 
+[0m✱ [0mGrep "GetGameValue" [90min Glyphbound/Source/Glyphbound · 30 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+[0m✱ [0mGrep "GBGameValue|GameValue" [90min Glyphbound/Source/Glyphbound/Core · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBGameMode.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBPlaceholder.cpp 
+> build · muse-spark-1.3-contributor
+I've charted the current ground-figure placement — now digging into the exact layout requirements.
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+[0m✱ [0mGrep "LightningRune|IceFloor" [90min Glyphbound/Content/Data · 2 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "EyeHeight|eye|BaseEyeHeight" [90min Glyphbound/Source/Glyphbound/Player · 3 matches[0m
+[0m✱ [0mGrep "GetAimOrigin|GetAimDirection" [90min Glyphbound/Source/Glyphbound · 20 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+> build · muse-spark-1.3-contributor
+Plan is set — now implementing the layered height system.
+[0m← [0mEdit Glyphbound/Content/Data/Game.json
+Index: Glyphbound/Content/Data/Game.json
+===================================================================
+--- Glyphbound/Content/Data/Game.json
++++ Glyphbound/Content/Data/Game.json
+@@ -25,8 +25,11 @@
+ 		"DamageNumberBigScale": 1.7,
+ 		"DamageNumberBigHealthFraction": 0.25,
+ 		"DamageNumberFadeStart": 0.6,
+ 		"DamageNumberMaxAlive": 40,
+-		"DamageNumberMergeWindow": 0.08
++		"DamageNumberMergeWindow": 0.08,
++		"GroundFigureLift": 3,
++		"GroundFigureLayerStep": 1.5,
++		"GroundFigureLayerMaxRise": 60
+ 	},
+ 	"Strings": {}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+@@ -6,10 +6,19 @@
+ #include "Spells/GBSpellTypes.h"
+ #include "GBSpellActor.generated.h"
+ 
+ class UBillboardComponent;
++class UStaticMeshComponent;
+ struct FCollisionShape;
+ 
++/** Keys of Game.json "Values" that control how ground spell figures stack (GDD 18). */
++namespace GBGroundFigure
++{
++	inline const FName Lift(TEXT("GroundFigureLift"));               // cm above the ground for a figure with no overlap
++	inline const FName LayerStep(TEXT("GroundFigureLayerStep"));     // cm per overlapping figure placed earlier
++	inline const FName LayerMaxRise(TEXT("GroundFigureLayerMaxRise")); // cm: figures farther above/below the ground point are ignored
++}
++
+ /**
+  * Spell parameter names that are not in GBStat (Core/GBStatNames.h). Shared ones live here; the ones only one
+  * behavior reads live at the top of that behavior's header. All of them are keys of Spells.json "Params".
+  */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+@@ -65,8 +65,21 @@
+ 
+ 	/** True while a sustained spell is running (the spellbook keeps a reference and blocks other casts). */
+ 	virtual bool IsSustaining() const { return false; }
+ 
++	/**
++	 * World Z for a new ground figure (GDD 18): above the ground point, and above every
++	 * overlapping live figure. Existing entries are (center X, center Y, figure world Z, radius).
++	 * Overlap = horizontal center distance < sum of radii, and the existing figure Z within
++	 * MaxRise above or below GroundPoint. Returns max(GroundPoint.Z + Lift, highest overlap + LayerStep).
++	 */
++	static float ComputeGroundFigureZ(const FVector& GroundPoint, float Radius, const TArray<FVector4>& Existing, float Lift, float LayerStep, float MaxRise);
++
++	/** True when this actor placed a ground figure with PlaceGroundFigure and has not ended. */
++	bool HasGroundFigure() const { return bHasGroundFigure; }
++	float GetGroundFigureRadius() const { return GroundFigureRadius; }
++	float GetGroundFigureWorldZ() const { return GroundFigureZ; }
++
+ 	const FGBSpellCast& GetSpellCast() const { return SpellCast; }
+ 	AActor* GetCaster() const { return SpellCast.Caster; }
+ 
+ 	/** Fired once when the spell is over, just before the actor is destroyed. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+@@ -141,8 +141,15 @@
+ 
+ 	/** Clamps a tick interval read from data so a 0 or negative value cannot flood the timer. */
+ 	static float SafeInterval(float Interval);
+ 
++	/**
++	 * Places a ground figure (trap, zone): the figure keeps the actor's X/Y and its world Z
++	 * comes from ComputeGroundFigureZ over the live ground figures in the world. Marks this
++	 * actor as a live ground figure with Radius until it ends.
++	 */
++	void PlaceGroundFigure(UStaticMeshComponent* Figure, float Radius);
++
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Root;
+ 
+ 	/** Named SpellCast, not Cast: a member called Cast would hide the engine Cast<T>() template. */
+ 	UPROPERTY() FGBSpellCast SpellCast;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h
+@@ -156,8 +156,13 @@
+ 	bool bEnded = false;
+ 	bool bSpellInitialized = false;
+ 	bool bSpellStarted = false;
+ 
++	/** Ground figure state for layering (GDD 18): set by PlaceGroundFigure, live until the spell ends. */
++	bool bHasGroundFigure = false;
++	float GroundFigureRadius = 0.f;
++	float GroundFigureZ = 0.f;
++
+ private:
+ 	void TryStartSpell();
+ 	void QueryHostiles(const FVector& Center, const FQuat& Rotation, const FCollisionShape& Shape, TArray<AActor*>& OutActors) const;
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+@@ -1,13 +1,15 @@
+ #include "Spells/GBSpellActor.h"
+ #include "Combat/GBCombatLibrary.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Components/BillboardComponent.h"
++#include "Components/StaticMeshComponent.h"
+ #include "Core/GBPlaceholder.h"
+ #include "Core/GBStatNames.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Engine/OverlapResult.h"
+ #include "Engine/World.h"
++#include "EngineUtils.h"
+ #include "GameFramework/Pawn.h"
+ #include "Player/GBPlayerCharacter.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "TimerManager.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp
+@@ -346,4 +346,64 @@
+ float AGBSpellActor::SafeInterval(float Interval)
+ {
+ 	return FMath::Max(Interval, SpellActorMinTickInterval);
+ }
++
++float AGBSpellActor::ComputeGroundFigureZ(const FVector& GroundPoint, float Radius, const TArray<FVector4>& Existing, float Lift, float LayerStep, float MaxRise)
++{
++	float Top = GroundPoint.Z + Lift;
++	for (const FVector4& Entry : Existing)
++	{
++		const float Dx = Entry.X - GroundPoint.X;
++		const float Dy = Entry.Y - GroundPoint.Y;
++		if (FMath::Sqrt(Dx * Dx + Dy * Dy) >= Radius + Entry.W)
++		{
++			continue;
++		}
++		if (FMath::Abs(Entry.Z - GroundPoint.Z) > MaxRise)
++		{
++			continue;
++		}
++		Top = FMath::Max(Top, Entry.Z + LayerStep);
++	}
++	return Top;
++}
++
++void AGBSpellActor::PlaceGroundFigure(UStaticMeshComponent* Figure, float Radius)
++{
++	if (!Figure)
++	{
++		return;
++	}
++	UWorld* World = GetWorld();
++	if (!World)
++	{
++		return;
++	}
++	UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const float Lift = Data ? Data->GetGameValue(GBGroundFigure::Lift, 3.f) : 3.f;
++	const float LayerStep = Data ? Data->GetGameValue(GBGroundFigure::LayerStep, 1.5f) : 1.5f;
++	const float MaxRise = Data ? Data->GetGameValue(GBGroundFigure::LayerMaxRise, 60.f) : 60.f;
++
++	const FVector GroundPoint = GetActorLocation();
++	TArray<FVector4> Existing;
++	for (TActorIterator<AGBSpellActor> It(World); It; ++It)
++	{
++		AGBSpellActor* Other = *It;
++		if (!Other || Other == this || !Other->bHasGroundFigure || Other->bEnded)
++		{
++			continue;
++		}
++		if (Other->IsPendingKillPending())
++		{
++			continue;
++		}
++		Existing.Add(FVector4(Other->GetActorLocation().X, Other->GetActorLocation().Y, Other->GroundFigureZ, Other->GroundFigureRadius));
++	}
++
++	const float FigureZ = ComputeGroundFigureZ(GroundPoint, Radius, Existing, Lift, LayerStep, MaxRise);
++	Figure->SetWorldLocation(FVector(GroundPoint.X, GroundPoint.Y, FigureZ));
++
++	GroundFigureRadius = FMath::Max(1.f, Radius);
++	GroundFigureZ = FigureZ;
++	bHasGroundFigure = true;
++}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Base layering logic is complete — now wiring it into the trap and zone spells.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+@@ -7,11 +7,10 @@
+ #include "TimerManager.h"
+ 
+ namespace
+ {
+-	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
+-	// disc thickness when the spell has no sprite.
+-	constexpr float TrapFigureLiftCm = 3.f;
++	// Visual only: the fallback disc thickness when the spell has no sprite. The lift above
++	// the ground and the per-layer step come from Game.json (GroundFigureLift/LayerStep).
+ 	constexpr float TrapDiscThicknessCm = 3.f;
+ 	/** Glow brightness of the trigger area while the rune is not armed yet. */
+ 	constexpr float TrapUnarmedBrightness = 0.3f;
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+@@ -39,21 +39,24 @@
+ 	const FString ColorStr = SpellCast.GetString(GBString::Color);
+ 	FigureTint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+ 	FigureGlowValue = SpellCast.Get(GBSpellParam::FigureGlow, 1.f);
+ 
+-	Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm));
++	Figure->SetRelativeLocation(FVector::ZeroVector);
+ 	const FName SpriteId = GetSpriteId();
+ 	if (SpriteId.IsNone())
+ 	{
+-		Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm + TrapDiscThicknessCm * 0.5f));
+ 		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(TriggerRadius * 2.f, TriggerRadius * 2.f, TrapDiscThicknessCm),
+ 			GetSpellColor() * TrapUnarmedBrightness, true);
++		PlaceGroundFigure(Figure, TriggerRadius);
++		Figure->AddWorldOffset(FVector(0.f, 0.f, TrapDiscThicknessCm * 0.5f));
++		GroundFigureZ = Figure->GetComponentLocation().Z;
+ 	}
+ 	else
+ 	{
+ 		FLinearColor Dimmed = FigureTint * TrapUnarmedBrightness;
+ 		Dimmed.A = 1.f;
+ 		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, TriggerRadius * 2.f, Dimmed, FigureGlowValue * TrapUnarmedBrightness);
++		PlaceGroundFigure(Figure, TriggerRadius);
+ 	}
+ 
+ 	if (ArmTime > 0.f)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp
+@@ -39,9 +39,8 @@
+ 	const FString ColorStr = SpellCast.GetString(GBString::Color);
+ 	FigureTint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+ 	FigureGlowValue = SpellCast.Get(GBSpellParam::FigureGlow, 1.f);
+ 
+-	Figure->SetRelativeLocation(FVector::ZeroVector);
+ 	const FName SpriteId = GetSpriteId();
+ 	if (SpriteId.IsNone())
+ 	{
+ 		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(TriggerRadius * 2.f, TriggerRadius * 2.f, TrapDiscThicknessCm),
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+@@ -6,11 +6,10 @@
+ #include "TimerManager.h"
+ 
+ namespace
+ {
+-	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
+-	// disc thickness when the spell has no sprite.
+-	constexpr float ZoneFigureLiftCm = 3.f;
++	// Visual only: the fallback disc thickness when the spell has no sprite. The lift above
++	// the ground and the per-layer step come from Game.json (GroundFigureLift/LayerStep).
+ 	constexpr float ZoneDiscThicknessCm = 4.f;
+ 	const FName FigureGlowParam(TEXT("FigureGlow"));
+ }
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+@@ -35,9 +35,9 @@
+ 	const FString ColorStr = SpellCast.GetString(GBString::Color);
+ 	const FLinearColor Tint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+ 	const float Glow = SpellCast.Get(FigureGlowParam, 1.f);
+ 
+-	Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm));
++	Figure->SetRelativeLocation(FVector::ZeroVector);
+ 	const FName SpriteId = GetSpriteId();
+ 	if (SpriteId.IsNone())
+ 	{
+ 		Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm + ZoneDiscThicknessCm * 0.5f));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+@@ -35,18 +35,20 @@
+ 	const FString ColorStr = SpellCast.GetString(GBString::Color);
+ 	const FLinearColor Tint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+ 	const float Glow = SpellCast.Get(FigureGlowParam, 1.f);
+ 
+-	Figure->SetRelativeLocation(FVector::ZeroVector);
+ 	const FName SpriteId = GetSpriteId();
+ 	if (SpriteId.IsNone())
+ 	{
+-		Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm + ZoneDiscThicknessCm * 0.5f));
+ 		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(ZoneRadius * 2.f, ZoneRadius * 2.f, ZoneDiscThicknessCm), GetSpellColor(), true);
++		PlaceGroundFigure(Figure, ZoneRadius);
++		Figure->AddWorldOffset(FVector(0.f, 0.f, ZoneDiscThicknessCm * 0.5f));
++		GroundFigureZ = Figure->GetComponentLocation().Z;
+ 	}
+ 	else
+ 	{
+ 		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, ZoneRadius * 2.f, Tint, Glow);
++		PlaceGroundFigure(Figure, ZoneRadius);
+ 	}
+ 
+ 	if (SpellCast.GetString(GBString::OnHitEffect).IsEmpty() && DamagePerTick <= 0.f)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Zone spell updated — verifying the trap changes before adding tests.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+@@ -1,7 +1,8 @@
+ // Pure-logic tests of spell cast resolution (no world, no data files).
+ #include "Misc/AutomationTest.h"
+ #include "Core/GBStatNames.h"
++#include "Spells/GBSpellActor.h"
+ #include "Spells/GBSpellTypes.h"
+ 
+ #if WITH_DEV_AUTOMATION_TESTS
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+@@ -101,5 +101,52 @@
+ 	TestEqual(TEXT("Amount follows the asked param"), Other.Amount, 170.f, 0.001f);
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellGroundFigureLayeringTest, "Glyphbound.Spells.GroundFigureLayering",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++bool FGBSpellGroundFigureLayeringTest::RunTest(const FString& Parameters)
++{
++	const float Lift = 3.f;
++	const float Step = 1.5f;
++	const float MaxRise = 60.f;
++	const FVector Ground(100.f, 200.f, 50.f);
++	const float Radius = 150.f;
++
++	// No existing figures: ground + lift.
++	TestEqual(TEXT("Empty world puts the figure at ground plus lift"),
++		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, {}, Lift, Step, MaxRise), 53.f, 0.001f);
++
++	// One overlapping figure at ground + lift: exactly one step above it.
++	const TArray<FVector4> One = { FVector4(100.f, 200.f, 53.f, 150.f) };
++	TestEqual(TEXT("One overlapping figure lifts the new one by a single step"),
++		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, One, Lift, Step, MaxRise), 54.5f, 0.001f);
++
++	// Two overlapping figures stacked: above the higher one.
++	const TArray<FVector4> Two = { FVector4(100.f, 200.f, 53.f, 150.f), FVector4(100.f, 200.f, 54.5f, 300.f) };
++	TestEqual(TEXT("Two stacked figures put the new one above the higher figure"),
++		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Two, Lift, Step, MaxRise), 56.f, 0.001f);
++
++	// A figure far away (beyond the summed radii) is ignored.
++	const TArray<FVector4> Far = { FVector4(1000.f, 200.f, 53.f, 150.f) };
++	TestEqual(TEXT("A distant figure does not lift the new one"),
++		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Far, Lift, Step, MaxRise), 53.f, 0.001f);
++
++	// A figure on a floor far above (more than MaxRise) is ignored.
++	const TArray<FVector4> HighFloor = { FVector4(100.f, 200.f, 53.f + MaxRise + 10.f, 150.f) };
++	TestEqual(TEXT("A figure more than MaxRise above the ground point is ignored"),
++		AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, HighFloor, Lift, Step, MaxRise), 53.f, 0.001f);
++
++	// The newest is always strictly above everything it overlaps.
++	const TArray<FVector4> Mixed = {
++		FVector4(120.f, 210.f, 53.f, 100.f),
++		FVector4(90.f, 190.f, 58.f, 200.f),
++		FVector4(5000.f, 5000.f, 200.f, 500.f),
++		FVector4(110.f, 205.f, 53.f + MaxRise + 5.f, 400.f)
++	};
++	const float Layered = AGBSpellActor::ComputeGroundFigureZ(Ground, Radius, Mixed, Lift, Step, MaxRise);
++	TestTrue(TEXT("The layered figure ends strictly above each overlapping figure"), Layered > 58.f);
++	TestEqual(TEXT("The layered figure sits one step above the highest overlap"), Layered, 59.5f, 0.001f);
++	return true;
++}
++
+ #endif
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Core logic and tests are in place — now updating the smoke scenario for overlapping casts.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -504,13 +504,13 @@
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the lightning rune actor did not spawn (ok=%d runes=%d)"), bOk ? 1 : 0, Runes);
+ 			}
+ 		});
+-		Add(33.7f + S, TEXT("ground spells: cast the ice floor farther out"), [](UWorld* World, AGBPlayerCharacter* Player)
++		Add(33.7f + S, TEXT("ground spells: cast the ice floor overlapping about half the rune"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+-				PC->SetControlRotation(FRotator(-10.f, PC->GetControlRotation().Yaw, 0.f));
++				PC->SetControlRotation(FRotator(-17.f, PC->GetControlRotation().Yaw, 0.f));
+ 			}
+ 			const bool bOk = Player->GetSpellbook()->TryCastSlot(1);
+ 			int32 Floors = 0;
+ 			for (TActorIterator<AGBSpell_Zone> It(World); It; ++It)
+@@ -521,14 +521,48 @@
+ 			if (!bOk || Floors == 0)
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the ice floor actor did not spawn (ok=%d floors=%d)"), bOk ? 1 : 0, Floors);
+ 			}
++			float RuneZ = 0.f;
++			bool bHasRune = false;
++			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)
++			{
++				if (It->HasGroundFigure())
++				{
++					RuneZ = It->GetGroundFigureWorldZ();
++					bHasRune = true;
++					break;
++				}
++			}
++			float FloorZ = 0.f;
++			bool bHasFloor = false;
++			for (TActorIterator<AGBSpell_Zone> It(World); It; ++It)
++			{
++				if (It->HasGroundFigure())
++				{
++					FloorZ = It->GetGroundFigureWorldZ();
++					bHasFloor = true;
++					break;
++				}
++			}
++			if (bHasRune && bHasFloor)
++			{
++				UE_LOG(LogGB, Display, TEXT("SMOKE ground layers runeZ=%.1f floorZ=%.1f"), RuneZ, FloorZ);
++				if (!(FloorZ > RuneZ))
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE ground layers: the ice floor (%.1f) is not above the rune (%.1f)"), FloorZ, RuneZ);
++				}
++			}
++			else
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE ground layers: missing figure (rune=%d floor=%d)"), bHasRune ? 1 : 0, bHasFloor ? 1 : 0);
++			}
+ 		});
+-		Add(36.2f + S, TEXT("screenshot: ground spells"), [](UWorld* World, AGBPlayerCharacter* Player)
++		Add(34.7f + S, TEXT("screenshot: ground spells"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+-				PC->SetControlRotation(FRotator(-20.f, PC->GetControlRotation().Yaw, 0.f));
++				PC->SetControlRotation(FRotator(-22.f, PC->GetControlRotation().Yaw, 0.f));
+ 			}
+ 			int32 Runes = 0;
+ 			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)
+ 			{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpython3 -c "import json; json.load(open('Glyphbound/Content/Data/Game.json')); print('Game.json valid')"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Content Glyphbound/Content/Data/Game.json -Raw | ConvertFrom-Json | Select-Object -ExpandProperty Values | Format-List GroundFigure*"
+GroundFigureLift         : 3
+GroundFigureLayerStep    : 1.5
+GroundFigureLayerMaxRise : 60
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 53 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 36 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 27
+Tests: 27 run, 0 failed, test time 0.43 s, wall time 16 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-162124
+> build · muse-spark-1.3-contributor
+Builds and tests pass — now running the final smoke verification.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "$r = Get-Content 'C:/GameJam/Glyphbound/Saved/TestRuns/20261112-162124/index.json' -Raw | ConvertFrom-Json; $r.tests | Where-Object { $_.fullTestPath -match 'GroundFigure' } | ForEach-Object { Write-Host $_.fullTestPath $_.state }"
+= : The term '=' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:2
++  = Get-Content 'C:/GameJam/Glyphbound/Saved/TestRuns/20261112-162124/ ...
++  ~
+    + CategoryInfo          : ObjectNotFound: (=:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+.tests : The term '.tests' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:107
++ ... s/20261112-162124/index.json' -Raw | ConvertFrom-Json; .tests | Where ...
++                                                            ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (.tests:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.Spells.' -MinTests 4
+Tests: 4 run, 0 failed, test time 0.05 s, wall time 14 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-162149
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-162207.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-162207.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 37 steps
+LogGB: Display: SMOKE step 1/37 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=12 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/37 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/37 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/37 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/37 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/37 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/37 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/37 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/37 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/37 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/37 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/37 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/37 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=150 (start 1550, needed <= 250) orc at V(X=-2453.97, Y=-142.42, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/37 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/37 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/37 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/37 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/37 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/37 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/37 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/37 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/37 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 23/37 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 24/37 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 25/37 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 26/37 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 27/37 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 28/37 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 29/37 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 30/37 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 31/37 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 32/37 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 33/37 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 34/37 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 35/37 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 36/37 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 37/37 (44.1 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 11 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=56 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-162207.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png 
+> build · muse-spark-1.3-contributor
+Smoke test confirms clean layering — doing one last check on the test suite.
+[0m✱ [0mGrep "IMPLEMENT_SIMPLE_AUTOMATION_TEST\(.*Glyphbound" [90min Glyphbound/Source/Glyphbound/Tests · 27 matches[0m
+> build · muse-spark-1.3-contributor
+1. Result lines verbatim:
+Result: Succeeded
+Result: Succeeded
+Tests: 27 run, 0 failed, test time 0.43 s, wall time 16 s, ensures in log: 0
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=56 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-162207.log
+SMOKE ground layers runeZ=3.0 floorZ=4.5
+
+2. What I changed, with file names:
+- Glyphbound/Content/Data/Game.json: added Values GroundFigureLift 3, GroundFigureLayerStep 1.5, GroundFigureLayerMaxRise 60.
+- Source/Glyphbound/Spells/GBSpellActor.h: added GBGroundFigure keys namespace, static ComputeGroundFigureZ, protected PlaceGroundFigure, live-figure flag/radius/Z members, HasGroundFigure/GetGroundFigureRadius/GetGroundFigureWorldZ getters.
+- Source/Glyphbound/Spells/GBSpellActor.cpp: implemented ComputeGroundFigureZ (max ground+Lift vs highest overlap+Step, overlap = 2D dist < sum radii and |figureZ-groundZ| <= MaxRise) and PlaceGroundFigure (collects live AGBSpellActor figures via TActorIterator, skips self/ended/pending-kill, reads Game.json values, SetWorldLocation XY=actor, Z=computed, records radius/Z/flag).
+- Source/Glyphbound/Spells/GBSpell_Trap.cpp: removed TrapFigureLiftCm, calls PlaceGroundFigure for sprite and disc fallback (disc adds half thickness on top and refreshes GroundFigureZ).
+- Source/Glyphbound/Spells/GBSpell_Zone.cpp: removed ZoneFigureLiftCm, same PlaceGroundFigure pattern with ZoneDiscThicknessCm half offset.
+- Source/Glyphbound/Tests/GBSpellTests.cpp: added Glyphbound.Spells.GroundFigureLayering covering empty, one overlap, two stacked, far ignored, high-floor ignored, strictly-above mixed case.
+- Source/Glyphbound/Core/GBDevCommands.cpp: ice floor cast pitch -10 deg to -17 deg so it overlaps about half the rune; added SMOKE ground layers runeZ/floorZ log plus Error when floor not above rune; screenshot step moved to 34.7s (1.0s after floor cast) with pitch -22 deg.
+
+3. Screenshot description (Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png):
+The pale-blue ice floor disc sits in the middle ground overlapping the yellow lightning rune. The rune's yellow zigzag ring is visible around the ice, mostly at the near edge and sides. Where they overlap the ice is fully opaque light blue with a darker blue pixel edge; the yellow rune does not show through the ice and there are no dotted or mixed pixels. The overlap reads as ice cleanly on top of the rune.
+
+4. What I could not do as described, and why:
+Nothing. All items implemented, builds/tests/smoke pass with zero LogGB warnings.
+
+5. What a person should check by playing:
+Cast LightningRune then IceFloor so they partly overlap: the floor must fully hide the rune underneath with a crisp edge and no flicker when moving. Cast in the reverse order (floor first, rune second): the rune must draw fully on top of the floor. Stack a third ground figure on the same spot: it must be the topmost. Figures on a clearly different floor height must ignore each other. Expired figures stay put; survivors must not jump or sink.
