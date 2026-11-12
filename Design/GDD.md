@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.17, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.18, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.18 (2026-11-12): owner asked for a "+1 skill point" button on the skill tree screen, to test perks.
 - v0.17 (2026-11-12): owner, after playing: the pixel-art figure of the lightning rune and the ice floor must cover the whole area of the spell, lying on the ground, not a small sprite in the middle.
 - v0.16 (2026-11-12): owner asked for a way to reset the perks from the skill tree screen, to test them better. All spent skill points come back.
 - v0.15 (2026-11-12): owner's second round of play-test notes. Jumps commit to their direction (no steering in the air; the second jump can pick a new direction and then commits too); the sword hits where the player aims, not the center of the target; sword hits and the staff's basic attack get the head / weak point bonus.
@@ -407,6 +408,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **New spells** go to the first free loadout slot.
 - **Ground spell figures (architect, after the owner's note):** the figure is the spell's sprite stretched to the diameter of its area, a few cm above the floor, keeping the pixels sharp; transparent pixels show the floor. It does not turn with the camera; it keeps the yaw the player was facing when casting. The rune shows dimmer until it is armed. The old colored disc is gone.
 - **Skill reset (owner asked for it, details provisional):** a "Reset skills" button on the skill tree screen (K, and the Skills page of the inventory), also the R key (Y / Triangle on a gamepad) while that screen is open. Free, any time, no confirmation, refunds exactly the points that were spent (even if a node's cost changed in `Skills.json` since). Whether the final game keeps it free, limits it (for example only at portals) or keeps it only as a test option is open.
+- **"+1 skill point" button (owner asked for it, to test perks):** on the same screen, left of the skill points; each click adds one free point to the pool (no key, no limit). A reset refunds only what was paid, so free points stay. It is a test option: it must be removed or hidden before the jam submission (provisional, architect).
 - **Elemental sword:** the hilt and the gems are not consumed when forging, so the player re-forges from the inventory to switch element.
 - **Enemies:** once hit, an enemy chases the player from any distance. Enemies of the other era are frozen and hidden, not simulated.
 - **Encounters:** if the player dies during one, its living enemies are removed and it starts again from wave 1 on return. Progress flags are never rolled back.
