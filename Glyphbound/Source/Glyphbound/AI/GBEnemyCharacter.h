@@ -39,6 +39,8 @@ namespace GBEnemyKey
 	inline const FName SteerAngleStep(TEXT("EnemySteerAngleStep"));            // degrees between candidate directions
 	inline const FName SteerCandidatesPerSide(TEXT("EnemySteerCandidatesPerSide")); // candidates on each side of the straight one
 	inline const FName SteerSideHoldTime(TEXT("EnemySteerSideHoldTime"));      // s a chosen side is kept (no flipping at corners)
+	inline const FName SteerLedgeProbeDistance(TEXT("EnemySteerLedgeProbeDistance")); // cm ahead to check for ground (no walking off ledges)
+	inline const FName SteerLedgeDrop(TEXT("EnemySteerLedgeDrop"));            // cm down searched for ground ahead
 	inline const FName StuckTime(TEXT("EnemyStuckTime"));                      // s window of the stuck check
 	inline const FName StuckDistance(TEXT("EnemyStuckDistance"));              // cm: moved less than this in StuckTime while moving = stuck
 	inline const FName GoAroundTime(TEXT("EnemyGoAroundTime"));                // s committed to one side after being stuck

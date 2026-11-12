@@ -418,7 +418,7 @@ namespace GBSmokeRun
 				InSlotAfter ? *InSlotAfter->GetWeaponId().ToString() : TEXT("none"),
 				Equipment->IsWeaponEquipped(TEXT("Staff_Ember")) ? 1 : 0);
 		});
-		Add(26.4f + S, TEXT("summon the ice shield, raise it, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(26.4f + S, TEXT("summon the ice shield and raise it"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			SetQTEEnabled(false);
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
@@ -433,16 +433,16 @@ namespace GBSmokeRun
 				bOk ? 1 : 0,
 				Player->GetSpellbook()->HasShield() ? 1 : 0,
 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
-			Shot(TEXT("9_shield"));
 		});
-		Add(27.6f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(27.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
+		Add(28.1f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetSpellbook()->SetBlockHeld(false);
 			UE_LOG(LogGB, Display, TEXT("SMOKE shield lowered hasShield=%d raised=%d"),
 				Player->GetSpellbook()->HasShield() ? 1 : 0,
 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
 		});
-		Add(28.8f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(29.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

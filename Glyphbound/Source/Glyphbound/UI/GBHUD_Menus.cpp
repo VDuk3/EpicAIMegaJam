@@ -1106,7 +1106,9 @@ void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& 
 		DrawLabel(bEquipped ? FString::Printf(TEXT("   %s  [equipped]"), *Row.Text) : TEXT("   ") + Row.Text, Style.Text, X, RowY, 20.f, 0.f, bShadow);
 		if (const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr)
 		{
-			DrawLabel(GBHudText::ElementName(Def->Element), GBHudText::ElementColor(Def->Element), X + ListW - 18.f * S, RowY + 2.f * S, 16.f, 1.f, true);
+			(void)Def;
+			const EGBElement Element = Equipment->GetWeaponElement(WeaponId);
+			DrawLabel(GBHudText::ElementName(Element), GBHudText::ElementColor(Element), X + ListW - 18.f * S, RowY + 2.f * S, 16.f, 1.f, true);
 		}
 	}
 
@@ -1123,8 +1125,8 @@ void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& 
 		DrawLabel(TEXT("Unknown weapon"), Style.Text, DX, DY, 18.f, 0.f, bShadow);
 		return;
 	}
-	DrawLabel(FString::Printf(TEXT("%s   %s"), *SlotName(Def->Slot, false), *GBHudText::ElementName(Def->Element)),
-		GBHudText::ElementColor(Def->Element), DX, DY, 18.f, 0.f, true);
+	DrawLabel(FString::Printf(TEXT("%s   %s"), *SlotName(Def->Slot, false), *GBHudText::ElementName(Equipment->GetWeaponElement(Selected))),
+		GBHudText::ElementColor(Equipment->GetWeaponElement(Selected)), DX, DY, 18.f, 0.f, true);
 	DY += 32.f * S;
 	for (const FString& Line : WeaponStatLines(*Def))
 	{

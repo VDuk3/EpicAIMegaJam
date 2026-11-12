@@ -391,6 +391,9 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.
 - **Modifier keys by weapon type:** besides one weapon (`Weapon.Pistol.Damage`) and all weapons (`Weapon.All.Damage`), a modifier can target a slot: `Weapon.Gun.*`, `Weapon.Staff.*`, `Weapon.Sword.*`. The enchant uses `Weapon.Gun.Damage`, so it never buffs the staff or the sword.
 - **Explosions and enemy melee need a clear line** to their target: no damage through walls or through the ice wall.
+- **Enemies and cover (after the first play-test):** enemies walk around obstacles. A melee enemy only starts its attack when it sees the player; a ranged enemy that loses sight stops aiming and moves until it sees the player again. Enemies do not walk off ledges on their own; one that falls out of the map dies without drops.
+- **Projectile explosions push enemies back** (knockback is a spell parameter, scaled by QTE power); they do not push the player.
+- **Falling:** the kill height is 2,500 cm below the floor of the level (`Game.json` `KillZ`).
 - **Weapon enchant QTE:** part 1 scales how long the buff lasts; part 2 scales how strong it is. Only one enchant at a time. The enchanted gun deals the element's damage type and applies its effect on hit (fire burns, lightning shocks, ice chills).
 - **Spell walls:** the fire wall does not block; it burns enemies that touch it. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
 - **QTE:** a wrong key consumes its step. A gesture is judged when the hand stops for a moment or the stroke is clearly complete. If both parts are fully missed the spell fizzles, and the mana is still spent and the cooldown still starts.

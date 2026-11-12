@@ -6,6 +6,7 @@
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
 #include "Spells/GBSpellbookComponent.h"
+#include "Spells/GBSpellActor.h"
 #include "QTE/GBQTEComponent.h"
 #include "Items/GBInventoryComponent.h"
 #include "Progression/GBSkillTreeComponent.h"
@@ -613,7 +614,14 @@ float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, cons
 		return 0.f;
 	}
 	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
-	UTexture2D* Shield = Sprites ? Sprites->GetSprite(TEXT("ice_shield")) : nullptr;
+	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+	const AGBSpellActor* ShieldActor = Spellbook ? Spellbook->GetShieldActor() : nullptr;
+	FString SpriteId = ShieldActor ? ShieldActor->GetSpellCast().GetString(GBString::Sprite, TEXT("ice_shield")) : FString(TEXT("ice_shield"));
+	if (SpriteId.IsEmpty())
+	{
+		SpriteId = TEXT("ice_shield");
+	}
+	UTexture2D* Shield = Sprites ? Sprites->GetSprite(FName(*SpriteId)) : nullptr;
 	if (!Shield)
 	{
 		return ShieldRaise01;
@@ -628,10 +636,18 @@ float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, cons
 	const FVector2D Lowered(W * 0.10f, H + Size.Y * 0.05f);
 	const FVector2D Raised(W * 0.36f, H * 0.40f);
 	const FVector2D Pos = FMath::Lerp(Lowered, Raised, Ease);
-	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
 	const float Health01 = Spellbook ? FMath::Clamp(Spellbook->GetShieldHealthFraction(), 0.f, 1.f) : 0.f;
-	// A worn shield is more see-through.
-	const FLinearColor Tint(1.f, 1.f, 1.f, FMath::Lerp(0.6f, 0.95f, Health01));
+	// A worn shield is more see-through. HudTint optionally tints it (default white, so Color never changes the look here).
+	FLinearColor BaseTint(FLinearColor::White);
+	if (ShieldActor)
+	{
+		const FString HudTintStr = ShieldActor->GetSpellCast().GetString(FName(TEXT("HudTint")));
+		if (!HudTintStr.IsEmpty())
+		{
+			BaseTint = UGBDataSubsystem::ParseColor(HudTintStr, FLinearColor::White);
+		}
+	}
+	const FLinearColor Tint(BaseTint.R, BaseTint.G, BaseTint.B, FMath::Lerp(0.6f, 0.95f, Health01));
 	DrawSprite(Shield, Pos.X - Size.X * 0.5f + Bob.X * 0.5f, Pos.Y + Bob.Y * 0.5f, Scale, Tint);
 	return ShieldRaise01;
 }

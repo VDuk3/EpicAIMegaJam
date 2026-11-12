@@ -476,8 +476,14 @@ void AGBEnemyCharacter::SteerTowards(const AActor* Goal)
 	const TOptional<int32> Choice = GBSteering::ChooseOffset(Blocked, Mode, SteerSide);
 	if (!Choice.IsSet())
 	{
-		// Boxed in on every side but the back: step back; the stuck check then commits to a side.
-		AddMovementInput(-ToGoal, 1.f);
+		// Boxed in on every side but the back: step back if it is free, otherwise stay in place this tick.
+		const FVector Back = -ToGoal;
+		if (IsDirectionBlocked(Back, Feeler, Goal))
+		{
+			StopMoving();
+			return;
+		}
+		AddMovementInput(Back, 1.f);
 		return;
 	}
 	if (Choice.GetValue() != 0)
@@ -514,18 +520,56 @@ bool AGBEnemyCharacter::IsDirectionBlocked(const FVector& Direction, float Dista
 	Response.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
 
 	FHitResult Hit;
-	if (!World->SweepSingleByChannel(Hit, Start, Start + Direction * Distance, FQuat::Identity, ECC_Pawn,
+	if (World->SweepSingleByChannel(Hit, Start, Start + Direction * Distance, FQuat::Identity, ECC_Pawn,
 		FCollisionShape::MakeCapsule(Radius, HalfHeight), Params, Response))
+	{
+		if (Hit.bStartPenetrating)
+		{
+			// Already touching something: only directions into it are blocked.
+			if (FVector::DotProduct(Hit.Normal, Direction) < 0.f)
+			{
+				return true;
+			}
+		}
+		else
+		{
+			// A ramp or a slope it can walk up is not an obstacle.
+			if (Hit.ImpactNormal.Z < Move->GetWalkableFloorZ())
+			{
+				return true;
+			}
+		}
+	}
+
+	// No walkable ground ahead: the direction leads off a ledge.
+	const float ProbeDistance = FMath::Max(GetGameValue(GBEnemyKey::SteerLedgeProbeDistance, 80.f), 0.f);
+	const float LedgeDrop = FMath::Max(GetGameValue(GBEnemyKey::SteerLedgeDrop, 150.f), 0.f);
+	if (ProbeDistance <= 0.f)
 	{
 		return false;
 	}
-	if (Hit.bStartPenetrating)
+	if (Goal && FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation()) <= ProbeDistance)
 	{
-		// Already touching something: only directions into it are blocked.
-		return FVector::DotProduct(Hit.Normal, Direction) < 0.f;
+		// The goal itself is within the probe distance: its position is never a ledge.
+		return false;
 	}
-	// A ramp or a slope it can walk up is not an obstacle.
-	return Hit.ImpactNormal.Z < Move->GetWalkableFloorZ();
+	const float ScaledHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const FVector Feet = GetActorLocation() - FVector::UpVector * ScaledHalfHeight;
+	const FVector LedgeTop = FVector(Feet.X + Direction.X * ProbeDistance, Feet.Y + Direction.Y * ProbeDistance, Feet.Z + StepHeight);
+	const FVector LedgeBottom = LedgeTop - FVector::UpVector * (LedgeDrop + StepHeight);
+	FCollisionQueryParams LedgeParams(SCENE_QUERY_STAT(GBEnemySteerLedge), false, this);
+	if (Goal)
+	{
+		LedgeParams.AddIgnoredActor(Goal);
+	}
+	FCollisionResponseParams LedgeResponse;
+	LedgeResponse.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+	FHitResult LedgeHit;
+	if (!World->LineTraceSingleByChannel(LedgeHit, LedgeTop, LedgeBottom, ECC_Pawn, LedgeParams, LedgeResponse))
+	{
+		return true;
+	}
+	return LedgeHit.ImpactNormal.Z < Move->GetWalkableFloorZ();
 }
 
 void AGBEnemyCharacter::ResetStuck()
@@ -644,15 +688,29 @@ bool AGBEnemyCharacter::HasLineOfSight(const AActor* Goal) const
 	{
 		return false;
 	}
-	FHitResult Hit;
+	const FVector Start = GetChestLocation();
+	const FVector End = Goal->GetActorLocation();
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBEnemyLineOfSight), false, this);
-	if (!GetWorld()->LineTraceSingleByChannel(Hit, GetChestLocation(), Goal->GetActorLocation(), ECC_Visibility, Params))
+	for (int32 Attempt = 0; Attempt < 8; ++Attempt)
 	{
-		return true;
+		FHitResult Hit;
+		if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+		{
+			return true;
+		}
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor == Goal)
+		{
+			return true;
+		}
+		if (HitActor && HitActor->IsA<APawn>())
+		{
+			Params.AddIgnoredActor(HitActor);
+			continue;
+		}
+		return false;
 	}
-	// Allies in the way do not block: enemy shots ignore the enemy team.
-	const AActor* HitActor = Hit.GetActor();
-	return HitActor == Goal || (HitActor && !UGBCombatLibrary::AreHostile(this, HitActor) && UGBCombatLibrary::GetTeam(HitActor) == EGBTeam::Enemy);
+	return false;
 }
 
 void AGBEnemyCharacter::PerformAttack()

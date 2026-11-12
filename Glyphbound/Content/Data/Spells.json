@@ -627,18 +627,6 @@
 					"Max": 1,
 					"ScaledBy": "Reach"
 				},
-				"Distance": {
-					"Base": 80,
-					"Min": 80,
-					"Max": 80,
-					"ScaledBy": "None"
-				},
-				"SpriteSize": {
-					"Base": 45,
-					"Min": 45,
-					"Max": 45,
-					"ScaledBy": "None"
-				},
 				"RaisedMoveSpeedMult": {
 					"Base": 0.6,
 					"Min": 0.6,

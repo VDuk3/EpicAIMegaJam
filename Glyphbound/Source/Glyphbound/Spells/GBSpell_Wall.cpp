@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "Engine/CollisionProfile.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
@@ -63,7 +64,9 @@ void AGBSpell_Wall::StartSpell()
 		// A structure (ice wall): one solid pixel-textured box, no camera-facing sprites (GDD 3).
 		const float TileSize = ReadParam(GBSpellParam::WallTileSize, 100.f);
 		const bool bGlow = SpellCast.Get(GBSpellParam::WallGlow, 0.f) > 0.5f;
-		GBPlaceholder::SetupTexturedShape(Visual, EGBShape::Cube, Size, FName(*TextureId), TileSize, FLinearColor::White, bGlow);
+		const FString TintStr = SpellCast.GetString(FName(TEXT("Tint")));
+		const FLinearColor Tinted = TintStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(TintStr, FLinearColor::White);
+		GBPlaceholder::SetupTexturedShape(Visual, EGBShape::Cube, Size, FName(*TextureId), TileSize, Tinted, bGlow);
 		Visual->SetCastShadow(true);
 	}
 	else

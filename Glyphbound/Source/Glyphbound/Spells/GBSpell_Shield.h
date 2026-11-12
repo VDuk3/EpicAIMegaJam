@@ -8,7 +8,8 @@
 //   BlockFraction         0..1; part of each hit coming from the front (relative to the caster's aim) that is removed
 //   Health                total damage the shield can absorb; every blocked point is subtracted and it breaks at 0
 //   RaisedMoveSpeedMult   multiplier on the caster's MoveSpeed while the shield is raised
-// Strings: Sprite, Color (read by the HUD for the first-person shield).
+// Strings: Sprite, Color (read by the HUD for the first-person shield), HudTint (optional "#RRGGBB" tint of the
+// raised shield sprite in the HUD; absent = white, so Color never changes the HUD look).
 #pragma once
 
 #include "CoreMinimal.h"

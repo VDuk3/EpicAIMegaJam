@@ -11,6 +11,8 @@
 		"EnemySteerAngleStep": 25,
 		"EnemySteerCandidatesPerSide": 6,
 		"EnemySteerSideHoldTime": 1.0,
+		"EnemySteerLedgeProbeDistance": 80,
+		"EnemySteerLedgeDrop": 150,
 		"EnemyStuckTime": 0.8,
 		"EnemyStuckDistance": 50,
 		"EnemyGoAroundTime": 1.5,
