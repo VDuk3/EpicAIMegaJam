@@ -30,6 +30,7 @@ Devlog/
    `powershell -File Tools/Devlog/Invoke-LoggedAgent.ps1 -Agent <name> -Model <model> -PromptFile <prompt.md> -Purpose "<what for>" -Command '<command>'`
    - Use `-Shell cmd` if the command contains `< file`.
    - That is what records it. An agent launched by hand leaves no record.
+   - **Cursor** (the art LAPTOP, which has no repo) is logged by user-level Cursor hooks instead: `Tools/Devlog/Install-CursorHooks.ps1` installs `cursor-devlog-hook.ps1`, which writes `C:\JamLog\raw\<MACHINE>\<date>\cursor-<conversation>.jsonl` (plus transcripts). `Register-LaptopDevlogTasks.ps1` copies that folder every 10 minutes to `Incoming\LAPTOP\_devlog_raw` on CENTRAL, and CENTRAL's `JamDevlogImport` task (`Import-RemoteDevlog.ps1`) moves it into `Devlog/raw/`, where `New-DevlogDay.ps1` reads it.
 3. **Prompts as files:** external agents get their prompt in a `.md` under `Prompts/`, never typed loose in the terminal.
 4. **Web or desktop tools** (Fab, cloud Canvas, audio or image generators, Blender by hand): in the day entry, write down the tool, the prompt, the result and the final asset, and save a screenshot in `media/`.
 5. **Unreal Editor:** always close it with `Tools/Jam/Stop-EditorMcp.ps1`, which closes open asset editors first (an open animation editor crashes the Editor on exit) and collects the log. If it was closed some other way, or before deleting `Saved/`, run `powershell -File Tools/Devlog/Collect-UnrealAgentLog.ps1 -ProjectDir <folder of the .uproject>`.

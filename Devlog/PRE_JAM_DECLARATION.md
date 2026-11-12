@@ -16,6 +16,8 @@ The jam rules (Official Rules 7(h)) allow preparing AI tools, agent configuratio
 | `Package-Jam.ps1` | Win64 packaging and submission zip (tested recipe) | `Tools/Jam/` |
 | `Backup-Content.ps1` | Daily mirror copy of the game project without build folders (the `Content/` has no git history) | `Tools/Jam/` |
 | `Setup-IncomingShare.ps1` | Sets up the LAN folder where the other machines drop assets (write allowed, delete denied) | `Tools/Jam/` |
+| `cursor-devlog-hook.ps1`, `Install-CursorHooks.ps1` | Dev log for Cursor on the art laptop (user-level Cursor hooks, same JSONL format as the Claude Code hook) | `Tools/Devlog/` |
+| `Sync-DevlogToCentral.ps1`, `Register-LaptopDevlogTasks.ps1`, `Import-RemoteDevlog.ps1` | Carry the laptop raw logs to CENTRAL over the LAN share every 10 minutes | `Tools/Devlog/` |
 | `AssetSearch` | Local semantic search over 37,668 licensed assets (public index `codepawl/asset-index`, EmbeddingGemma 2 embeddings). Contains no assets, only metadata | `Tools/AssetSearch/` |
 | Dev log templates | `README.md`, `TEMPLATE_DAY.md`, this file, `PREJAM_PREP.md` | `Devlog/` |
 | Project `CLAUDE.md` | Working rules for the agents | root |

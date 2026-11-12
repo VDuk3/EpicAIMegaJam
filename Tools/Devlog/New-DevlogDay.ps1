@@ -32,11 +32,18 @@ $harnessNotices = 0
 foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory -ErrorAction SilentlyContinue) {
     $dayDir = Join-Path $machineDir.FullName $Date
     if (-not (Test-Path $dayDir)) { continue }
-    foreach ($f in Get-ChildItem $dayDir -Filter 'claude-*.jsonl') {
+    # claude-*.jsonl: hook de Claude Code; cursor-*.jsonl: hook de Cursor (Tools/Devlog/cursor-devlog-hook.ps1)
+    foreach ($f in Get-ChildItem $dayDir -File | Where-Object { $_.Name -match '^(claude|cursor)-.*\.jsonl$' }) {
         foreach ($line in [IO.File]::ReadAllLines($f.FullName, $utf8)) {
             try { $o = $line | ConvertFrom-Json } catch { continue }
-            $sessions["$($o.machine)/$($o.session)"] = $true
-            if ($o.event -eq 'UserPromptSubmit') {
+            $agentName = if ($o.agent) { [string]$o.agent } else { 'claude-code' }
+            $sessions["$agentName/$($o.machine)/$($o.session)"] = $agentName
+            if ($o.event -ceq 'beforeSubmitPrompt') {
+                $prompts.Add([pscustomobject]@{ ts = $o.ts_utc; machine = "$($o.machine), Cursor"; text = (Redact ([string]$o.payload.prompt)) })
+            } elseif ($o.event -ceq 'postToolUse') {
+                $k = 'Cursor: ' + [string]$o.payload.tool_name
+                if ($toolCount.ContainsKey($k)) { $toolCount[$k]++ } else { $toolCount[$k] = 1 }
+            } elseif ($o.event -eq 'UserPromptSubmit') {
                 # Los avisos automaticos del arnes (fin de tareas en segundo plano, eventos de
                 # otras sesiones, CI...) llegan como UserPromptSubmit pero no son prompts del equipo.
                 if ([string]$o.payload.prompt -match '^\s*<(task-notification|system-reminder|side-sessions-event|ci-monitor-event)\b') { $harnessNotices++; continue }
@@ -71,12 +78,13 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine("# Day $Date - generated DRAFT (complete it with TEMPLATE_DAY.md)")
 [void]$sb.AppendLine()
 [void]$sb.AppendLine("## Automatic data")
-[void]$sb.AppendLine("- Claude Code sessions: $($sessions.Count)")
+[void]$sb.AppendLine("- Claude Code sessions: $(@($sessions.Values | Where-Object { $_ -eq 'claude-code' }).Count)")
+[void]$sb.AppendLine("- Cursor conversations: $(@($sessions.Values | Where-Object { $_ -eq 'cursor' }).Count)")
 [void]$sb.AppendLine("- Team prompts to agents: $($prompts.Count) (automatic harness notices left out: $harnessNotices)")
 [void]$sb.AppendLine("- External agent runs: $(@($agentRuns | Where-Object event -eq 'start').Count)")
 [void]$sb.AppendLine("- MCP calls inside Unreal: $mcpCalls")
 [void]$sb.AppendLine()
-[void]$sb.AppendLine("### Tools used by Claude Code")
+[void]$sb.AppendLine("### Tools used by the agents (Claude Code, and Cursor marked 'Cursor:')")
 foreach ($k in ($toolCount.Keys | Sort-Object { -$toolCount[$_] })) { [void]$sb.AppendLine("- $k : $($toolCount[$k])") }
 [void]$sb.AppendLine()
 [void]$sb.AppendLine("### External agents")
