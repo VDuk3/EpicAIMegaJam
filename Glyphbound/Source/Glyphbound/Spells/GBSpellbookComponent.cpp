@@ -6,6 +6,7 @@
 #include "Player/GBPlayerCharacter.h"
 #include "QTE/GBQTEComponent.h"
 #include "Spells/GBSpellActor.h"
+#include "Spells/GBSpell_Shield.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "Weapons/GBEquipmentComponent.h"
@@ -50,6 +51,7 @@ void UGBSpellbookComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		Attributes->OnDeath.Remove(DeathHandle);
 	}
 	CancelSustained();
+	EndShield();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -416,6 +418,9 @@ bool UGBSpellbookComponent::TryCastSpell(FName SpellId)
 
 bool UGBSpellbookComponent::BeginCast(FName SpellId)
 {
+	// Casting with the shield up is not allowed by the character; this only makes sure it is down during the QTE.
+	SetBlockHeld(false);
+
 	const float Cost = GetManaCost(SpellId);
 	UGBAttributeComponent* Attributes = GetOwnerAttributes();
 	if (Cost > 0.f && (!Attributes || !Attributes->SpendMana(Cost)))
@@ -564,11 +569,131 @@ void UGBSpellbookComponent::HandleSustainedEnded()
 void UGBSpellbookComponent::HandleActiveItemChanged(AGBHeldItem* NewItem)
 {
 	CancelSustained();
+	// A gun in hand lowers the shield; it stays summoned and its time keeps running.
+	SetBlockHeld(bBlockHeld);
 }
 
 void UGBSpellbookComponent::HandleOwnerDeath(const FGBDamageInfo& KillingBlow)
 {
 	CancelSustained();
+	EndShield();
+}
+
+// ---- Summoned shield ----
+
+AGBSpell_Shield* UGBSpellbookComponent::GetActiveShield() const
+{
+	AGBSpell_Shield* Current = Shield.Get();
+	return (Current && Current->IsShieldActive()) ? Current : nullptr;
+}
+
+AGBSpellActor* UGBSpellbookComponent::GetShieldActor() const
+{
+	return GetActiveShield();
+}
+
+void UGBSpellbookComponent::RegisterShield(AGBSpellActor* InShield)
+{
+	AGBSpell_Shield* NewShield = Cast<AGBSpell_Shield>(InShield);
+	if (!NewShield)
+	{
+		return;
+	}
+	AGBSpell_Shield* Old = Shield.Get();
+	if (Old == NewShield)
+	{
+		return;
+	}
+	Shield = NewShield;
+	if (Old)
+	{
+		// A new shield replaces the previous one. Its EndPlay unregisters, which is ignored now that it is not current.
+		Old->SetRaised(false);
+		Old->OnCastReleased();
+	}
+	SetBlockHeld(bBlockHeld);
+}
+
+void UGBSpellbookComponent::UnregisterShield(AGBSpellActor* InShield)
+{
+	if (InShield && Shield.Get() == InShield)
+	{
+		Shield.Reset();
+		bBlockHeld = false;
+	}
+}
+
+void UGBSpellbookComponent::EndShield()
+{
+	AGBSpell_Shield* Current = Shield.Get();
+	Shield.Reset();
+	bBlockHeld = false;
+	if (IsValid(Current))
+	{
+		Current->SetRaised(false);
+		Current->OnCastReleased();
+	}
+}
+
+bool UGBSpellbookComponent::CanRaiseBlock() const
+{
+	if (!PendingSpellId.IsNone())
+	{
+		return false;
+	}
+	if (const UGBQTEComponent* QTE = GetOwnerQTE())
+	{
+		if (QTE->IsActive())
+		{
+			return false;
+		}
+	}
+	if (const UGBEquipmentComponent* Equipment = GetOwnerEquipment())
+	{
+		if (Equipment->IsHoldingGun())
+		{
+			return false;
+		}
+	}
+	const UGBAttributeComponent* Attributes = GetOwnerAttributes();
+	return !(Attributes && Attributes->IsDead());
+}
+
+void UGBSpellbookComponent::SetBlockHeld(bool bHeld)
+{
+	AGBSpell_Shield* Current = GetActiveShield();
+	bBlockHeld = bHeld && Current && CanRaiseBlock();
+	if (Current)
+	{
+		Current->SetRaised(bBlockHeld);
+	}
+}
+
+bool UGBSpellbookComponent::HasShield() const
+{
+	return GetActiveShield() != nullptr;
+}
+
+bool UGBSpellbookComponent::IsBlockRaised() const
+{
+	const AGBSpell_Shield* Current = GetActiveShield();
+	return Current && Current->IsRaised();
+}
+
+float UGBSpellbookComponent::GetShieldHealthFraction() const
+{
+	const AGBSpell_Shield* Current = GetActiveShield();
+	if (!Current || Current->GetShieldMaxHealth() <= 0.f)
+	{
+		return 0.f;
+	}
+	return FMath::Clamp(Current->GetShieldHealth() / Current->GetShieldMaxHealth(), 0.f, 1.f);
+}
+
+float UGBSpellbookComponent::GetShieldTimeRemaining() const
+{
+	const AGBSpell_Shield* Current = GetActiveShield();
+	return Current ? Current->GetTimeRemaining() : 0.f;
 }
 
 void UGBSpellbookComponent::CancelSustained()

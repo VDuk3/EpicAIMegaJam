@@ -7,6 +7,8 @@
 //   Radius             collision radius, cm
 //   ExplosionRadius    optional; > 0 = deals Damage in this radius on impact instead of a single hit
 //   ExplosionFalloff   optional; > 0.5 = blast damage fades from the center to the edge (default 1)
+//   ExplosionKnockback optional; cm/s push on hostile characters in the blast, full at the center (default 0)
+//   ExplosionEffectTime optional; seconds the shockwave is shown (default FGBProjectileConfig's, 0.35)
 //   ProjectileGravity  optional; 0 = straight line, 1 = normal gravity (default 0)
 //   Pierce             optional; > 0.5 = flies through the actors it damages
 //   VisualScale        optional; sprite size relative to the collision radius (default 1)
@@ -22,6 +24,8 @@ namespace GBSpellParam
 {
 	inline const FName ExplosionRadius(TEXT("ExplosionRadius"));
 	inline const FName ExplosionFalloff(TEXT("ExplosionFalloff"));
+	inline const FName ExplosionKnockback(TEXT("ExplosionKnockback"));
+	inline const FName ExplosionEffectTime(TEXT("ExplosionEffectTime"));
 	inline const FName Pierce(TEXT("Pierce"));
 	inline const FName VisualScale(TEXT("VisualScale"));
 }

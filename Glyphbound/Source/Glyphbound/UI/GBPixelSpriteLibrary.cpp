@@ -70,6 +70,7 @@ void UGBPixelSpriteLibrary::Initialize(FSubsystemCollectionBase& Collection)
 void UGBPixelSpriteLibrary::ClearCache()
 {
 	Cache.Reset();
+	TileCache.Reset();
 }
 
 bool UGBPixelSpriteLibrary::BuildPixels(const FGBSpriteDefinition& Definition, TArray<FColor>& OutPixels, int32& OutWidth, int32& OutHeight)
@@ -128,7 +129,7 @@ bool UGBPixelSpriteLibrary::BuildPixels(const FGBSpriteDefinition& Definition, T
 	return true;
 }
 
-UTexture2D* UGBPixelSpriteLibrary::CreateTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName)
+UTexture2D* UGBPixelSpriteLibrary::CreateTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName, bool bWrap)
 {
 	if (Width <= 0 || Height <= 0 || Pixels.Num() != Width * Height)
 	{
@@ -147,8 +148,9 @@ UTexture2D* UGBPixelSpriteLibrary::CreateTexture(const TArray<FColor>& Pixels, i
 	Texture->NeverStream = true;
 	Texture->CompressionSettings = TC_EditorIcon;
 	Texture->LODGroup = TEXTUREGROUP_Pixels2D;
-	Texture->AddressX = TA_Clamp;
-	Texture->AddressY = TA_Clamp;
+	// Sprites clamp (no bleeding from the opposite edge); tiles repeat across a structure's faces.
+	Texture->AddressX = bWrap ? TA_Wrap : TA_Clamp;
+	Texture->AddressY = bWrap ? TA_Wrap : TA_Clamp;
 #if WITH_EDITORONLY_DATA
 	Texture->MipGenSettings = TMGS_NoMipmaps;
 #endif
@@ -164,7 +166,18 @@ UTexture2D* UGBPixelSpriteLibrary::CreateTexture(const TArray<FColor>& Pixels, i
 
 UTexture2D* UGBPixelSpriteLibrary::GetSprite(FName SpriteId)
 {
-	if (TObjectPtr<UTexture2D>* Cached = Cache.Find(SpriteId))
+	return GetOrBuild(SpriteId, /*bWrap*/ false);
+}
+
+UTexture2D* UGBPixelSpriteLibrary::GetTileTexture(FName SpriteId)
+{
+	return GetOrBuild(SpriteId, /*bWrap*/ true);
+}
+
+UTexture2D* UGBPixelSpriteLibrary::GetOrBuild(FName SpriteId, bool bWrap)
+{
+	TMap<FName, TObjectPtr<UTexture2D>>& TargetCache = bWrap ? TileCache : Cache;
+	if (TObjectPtr<UTexture2D>* Cached = TargetCache.Find(SpriteId))
 	{
 		if (*Cached)
 		{
@@ -172,7 +185,8 @@ UTexture2D* UGBPixelSpriteLibrary::GetSprite(FName SpriteId)
 		}
 	}
 
-	if (!MissingTexture)
+	TObjectPtr<UTexture2D>& Missing = bWrap ? MissingTileTexture : MissingTexture;
+	if (!Missing)
 	{
 		constexpr int32 Size = 8;
 		TArray<FColor> Checker;
@@ -184,7 +198,7 @@ UTexture2D* UGBPixelSpriteLibrary::GetSprite(FName SpriteId)
 				Checker.Add(((X / 2 + Y / 2) % 2) ? FColor::Black : GBSpriteLocal::MissingColor);
 			}
 		}
-		MissingTexture = CreateTexture(Checker, Size, Size, TEXT("Missing"));
+		Missing = CreateTexture(Checker, Size, Size, TEXT("Missing"), bWrap);
 	}
 
 	UTexture2D* Result = nullptr;
@@ -202,7 +216,7 @@ UTexture2D* UGBPixelSpriteLibrary::GetSprite(FName SpriteId)
 		int32 Height = 0;
 		if (BuildPixels(*Definition, Pixels, Width, Height))
 		{
-			Result = CreateTexture(Pixels, Width, Height, SpriteId);
+			Result = CreateTexture(Pixels, Width, Height, SpriteId, bWrap);
 		}
 		else
 		{
@@ -212,10 +226,10 @@ UTexture2D* UGBPixelSpriteLibrary::GetSprite(FName SpriteId)
 
 	if (!Result)
 	{
-		Result = MissingTexture;
+		Result = Missing;
 	}
-	// Missing sprites are cached too, so the warning is logged once per id (until the next data reload).
-	Cache.Add(SpriteId, Result);
+	// Missing sprites are cached too, so the warning is logged once per id and use (until the next data reload).
+	TargetCache.Add(SpriteId, Result);
 	return Result;
 }
 

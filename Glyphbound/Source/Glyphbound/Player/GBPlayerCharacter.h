@@ -18,6 +18,7 @@ class UGBInventoryComponent;
 class UGBSkillTreeComponent;
 class UGBInputSet;
 class IGBInteractable;
+class UDamageType;
 struct FInputActionValue;
 struct FGBPlayerSnapshot;
 struct FGBDamageInfo;
@@ -99,6 +100,12 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	/**
+	 * Below the world's KillZ (set by AGBGameMode from Game.json "KillZ"): the pawn is never destroyed. It is killed
+	 * through its attributes (even if invulnerable), so the normal death screen and checkpoint respawn run, and
+	 * the fall stops until RespawnAt. Called every frame while below KillZ; only the first call kills.
+	 */
+	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -144,6 +151,14 @@ protected:
 	void InputQuickUse();
 	void InputCycleQuickUse(const FInputActionValue& Value);
 	void InputQTEKey(int32 KeyIndex);
+	/** Q / L2: raise / lower the summoned shield (UGBSpellbookComponent::SetBlockHeld). */
+	void InputBlockPressed();
+	void InputBlockReleased();
+	/** True while the summoned shield is raised: attacks and spells are ignored. */
+	bool IsBlocking() const;
+	/** Stops the fall after a KillZ death (movement off) and turns movement back on at respawn. */
+	void FreezeMovement();
+	void UnfreezeMovement();
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> HeldItemAnchor;
@@ -162,6 +177,8 @@ protected:
 	TWeakObjectPtr<AActor> FocusedInteractable;
 
 	bool bControlEnabled = true;
+	/** Movement turned off by a KillZ death, until RespawnAt / LoadFromSnapshot. */
+	bool bMovementFrozen = false;
 	bool bDashing = false;
 	float DashTimeLeft = 0.f;
 	double DashReadyTime = 0.0;

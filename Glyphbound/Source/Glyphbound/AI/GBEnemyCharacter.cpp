@@ -10,6 +10,7 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+#include "AI/GBSteering.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBProjectile.h"
 #include "Combat/GBStatusEffectComponent.h"
@@ -33,8 +34,10 @@ namespace GBEnemyCharacterLocal
 	// Pure layout / technical constants (not gameplay tuning).
 	constexpr float GroundProbeDepth = 1000.f;     // cm below the requested spawn point searched for a floor
 	constexpr float SpawnLift = 2.f;               // cm above the floor, so the capsule does not start inside it
-	constexpr float NavRetryDelay = 1.f;           // seconds of straight steering after a failed path request
 	constexpr float ChestHeightFraction = 0.5f;    // of the capsule half height, above the center
+	constexpr float SteerSweepRadiusScale = 0.9f;  // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
+	constexpr float StuckSpeedFraction = 0.25f;    // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
+	constexpr int32 MaxSteerCandidatesPerSide = 12;
 	constexpr float TelegraphSpriteScale = 1.12f;
 	constexpr float TelegraphTintBlend = 0.55f;    // towards white
 }
@@ -166,6 +169,15 @@ void AGBEnemyCharacter::BeginPlay()
 	{
 		Data->OnDataReloaded.AddUObject(this, &AGBEnemyCharacter::HandleDataReloaded);
 	}
+
+	SteerSide = FMath::RandBool() ? 1 : -1;
+	ResetStuck();
+}
+
+float AGBEnemyCharacter::GetGameValue(FName Key, float DefaultValue) const
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	return Data ? Data->GetGameValue(Key, DefaultValue) : DefaultValue;
 }
 
 void AGBEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -290,6 +302,9 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 
 	StateTime += DeltaSeconds;
 	NavRetryTimer = FMath::Max(0.f, NavRetryTimer - DeltaSeconds);
+	SteerSideHoldTimer = FMath::Max(0.f, SteerSideHoldTimer - DeltaSeconds);
+	GoAroundTimer = FMath::Max(0.f, GoAroundTimer - DeltaSeconds);
+	bWantsToMove = false;
 
 	AActor* Goal = FindTarget();
 	Target = Goal;
@@ -301,6 +316,8 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 			SetState(EGBEnemyState::Idle);
 		}
 		bProvoked = false;
+		bRepositioning = false;
+		ResetStuck();
 		return;
 	}
 
@@ -320,7 +337,8 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 		break;
 
 	case EGBEnemyState::Chase:
-		if (bCanAttack && Distance <= AttackRange && (!IsRanged() || HasLineOfSight(Goal)))
+		// Line of sight for melee too: an orc on the other side of a low wall keeps going around it instead of swinging at stone.
+		if (bCanAttack && Distance <= AttackRange && HasLineOfSight(Goal))
 		{
 			StopMoving();
 			FaceTowards(Goal);
@@ -333,6 +351,13 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 		break;
 
 	case EGBEnemyState::Windup:
+		// A shot needs a clear line: the player stepped behind cover, so reposition instead of shooting the wall.
+		if (IsRanged() && !HasLineOfSight(Goal))
+		{
+			SetState(EGBEnemyState::Chase);
+			MoveTowards(Goal, DeltaSeconds);
+			break;
+		}
 		FaceTowards(Goal);
 		if (StateTime >= Stats->GetStat(GBStat::AttackWindup, 0.f))
 		{
@@ -345,9 +370,24 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 		break;
 
 	case EGBEnemyState::Recover:
-		FaceTowards(Goal);
+		// Ranged enemies do not wait out the interval behind a wall: they move until they see the player again.
+		if (IsRanged() && !HasLineOfSight(Goal))
+		{
+			MoveTowards(Goal, DeltaSeconds);
+			bRepositioning = true;
+		}
+		else
+		{
+			if (bRepositioning)
+			{
+				StopMoving();
+				bRepositioning = false;
+			}
+			FaceTowards(Goal);
+		}
 		if (StateTime >= Stats->GetStat(GBStat::AttackInterval, 0.f))
 		{
+			bRepositioning = false;
 			SetState(EGBEnemyState::Chase);
 		}
 		break;
@@ -355,6 +395,8 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 	default:
 		break;
 	}
+
+	UpdateStuck(DeltaSeconds);
 }
 
 void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
@@ -363,6 +405,7 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
 	{
 		return;
 	}
+	bWantsToMove = true;
 
 	bool bPathing = false;
 	AAIController* AI = Cast<AAIController>(GetController());
@@ -384,7 +427,7 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
 				bPathing = Result == EPathFollowingRequestResult::RequestSuccessful;
 				if (Result == EPathFollowingRequestResult::Failed)
 				{
-					NavRetryTimer = GBEnemyCharacterLocal::NavRetryDelay;
+					NavRetryTimer = GetGameValue(GBEnemyKey::NavRetryDelay, 1.f);
 				}
 			}
 		}
@@ -396,9 +439,173 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
 		{
 			AI->StopMovement();
 		}
-		const FVector Direction = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
-		AddMovementInput(Direction, 1.f);
+		SteerTowards(Goal);
 	}
+	bSteering = !bPathing;
+	if (bPathing)
+	{
+		NavMoveTime += DeltaSeconds;
+	}
+	else
+	{
+		SteerMoveTime += DeltaSeconds;
+	}
+}
+
+void AGBEnemyCharacter::SteerTowards(const AActor* Goal)
+{
+	const FVector ToGoal = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+	if (ToGoal.IsNearlyZero())
+	{
+		return;
+	}
+
+	const float Feeler = FMath::Max(GetGameValue(GBEnemyKey::SteerFeelerLength, 150.f), 1.f);
+	const float AngleStep = FMath::Clamp(GetGameValue(GBEnemyKey::SteerAngleStep, 25.f), 1.f, 180.f);
+	const int32 PerSide = FMath::Clamp(FMath::RoundToInt(GetGameValue(GBEnemyKey::SteerCandidatesPerSide, 6.f)), 1, GBEnemyCharacterLocal::MaxSteerCandidatesPerSide);
+
+	TArray<bool, TInlineAllocator<2 * GBEnemyCharacterLocal::MaxSteerCandidatesPerSide + 1>> Blocked;
+	Blocked.SetNum(2 * PerSide + 1);
+	for (int32 Offset = -PerSide; Offset <= PerSide; ++Offset)
+	{
+		Blocked[Offset + PerSide] = IsDirectionBlocked(ToGoal.RotateAngleAxis(Offset * AngleStep, FVector::UpVector), Feeler, Goal);
+	}
+
+	const EGBSteerMode Mode = GoAroundTimer > 0.f ? EGBSteerMode::GoAround
+		: (SteerSideHoldTimer > 0.f ? EGBSteerMode::HoldSide : EGBSteerMode::Free);
+	const TOptional<int32> Choice = GBSteering::ChooseOffset(Blocked, Mode, SteerSide);
+	if (!Choice.IsSet())
+	{
+		// Boxed in on every side but the back: step back; the stuck check then commits to a side.
+		AddMovementInput(-ToGoal, 1.f);
+		return;
+	}
+	if (Choice.GetValue() != 0)
+	{
+		SteerSide = Choice.GetValue() > 0 ? 1 : -1;
+		SteerSideHoldTimer = FMath::Max(SteerSideHoldTimer, GetGameValue(GBEnemyKey::SteerSideHoldTime, 1.f));
+	}
+	AddMovementInput(ToGoal.RotateAngleAxis(Choice.GetValue() * AngleStep, FVector::UpVector), 1.f);
+}
+
+bool AGBEnemyCharacter::IsDirectionBlocked(const FVector& Direction, float Distance, const AActor* Goal) const
+{
+	UWorld* World = GetWorld();
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	const UCharacterMovementComponent* Move = GetCharacterMovement();
+	if (!World || !Capsule || !Move)
+	{
+		return false;
+	}
+
+	// Bottom lifted by the step height (the character walks over anything lower), top unchanged, a bit thinner.
+	const float StepHeight = FMath::Max(Move->MaxStepHeight, 0.f);
+	const float Radius = Capsule->GetScaledCapsuleRadius() * GBEnemyCharacterLocal::SteerSweepRadiusScale;
+	const float HalfHeight = FMath::Max(Capsule->GetScaledCapsuleHalfHeight() - StepHeight * 0.5f, Radius);
+	const FVector Start = GetActorLocation() + FVector::UpVector * (StepHeight * 0.5f);
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBEnemySteer), false, this);
+	if (Goal)
+	{
+		Params.AddIgnoredActor(Goal);
+	}
+	// Other enemies are not obstacles to plan around: they move, and the capsules push each other aside.
+	FCollisionResponseParams Response;
+	Response.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+
+	FHitResult Hit;
+	if (!World->SweepSingleByChannel(Hit, Start, Start + Direction * Distance, FQuat::Identity, ECC_Pawn,
+		FCollisionShape::MakeCapsule(Radius, HalfHeight), Params, Response))
+	{
+		return false;
+	}
+	if (Hit.bStartPenetrating)
+	{
+		// Already touching something: only directions into it are blocked.
+		return FVector::DotProduct(Hit.Normal, Direction) < 0.f;
+	}
+	// A ramp or a slope it can walk up is not an obstacle.
+	return Hit.ImpactNormal.Z < Move->GetWalkableFloorZ();
+}
+
+void AGBEnemyCharacter::ResetStuck()
+{
+	StuckTimer = 0.f;
+	StuckOrigin = GetActorLocation();
+}
+
+void AGBEnemyCharacter::UpdateStuck(float DeltaSeconds)
+{
+	if (!bWantsToMove)
+	{
+		ResetStuck();
+		return;
+	}
+
+	StuckTimer += DeltaSeconds;
+	const float Window = FMath::Max(GetGameValue(GBEnemyKey::StuckTime, 0.8f), 0.1f);
+	if (StuckTimer < Window)
+	{
+		return;
+	}
+
+	const float Moved = FVector::Dist2D(GetActorLocation(), StuckOrigin);
+	const float Speed = GetCharacterMovement() ? GetCharacterMovement()->MaxWalkSpeed : 0.f;
+	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GBEnemyCharacterLocal::StuckSpeedFraction);
+	ResetStuck();
+	if (Moved >= Threshold)
+	{
+		return;
+	}
+
+	++StuckCount;
+	const float GoAround = FMath::Max(GetGameValue(GBEnemyKey::GoAroundTime, 1.5f), 0.f);
+	if (!bSteering)
+	{
+		// The navmesh path is not getting anywhere (snagged on a corner, the mesh still building): steer for a while.
+		NavRetryTimer = FMath::Max(GetGameValue(GBEnemyKey::NavRetryDelay, 1.f), GoAround);
+		if (AAIController* AI = Cast<AAIController>(GetController()))
+		{
+			AI->StopMovement();
+		}
+	}
+	else if (GoAroundTimer > 0.f)
+	{
+		// Already going around this way and still stuck (a dead end): try the other side.
+		SteerSide = -SteerSide;
+	}
+	GoAroundTimer = GoAround;
+	SteerSideHoldTimer = GoAround;
+	UE_LOG(LogGB, Verbose, TEXT("%s stuck (moved %.0f cm): going around on side %d"), *GetName(), Moved, SteerSide);
+}
+
+FString AGBEnemyCharacter::DescribeMovement() const
+{
+	return FString::Printf(TEXT("navTime=%.1f steerTime=%.1f stuckEvents=%d side=%d goAround=%.1f state=%d"),
+		NavMoveTime, SteerMoveTime, StuckCount, SteerSide, GoAroundTimer, static_cast<int32>(State));
+}
+
+void AGBEnemyCharacter::FellOutOfWorld(const UDamageType& DamageType)
+{
+	if (State == EGBEnemyState::Dead)
+	{
+		Super::FellOutOfWorld(DamageType);
+		return;
+	}
+
+	// Die like any other death so the encounter counts it; no drops down there.
+	bFellOutOfWorld = true;
+	FGBDamageInfo Info;
+	Info.Amount = Attributes->GetMaxHealth() + Attributes->GetHealth() + 1.f;
+	Info.SourceId = FName(TEXT("FellOutOfWorld"));
+	Attributes->SetInvulnerable(false);
+	Attributes->ApplyDamage(Info);
+	if (State != EGBEnemyState::Dead)
+	{
+		// The hit was cancelled (a shield, DamageTaken 0): it still cannot come back from below the world.
+		HandleDeath(Info);
+	}
+	SetActorHiddenInGame(true);
 }
 
 void AGBEnemyCharacter::StopMoving()
@@ -533,9 +740,11 @@ void AGBEnemyCharacter::HandleDamaged(const FGBDamageInfo& Info, float ActualDam
 
 void AGBEnemyCharacter::HandlePresenceChanged()
 {
+	ResetStuck();
 	if (!EraComponent->IsPresent() && State != EGBEnemyState::Dead)
 	{
 		StopMoving();
+		bRepositioning = false;
 		if (State == EGBEnemyState::Windup)
 		{
 			SetState(EGBEnemyState::Chase);
@@ -560,7 +769,8 @@ void AGBEnemyCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 	SetActorEnableCollision(false);
 
 	UWorld* World = GetWorld();
-	if (const FGBEnemyDefinition* Def = GetDefinition())
+	const FGBEnemyDefinition* Def = GetDefinition();
+	if (Def && !bFellOutOfWorld)
 	{
 		AGBPickup::SpawnDrops(World, Def->Drops, GetActorLocation());
 	}

@@ -26,6 +26,8 @@ void AGBSpell_Projectile::StartSpell()
 	Config.MaxRange = FMath::Max(0.f, ReadParam(GBStat::Range, 5000.f));
 	Config.ExplosionRadius = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionRadius, 0.f));
 	Config.bExplosionFalloff = SpellCast.Get(GBSpellParam::ExplosionFalloff, 1.f) > 0.5f;
+	Config.ExplosionKnockback = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionKnockback, Config.ExplosionKnockback));
+	Config.ExplosionEffectTime = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionEffectTime, Config.ExplosionEffectTime));
 	Config.GravityScale = SpellCast.Get(GBStat::ProjectileGravity, 0.f);
 	Config.bPierce = SpellCast.Get(GBSpellParam::Pierce, 0.f) > 0.5f;
 	Config.bPixelArt = true;

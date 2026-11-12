@@ -6,6 +6,9 @@
 #include "Core/GBTypes.h"
 #include "GBCombatLibrary.generated.h"
 
+/** One hit that really took health away: who was hit, the final hit (after stats and shields) and the health removed. */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnDamageDealt, AActor* /*Target*/, const FGBDamageInfo& /*Info*/, float /*DamageDealt*/);
+
 UCLASS()
 class GLYPHBOUND_API UGBCombatLibrary : public UBlueprintFunctionLibrary
 {
@@ -27,6 +30,13 @@ public:
 	 */
 	static int32 DealRadialDamage(const UObject* WorldContextObject, const FVector& Origin, float Radius, const FGBDamageInfo& Info,
 		TConstArrayView<AActor*> IgnoreActors, bool bLinearFalloff = false);
+
+	/**
+	 * Fired for every hit that removed health, anywhere in the game (weapons, spells, effects over time, enemies).
+	 * It is global, not per world: whoever binds must unbind in EndPlay. The HUD uses it for the floating damage
+	 * numbers; Info.bHeadshot, Info.Element and Info.HitLocation are filled when the source knows them.
+	 */
+	static FGBOnDamageDealt& OnDamageDealt();
 
 	static EGBTeam GetTeam(const AActor* Actor);
 

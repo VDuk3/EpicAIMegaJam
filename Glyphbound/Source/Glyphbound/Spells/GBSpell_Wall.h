@@ -10,9 +10,12 @@
 //   DamagePerSecond   optional; > 0 = hostile actors inside / touching the wall take damage every TickInterval
 //   TickInterval      seconds between damage ticks (when DamagePerSecond > 0)
 //   SpriteSize        optional; height of each sprite (default = Height)
+//   TileSize          with Texture: cm covered by one tile of the texture (default 100)
+//   Glow              with Texture: > 0.5 = the surface also emits its own color (magic look; default 0)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
-// Strings: Sprite (drawn in a row along the wall), Color (glow tint, default = element color), OnHitEffect
-// (status effect given with each damage tick, e.g. Burn for the fire wall).
+// Strings: Texture (tile sprite id: the wall is a STRUCTURE, one solid box with a pixel texture, GDD 3; the ice
+// wall), Sprite (without Texture: an effect, a glowing box plus a row of camera-facing sprites; the fire wall),
+// Color (glow tint, default = element color), OnHitEffect (status effect given with each damage tick, e.g. Burn).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -27,6 +30,16 @@ struct FGBDamageInfo;
 namespace GBSpellParam
 {
 	inline const FName Blocking(TEXT("Blocking"));
+	/** Param "TileSize" (named apart so it cannot clash with another behavior's constant). */
+	inline const FName WallTileSize(TEXT("TileSize"));
+	/** Param "Glow". */
+	inline const FName WallGlow(TEXT("Glow"));
+}
+
+namespace GBSpellString
+{
+	/** Strings "Texture": tile sprite id of a textured (structure) wall. */
+	inline const FName WallTexture(TEXT("Texture"));
 }
 
 UCLASS()

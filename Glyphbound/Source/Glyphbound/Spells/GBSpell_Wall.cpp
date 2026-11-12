@@ -56,10 +56,23 @@ void AGBSpell_Wall::StartSpell()
 
 	const FVector Size(Thickness, Width, Height);
 	Box->SetBoxExtent(Size * 0.5f);
-	GBPlaceholder::SetupShape(Visual, EGBShape::Cube, Size, GetSpellColor(), true);
 
-	// A row of camera-facing sprites along the wall (pixel-art flames / ice).
-	if (!GetSpriteId().IsNone())
+	const FString TextureId = SpellCast.GetString(GBSpellString::WallTexture);
+	if (!TextureId.IsEmpty())
+	{
+		// A structure (ice wall): one solid pixel-textured box, no camera-facing sprites (GDD 3).
+		const float TileSize = ReadParam(GBSpellParam::WallTileSize, 100.f);
+		const bool bGlow = SpellCast.Get(GBSpellParam::WallGlow, 0.f) > 0.5f;
+		GBPlaceholder::SetupTexturedShape(Visual, EGBShape::Cube, Size, FName(*TextureId), TileSize, FLinearColor::White, bGlow);
+		Visual->SetCastShadow(true);
+	}
+	else
+	{
+		// An effect (fire wall): a glowing box plus a row of camera-facing sprites (pixel-art flames).
+		GBPlaceholder::SetupShape(Visual, EGBShape::Cube, Size, GetSpellColor(), true);
+	}
+
+	if (TextureId.IsEmpty() && !GetSpriteId().IsNone())
 	{
 		const float SpriteHeight = FMath::Max(1.f, SpellCast.Get(GBSpellParam::SpriteSize, Height));
 		const int32 Count = FMath::Clamp(FMath::RoundToInt(Width / SpriteHeight), 1, MaxWallSprites);

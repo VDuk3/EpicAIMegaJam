@@ -7,12 +7,15 @@
 #include "GBGameMode.generated.h"
 
 class AGBPlayerCharacter;
+class AGBTestArena;
 class APlayerStart;
 
 /** Keys of Game.json "Values" read by the game mode. */
 namespace GBGameValue
 {
 	inline const FName RespawnDelay(TEXT("RespawnDelay"));   // seconds between death and the checkpoint restore
+	/** cm, world height below which the player dies (falling out of the map). Relative to the floor of the code-built arena. */
+	inline const FName KillZ(TEXT("KillZ"));
 }
 
 /** Exists so the project has its own game instance class to grow into; the state lives in the subsystems. */
@@ -27,6 +30,7 @@ class GLYPHBOUND_API UGBGameInstance : public UGameInstance
  * - If the world has no AGBTestArena yet and the map has no PlayerStart (or is an engine map like the
  *   default empty Entry map), it spawns AGBTestArena, which builds the whole test level in code, and uses
  *   the APlayerStart the arena created.
+ * - Falling out of the map kills the player: InitGame sets the world's KillZ from Game.json "KillZ".
  * - Player death (checkpoints only, GDD 10): shows the death screen, then after Game.json "RespawnDelay"
  *   restores the last checkpoint (or restarts the map if there is none) and resets running encounters.
  */
@@ -55,6 +59,12 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
+	/**
+	 * Sets the world's KillZ from Game.json "KillZ" (if present). With the code-built arena it is relative to the
+	 * arena floor; on a real level it is only applied if the level kept the engine's default KillZ.
+	 */
+	void ApplyKillZ(const AGBTestArena* Arena);
+
 	bool bWaitingToRespawn = false;
 	/** Real time (World->GetRealTimeSeconds) at which the respawn happens even if the game is paused. */
 	double RespawnRealTime = 0.0;

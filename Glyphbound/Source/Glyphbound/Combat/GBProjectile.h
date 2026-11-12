@@ -32,6 +32,10 @@ struct GLYPHBOUND_API FGBProjectileConfig
 	/** > 0: on impact (or when the fuse / range ends) it deals Damage in this radius instead of a single hit. */
 	UPROPERTY() float ExplosionRadius = 0.f;
 	UPROPERTY() bool bExplosionFalloff = true;
+	/** cm/s pushed onto hostile characters by the blast: full at the center, 0 at the edge. 0 = no push. */
+	UPROPERTY() float ExplosionKnockback = 0.f;
+	/** Seconds the explosion shockwave (AGBExplosionEffect) is shown. Every explosion shows it, hit or miss. */
+	UPROPERTY() float ExplosionEffectTime = 0.35f;
 	/** > 0: it does not explode on contact with the world; it bounces and explodes after this many seconds (grenades). */
 	UPROPERTY() float FuseTime = 0.f;
 	/** Keeps going through actors it damages (each actor once). */
@@ -85,7 +89,10 @@ protected:
 	bool IsValidTarget(const AActor* Other) const;
 	/** Damages (or explodes on) a valid target, then finishes unless it pierces. */
 	void HitTarget(AActor* Other, const FVector& ImpactPoint);
+	/** Blast damage, the shockwave effect and the knockback. Called on every explosion, whatever it hit. */
 	void Explode(const FVector& Origin);
+	/** Pushes hostile characters in the blast away from Origin (never the instigator; walls block it like the damage). */
+	void ApplyExplosionKnockback(const FVector& Origin);
 	/** Broadcasts OnImpact once and destroys the projectile. */
 	void Finish(AActor* HitActor, const FVector& Location);
 

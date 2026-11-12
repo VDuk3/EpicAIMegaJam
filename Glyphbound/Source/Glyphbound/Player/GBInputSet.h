@@ -52,6 +52,7 @@ public:
 	UPROPERTY() TObjectPtr<UInputAction> Inventory;    // Tab / View
 	UPROPERTY() TObjectPtr<UInputAction> SkillTrees;   // K
 	UPROPERTY() TObjectPtr<UInputAction> Pause;        // Esc / Menu
+	UPROPERTY() TObjectPtr<UInputAction> Block;        // Q / L2: hold to raise the summoned shield (staff or sword in hand)
 	// Gamepad face buttons, raw: the character decides if they mean jump / dash / reload / interact,
 	// a QTE key, or (with L2 held and the staff) spell slots 2-5.
 	UPROPERTY() TObjectPtr<UInputAction> FaceUp;
@@ -68,4 +69,5 @@ public:
 	UPROPERTY() TObjectPtr<UInputAction> MenuConfirm;  // Enter / Space / Cross (A)
 	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Tab / Circle (B)
 	UPROPERTY() TObjectPtr<UInputAction> MenuTab;      // Axis1D: Q-E / L1-R1, switches menu page
+	UPROPERTY() TObjectPtr<UInputAction> MenuClick;    // left mouse button (menu context only)
 };

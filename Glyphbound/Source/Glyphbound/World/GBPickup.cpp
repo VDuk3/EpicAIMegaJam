@@ -177,13 +177,34 @@ bool AGBPickup::GiveDrop(AGBPlayerCharacter* Player, FGBDropDefinition& InOutDro
 
 	if (!InOutDrop.WeaponId.IsNone())
 	{
+		// Owner's rule (2026-11-12): a weapon never replaces the one in hand and nothing is left on the floor.
+		// A new weapon goes to its slot if that is empty, otherwise it is stored (equipped later from the inventory).
 		UGBEquipmentComponent* Equipment = Player->GetEquipment();
-		if (Equipment && Equipment->GiveWeapon(InOutDrop.WeaponId, true, true))
+		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(Player);
+		const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(InOutDrop.WeaponId) : nullptr;
+		if (!Equipment || !Def)
 		{
-			bOutAllTaken = true;
-			return true;
+			return false;
 		}
-		return false;
+		const bool bGun = Def->Slot == EGBHeldSlot::Gun;
+		if (Equipment->OwnsWeapon(InOutDrop.WeaponId))
+		{
+			// A copy of a gun already owned is worth one spare magazine if that gun is in the slot; otherwise it is just used up.
+			if (bGun && Equipment->IsWeaponEquipped(InOutDrop.WeaponId))
+			{
+				Equipment->AddSpareMagazines(1);
+			}
+		}
+		else
+		{
+			Equipment->GiveWeapon(InOutDrop.WeaponId, true);
+			if (!Equipment->OwnsWeapon(InOutDrop.WeaponId))
+			{
+				return false;
+			}
+		}
+		bOutAllTaken = true;
+		return true;
 	}
 
 	if (!InOutDrop.SpellGroup.IsNone())
@@ -315,6 +336,15 @@ void AGBPickup::TryPickUp(AGBPlayerCharacter* Player)
 	}
 
 	const FGBDropDefinition Before = Drop;
+
+	// Weapon drops: what happened decides the message ("Picked up", "added to the inventory", "already owned").
+	const bool bWeaponDrop = Before.ItemId.IsNone() && !Before.WeaponId.IsNone();
+	const UGBEquipmentComponent* EquipmentBefore = Player->GetEquipment();
+	const bool bOwnedBefore = bWeaponDrop && EquipmentBefore && EquipmentBefore->OwnsWeapon(Before.WeaponId);
+	FGBAmmoState AmmoBefore;
+	const bool bHadAmmo = bOwnedBefore && EquipmentBefore->IsWeaponEquipped(Before.WeaponId)
+		&& EquipmentBefore->GetWeaponAmmo(Before.WeaponId, AmmoBefore);
+
 	bool bAllTaken = false;
 	if (!GiveDrop(Player, Drop, bAllTaken))
 	{
@@ -340,12 +370,37 @@ void AGBPickup::TryPickUp(AGBPlayerCharacter* Player)
 		}
 	}
 
-	FGBDropDefinition TakenPart = Before;
-	if (!Before.ItemId.IsNone())
+	if (bWeaponDrop)
 	{
-		TakenPart.Count = FMath::Max(1, Before.Count) - FMath::Max(0, Drop.Count);
+		const FString Name = GetDropDisplayName(this, Before);
+		const UGBEquipmentComponent* Equipment = Player->GetEquipment();
+		FString Message;
+		if (bOwnedBefore)
+		{
+			FGBAmmoState AmmoAfter;
+			const bool bGotMagazine = bHadAmmo && Equipment && Equipment->GetWeaponAmmo(Before.WeaponId, AmmoAfter)
+				&& AmmoAfter.SpareMagazines > AmmoBefore.SpareMagazines;
+			Message = bGotMagazine ? FString::Printf(TEXT("%s: +1 magazine"), *Name) : FString::Printf(TEXT("%s: already owned"), *Name);
+		}
+		else if (Equipment && Equipment->IsWeaponEquipped(Before.WeaponId))
+		{
+			Message = FString::Printf(TEXT("Picked up %s"), *Name);
+		}
+		else
+		{
+			Message = FString::Printf(TEXT("%s added to the inventory"), *Name);
+		}
+		GBPickupLocal::ShowHudMessage(this, Message);
 	}
-	GBPickupLocal::ShowHudMessage(this, FString::Printf(TEXT("Picked up %s"), *GetDropDisplayName(this, TakenPart, true)));
+	else
+	{
+		FGBDropDefinition TakenPart = Before;
+		if (!Before.ItemId.IsNone())
+		{
+			TakenPart.Count = FMath::Max(1, Before.Count) - FMath::Max(0, Drop.Count);
+		}
+		GBPickupLocal::ShowHudMessage(this, FString::Printf(TEXT("Picked up %s"), *GetDropDisplayName(this, TakenPart, true)));
+	}
 
 	if (bAllTaken)
 	{

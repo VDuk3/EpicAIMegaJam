@@ -119,6 +119,7 @@ void UGBInputSet::Build()
 	Reload = MakeAction(this, TEXT("IA_Reload"), EType::Boolean);
 	Interact = MakeAction(this, TEXT("IA_Interact"), EType::Boolean);
 	QuickUse = MakeAction(this, TEXT("IA_QuickUse"), EType::Boolean);
+	Block = MakeAction(this, TEXT("IA_Block"), EType::Boolean);
 	// These three open / close menus, so they must also fire while the game is paused.
 	Inventory = MakeAction(this, TEXT("IA_Inventory"), EType::Boolean, true);
 	SkillTrees = MakeAction(this, TEXT("IA_SkillTrees"), EType::Boolean, true);
@@ -138,6 +139,7 @@ void UGBInputSet::Build()
 	MenuConfirm = MakeAction(this, TEXT("IA_MenuConfirm"), EType::Boolean, true);
 	MenuBack = MakeAction(this, TEXT("IA_MenuBack"), EType::Boolean, true);
 	MenuTab = MakeAction(this, TEXT("IA_MenuTab"), EType::Axis1D, true);
+	MenuClick = MakeAction(this, TEXT("IA_MenuClick"), EType::Boolean, true);
 
 	// ---- Gameplay context (GDD 9) ----
 	GameplayContext = NewObject<UInputMappingContext>(this, MakeUniqueObjectName(this, UInputMappingContext::StaticClass(), TEXT("IMC_Gameplay")));
@@ -178,6 +180,10 @@ void UGBInputSet::Build()
 	MapButton(G, Interact, EKeys::G);
 	MapButton(G, QuickUse, EKeys::F);
 	MapButton(G, QuickUse, EKeys::Gamepad_RightShoulder);
+	// L2 is also Secondary (aim with a gun, spell modifier with the staff): both meanings coexist, the character
+	// and the spellbook decide (block is refused with a gun in hand).
+	MapButton(G, Block, EKeys::Q);
+	MapButton(G, Block, EKeys::Gamepad_LeftTrigger);
 
 	MapButton(G, Inventory, EKeys::Tab);
 	MapButton(G, Inventory, EKeys::Gamepad_Special_Left);
@@ -222,6 +228,8 @@ void UGBInputSet::Build()
 	MapAxis1D(M, MenuTab, EKeys::E);
 	MapAxis1D(M, MenuTab, EKeys::Gamepad_LeftShoulder, true);
 	MapAxis1D(M, MenuTab, EKeys::Gamepad_RightShoulder);
+
+	MapButton(M, MenuClick, EKeys::LeftMouseButton);
 
 	// Inside menus: the gamepad Menu / View buttons and K still toggle their screens (Esc and Tab are "back" here).
 	MapButton(M, Pause, EKeys::Gamepad_Special_Right);

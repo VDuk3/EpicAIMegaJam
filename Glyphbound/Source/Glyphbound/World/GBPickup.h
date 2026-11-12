@@ -36,7 +36,8 @@ public:
 	const FGBDropDefinition& GetDrop() const { return Drop; }
 
 	/**
-	 * Gives one drop to the player with the pickup rules (item -> inventory, weapon -> equipment, spell group ->
+	 * Gives one drop to the player with the pickup rules (item -> inventory, weapon -> owned: its slot if empty,
+	 * otherwise stored; a weapon already owned is used up, a gun in the slot gains one spare magazine; spell group ->
 	 * spellbook). Returns true if anything was taken. For items, InOutDrop.Count is reduced by what was taken;
 	 * bOutAllTaken tells whether nothing is left. Shared by pickups and chests.
 	 */

@@ -26,7 +26,7 @@ namespace
 
 AGBPlayerController::AGBPlayerController()
 {
-	// Menus are driven by keyboard / gamepad only.
+	// Hidden while playing; shown while a menu is open (ApplyMouseMode).
 	bShowMouseCursor = false;
 }
 
@@ -35,7 +35,53 @@ void AGBPlayerController::BeginPlay()
 	Super::BeginPlay();
 	if (IsLocalController())
 	{
-		SetInputMode(FInputModeGameOnly());
+		ApplyMouseMode(OpenMenu != EGBMenu::None);
+	}
+}
+
+void AGBPlayerController::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
+{
+	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
+	if (bCenterCursorPending)
+	{
+		bCenterCursorPending = false;
+		if (OpenMenu != EGBMenu::None)
+		{
+			CenterMouseCursor();
+		}
+	}
+}
+
+void AGBPlayerController::ApplyMouseMode(bool bMenuOpen)
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+	if (bMenuOpen)
+	{
+		bShowMouseCursor = true;
+		FInputModeGameAndUI Mode;
+		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		Mode.SetHideCursorDuringCapture(false);
+		SetInputMode(Mode);
+		return;
+	}
+	bShowMouseCursor = false;
+	// The click that gives the mouse back to the game is swallowed, so it never fires the weapon.
+	FInputModeGameOnly Mode;
+	Mode.SetConsumeCaptureMouseDown(true);
+	SetInputMode(Mode);
+}
+
+void AGBPlayerController::CenterMouseCursor()
+{
+	int32 SizeX = 0;
+	int32 SizeY = 0;
+	GetViewportSize(SizeX, SizeY);
+	if (SizeX > 0 && SizeY > 0)
+	{
+		SetMouseLocation(SizeX / 2, SizeY / 2);
 	}
 }
 
@@ -84,6 +130,7 @@ void AGBPlayerController::SetupInput(UGBInputSet* InInputSet)
 	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
 	EIC->BindAction(InputSet->MenuBack, ETriggerEvent::Started, this, &ThisClass::InputMenuBack);
 	EIC->BindAction(InputSet->MenuTab, ETriggerEvent::Started, this, &ThisClass::InputMenuTab);
+	EIC->BindAction(InputSet->MenuClick, ETriggerEvent::Started, this, &ThisClass::InputMenuClick);
 }
 
 void AGBPlayerController::SetMenu(EGBMenu Menu)
@@ -108,8 +155,13 @@ void AGBPlayerController::SetMenu(EGBMenu Menu)
 		if (Subsystem && InputSet)
 		{
 			Subsystem->RemoveMappingContext(InputSet->MenuContext);
-			Subsystem->AddMappingContext(InputSet->GameplayContext, GameplayContextPriority);
+			// A key or button still held from the menu (the click that closed it) does nothing until released.
+			FModifyContextOptions Options;
+			Options.bIgnoreAllPressedKeysUntilRelease = true;
+			Subsystem->AddMappingContext(InputSet->GameplayContext, GameplayContextPriority, Options);
 		}
+		bCenterCursorPending = false;
+		ApplyMouseMode(false);
 		return;
 	}
 
@@ -127,6 +179,13 @@ void AGBPlayerController::SetMenu(EGBMenu Menu)
 		Subsystem->AddMappingContext(InputSet->MenuContext, MenuContextPriority);
 	}
 	SetPause(IsPausingMenu(Menu));
+
+	ApplyMouseMode(true);
+	if (OldMenu == EGBMenu::None)
+	{
+		CenterMouseCursor();
+		bCenterCursorPending = true;
+	}
 
 	if (HUD)
 	{
@@ -238,5 +297,32 @@ void AGBPlayerController::InputMenuTab(const FInputActionValue& Value)
 	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
 	{
 		HUD->MenuTab(Axis > 0.f ? 1 : -1);
+	}
+}
+
+void AGBPlayerController::InputMenuClick()
+{
+	if (OpenMenu == EGBMenu::None)
+	{
+		return;
+	}
+	if (OpenMenu == EGBMenu::Death)
+	{
+		// Like confirm: a click anywhere respawns.
+		if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+		{
+			GameMode->RespawnPlayer();
+		}
+		return;
+	}
+	float MouseX = 0.f;
+	float MouseY = 0.f;
+	if (!GetMousePosition(MouseX, MouseY))
+	{
+		return;
+	}
+	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+	{
+		HUD->MenuClick(FVector2D(MouseX, MouseY));
 	}
 }

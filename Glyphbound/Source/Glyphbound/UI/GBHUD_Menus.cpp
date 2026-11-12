@@ -1,4 +1,5 @@
-// Menus of AGBHUD: pause, inventory (items, spells, skills), skill trees, death screen. Keyboard / gamepad only.
+// Menus of AGBHUD: pause, inventory (items, weapons, spells, skills), skill trees, death screen.
+// Keyboard, gamepad and mouse share one cursor: every clickable drawn in a frame is recorded in MenuHits.
 #include "UI/GBHUD.h"
 
 #include "UI/GBHUDShared.h"
@@ -7,7 +8,11 @@
 #include "Spells/GBSpellbookComponent.h"
 #include "Items/GBInventoryComponent.h"
 #include "Progression/GBSkillTreeComponent.h"
+#include "Weapons/GBEquipmentComponent.h"
+#include "Weapons/GBHeldItem.h"
 #include "Data/GBDataSubsystem.h"
+#include "Core/GBGameMode.h"
+#include "Core/GBStatNames.h"
 
 #include "Engine/Canvas.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -84,6 +89,47 @@ namespace GBHudMenuLocal
 		// FName comparison ignores case.
 		return Tree == FName(TEXT("Weapon")) || Tree == FName(TEXT("Weapons"));
 	}
+
+	FString WeaponName(const UGBDataSubsystem* Data, FName WeaponId)
+	{
+		const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr;
+		return (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : WeaponId.ToString();
+	}
+
+	FString SlotName(EGBHeldSlot Slot, bool bPlural)
+	{
+		switch (Slot)
+		{
+		case EGBHeldSlot::Staff: return bPlural ? TEXT("Staffs") : TEXT("Staff");
+		case EGBHeldSlot::Gun: return bPlural ? TEXT("Guns") : TEXT("Gun");
+		case EGBHeldSlot::Sword: return TEXT("Sword");
+		}
+		return FString();
+	}
+
+	/** "Damage 10 x8   Fire interval 0.85 s   Magazine 6" from the base data. */
+	TArray<FString> WeaponStatLines(const FGBWeaponDefinition& Def)
+	{
+		TArray<FString> Lines;
+		const float Damage = Def.Stats.FindRef(GBStat::Damage);
+		const int32 Pellets = FMath::RoundToInt(Def.Stats.FindRef(GBStat::Pellets));
+		if (Damage > 0.f)
+		{
+			Lines.Add(Pellets > 1 ? FString::Printf(TEXT("Damage %d x%d"), FMath::RoundToInt(Damage), Pellets)
+				: FString::Printf(TEXT("Damage %d"), FMath::RoundToInt(Damage)));
+		}
+		const float Interval = Def.Stats.FindRef(GBStat::FireInterval);
+		if (Interval > 0.f)
+		{
+			Lines.Add(FString::Printf(TEXT("Fire interval %.2f s"), Interval));
+		}
+		const int32 Magazine = FMath::RoundToInt(Def.Stats.FindRef(GBStat::MagazineSize));
+		if (Def.Slot == EGBHeldSlot::Gun && Magazine > 0)
+		{
+			Lines.Add(FString::Printf(TEXT("Magazine %d"), Magazine));
+		}
+		return Lines;
+	}
 }
 
 // ======================================================================== state and input
@@ -102,6 +148,7 @@ EGBMenu AGBHUD::GetOpenMenu() const
 void AGBHUD::OnMenuOpened(EGBMenu Menu)
 {
 	MenuState = FMenuState();
+	ResetMenuMouse();
 	if (Menu == EGBMenu::SkillTrees)
 	{
 		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
@@ -112,6 +159,168 @@ void AGBHUD::OnMenuOpened(EGBMenu Menu)
 void AGBHUD::OnMenuClosed(EGBMenu Menu)
 {
 	MenuState = FMenuState();
+	ResetMenuMouse();
+}
+
+void AGBHUD::SetInventoryPage(int32 NewPage)
+{
+	const FName KeepSkill = MenuState.SkillCursor;
+	MenuState = FMenuState();
+	MenuState.Page = GBHudMenuLocal::Wrap(NewPage, PageCount);
+	MenuState.SkillCursor = KeepSkill;
+}
+
+// ======================================================================== mouse
+
+void AGBHUD::ResetMenuMouse()
+{
+	MenuHits.Reset();
+	MenuHitsMenu = EGBMenu::None;
+	MenuHitsPage = -1;
+	bMenuHitsChoosing = false;
+	// The first position read after opening is only a baseline: an idle mouse must not steal the keyboard cursor.
+	bHasMenuMouse = false;
+}
+
+void AGBHUD::AddMenuHit(EMenuHitKind Kind, float X, float Y, float W, float H, int32 Index, FName Id)
+{
+	FMenuHit Hit;
+	Hit.Kind = Kind;
+	Hit.Min = FVector2D(X, Y);
+	Hit.Max = FVector2D(X + FMath::Max(0.f, W), Y + FMath::Max(0.f, H));
+	Hit.Index = Index;
+	Hit.Id = Id;
+	MenuHits.Add(Hit);
+}
+
+const AGBHUD::FMenuHit* AGBHUD::FindMenuHit(const FVector2D& CanvasPosition) const
+{
+	// Last drawn is on top.
+	for (int32 i = MenuHits.Num() - 1; i >= 0; --i)
+	{
+		const FMenuHit& Hit = MenuHits[i];
+		if (CanvasPosition.X >= Hit.Min.X && CanvasPosition.X <= Hit.Max.X && CanvasPosition.Y >= Hit.Min.Y && CanvasPosition.Y <= Hit.Max.Y)
+		{
+			return &Hit;
+		}
+	}
+	return nullptr;
+}
+
+void AGBHUD::UpdateMenuMouse()
+{
+	APlayerController* PC = GetOwningPlayerController();
+	float MouseX = 0.f;
+	float MouseY = 0.f;
+	if (!PC || !PC->GetMousePosition(MouseX, MouseY))
+	{
+		return;
+	}
+	const FVector2D Mouse(MouseX * MouseToCanvas, MouseY * MouseToCanvas);
+	const bool bMoved = bHasMenuMouse && !Mouse.Equals(LastMenuMouse, 0.5f);
+	LastMenuMouse = Mouse;
+	bHasMenuMouse = true;
+	// Hover uses last frame's clickables, so the highlight moves in the same frame it is drawn.
+	if (bMoved && MenuHitsMenu == GetOpenMenu())
+	{
+		if (const FMenuHit* Hit = FindMenuHit(Mouse))
+		{
+			ApplyMenuHover(*Hit);
+		}
+	}
+}
+
+void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
+{
+	switch (Hit.Kind)
+	{
+	case EMenuHitKind::PauseEntry:
+	case EMenuHitKind::ItemRow:
+	case EMenuHitKind::WeaponRow:
+		MenuState.Cursor = Hit.Index;
+		break;
+	case EMenuHitKind::SpellSlot:
+		if (!MenuState.bChoosingSpell)
+		{
+			MenuState.Cursor = Hit.Index;
+		}
+		break;
+	case EMenuHitKind::SpellChoice:
+		MenuState.SubCursor = Hit.Index;
+		break;
+	case EMenuHitKind::SkillNode:
+		MenuState.SkillCursor = Hit.Id;
+		break;
+	default:
+		// Tabs and the death screen only react to clicks.
+		break;
+	}
+}
+
+void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
+{
+	AGBPlayerCharacter* Player = GetPlayer();
+	switch (Hit.Kind)
+	{
+	case EMenuHitKind::PauseEntry:
+		MenuState.Cursor = Hit.Index;
+		MenuConfirm();
+		break;
+	case EMenuHitKind::Tab:
+		if (Hit.Index != MenuState.Page)
+		{
+			SetInventoryPage(Hit.Index);
+		}
+		break;
+	case EMenuHitKind::ItemRow:
+		MenuState.Cursor = Hit.Index;
+		ConfirmItem(Player);
+		break;
+	case EMenuHitKind::WeaponRow:
+		MenuState.Cursor = Hit.Index;
+		ConfirmWeapon(Player);
+		break;
+	case EMenuHitKind::SpellSlot:
+		// A click on another slot while choosing leaves the chooser and opens it for that slot.
+		MenuState.bChoosingSpell = false;
+		MenuState.Cursor = Hit.Index;
+		ConfirmSpellSlot(Player);
+		break;
+	case EMenuHitKind::SpellChoice:
+		MenuState.SubCursor = Hit.Index;
+		ConfirmSpellSlot(Player);
+		break;
+	case EMenuHitKind::SkillNode:
+		MenuState.SkillCursor = Hit.Id;
+		ConfirmSkill(Player);
+		break;
+	case EMenuHitKind::DeathScreen:
+		if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+		{
+			GameMode->RespawnPlayer();
+		}
+		break;
+	}
+}
+
+bool AGBHUD::MenuClick(const FVector2D& ScreenPosition)
+{
+	const EGBMenu Menu = GetOpenMenu();
+	// Only the clickables of the screen that is showing right now (not of a page left this frame).
+	if (Menu == EGBMenu::None || Menu != MenuHitsMenu || MenuHitsPage != MenuState.Page || bMenuHitsChoosing != MenuState.bChoosingSpell)
+	{
+		return false;
+	}
+	const FVector2D Position = ScreenPosition * MouseToCanvas;
+	const FMenuHit* Found = FindMenuHit(Position);
+	if (!Found)
+	{
+		return false;
+	}
+	// Copy: the action may change the menu, and the list is rebuilt on the next draw.
+	const FMenuHit Hit = *Found;
+	ActivateMenuHit(Hit);
+	return true;
 }
 
 void AGBHUD::MenuNavigate(FIntPoint Direction)
@@ -149,6 +358,13 @@ void AGBHUD::MenuNavigate(FIntPoint Direction)
 				MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, UGBSpellbookComponent::NumSlots + 1);
 			}
 		}
+		else if (MenuState.Page == PageWeapons)
+		{
+			if (Direction.Y != 0)
+			{
+				MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, GetWeaponList(Player).Num());
+			}
+		}
 		else if (Direction.Y != 0)
 		{
 			MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, GetInventoryList(Player).Num());
@@ -184,6 +400,10 @@ void AGBHUD::MenuConfirm()
 		if (MenuState.Page == PageItems)
 		{
 			ConfirmItem(Player);
+		}
+		else if (MenuState.Page == PageWeapons)
+		{
+			ConfirmWeapon(Player);
 		}
 		else if (MenuState.Page == PageSpells)
 		{
@@ -233,11 +453,7 @@ void AGBHUD::MenuTab(int32 Direction)
 	const EGBMenu Menu = GetOpenMenu();
 	if (Menu == EGBMenu::Inventory)
 	{
-		const FName KeepSkill = MenuState.SkillCursor;
-		const int32 NewPage = GBHudMenuLocal::Wrap(MenuState.Page + Direction, PageCount);
-		MenuState = FMenuState();
-		MenuState.Page = NewPage;
-		MenuState.SkillCursor = KeepSkill;
+		SetInventoryPage(MenuState.Page + Direction);
 	}
 	else if (Menu == EGBMenu::SkillTrees)
 	{
@@ -278,6 +494,38 @@ TArray<FName> AGBHUD::GetInventoryList(AGBPlayerCharacter* Player) const
 		if (Entry.Value > 0 && !Result.Contains(Entry.Key))
 		{
 			Result.Add(Entry.Key);
+		}
+	}
+	return Result;
+}
+
+TArray<FName> AGBHUD::GetWeaponList(AGBPlayerCharacter* Player) const
+{
+	TArray<FName> Result;
+	const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+	if (!Equipment)
+	{
+		return Result;
+	}
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	static const EGBHeldSlot Order[] = { EGBHeldSlot::Staff, EGBHeldSlot::Gun, EGBHeldSlot::Sword };
+	for (const EGBHeldSlot Slot : Order)
+	{
+		for (const FName& WeaponId : Equipment->GetOwnedWeapons())
+		{
+			const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr;
+			if (Def && Def->Slot == Slot)
+			{
+				Result.AddUnique(WeaponId);
+			}
+		}
+	}
+	// Weapons no longer in the data (after a reload) are still listed, at the end.
+	for (const FName& WeaponId : Equipment->GetOwnedWeapons())
+	{
+		if (WeaponId != NAME_None)
+		{
+			Result.AddUnique(WeaponId);
 		}
 	}
 	return Result;
@@ -461,6 +709,31 @@ void AGBHUD::ConfirmItem(AGBPlayerCharacter* Player)
 	}
 }
 
+void AGBHUD::ConfirmWeapon(AGBPlayerCharacter* Player)
+{
+	UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+	const TArray<FName> List = GetWeaponList(Player);
+	if (!Equipment || List.Num() == 0)
+	{
+		return;
+	}
+	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
+	const FName WeaponId = List[MenuState.Cursor];
+	const FString Name = GBHudMenuLocal::WeaponName(UGBDataSubsystem::Get(this), WeaponId);
+	if (Equipment->IsWeaponEquipped(WeaponId))
+	{
+		ShowMessage(FString::Printf(TEXT("%s is already equipped"), *Name), 1.5f);
+	}
+	else if (Equipment->EquipOwnedWeapon(WeaponId))
+	{
+		ShowMessage(FString::Printf(TEXT("Equipped %s"), *Name), 2.f);
+	}
+	else
+	{
+		ShowMessage(TEXT("Cannot change weapons right now"), 1.5f);
+	}
+}
+
 void AGBHUD::ConfirmSpellSlot(AGBPlayerCharacter* Player)
 {
 	UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
@@ -555,6 +828,11 @@ float AGBHUD::DrawWrapped(const FString& Text, const FLinearColor& Color, float 
 void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 {
 	const FGBHudSkinStyle& Style = GetSkinStyle(GetCurrentSkin());
+	// Clickables are rebuilt while drawing, for the screen as it is now.
+	MenuHits.Reset();
+	MenuHitsMenu = GetOpenMenu();
+	MenuHitsPage = MenuState.Page;
+	bMenuHitsChoosing = MenuState.bChoosingSpell;
 	switch (GetOpenMenu())
 	{
 	case EGBMenu::Pause:
@@ -575,7 +853,7 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 		{
 			DrawSkillTrees(Player, Canvas->ClipY * 0.1f);
 		}
-		DrawLabel(TEXT("Arrows: move   Enter: unlock   Q / E: other tree   Esc: close"), GBHudMenuLocal::MenuWhite,
+		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   Esc: close"), GBHudMenuLocal::MenuWhite,
 			Canvas->ClipX * 0.5f, Canvas->ClipY - 40.f * S, 16.f, 0.5f);
 		break;
 	}
@@ -608,8 +886,10 @@ void AGBHUD::DrawPauseMenu(const FGBHudSkinStyle& Style)
 		{
 			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), PX + 30.f * S, Y - 6.f * S, PW - 60.f * S, 42.f * S);
 		}
+		AddMenuHit(EMenuHitKind::PauseEntry, PX + 30.f * S, Y - 6.f * S, PW - 60.f * S, 42.f * S, i);
 		DrawLabel(bSelected ? FString::Printf(TEXT("> %s <"), Entries[i]) : FString(Entries[i]), Style.Text, W * 0.5f, Y, 26.f, 0.5f, bShadow);
 	}
+	DrawLabel(TEXT("Click or Enter: select   Esc: resume"), Style.Text, W * 0.5f, PY + PH - 36.f * S, 15.f, 0.5f, bShadow);
 }
 
 void AGBHUD::DrawDeathScreen()
@@ -618,7 +898,8 @@ void AGBHUD::DrawDeathScreen()
 	const float H = Canvas->ClipY;
 	DrawRect(FLinearColor(0.25f, 0.f, 0.f, 0.65f), 0.f, 0.f, W, H);
 	DrawLabel(TEXT("YOU DIED"), FLinearColor(1.f, 0.25f, 0.2f, 1.f), W * 0.5f, H * 0.38f, 72.f, 0.5f, true, true);
-	DrawLabel(TEXT("Press Enter / A to respawn"), GBHudMenuLocal::MenuWhite, W * 0.5f, H * 0.52f, 26.f, 0.5f);
+	DrawLabel(TEXT("Click, or press Enter / A, to respawn"), GBHudMenuLocal::MenuWhite, W * 0.5f, H * 0.52f, 26.f, 0.5f);
+	AddMenuHit(EMenuHitKind::DeathScreen, 0.f, 0.f, W, H);
 }
 
 void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
@@ -636,7 +917,8 @@ void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 	DrawPanel(Style, PX, PY, PW, PH);
 
 	// Tabs.
-	static const TCHAR* Tabs[] = { TEXT("Items"), TEXT("Spells"), TEXT("Skills") };
+	static const TCHAR* Tabs[] = { TEXT("Items"), TEXT("Weapons"), TEXT("Spells"), TEXT("Skills") };
+	static_assert((int32)UE_ARRAY_COUNT(Tabs) == PageCount,"One tab name per inventory page");
 	float TabX = PX + 24.f * S;
 	for (int32 i = 0; i < PageCount; ++i)
 	{
@@ -646,10 +928,11 @@ void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 		{
 			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.45f), TabX - 10.f * S, PY + 14.f * S, Size.X + 20.f * S, Size.Y + 8.f * S);
 		}
+		AddMenuHit(EMenuHitKind::Tab, TabX - 10.f * S, PY + 14.f * S, Size.X + 20.f * S, Size.Y + 8.f * S, i);
 		DrawLabel(Tabs[i], Style.Text, TabX, PY + 18.f * S, 24.f, 0.f, bShadow);
 		TabX += Size.X + 44.f * S;
 	}
-	DrawLabel(TEXT("Q / E: switch page   Esc: close"), Style.Text, PX + PW - 24.f * S, PY + 22.f * S, 16.f, 1.f, bShadow);
+	DrawLabel(TEXT("Q / E or click a tab: switch page   Esc: close"), Style.Text, PX + PW - 24.f * S, PY + 22.f * S, 16.f, 1.f, bShadow);
 
 	if (!Player)
 	{
@@ -662,6 +945,10 @@ void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 	if (MenuState.Page == PageItems)
 	{
 		DrawItemsPage(Player, Style, CX, CY, CW, CH);
+	}
+	else if (MenuState.Page == PageWeapons)
+	{
+		DrawWeaponsPage(Player, Style, CX, CY, CW, CH);
 	}
 	else if (MenuState.Page == PageSpells)
 	{
@@ -700,6 +987,7 @@ void AGBHUD::DrawItemsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 		{
 			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S);
 		}
+		AddMenuHit(EMenuHitKind::ItemRow, X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S, i);
 		FString Text = FString::Printf(TEXT("%s  x%d"), *ItemName(Data, ItemId), Inventory->GetCount(ItemId));
 		if (Inventory->GetEquippedArmor() == ItemId)
 		{
@@ -733,14 +1021,14 @@ void AGBHUD::DrawItemsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 		FString Hint;
 		switch (Def->Type)
 		{
-		case EGBItemType::Consumable: Hint = TEXT("Enter: use"); break;
+		case EGBItemType::Consumable: Hint = TEXT("Click or Enter: use"); break;
 		case EGBItemType::Throwable: Hint = TEXT("Throw it with [F] (quick-use, Shift cycles)"); break;
-		case EGBItemType::Armor: Hint = Inventory->GetEquippedArmor() == Selected ? TEXT("Enter: unequip") : TEXT("Enter: equip"); break;
+		case EGBItemType::Armor: Hint = Inventory->GetEquippedArmor() == Selected ? TEXT("Click or Enter: unequip") : TEXT("Click or Enter: equip"); break;
 		case EGBItemType::Material:
 		case EGBItemType::KeyItem:
 			if (MenuState.PendingCombine == NAME_None)
 			{
-				Hint = TEXT("Enter: combine with another item");
+				Hint = TEXT("Click or Enter: combine with another item");
 			}
 			else if (MenuState.PendingCombine == Selected)
 			{
@@ -748,12 +1036,115 @@ void AGBHUD::DrawItemsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 			}
 			else
 			{
-				Hint = FString::Printf(TEXT("Enter: combine with %s"), *ItemName(Data, MenuState.PendingCombine));
+				Hint = FString::Printf(TEXT("Click or Enter: combine with %s"), *ItemName(Data, MenuState.PendingCombine));
 			}
 			break;
 		default: break;
 		}
 		DrawLabel(Hint, Style.Accent, DX, DY, 18.f, 0.f, true);
+	}
+}
+
+void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, float W, float H)
+{
+	using namespace GBHudMenuLocal;
+	const float S = UIScale();
+	const bool bShadow = !Style.bChunky;
+	const UGBEquipmentComponent* Equipment = Player->GetEquipment();
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const TArray<FName> List = GetWeaponList(Player);
+	if (!Equipment || List.Num() == 0)
+	{
+		DrawLabel(TEXT("You carry no weapons."), Style.Text, X, Y, 22.f, 0.f, bShadow);
+		return;
+	}
+	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
+
+	// Display rows: a header before each kind, then its weapons. WeaponIndex -1 = header.
+	struct FRow
+	{
+		FString Text;
+		int32 WeaponIndex = -1;
+	};
+	TArray<FRow> Rows;
+	FString LastGroup;
+	int32 CursorRow = 0;
+	for (int32 i = 0; i < List.Num(); ++i)
+	{
+		const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(List[i]) : nullptr;
+		const FString Group = Def ? SlotName(Def->Slot, true) : FString(TEXT("Other"));
+		if (Group != LastGroup)
+		{
+			Rows.Add(FRow{ Group, -1 });
+			LastGroup = Group;
+		}
+		if (i == MenuState.Cursor)
+		{
+			CursorRow = Rows.Num();
+		}
+		Rows.Add(FRow{ WeaponName(Data, List[i]), i });
+	}
+
+	const float ListW = W * 0.5f;
+	const float RowH = 34.f * S;
+	const int32 Visible = FMath::Max(1, FMath::FloorToInt(H / RowH));
+	const int32 First = FMath::Clamp(CursorRow - Visible + 1, 0, FMath::Max(0, Rows.Num() - Visible));
+	for (int32 r = First; r < Rows.Num() && r < First + Visible; ++r)
+	{
+		const FRow& Row = Rows[r];
+		const float RowY = Y + (r - First) * RowH;
+		if (Row.WeaponIndex < 0)
+		{
+			DrawLabel(Row.Text.ToUpper(), Style.Text, X, RowY + 6.f * S, 16.f, 0.f, bShadow, true);
+			continue;
+		}
+		const FName WeaponId = List[Row.WeaponIndex];
+		if (Row.WeaponIndex == MenuState.Cursor)
+		{
+			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S);
+		}
+		AddMenuHit(EMenuHitKind::WeaponRow, X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S, Row.WeaponIndex);
+		const bool bEquipped = Equipment->IsWeaponEquipped(WeaponId);
+		DrawLabel(bEquipped ? FString::Printf(TEXT("   %s  [equipped]"), *Row.Text) : TEXT("   ") + Row.Text, Style.Text, X, RowY, 20.f, 0.f, bShadow);
+		if (const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr)
+		{
+			DrawLabel(GBHudText::ElementName(Def->Element), GBHudText::ElementColor(Def->Element), X + ListW - 18.f * S, RowY + 2.f * S, 16.f, 1.f, true);
+		}
+	}
+
+	// Details of the selected weapon.
+	const FName Selected = List[MenuState.Cursor];
+	const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(Selected) : nullptr;
+	const float DX = X + ListW + 30.f * S;
+	const float DW = W - ListW - 30.f * S;
+	float DY = Y;
+	DrawLabel(WeaponName(Data, Selected), Style.Text, DX, DY, 28.f, 0.f, bShadow, true);
+	DY += 44.f * S;
+	if (!Def)
+	{
+		DrawLabel(TEXT("Unknown weapon"), Style.Text, DX, DY, 18.f, 0.f, bShadow);
+		return;
+	}
+	DrawLabel(FString::Printf(TEXT("%s   %s"), *SlotName(Def->Slot, false), *GBHudText::ElementName(Def->Element)),
+		GBHudText::ElementColor(Def->Element), DX, DY, 18.f, 0.f, true);
+	DY += 32.f * S;
+	for (const FString& Line : WeaponStatLines(*Def))
+	{
+		DrawLabel(Line, Style.Text, DX, DY, 18.f, 0.f, bShadow);
+		DY += 28.f * S;
+	}
+	DY += 16.f * S;
+
+	if (Equipment->IsWeaponEquipped(Selected))
+	{
+		DrawLabel(FString::Printf(TEXT("Equipped in the %s slot"), *SlotName(Def->Slot, false).ToLower()), Style.Accent, DX, DY, 18.f, 0.f, true);
+	}
+	else
+	{
+		const AGBHeldItem* Current = Equipment->GetItemInSlot(Def->Slot);
+		const FString Hint = Current ? FString::Printf(TEXT("Click or Enter: equip (replaces %s)"), *Current->GetDisplayName())
+			: FString(TEXT("Click or Enter: equip"));
+		DrawWrapped(Hint, Style.Accent, DX, DY, DW, 18.f, true);
 	}
 }
 
@@ -781,6 +1172,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 		{
 			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, MenuState.bChoosingSpell ? 0.2f : 0.4f), X - 6.f * S, RowY - 4.f * S, ListW, RowH - 4.f * S);
 		}
+		AddMenuHit(EMenuHitKind::SpellSlot, X - 6.f * S, RowY - 4.f * S, ListW, RowH - 4.f * S, i);
 		FString Text;
 		if (i < NumSlots)
 		{
@@ -833,6 +1225,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 			{
 				DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.4f), DX - 6.f * S, DY - 3.f * S, DW * 0.8f, OptH - 2.f * S);
 			}
+			AddMenuHit(EMenuHitKind::SpellChoice, DX - 6.f * S, DY - 3.f * S, DW * 0.8f, OptH - 2.f * S, i);
 			FString Text = SpellId == NAME_None ? FString(TEXT("(empty the slot)")) : GBHudText::SpellName(this, SpellId);
 			for (int32 Slot = 0; Slot < NumSlots; ++Slot)
 			{
@@ -851,7 +1244,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 			DY += 12.f * S;
 			DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 16.f, bShadow);
 		}
-		DrawLabel(TEXT("Enter: equip   Esc: back"), Style.Accent, DX, Y + H - 30.f * S, 16.f, 0.f, true);
+		DrawLabel(TEXT("Click or Enter: equip   Esc: back"), Style.Accent, DX, Y + H - 30.f * S, 16.f, 0.f, true);
 		return;
 	}
 
@@ -873,7 +1266,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 			DrawLabel(TEXT("Empty slot"), Style.Text, DX, DY, 24.f, 0.f, bShadow);
 			DY += 44.f * S;
 		}
-		DrawLabel(TEXT("Enter: choose a spell"), Style.Accent, DX, DY, 18.f, 0.f, true);
+		DrawLabel(TEXT("Click or Enter: choose a spell"), Style.Accent, DX, DY, 18.f, 0.f, true);
 	}
 	else
 	{
@@ -886,7 +1279,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 			DY += DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 18.f, bShadow) + 16.f * S;
 		}
 		DY += DrawWrapped(TEXT("Only with a gun in hand (T). Enchants the gun with the chosen element."), Style.Text, DX, DY, DW, 16.f, bShadow) + 16.f * S;
-		DrawLabel(TEXT("Enter: change element (Fire, Lightning, Ice)"), Style.Accent, DX, DY, 18.f, 0.f, true);
+		DrawLabel(TEXT("Click or Enter: change element (Fire, Lightning, Ice)"), Style.Accent, DX, DY, 18.f, 0.f, true);
 	}
 }
 
@@ -999,6 +1392,7 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 				Fill = Style.Mana * FLinearColor(0.5f, 0.5f, 0.5f, 0.85f);
 			}
 			DrawRect(Fill, Pos.X, Pos.Y, BoxW, BoxH);
+			AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, BoxH, 0, Node.Id);
 			const FLinearColor Edge = bSelected ? Style.Accent : (bCan ? (Style.bChunky ? FLinearColor(1.f, 0.85f, 0.5f, 1.f) : Style.Border) : MenuGrey);
 			DrawOutline(Pos.X, Pos.Y, BoxW, BoxH, Edge, (bSelected ? 4.f : (bCan ? 2.f : 1.f)) * S);
 
@@ -1026,7 +1420,7 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 			DrawWrapped(Def->Description, Style.Text, AreaX0 + 16.f * S, DY + 42.f * S, DW * 0.65f, 16.f, bShadow);
 		}
 		const EGBSkillUnlockResult Can = SkillTree->CanUnlock(Selected->Id);
-		const FString Status = Can == EGBSkillUnlockResult::Ok ? FString(TEXT("Enter: unlock")) : SkillResultText(Data, Selected->Id, Can);
+		const FString Status = Can == EGBSkillUnlockResult::Ok ? FString(TEXT("Click or Enter: unlock")) : SkillResultText(Data, Selected->Id, Can);
 		DrawLabel(Status, Style.Accent, AreaX0 + DW - 16.f * S, DY + 42.f * S, 18.f, 1.f, true);
 	}
 }

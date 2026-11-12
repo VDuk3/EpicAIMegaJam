@@ -6,8 +6,16 @@
 		"RespawnDelay": 2.5,
 		"CorpseTime": 1.5,
 		"EnemyMeleeReachTolerance": 1.2,
-		"EncounterSpawnRingRadius": 400
+		"EnemyNavRetryDelay": 1.0,
+		"EnemySteerFeelerLength": 150,
+		"EnemySteerAngleStep": 25,
+		"EnemySteerCandidatesPerSide": 6,
+		"EnemySteerSideHoldTime": 1.0,
+		"EnemyStuckTime": 0.8,
+		"EnemyStuckDistance": 50,
+		"EnemyGoAroundTime": 1.5,
+		"EncounterSpawnRingRadius": 400,
+		"KillZ": -2500
 	},
-	"Strings": {
-	}
+	"Strings": {}
 }

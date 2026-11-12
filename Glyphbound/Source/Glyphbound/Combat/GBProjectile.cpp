@@ -2,15 +2,30 @@
 
 #include "AI/GBEnemyCharacter.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBExplosionEffect.h"
 #include "Core/GBPlaceholder.h"
 #include "Stats/GBAttributeComponent.h"
 #include "UI/GBPixelSpriteLibrary.h"
+#include "CollisionQueryParams.h"
 #include "Components/BillboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/OverlapResult.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+
+namespace GBProjectileLocal
+{
+	/** Same lift as the radial damage obstruction trace (GBCombatLibrary.cpp), so a blast on the floor is not blocked by it. */
+	constexpr float KnockbackTraceLiftCm = 5.f;
+	/**
+	 * Smallest upward part of the push direction. A walking character pushed only sideways is stopped at once by
+	 * ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
+	 */
+	constexpr float KnockbackMinLift = 0.35f;
+}
 
 AGBProjectile::AGBProjectile()
 {
@@ -269,6 +284,85 @@ void AGBProjectile::Explode(const FVector& Origin)
 	FGBDamageInfo Info = Config.Damage;
 	Info.Causer = this;
 	UGBCombatLibrary::DealRadialDamage(this, Origin, Config.ExplosionRadius, Info, TConstArrayView<AActor*>(), Config.bExplosionFalloff);
+
+	// Seen and felt even when the blast hits nothing.
+	AGBExplosionEffect::Spawn(GetWorld(), Origin, Config.ExplosionRadius, Config.Color, Config.ExplosionEffectTime);
+	if (Config.ExplosionKnockback > 0.f)
+	{
+		ApplyExplosionKnockback(Origin);
+	}
+}
+
+void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
+{
+	UWorld* World = GetWorld();
+	const float Radius = Config.ExplosionRadius;
+	if (!World || Radius <= 0.f)
+	{
+		return;
+	}
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBExplosionKnockback), false, this);
+	TArray<FOverlapResult> Overlaps;
+	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Radius), QueryParams);
+
+	AActor* ProjectileInstigator = Config.Damage.Instigator.Get();
+	if (!IsValid(ProjectileInstigator))
+	{
+		ProjectileInstigator = nullptr;
+	}
+
+	TSet<ACharacter*> Visited;
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		ACharacter* Character = Cast<ACharacter>(Overlap.GetActor());
+		if (!IsValid(Character) || Character == ProjectileInstigator || Visited.Contains(Character))
+		{
+			continue;
+		}
+		Visited.Add(Character);
+
+		if (!UGBCombatLibrary::CanDamage(ProjectileInstigator, Character))
+		{
+			continue;
+		}
+
+		const FVector TargetLocation = Character->GetActorLocation();
+		const float Distance = FVector::Dist(TargetLocation, Origin);
+		if (Distance > Radius)
+		{
+			continue;
+		}
+
+		// Same rule as the blast damage: solid geometry between the blast and the target stops the push.
+		FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(GBKnockbackObstruction), true, this);
+		TraceParams.AddIgnoredActor(Character);
+		FHitResult Obstruction;
+		const FVector TraceStart = Origin + FVector(0.f, 0.f, GBProjectileLocal::KnockbackTraceLiftCm);
+		if (World->LineTraceSingleByChannel(Obstruction, TraceStart, TargetLocation, ECC_Visibility, TraceParams)
+			&& Obstruction.bBlockingHit && Obstruction.GetActor() && Obstruction.GetActor() != Character)
+		{
+			continue;
+		}
+
+		const float Strength = Config.ExplosionKnockback * FMath::Clamp(1.f - Distance / Radius, 0.f, 1.f);
+		if (Strength <= 0.f)
+		{
+			continue;
+		}
+
+		FVector Direction = (TargetLocation - Origin).GetSafeNormal();
+		if (Direction.IsNearlyZero())
+		{
+			// Blast right on the target: push it back along the projectile's flight.
+			Direction = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
+		}
+		Direction.Z = FMath::Max(Direction.Z, GBProjectileLocal::KnockbackMinLift);
+		Direction = Direction.GetSafeNormal();
+		Character->LaunchCharacter(Direction * Strength, /*bXYOverride*/ true, /*bZOverride*/ true);
+	}
 }
 
 void AGBProjectile::Finish(AActor* HitActor, const FVector& Location)

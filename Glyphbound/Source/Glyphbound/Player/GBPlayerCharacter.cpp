@@ -51,6 +51,10 @@ namespace
 	const FVector HeldItemOffset(30.f, 15.f, -15.f);
 	const FVector MuzzleOffset(40.f, 15.f, -12.f);
 
+	/** Not a balance number: a hit far above any health pool (KillZ death). */
+	constexpr float FallOutOfWorldDamage = 1.0e9f;
+	const FName FellOutOfWorldSourceId(TEXT("FellOutOfWorld"));
+
 	TSet<FName> GWarnedMissingPlayerStats;
 }
 
@@ -120,13 +124,17 @@ void AGBPlayerCharacter::BeginPlay()
 
 	if (Data)
 	{
-		const TArray<FName>& StartingWeapons = Data->GetPlayer().StartingWeapons;
+		// Copy: GiveWeapon reads the data tables, never keep a reference into them across calls.
+		const TArray<FName> StartingWeapons = Data->GetPlayer().StartingWeapons;
 		for (int32 Index = 0; Index < StartingWeapons.Num(); ++Index)
 		{
-			if (!Equipment->GiveWeapon(StartingWeapons[Index], Index == 0, false))
+			if (!Data->FindWeapon(StartingWeapons[Index]))
 			{
 				UE_LOG(LogGB, Warning, TEXT("GBPlayerCharacter: starting weapon '%s' is not in Weapons.json."), *StartingWeapons[Index].ToString());
+				continue;
 			}
+			// Same rule as pickups: the first of each kind goes to its slot, the others are stored.
+			Equipment->GiveWeapon(StartingWeapons[Index], Index == 0);
 		}
 	}
 
@@ -467,6 +475,10 @@ void AGBPlayerCharacter::ReleaseHeldInputs()
 		Item->StopPrimary();
 		Item->StopSecondary();
 	}
+	if (Spellbook)
+	{
+		Spellbook->SetBlockHeld(false);
+	}
 	bSecondaryHeld = false;
 	LastMoveInput = FVector2D::ZeroVector;
 	StopJumping();
@@ -498,6 +510,74 @@ void AGBPlayerCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 	else
 	{
 		UE_LOG(LogGB, Warning, TEXT("GBPlayerCharacter: died without an AGBGameMode, nothing will respawn the player."));
+	}
+}
+
+void AGBPlayerCharacter::FellOutOfWorld(const UDamageType& /*DmgType*/)
+{
+	// Never Super: the engine would destroy the pawn. The checkpoint respawn brings the player back.
+	if (IsDead())
+	{
+		FreezeMovement(); // already dead (or killed by the first call): just keep it from falling forever
+		return;
+	}
+	if (!Attributes)
+	{
+		return;
+	}
+
+	EndDash();
+	FreezeMovement();
+
+	// Friendly fire and invulnerability do not matter here: the hit goes straight to the attributes.
+	const bool bWasInvulnerable = Attributes->IsInvulnerable();
+	Attributes->SetInvulnerable(false);
+	FGBDamageInfo Fall;
+	Fall.Amount = FallOutOfWorldDamage;
+	Fall.Element = EGBElement::Physical;
+	Fall.SourceId = FellOutOfWorldSourceId;
+	Attributes->ApplyDamage(Fall); // HitDirection is zero, so a raised shield cannot block it
+	Attributes->SetInvulnerable(bWasInvulnerable);
+
+	if (!IsDead())
+	{
+		// Only a data setup with DamageTaken 0 gets here: respawn directly rather than fall forever.
+		UE_LOG(LogGB, Warning, TEXT("GBPlayerCharacter: fell out of the world but could not be killed (DamageTaken 0?); respawning at the checkpoint."));
+		if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
+		{
+			if (Progress->RestoreCheckpoint(this))
+			{
+				return;
+			}
+		}
+		UnfreezeMovement();
+	}
+}
+
+void AGBPlayerCharacter::FreezeMovement()
+{
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		if (!bMovementFrozen)
+		{
+			MoveComp->DisableMovement();
+		}
+	}
+	bMovementFrozen = true;
+}
+
+void AGBPlayerCharacter::UnfreezeMovement()
+{
+	if (!bMovementFrozen)
+	{
+		return;
+	}
+	bMovementFrozen = false;
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		// Falling settles into walking on the first floor check.
+		MoveComp->SetMovementMode(MOVE_Falling);
 	}
 }
 
@@ -546,6 +626,7 @@ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	const float Health = Snapshot.Health > 0.f ? Snapshot.Health : Attributes->GetMaxHealth();
 	Attributes->SetHealthAndMana(Health, Snapshot.Mana);
 
+	UnfreezeMovement();
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->StopMovementImmediately();
@@ -593,6 +674,7 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
 	}
 	RestoreAll();
 
+	UnfreezeMovement();
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->StopMovementImmediately();
@@ -652,6 +734,8 @@ void AGBPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EIC->BindAction(S->SpellSlot4, ETriggerEvent::Started, this, &ThisClass::InputSpellSlot, 3);
 	EIC->BindAction(S->SpellSlot5, ETriggerEvent::Started, this, &ThisClass::InputSpellSlot, 4);
 	EIC->BindAction(S->Enchant, ETriggerEvent::Started, this, &ThisClass::InputEnchant);
+	EIC->BindAction(S->Block, ETriggerEvent::Started, this, &ThisClass::InputBlockPressed);
+	EIC->BindAction(S->Block, ETriggerEvent::Completed, this, &ThisClass::InputBlockReleased);
 
 	EIC->BindAction(S->Reload, ETriggerEvent::Started, this, &ThisClass::InputReload);
 	EIC->BindAction(S->Interact, ETriggerEvent::Started, this, &ThisClass::InputInteract);
@@ -758,6 +842,12 @@ void AGBPlayerCharacter::InputFace(EGBQTEKey Key)
 	// GDD 9: hold L2 + Cross, Circle, Square, Triangle = spell slots 2-5 with the staff.
 	if (bSecondaryHeld && Equipment->IsHoldingStaff())
 	{
+		// L2 also raises a summoned shield (Block). A face button while it is up means "cast": lower it first,
+		// otherwise slots 2-5 would be unusable on gamepad for the whole life of the shield.
+		if (IsBlocking())
+		{
+			Spellbook->SetBlockHeld(false);
+		}
 		int32 Slot = 1;
 		switch (Key)
 		{
@@ -836,7 +926,7 @@ void AGBPlayerCharacter::InputDash()
 
 void AGBPlayerCharacter::InputPrimaryPressed()
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking())
 	{
 		return;
 	}
@@ -908,7 +998,7 @@ void AGBPlayerCharacter::InputSwitchWeapon(const FInputActionValue& Value)
 
 void AGBPlayerCharacter::InputSpellSlot(int32 Slot)
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || !Equipment->IsHoldingStaff())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || !Equipment->IsHoldingStaff())
 	{
 		return;
 	}
@@ -917,11 +1007,41 @@ void AGBPlayerCharacter::InputSpellSlot(int32 Slot)
 
 void AGBPlayerCharacter::InputEnchant()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || !Equipment->IsHoldingGun())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || !Equipment->IsHoldingGun())
 	{
 		return;
 	}
 	Spellbook->TryCastEnchant();
+}
+
+bool AGBPlayerCharacter::IsBlocking() const
+{
+	return Spellbook && Spellbook->IsBlockRaised();
+}
+
+void AGBPlayerCharacter::InputBlockPressed()
+{
+	if (!CanUseGameplayInput() || IsQTEActive())
+	{
+		return;
+	}
+	Spellbook->SetBlockHeld(true);
+	if (IsBlocking())
+	{
+		// Raising the shield interrupts a held attack (an automatic staff keeps firing otherwise).
+		if (AGBHeldItem* Item = Equipment->GetActiveItem())
+		{
+			Item->StopPrimary();
+		}
+	}
+}
+
+void AGBPlayerCharacter::InputBlockReleased()
+{
+	if (Spellbook)
+	{
+		Spellbook->SetBlockHeld(false);
+	}
 }
 
 void AGBPlayerCharacter::InputInteract()

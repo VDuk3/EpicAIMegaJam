@@ -7,7 +7,7 @@
 		"ManaRegen": 6,
 		"ManaRegenDelay": 1.5,
 		"MoveSpeed": 750,
-		"JumpVelocity": 620,
+		"JumpVelocity": 800,
 		"MaxJumps": 1,
 		"AirControl": 0.6,
 		"GravityScale": 1.6,
@@ -21,9 +21,17 @@
 		"CapsuleHalfHeight": 90,
 		"EyeHeight": 70
 	},
-	"StartingWeapons": ["Staff_Apprentice"],
-	"StartingSpells": ["Air_DoubleJump"],
-	"StartingLoadout": ["Fireball", "LightningBolt", "IceWall"],
+	"StartingWeapons": [
+		"Staff_Apprentice"
+	],
+	"StartingSpells": [
+		"Air_DoubleJump"
+	],
+	"StartingLoadout": [
+		"Fireball",
+		"LightningBolt",
+		"IceWall"
+	],
 	"StartingItems": {
 		"HealthPotion": 2,
 		"ManaPotion": 2

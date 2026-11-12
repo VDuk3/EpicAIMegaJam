@@ -1115,6 +1115,116 @@
 				".......oopppp00oo.......",
 				".........oooooo........."
 			]
+		},
+		{
+			"Id": "tile_ice",
+			"Palette": {
+				"0": "#86CDEB",
+				"o": "#3E86B0",
+				"w": "#F0FCFF",
+				"c": "#B4E8FA"
+			},
+			"Rows": [
+				"oooooooooooooooo",
+				"owwwwwwcowwwwwwc",
+				"owccccc0owccccc0",
+				"owccwcc0owccccc0",
+				"owccccc0owcccwc0",
+				"owccccc0owccccc0",
+				"owccccc0owccccc0",
+				"oc000000oc000000",
+				"oooooooooooooooo",
+				"wwwcowwwwwwcowww",
+				"ccc0owccccc0owcc",
+				"ccc0owcwccc0owcc",
+				"cwc0owccccc0owcc",
+				"ccc0owccccc0owcc",
+				"ccc0owccccc0owcc",
+				"0000oc000000oc00"
+			]
+		},
+		{
+			"Id": "tile_stone",
+			"Palette": {
+				"m": "#3A3836",
+				"s": "#8A8580",
+				"l": "#A8A39C",
+				"d": "#6A6560"
+			},
+			"Rows": [
+				"mmmmmmmmmmmmmmmm",
+				"mllllllsmlllllls",
+				"mlssdssdmlsssssd",
+				"msddddddmsdddddd",
+				"mmmmmmmmmmmmmmmm",
+				"lllsmllllllsmlll",
+				"sssdmlsssdsdmlss",
+				"ddddmsddddddmsdd",
+				"mmmmmmmmmmmmmmmm",
+				"mllllllsmlllllls",
+				"mlsssssdmlssdssd",
+				"msddddddmsdddddd",
+				"mmmmmmmmmmmmmmmm",
+				"lllsmllllllsmlll",
+				"sdsdmlsssssdmlss",
+				"ddddmsddddddmsdd"
+			]
+		},
+		{
+			"Id": "tile_stone_floor",
+			"Palette": {
+				"g": "#2E2C2A",
+				"1": "#9C988F",
+				"a": "#7A7670",
+				"b": "#8C8882",
+				"c": "#6C6862"
+			},
+			"Rows": [
+				"gggggggggggggggg",
+				"g111111111g11111",
+				"g1aaaaaaacg1bbbb",
+				"g1aaacaaacg1bbbc",
+				"g1aaaaaaacg1bcbb",
+				"g1aacaaaacg1bbbb",
+				"g1aaaaaaacg1bbbc",
+				"gcccccccccgccccc",
+				"gggggggggggggggg",
+				"11111g1111111g11",
+				"bbbbcg1aaaaacg1b",
+				"bcbbcg1aacaacg1b",
+				"bbbbcg1aaaaacg1b",
+				"bbcbcg1acaaacg1b",
+				"bbbbcg1aaaaacg1b",
+				"cccccgcccccccgcc"
+			]
+		},
+		{
+			"Id": "tile_wood",
+			"Palette": {
+				"1": "#D8D0C0",
+				"k": "#3A2412",
+				"w": "#9A6A3A",
+				"l": "#B07C46",
+				"d": "#7A5028"
+			},
+			"Rows": [
+				"llllllllllklllll",
+				"wwddwwwww1k1wwdw",
+				"wwwwwwdddwkwdwww",
+				"kkkkkkkkkkkkkkkk",
+				"lllkllllllllllll",
+				"wdwkwwwwddwwwwww",
+				"wwwkwwdwwwwwwddw",
+				"kkkkkkkkkkkkkkkk",
+				"lllllllllllllkll",
+				"wwwwddwwwwwwwkwd",
+				"wdwwwwwwddwwwkww",
+				"kkkkkkkkkkkkkkkk",
+				"lllllllkllllllll",
+				"wwdwwwwkwwwddwww",
+				"wwwwddwkwwwwwwdw",
+				"kkkkkkkkkkkkkkkk"
+			]
 		}
 	]
 }

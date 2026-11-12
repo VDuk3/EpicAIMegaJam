@@ -15,8 +15,11 @@
 #include "HAL/PlatformTime.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
 #include "AI/GBEnemyCharacter.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Core/GBStatNames.h"
 #include "Core/GBTypes.h"
 #include "Data/GBDataSubsystem.h"
 #include "Items/GBInventoryComponent.h"
@@ -26,10 +29,12 @@
 #include "QTE/GBQTEComponent.h"
 #include "Spells/GBSpellbookComponent.h"
 #include "Stats/GBAttributeComponent.h"
+#include "Stats/GBStatsComponent.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
 #include "World/GBEraSubsystem.h"
 #include "World/GBProgressSubsystem.h"
+#include "World/GBTestArena.h"
 
 namespace GBSmokeRun
 {
@@ -45,6 +50,17 @@ namespace GBSmokeRun
 	static double StartSeconds = 0.0;
 	static TWeakObjectPtr<UWorld> SmokeWorld;
 	static FTSTicker::FDelegateHandle TickerHandle;
+
+	// Pathing check: an orc spawned behind a wall must reach the player around it.
+	constexpr float PathCheckStart = 7.8f;
+	constexpr float PathCheckDuration = 6.0f;          // the way around the wall is about 17 m: some 4 s at the orc's MoveSpeed
+	constexpr float PathCheckShift = 6.4f;             // every later step moves this much later
+	constexpr float PathCheckReachMargin = 100.f;      // cm on top of the orc's AttackRange
+	constexpr float PathCheckPlayerTolerance = 200.f;  // cm: farther than this from the start, the player is put back there first
+	static TWeakObjectPtr<AGBEnemyCharacter> PathOrc;
+	static float PathStartDistance = 0.f;
+	static bool bPathOrcSpawned = false;
+	static const FName PathOrcId(TEXT("Orc_Past"));
 
 	static void Shot(const TCHAR* Name)
 	{
@@ -95,6 +111,111 @@ namespace GBSmokeRun
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE [%s] there are no enemies in the level (was the test arena built?)"), Label);
 		}
+	}
+
+	static void StartPathCheck(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(World);
+		const bool bNavData = Nav && Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) != nullptr;
+		UE_LOG(LogGB, Display, TEXT("SMOKE navigation system=%d navData=%d"), Nav ? 1 : 0, bNavData ? 1 : 0);
+
+		bPathOrcSpawned = false;
+		PathOrc.Reset();
+		bool bHasArena = false;
+		for (TActorIterator<AGBTestArena> It(World); It; ++It)
+		{
+			bHasArena = true;
+			break;
+		}
+		if (!bHasArena)
+		{
+			UE_LOG(LogGB, Warning, TEXT("SMOKE path check skipped: this map has no test arena"));
+			return;
+		}
+
+		FVector EnemySpawn;
+		FVector PlayerSpot;
+		AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+		if (FVector::Dist2D(Player->GetActorLocation(), PlayerSpot) > PathCheckPlayerTolerance)
+		{
+			Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+		}
+		Player->GetAttributes()->SetInvulnerable(true);
+
+		AGBEnemyCharacter* Orc = AGBEnemyCharacter::SpawnEnemy(World, PathOrcId, EnemySpawn, FRotator::ZeroRotator, EGBEraPresence::Both);
+		if (!Orc)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE path check: could not spawn %s"), *PathOrcId.ToString());
+			Player->GetAttributes()->SetInvulnerable(false);
+			return;
+		}
+		PathOrc = Orc;
+		bPathOrcSpawned = true;
+
+		const FVector From = Orc->GetActorLocation();
+		const FVector To = Player->GetActorLocation();
+		PathStartDistance = FVector::Dist2D(From, To);
+
+		FHitResult Hit;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSmokePathCheck), false, Orc);
+		Params.AddIgnoredActor(Player);
+		const bool bBlocked = World->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, Params);
+
+		int32 PathValid = 0;
+		int32 PathPartial = 0;
+		double PathLength = 0.0;
+		if (bNavData)
+		{
+			if (const UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(World, From, To, Orc))
+			{
+				PathValid = Path->IsValid() ? 1 : 0;
+				PathPartial = Path->IsPartial() ? 1 : 0;
+				PathLength = Path->GetPathLength();
+			}
+		}
+		const FString BlockerName = bBlocked ? GetNameSafe(Hit.GetActor()) : FString(TEXT("nothing"));
+		UE_LOG(LogGB, Display, TEXT("SMOKE path check start: orc at %s, player at %s, distance=%.0f straightLineBlocked=%d (by %s) navPath=%d partial=%d pathLength=%.0f"),
+			*From.ToCompactString(), *To.ToCompactString(), PathStartDistance, bBlocked ? 1 : 0, *BlockerName, PathValid, PathPartial, PathLength);
+		if (!bBlocked)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE path check: nothing blocks the straight line from the orc to the player (is the test wall missing?)"));
+		}
+	}
+
+	static void EndPathCheck(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		Player->GetAttributes()->SetInvulnerable(false);
+		if (!bPathOrcSpawned)
+		{
+			return;
+		}
+		bPathOrcSpawned = false;
+
+		AGBEnemyCharacter* Orc = PathOrc.Get();
+		PathOrc.Reset();
+		if (!Orc || Orc->IsDead())
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE path check: the orc is gone or dead before the end of the check"));
+			if (Orc)
+			{
+				Orc->Destroy();
+			}
+			return;
+		}
+
+		const float Distance = FVector::Dist2D(Orc->GetActorLocation(), Player->GetActorLocation());
+		const float Reach = Orc->GetStats()->GetStat(GBStat::AttackRange, 0.f) + PathCheckReachMargin;
+		UE_LOG(LogGB, Display, TEXT("SMOKE path check end: distance=%.0f (start %.0f, needed <= %.0f) orc at %s, %s"),
+			Distance, PathStartDistance, Reach, *Orc->GetActorLocation().ToCompactString(), *Orc->DescribeMovement());
+		if (Distance > Reach)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE path check FAILED: the orc did not get around the wall to the player (distance %.0f > %.0f)"), Distance, Reach);
+		}
+		else
+		{
+			UE_LOG(LogGB, Display, TEXT("SMOKE path check passed"));
+		}
+		Orc->Destroy();
 	}
 
 	static void BuildSteps()
@@ -193,25 +314,36 @@ namespace GBSmokeRun
 			}
 		});
 		Add(6.6f, TEXT("screenshot: past, gun"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("2_past_gun")); });
-		Add(7.8f, TEXT("travel to the future"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(PathCheckStart, TEXT("pathing check: an orc behind a wall, the player invulnerable"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			StartPathCheck(World, Player);
+		});
+		Add(PathCheckStart + PathCheckDuration, TEXT("pathing check: did the orc get around the wall"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			EndPathCheck(World, Player);
+		});
+
+		// Everything below moved PathCheckShift seconds later to make room for the pathing check.
+		const float S = PathCheckShift;
+		Add(7.8f + S, TEXT("travel to the future"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			const bool bOk = UGBEraSubsystem::Get(World)->RequestTravel(EGBEra::Future, Player);
 			UE_LOG(LogGB, Display, TEXT("SMOKE travel requested ok=%d"), bOk ? 1 : 0);
 		});
-		Add(10.5f, TEXT("screenshot: future"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(10.5f + S, TEXT("screenshot: future"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			LogState(World, Player, TEXT("after travel"));
 			Shot(TEXT("3_future_gun"));
 		});
-		Add(11.7f, TEXT("open the inventory"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(11.7f + S, TEXT("open the inventory"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
 				PC->SetMenu(EGBMenu::Inventory);
 			}
 		});
-		Add(12.2f, TEXT("screenshot: inventory"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("4_inventory")); });
-		Add(13.4f, TEXT("open the skill trees and unlock a node"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(12.2f + S, TEXT("screenshot: inventory"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("4_inventory")); });
+		Add(13.4f + S, TEXT("open the skill trees and unlock a node"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
@@ -227,8 +359,8 @@ namespace GBSmokeRun
 				}
 			}
 		});
-		Add(13.9f, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
-		Add(15.1f, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(13.9f + S, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
+		Add(15.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 			{
@@ -240,35 +372,35 @@ namespace GBSmokeRun
 			const bool bOk = Player->GetSpellbook()->TryCastSlot(3);
 			UE_LOG(LogGB, Display, TEXT("SMOKE cast slot3 (%s) with QTE ok=%d qteActive=%d"), *Player->GetSpellbook()->GetSlotSpell(3).ToString(), bOk ? 1 : 0, Player->GetQTE()->IsActive() ? 1 : 0);
 		});
-		Add(15.5f, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(15.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
 			{
 				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
 			}
 		});
-		Add(15.8f, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
-		Add(19.0f, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(15.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
+		Add(19.0f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			const FGBQTEResult& Result = Player->GetQTE()->GetLastResult();
 			UE_LOG(LogGB, Display, TEXT("SMOKE qte finished active=%d power=%.2f reach=%.2f success=%d timedOut=%d dilation=%.2f"),
 				Player->GetQTE()->IsActive() ? 1 : 0, Result.Power, Result.Reach, Result.bSuccess ? 1 : 0, Result.bTimedOut ? 1 : 0,
 				World->GetWorldSettings() ? World->GetWorldSettings()->GetEffectiveTimeDilation() : -1.f);
 		});
-		Add(19.3f, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(19.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			FGBDamageInfo Info;
 			Info.Amount = 10000000.f;
 			UGBCombatLibrary::DealDamage(Player, Info, true);
 			UE_LOG(LogGB, Display, TEXT("SMOKE player dead=%d"), Player->IsDead() ? 1 : 0);
 		});
-		Add(20.0f, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
-		Add(24.0f, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(20.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+		Add(24.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			LogState(World, Player, TEXT("after respawn"));
 			Shot(TEXT("8_respawn"));
 		});
-		Add(25.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(25.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

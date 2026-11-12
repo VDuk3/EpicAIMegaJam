@@ -29,6 +29,12 @@ public:
 	 */
 	UTexture2D* GetSprite(FName SpriteId);
 
+	/**
+	 * The same pixels as GetSprite, but with wrap addressing, for repeating tiles on 3D structures
+	 * (GBPlaceholder::SetupTexturedShape). Cached separately from the sprites (which clamp). Never null.
+	 */
+	UTexture2D* GetTileTexture(FName SpriteId);
+
 	/** Size in pixels of a sprite (0,0 if unknown). */
 	FIntPoint GetSpriteSize(FName SpriteId) const;
 
@@ -47,8 +53,13 @@ public:
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-	UTexture2D* CreateTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName);
+	UTexture2D* CreateTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName, bool bWrap = false);
+
+	/** Shared by GetSprite and GetTileTexture: builds (or finds) the texture of an id in the given cache. */
+	UTexture2D* GetOrBuild(FName SpriteId, bool bWrap);
 
 	UPROPERTY() TMap<FName, TObjectPtr<UTexture2D>> Cache;
+	UPROPERTY() TMap<FName, TObjectPtr<UTexture2D>> TileCache;
 	UPROPERTY() TObjectPtr<UTexture2D> MissingTexture;
+	UPROPERTY() TObjectPtr<UTexture2D> MissingTileTexture;
 };

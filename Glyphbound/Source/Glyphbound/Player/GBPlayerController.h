@@ -37,8 +37,18 @@ public:
 	/** Opens Menu, or closes it if it is the one already open. */
 	void ToggleMenu(EGBMenu Menu);
 
+	/** Ticks while paused too (menus pause the game): finishes centering the cursor after a menu opens. */
+	virtual void TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
+
 protected:
 	virtual void BeginPlay() override;
+
+	/**
+	 * Mouse in menus: while any menu is open the cursor is visible and free over the viewport (game and UI input,
+	 * so keys and clicks still reach the menu actions); with no menu it is hidden and captured again (game only).
+	 */
+	void ApplyMouseMode(bool bMenuOpen);
+	void CenterMouseCursor();
 
 	void InputInventory();
 	void InputSkillTrees();
@@ -47,7 +57,11 @@ protected:
 	void InputMenuConfirm();
 	void InputMenuBack();
 	void InputMenuTab(const FInputActionValue& Value);
+	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */
+	void InputMenuClick();
 
 	UPROPERTY() TObjectPtr<UGBInputSet> InputSet;
 	EGBMenu OpenMenu = EGBMenu::None;
+	/** The cursor is centered again on the next tick: Slate may move it back while releasing the mouse capture. */
+	bool bCenterCursorPending = false;
 };

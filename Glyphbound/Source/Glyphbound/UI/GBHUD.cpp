@@ -10,6 +10,7 @@
 #include "Items/GBInventoryComponent.h"
 #include "Progression/GBSkillTreeComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
+#include "Combat/GBCombatLibrary.h"
 #include "Stats/GBStatsComponent.h"
 #include "Stats/GBAttributeComponent.h"
 #include "World/GBEraSubsystem.h"
@@ -36,6 +37,10 @@ namespace GBHudLayout
 	constexpr int32 MaxToasts = 5;
 	/** Canvas height / this = size of one sprite pixel for the hands (9 at 1080p, 6 at 720p). */
 	constexpr float HandPixelDivisor = 120.f;
+	/** The raised shield's sprite pixels are this many times the hands' pixels. */
+	constexpr float ShieldPixelMult = 2.f;
+	/** Seconds of the raise / lower slide of the shield (visual only; blocking follows the input at once). */
+	constexpr float ShieldSlideTime = 0.12f;
 }
 
 namespace GBHudText
@@ -165,6 +170,16 @@ void AGBHUD::BeginPlay()
 {
 	Super::BeginPlay();
 	BindToPlayer(GetPlayer());
+	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBHUD::HandleDamageDealt);
+}
+
+void AGBHUD::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// The damage delegate is global: it must never call into a dead HUD.
+	UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
+	DamageDealtHandle.Reset();
+	BindToPlayer(nullptr);
+	Super::EndPlay(EndPlayReason);
 }
 
 AGBPlayerCharacter* AGBHUD::GetPlayer() const
@@ -424,7 +439,11 @@ void AGBHUD::DrawHUD()
 	BindToPlayer(Player);
 	const FGBHudSkinStyle& Style = GetSkinStyle(GetCurrentSkin());
 	const bool bMenuOpen = GetOpenMenu() != EGBMenu::None;
+	// The canvas is the viewport divided by the DPI scale; the mouse comes in viewport pixels.
+	MouseToCanvas = Canvas->SizeX > 0 ? Canvas->ClipX / (float)Canvas->SizeX : 1.f;
 
+	// World-space numbers first: hands and HUD panels stay on top of them.
+	DrawDamageNumbers();
 	if (Player)
 	{
 		DrawHands(Player);
@@ -447,6 +466,7 @@ void AGBHUD::DrawHUD()
 	DrawEraFade();
 	if (bMenuOpen)
 	{
+		UpdateMenuMouse();
 		DrawMenus(Player);
 		// Menu actions answer with toasts (skill unlocks, combines): keep them readable above the menu.
 		DrawToasts();
@@ -564,16 +584,56 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		DrawSprite(HandRight, W * 0.72f - RightSize.X * 0.5f + Bob.X, H - RightSize.Y * 0.45f + Bob.Y, P);
 	}
 
-	if (bCastPose)
+	// The summoned shield is held by the left hand: while it is up (or sliding) the left hand is hidden.
+	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
+	const bool bBlockRaised = Spellbook && Spellbook->HasShield() && Spellbook->IsBlockRaised();
+	const double Now = GetRealTime();
+	const float Dt = LastShieldUpdateTime < 0.0 ? 0.f : FMath::Clamp((float)(Now - LastShieldUpdateTime), 0.f, 0.1f);
+	LastShieldUpdateTime = Now;
+	const float Step = Dt / GBHudLayout::ShieldSlideTime;
+	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
+
+	if (bCastPose && ShieldRaise01 < 0.5f)
 	{
 		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
 		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
 		DrawSprite(HandCast, CastX - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
 	}
-	else if (!(Item && Slot == EGBHeldSlot::Gun))
+	else if (!bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
 	{
 		DrawSprite(HandLeft, W * 0.22f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.45f + Bob.Y, P);
 	}
+	DrawRaisedShield(Player, P, Bob);
+}
+
+float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, const FVector2D& Bob)
+{
+	if (ShieldRaise01 <= 0.f)
+	{
+		return 0.f;
+	}
+	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
+	UTexture2D* Shield = Sprites ? Sprites->GetSprite(TEXT("ice_shield")) : nullptr;
+	if (!Shield)
+	{
+		return ShieldRaise01;
+	}
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	// Whole sprite pixels, like the hands, only bigger: the shield is close to the eye.
+	const float Scale = FMath::Max(1.f, (float)FMath::RoundToInt(PixelSize * GBHudLayout::ShieldPixelMult));
+	const FVector2D Size(Shield->GetSizeX() * Scale, Shield->GetSizeY() * Scale);
+	const float Ease = FMath::InterpEaseOut(0.f, 1.f, ShieldRaise01, 2.f);
+	// Center X and top Y: from below the lower left corner up towards the middle, leaving the crosshair visible.
+	const FVector2D Lowered(W * 0.10f, H + Size.Y * 0.05f);
+	const FVector2D Raised(W * 0.36f, H * 0.40f);
+	const FVector2D Pos = FMath::Lerp(Lowered, Raised, Ease);
+	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+	const float Health01 = Spellbook ? FMath::Clamp(Spellbook->GetShieldHealthFraction(), 0.f, 1.f) : 0.f;
+	// A worn shield is more see-through.
+	const FLinearColor Tint(1.f, 1.f, 1.f, FMath::Lerp(0.6f, 0.95f, Health01));
+	DrawSprite(Shield, Pos.X - Size.X * 0.5f + Bob.X * 0.5f, Pos.Y + Bob.Y * 0.5f, Scale, Tint);
+	return ShieldRaise01;
 }
 
 // ======================================================================== status HUD
@@ -638,6 +698,7 @@ void AGBHUD::DrawStatusHud(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 			DrawLabel(GBHudText::ElementName(Item->GetElement()), GBHudText::ElementColor(Item->GetElement()), W * 0.5f, Top + 62.f * S, 18.f, 0.5f, true);
 		}
 		DrawStatusEffects(Player, Style, 20.f * S, Top - 40.f * S, false);
+		DrawShieldIndicator(Player, Style, 20.f * S, Top - 90.f * S);
 		InfoX = W - 24.f * S;
 		InfoY = Top + 18.f * S;
 	}
@@ -660,6 +721,7 @@ void AGBHUD::DrawStatusHud(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 			DrawLabel(Item->GetDisplayName(), Style.Text, W - 32.f * S, H - 70.f * S, 24.f, 1.f, bShadow);
 		}
 		DrawStatusEffects(Player, Style, 24.f * S, 24.f * S, true);
+		DrawShieldIndicator(Player, Style, 24.f * S, H - 172.f * S);
 		InfoX = W - 24.f * S;
 		InfoY = 24.f * S;
 	}
@@ -703,6 +765,28 @@ void AGBHUD::DrawVitals(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style
 	const float DashFrac = (Remaining <= 0.f || Total <= 0.f) ? 1.f : 1.f - Remaining / Total;
 	DrawLabel(TEXT("DASH"), Style.Text, X, DashY - 3.f * S, 14.f, 0.f, bShadow);
 	DrawBar(Style, X + LabelW, DashY, BarW * 0.5f, 8.f * S, DashFrac, DashFrac >= 1.f ? Style.Accent : FLinearColor(0.4f, 0.4f, 0.4f, 1.f), FString());
+}
+
+void AGBHUD::DrawShieldIndicator(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y)
+{
+	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
+	if (!Spellbook || !Spellbook->HasShield())
+	{
+		return;
+	}
+	const float S = UIScale();
+	const bool bShadow = !Style.bChunky;
+	const float PW = 340.f * S;
+	const float PH = 40.f * S;
+	const FLinearColor Ice = GBHudText::ElementColor(EGBElement::Ice);
+	const bool bRaised = Spellbook->IsBlockRaised();
+	DrawPanel(Style, X, Y, PW, PH);
+	DrawLabel(TEXT("SHIELD"), bRaised ? Ice : Style.Text, X + 10.f * S, Y + 11.f * S, 16.f, 0.f, bShadow);
+	const float BarX = X + 86.f * S;
+	const float BarW = 140.f * S;
+	DrawBar(Style, BarX, Y + 11.f * S, BarW, 18.f * S, Spellbook->GetShieldHealthFraction(), Ice,
+		FString::Printf(TEXT("%.1fs"), FMath::Max(0.f, Spellbook->GetShieldTimeRemaining())));
+	DrawLabel(bRaised ? TEXT("BLOCKING") : TEXT("[Q] Block"), bRaised ? Ice : Style.Accent, X + PW - 10.f * S, Y + 11.f * S, 16.f, 1.f, true);
 }
 
 void AGBHUD::DrawSpellSlots(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float CenterX, float Y)

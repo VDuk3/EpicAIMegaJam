@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
+#include "GameFramework/WorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "UObject/Package.h"
@@ -74,10 +75,12 @@ void AGBGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 		{
 			ArenaStart = ArenaPlayerStart->GetActorTransform();
 		}
+		ApplyKillZ(ExistingArena);
 		return;
 	}
 	if (bHasPlayerStart && !bEngineMap)
 	{
+		ApplyKillZ(nullptr);
 		return;
 	}
 
@@ -88,12 +91,49 @@ void AGBGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 	if (!Arena)
 	{
 		UE_LOG(LogGB, Error, TEXT("GameMode: could not spawn the test arena."));
+		ApplyKillZ(nullptr);
 		return;
 	}
 	Arena->BuildStatic();
 	ArenaStart = Arena->GetPlayerStartTransform();
 	bHasArenaStart = true;
 	ArenaPlayerStart = Arena->GetPlayerStartActor();
+	ApplyKillZ(Arena);
+}
+
+void AGBGameMode::ApplyKillZ(const AGBTestArena* Arena)
+{
+	UWorld* World = GetWorld();
+	AWorldSettings* WorldSettings = World ? World->GetWorldSettings() : nullptr;
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	if (!WorldSettings || !Data)
+	{
+		UE_LOG(LogGB, Warning, TEXT("GameMode: no world settings or data; KillZ left as the level has it."));
+		return;
+	}
+
+	// GetGameValue logs a warning once when the key is missing; the sentinel tells "missing" from any real height.
+	const float Missing = -TNumericLimits<float>::Max();
+	const float Value = Data->GetGameValue(GBGameValue::KillZ, Missing);
+	if (Value == Missing)
+	{
+		return;
+	}
+
+	if (Arena)
+	{
+		// Floor top of the code-built arena is its actor's height (GBTestArena.cpp layout).
+		WorldSettings->KillZ = static_cast<float>(Arena->GetActorLocation().Z) + Value;
+		return;
+	}
+
+	// A real level that set its own KillZ keeps it.
+	const AWorldSettings* Defaults = WorldSettings->GetClass()->GetDefaultObject<AWorldSettings>();
+	if (Defaults && !FMath::IsNearlyEqual(WorldSettings->KillZ, Defaults->KillZ))
+	{
+		return;
+	}
+	WorldSettings->KillZ = Value;
 }
 
 AActor* AGBGameMode::ChoosePlayerStart_Implementation(AController* Player)

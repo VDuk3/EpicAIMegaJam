@@ -28,8 +28,10 @@ struct GLYPHBOUND_API FGBPlayerSnapshot
 	UPROPERTY() float Mana = 0.f;
 
 	// Equipment
-	/** Weapon ids held, any order (the slot comes from each definition). */
+	/** Weapon ids owned, in the order they were obtained (the slot comes from each definition). */
 	UPROPERTY() TArray<FName> Weapons;
+	/** Of those, the ones in a slot right now (at most one per slot). Empty in old snapshots = equip the first of each kind. */
+	UPROPERTY() TArray<FName> EquippedWeapons;
 	UPROPERTY() TMap<FName, FGBAmmoState> Ammo;
 	UPROPERTY() TMap<FName, EGBElement> WeaponElements;
 	UPROPERTY() EGBHeldSlot ActiveSlot = EGBHeldSlot::Staff;

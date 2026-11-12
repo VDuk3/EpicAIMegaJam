@@ -15,6 +15,12 @@ namespace GBCombatLocal
 	constexpr float RadialTraceLiftCm = 5.f;
 }
 
+FGBOnDamageDealt& UGBCombatLibrary::OnDamageDealt()
+{
+	static FGBOnDamageDealt Event;
+	return Event;
+}
+
 float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bool bAllowFriendlyFire)
 {
 	if (!IsValid(Target))
@@ -59,6 +65,10 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 	}
 
 	const float Dealt = Attributes->ApplyDamage(FinalInfo);
+	if (Dealt > 0.f)
+	{
+		OnDamageDealt().Broadcast(Target, FinalInfo, Dealt);
+	}
 
 	if (Dealt > 0.f && !FinalInfo.OnHitEffect.IsNone())
 	{

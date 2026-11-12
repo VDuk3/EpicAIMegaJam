@@ -7,6 +7,7 @@
 #include "GBSpellbookComponent.generated.h"
 
 class AGBSpellActor;
+class AGBSpell_Shield;
 class AGBHeldItem;
 class UGBStatsComponent;
 class UGBAttributeComponent;
@@ -68,6 +69,23 @@ public:
 	/** Ends the active sustained spell, if any (weapon switch, death). */
 	void CancelSustained();
 
+	// ---- Summoned shield (GDD 6: the ice shield is a held block, like a first-person RPG shield) ----
+	// Casting a shield spell summons the shield for its Duration; it does nothing by itself. The player raises it
+	// by holding the Block input (Q / L2 with the staff or the sword in hand) and it only blocks while raised.
+	// A summoned shield does not make the spellbook busy: other spells can be cast while it is lowered.
+	/** Called by a shield behavior when it starts / ends. A new shield replaces the previous one (which ends). */
+	void RegisterShield(AGBSpellActor* Shield);
+	void UnregisterShield(AGBSpellActor* Shield);
+	/** The Block input. Ignored (and forced to false) when there is no shield or the held item is a gun. */
+	void SetBlockHeld(bool bHeld);
+	bool HasShield() const;
+	bool IsBlockRaised() const;
+	/** 0..1 of the shield's remaining health, and seconds until it expires; 0 when there is no shield. */
+	float GetShieldHealthFraction() const;
+	float GetShieldTimeRemaining() const;
+	/** The summoned shield (null if none), e.g. for the HUD to read its spell's Strings (Sprite, Color). */
+	AGBSpellActor* GetShieldActor() const;
+
 	/** Seconds left / total, for the HUD. */
 	float GetCooldownRemaining(FName SpellId) const;
 	float GetCooldownDuration(FName SpellId) const;
@@ -125,4 +143,15 @@ protected:
 	TMap<FName, float> CooldownLength;
 	UPROPERTY() TObjectPtr<AGBSpellActor> ActiveSustained;
 	FName PendingSpellId = NAME_None;
+
+	/** The summoned shield, if any (it ends itself: Duration, broken, death). */
+	TWeakObjectPtr<AGBSpell_Shield> Shield;
+	/** Block input accepted and the shield raised (forced false when refused). */
+	bool bBlockHeld = false;
+	/** The shield, if it is still active. */
+	AGBSpell_Shield* GetActiveShield() const;
+	/** Block is refused with a gun in hand, while a cast / QTE runs, and while dead. */
+	bool CanRaiseBlock() const;
+	/** Lowers and ends the summoned shield now (death, teardown). */
+	void EndShield();
 };
