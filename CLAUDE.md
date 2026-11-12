@@ -30,6 +30,19 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
 - **Commits** pequeños y frecuentes, con mensajes claros: el borrador del día los lista.
 - **Implementador:** por defecto, la implementación la hace **Muse Spark 1.3 Contributor en High** a través de OpenCode (`opencode-go/muse-spark-1.3-contributor#high`, ya fijado en `opencode.jsonc`). Excepciones solo por decisión del arquitecto o de quien esté de turno: cambios pequeños que haga directamente el orquestador, o una tarea demasiado compleja para Muse que se le da a Opus u otro modelo. Si se hace una excepción, se anota el motivo en la entrada del día. OpenCode se lanza SOLO con `Tools/Devlog/Invoke-LoggedAgent.ps1`.
 
+## Autonomía del arquitecto
+- El **arquitecto** es el chat de Claude Code que esté implementando en ese momento. Su fuente de verdad del diseño es `Design/GDD.md`.
+- **Las decisiones técnicas y de ingeniería las toma el arquitecto, sin consultar.** Nadie del equipo es programador: no se pregunta por arquitectura de código, C++ o Blueprints, estructura de clases, plugins, herramientas, formatos de datos, optimización ni nada parecido. Se decide, se ejecuta y se anota en la bitácora (decisión y motivo, que también suma para Glass Box).
+- Si falta un dato de diseño (gameplay, arte, historia), el arquitecto **no se detiene**: elige un valor razonable y provisional, lo marca en el GDD como provisional y sigue. Solo pregunta al dueño cuando una decisión de diseño cambie de verdad la visión del juego, y lo hace en una sola pregunta, sin parar el resto del trabajo.
+- El tiempo manda: entre dos opciones correctas, gana la que antes deja un build jugable.
+
+## Tiempo de iteración (el tiempo premia en este proyecto)
+- **Plugins:** el proyecto se crea con los plugins que ya trae el motor por defecto **desactivados si no se usan**, porque alargan el arranque y la compilación. Se dejan solo los que el juego o el flujo necesitan (el MCP, Enhanced Input, el de DLSS si se usa, Paper2D si se usa para sprites, etc.). Se mide el arranque del Editor antes y después.
+- **Compilar poco:** cambios solo en `.cpp` con Live Coding; build completo solo cuando cambian cabeceras, `UPROPERTY`/`UFUNCTION` o módulos. Una compilación o corrida a la vez por máquina.
+- **No correr la suite entera en cada cambio:** en cada cambio, solo el filtro anclado de lo que se tocó. La suite completa (por debajo de 30 s) una vez antes de empaquetar al final del día.
+- **Arranque del Editor:** mapa inicial casi vacío, `bEnableUncontrolledChangelists=False` y, en corridas sin ventana, `-unattended -nopause -nosplash -NullRHI -nosound -nocrashreports` (detalles en `Devlog/PREJAM_PREP.md`, "Where the time really went").
+- Comandos largos en segundo plano, sin bucles de espera.
+
 ## Tests y verificación
 Reglas que salen de lo que nos costó horas en el proyecto anterior. El porqué y las cifras están en `Devlog/PREJAM_PREP.md`, sección "Lessons from our previous project: tests and verification time"; léela antes de escribir un test o una herramienta de Editor.
 1. **Pocos tests, y solo de lógica pura** que sea fácil de romper y difícil de ver jugando (puntuación, guardado, máquinas de estado, generadores, matemáticas). Toda la suite por debajo de 30 s. Lo demás se verifica jugando el juego empaquetado.
