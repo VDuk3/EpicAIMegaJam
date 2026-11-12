@@ -253,8 +253,9 @@ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
 		break;
 	case EMenuHitKind::Tab:
 	case EMenuHitKind::SkillReset:
+	case EMenuHitKind::SkillAddPoint:
 	default:
-		// Tabs, the skill reset button and the death screen only react to clicks.
+		// Tabs, the skill buttons (reset, +1 point) and the death screen only react to clicks.
 		break;
 	}
 }
@@ -298,6 +299,9 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 		break;
 	case EMenuHitKind::SkillReset:
 		ResetSkills(Player);
+		break;
+	case EMenuHitKind::SkillAddPoint:
+		AddTestSkillPoint(Player);
 		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
@@ -813,6 +817,17 @@ void AGBHUD::ResetSkills(AGBPlayerCharacter* Player)
 	{
 		ShowMessage(TEXT("No skills to reset"), 1.5f);
 	}
+}
+
+void AGBHUD::AddTestSkillPoint(AGBPlayerCharacter* Player)
+{
+	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+	if (!SkillTree)
+	{
+		return;
+	}
+	SkillTree->AddPoints(1);
+	ShowMessage(FString::Printf(TEXT("+1 skill point (%d)"), SkillTree->GetPoints()), 1.5f);
 }
 
 void AGBHUD::MenuReset()
@@ -1349,6 +1364,16 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 		DrawOutline(BtnX, BtnY, BtnW, BtnH, BtnColor, 1.f * S);
 		AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
 		DrawLabel(ResetText, BtnColor, BtnX + BtnW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
+
+		// Test option (GDD 18, provisional): "+1 skill point", mirrored on the left of the label.
+		const FString AddText(TEXT("+1 skill point"));
+		const FVector2D AddSize = MeasureLabel(AddText, 16.f);
+		const float AddW = AddSize.X + 20.f * S;
+		const float AddX = W * 0.5f - PointsSize.X * 0.5f - 24.f * S - AddW;
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), AddX, BtnY, AddW, BtnH);
+		DrawOutline(AddX, BtnY, AddW, BtnH, MenuWhite, 1.f * S);
+		AddMenuHit(EMenuHitKind::SkillAddPoint, AddX, BtnY, AddW, BtnH);
+		DrawLabel(AddText, MenuWhite, AddX + AddW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
 	}
 	if (Nodes.Num() == 0)
 	{

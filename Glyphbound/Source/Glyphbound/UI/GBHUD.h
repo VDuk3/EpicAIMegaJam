@@ -72,6 +72,8 @@ public:
 	void MenuReset();
 	/** Refunds every owned skill node (see UGBSkillTreeComponent::ResetAll). The cursor stays on its node. */
 	void ResetSkills(AGBPlayerCharacter* Player);
+	/** Test option (owner, GDD 18 provisional): gives one free skill point. Not a refund: it adds to the pool. */
+	void AddTestSkillPoint(AGBPlayerCharacter* Player);
 	/**
 	 * Mouse in menus: the cursor is visible while a menu is open, the entry under it is highlighted (the HUD
 	 * reads the mouse position itself while drawing), and a left click on an entry does what confirm does there
@@ -145,6 +147,7 @@ protected:
 		SpellChoice,
 		SkillNode,
 		SkillReset,
+		SkillAddPoint,
 		DeathScreen
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */
