@@ -1,10 +1,11 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.7, 2026-11-12** — owner's vision plus six rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.8, 2026-11-12** — owner's vision plus seven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.8 (2026-11-12): enemies do not respawn; provisional game order; story questions parked; open questions narrowed to what the prototype and base systems need.
 - v0.7 (2026-11-12): full story (the entity, the false voice, the Valkyrie); elemental zones in the castle unlock the rest of each element; air passives learned the same way; shotgun and rifle dropped by enemies; era travel restores everything (bonfire-like); remaining keys confirmed.
 - v0.6 (2026-11-12): art rule clarified for characters (style of the world they belong to); story premise; opening sequence with the first gun; starting spells; enchant only with a gun in hand; key changes (F quick-use, G interact, L1 enchant on gamepad); counter-style ammo refilled on era travel; automatic checkpoints; no sprint; one full-armor slot.
 - v0.5 (2026-11-12): sword is a third slot; magazines, reload, limited ammo dropped by enemies; health and mana regenerate, no stamina; state carries across eras; checkpoints; one skill point pool; controls filled in; opening sequence; armor from chests; difficulty = hard only for now.
@@ -62,7 +63,13 @@ Working title: **TBD**.
 4. Appears in the **future**.
 5. Fights **3D armed orcs**. One of the first ones **drops the first gun**.
 6. The player **picks up the gun** → **short cutscene #2**. The player **cannot progress** without picking it up.
-7. Rest of the game: elemental zones in the castle (§6), the two Valkyrie fights, the final portal (§11). Exact order and map flow: **TBD**.
+7. Back to the **castle**.
+8. **Elemental zones**, in the order the player chooses (§6).
+9. **Valkyrie, past.**
+10. **Valkyrie, future.**
+11. **Final portal** → the Entity (§11).
+
+Steps 7–11 are **provisional** (owner, 2026-11-12).
 
 ## 5. Player progression
 - **No character levels / no XP leveling.**
@@ -230,6 +237,7 @@ No sprint (the air speed passive covers movement speed).
 - **The true final boss.**
 - Known enemies: **orcs** (past) and **armed orcs** (future). Other types and behavior: **TBD**. Their art follows §3 (medieval = pixel art, cyberpunk = 3D).
 - Enemies **drop ammo** on the floor.
+- **Enemies do not respawn.** A cleared zone stays cleared, also after era travel.
 
 ### Death and difficulty
 - On death the player **returns to the last checkpoint**. Checkpoints are **automatic**.
@@ -311,21 +319,26 @@ Not decisions, just the list of systems the design implies:
 ## 17. Open questions
 Answers get folded into the sections above as they come.
 
-**Blocking (needed before the architect starts):**
-1. **Enemy respawn:** like rest points in classic action RPGs, does era travel also **respawn the enemies**? Or do cleared areas stay cleared?
-2. **Map flow:** what is the order after cutscene #2? Can the player pick the order of the elemental zones, or is it linear? Rough proposal to confirm or change: future intro → back to the castle → elemental zones (any order) → Valkyrie (past) → Valkyrie (future) → final portal.
-3. **What the future has:** the elemental zones are in the castle. What does the player do in the future besides the intro and the Valkyrie (zones unlocked from the past, where the shotgun and rifle drop, sub-bosses)?
-4. **Challenges per zone:** 4 elemental zones; which one ends in a wave, which in a sub-boss, which in a boss? Are the "couple of sub-bosses" the guardians of these zones?
+### For the prototype and base systems (asked 2026-11-12)
+1. **Project name:** there is no `.uproject` yet. What name do we give the project / folder (a code name is fine; the game title can come later)?
+2. **Blueprints or C++:** core systems in C++ with tuning in Blueprints/data, mostly Blueprints, or the architect decides?
+3. **Pixel-art world in first person:** is the castle **3D geometry with low-res pixel textures** (retro 3D shooter look), or flat 2D? And are pixel-art characters (orcs, the player's hands) **sprites that always face the camera**, with how many view angles (1, or 8 like classic shooters)?
+4. **Headshots on pixel-art enemies:** the weapon tree has headshot damage, so sprite enemies need a head hit zone. OK to define it as the top part of the sprite?
+5. **Art delivery:** who makes the pixel art and the 3D models, and in what format (PNG sprite sheets at what pixel size, FBX)? Until then, is greybox + placeholders OK for the prototype?
+6. **Placeholder numbers:** OK for the architect to put placeholder values (damage, mana, cooldowns, QTE sequence length and time limit) in data tables, for the owner to tune later?
+7. **QTE and the camera:** the mouse draws the gesture in part 2, so the camera has to **lock during the QTE**. Confirm. Does the player character also stay still while time is slowed?
+8. **Era travel transition:** is a short fade / effect when crossing a portal OK (it lets us load the other era's version of the map)?
+9. **Saving:** only checkpoints inside one play session, or must progress also be **saved to disk** to continue after closing the game?
+10. **Performance target:** which PC should it run well on (the team's weakest machine?) and at what fps? Single-player only (assumed yes)?
 
-**Can wait:**
-5. **Valkyrie fight:** if she is a victim of the Entity, why does she fight the player (she thinks he serves the Entity, she is still under its control…)?
-6. **Final boss mechanics:** does the possession attempt become part of the fight (e.g. a phase where it tries to take the player's body)?
-7. **Staffs:** how many, and does each one's basic attack have an element?
-8. **Ice shield QTE:** which part scales duration and which scales block effectiveness?
-9. **Armor:** which stats besides the QTE time slow (defense, mana regen…)?
-10. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
-11. Examples of era-gated zones and past→future unlocks.
-12. Other enemy types per era.
-13. The two quest items.
-14. QTE: time limit, sequence length per spell, does the camera slow too.
-15. Game and team name.
+### Content questions (parked by the owner, 2026-11-12)
+Not needed for the prototype; to be answered later.
+- Why the Valkyrie fights the player; whether the possession attempt is part of the final fight.
+- Staffs: how many, element of each basic attack.
+- Ice shield QTE: which part scales duration and which block effectiveness.
+- Armor stats besides the QTE time slow.
+- How "combining styles" is rewarded beyond synergies.
+- What the player does in the future besides the intro and the Valkyrie; challenge per elemental zone; sub-bosses.
+- Examples of era-gated zones and past→future unlocks.
+- Other enemy types per era; the two quest items.
+- Game and team name.
