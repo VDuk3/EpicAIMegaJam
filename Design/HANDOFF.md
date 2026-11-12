@@ -1,7 +1,7 @@
 # Handoff between architect chats
 
-> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.21) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
-> Last update: 2026-11-12 (day 1, sixth block: six new spell perks, hold-to-sustain flamethrower with strong-hit interrupt), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
+> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.22) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
+> Last update: 2026-11-12 (day 1, seventh block: elemental build-up with Ignite, Shock and Frost), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
 
 ## Standing instructions from the owner (2026-11-12)
 - Do not stop to ask for go-aheads or yes/no questions. Decide, do, log. If the architect stops, the project stops.
@@ -55,7 +55,8 @@
 | QTE time, keys, gestures | `QTE.json`; `QTE/GBQTELogic.cpp`, `QTE/GBQTEComponent.cpp` |
 | Enemies: health, damage, ranges, speed, drops | `Enemies.json`, `Encounters.json`; movement tuning (`Enemy*` keys) in `Game.json`; `AI/GBEnemyCharacter.cpp` |
 | Perks (and the reset: `ResetAll`) | `Skills.json` (modifier keys: `Weapon.<Id|Gun|Staff|Sword|All>.<Stat>`, `Spell.<Id|All>.<Param>`, player stats by name) |
-| Burn, chill, shock, slows | `StatusEffects.json` |
+| Slows, Ignite's damage ticks, potions, enchant buffs | `StatusEffects.json` |
+| Elemental build-up: per-enemy thresholds, resistances, reactions, durations | `Enemies.json` (per enemy), `Game.json` `ElementalDefault.*` (fallbacks); spell `BuildUp` param; weapon `FireBuildUp` / `LightningBuildUp` / `IceBuildUp`; code `Combat/GBElementalStatusComponent.cpp`, `Combat/GBBuildUpMeter.cpp` |
 | Items, armor, recipes | `Items.json`; `Items/GBInventoryComponent.cpp` |
 | HUD, menus, damage numbers | `UI/GBHUD*.cpp`; damage-number tuning in `Game.json` |
 | Kill height, corpse time, global values | `Game.json` |
@@ -81,7 +82,8 @@ Codex (read-only review):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent codex -Model 'gpt-6.1-sol (medium)' -PromptFile Prompts\X.md -Purpose '...' -Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`
 A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
 
-## Right now (end of the sixth block, 2026-11-12)
+## Right now (end of the seventh block, 2026-11-12)
+- **Seventh block (GDD v0.22, owner's spec `Prompts/feedback8_elemental_spec_owner.md`):** elemental build-up on every enemy (three bars, Ignite / Shock / Frost, per-enemy resistances and reactions, spell and weapon build-up, one count per event, weak-point bonus, `MultiplyMin` slows). The old per-hit Burn / Shock slow / Chill were removed (owner's answer). Debug: `gb.ShowElemental 1`, `gb.BuildUp <Element> <Amount>`. 34 tests; smoke fills each bar on a training dummy. Not played yet. Not reviewed by Codex (one Muse batch, read by the architect; one fix: spell projectiles no longer flag head hits as headshots).
 - Everything is committed on `main` (last commits: perks and flamethrower, beam interrupt, then the seventh package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
 - Editor build and game build green; 30 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
 - Six blocks done today:
@@ -109,6 +111,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
+- Build 8 (elemental): with `gb.ShowElemental 1`: fire spells fill the fire bar and Ignite burns 4 s then 3 s immune; a lightning bolt through a line of orcs gives each one build-up; a full lightning bar stuns an orc (stops, attack cancelled) but only interrupts the brute; the ice floor alone fills slowly and decays, an ice-enchanted gun finishes it; frozen orcs stop, the brute only slows; Frost on the ice floor does not slow more than the strongest of the two; a shotgun shot counts once; head shots fill faster; the flamethrower and the ice floor (Deep Freeze) feel the same as before.
 - Build 7: the six new perks (each at rank 3), the flamethrower held / released / out of mana, a strong hit interrupting it (shake, message, aim unchanged), a small hit not interrupting it, with the ice shield raised the blocked part not counting.
 - Build 6: overlapping rune and ice floor in both orders (the last one fully on top, no flicker, also while moving).
 - Build 5: the rune and ice floor figures (full area, flat, sharp, floor visible through them, rune dim until armed), the +1 skill point button.
