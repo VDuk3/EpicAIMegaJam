@@ -364,3 +364,34 @@ Not needed for the prototype; to be answered later.
 - Examples of era-gated zones and past→future unlocks.
 - Other enemy types per era; the two quest items.
 - Game and team name.
+
+## 18. Provisional rules and numbers picked by the architect (2026-11-12)
+The owner asked the architect not to stop for missing design details. Everything below was chosen so the prototype could be built; **all of it is provisional** and waits for the owner's word. Numbers are in `Glyphbound/Content/Data/*.json` and can be changed there without touching code.
+
+### Rules
+- **Double jump on day 1:** the player starts knowing the air passive "Double jump" so it can be tested now. In the real game it is learned in the air zone (§6); remove it from `Player.json` `StartingSpells` then.
+- **Dash:** available from the start (the air passive only improves it). It goes in the movement direction (forward when standing still), works in the air, gives no invulnerability, and does not refill jumps.
+- **Swapping weapons:** picking up a gun or a staff replaces the one held; the old one is left on the floor. A gun that is picked up comes fully loaded.
+- **Reload:** the bullets left in the old magazine are lost (classic tactical style). A gun reloads by itself when its magazine runs dry. Ammo pickups give one spare magazine, up to the gun's maximum.
+- **Sustained spells (flamethrower, ice shield):** after the QTE they run for their Duration, or until the same spell key is pressed again, the weapon is switched, or the player dies. Mana is paid once, at the start.
+- **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.
+- **Weapon enchant QTE:** part 1 scales how long the buff lasts; part 2 scales how strong it is. Only one enchant at a time. The enchanted gun deals the element's damage type and applies its effect on hit (fire burns, lightning shocks, ice chills).
+- **Spell walls:** the fire wall does not block; it burns enemies that touch it. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
+- **QTE:** a wrong key consumes its step. A gesture is judged when the hand stops for a moment or the stroke is clearly complete. If both parts are fully missed the spell fizzles, and the mana is still spent and the cooldown still starts.
+- **New spells** go to the first free loadout slot.
+- **Elemental sword:** the hilt and the gems are not consumed when forging, so the player re-forges from the inventory to switch element.
+- **Enemies:** once hit, an enemy chases the player from any distance. Enemies of the other era are frozen and hidden, not simulated.
+- **Encounters:** if the player dies during one, its living enemies are removed and it starts again from wave 1 on return. Progress flags are never rolled back.
+- **Checkpoints:** saved at the start, on every era travel, on entering a checkpoint zone and when an encounter is cleared. Death brings back the player's state as it was at the checkpoint (health, mana, ammo, items, spells, skills).
+- **Consumables** can be used at full health or mana (they are wasted).
+- **Art rule on pickups:** cyberpunk items (injection, grenade, magazine, sword hilt) lie on the floor as 3D shapes; medieval ones (potions, gems, books, staffs) as pixel-art sprites.
+
+### Numbers (first pass, all in the JSON files)
+- **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
+- **QTE:** 4 keys, 1 gesture, 3 s in real time, world at 10% speed.
+- **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and burns.
+- **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots x2 (shotgun x1.5).
+- **Enemies:** past orc 60 health, melee 12; future orc 70 health, ranged 9; brute (sub-boss placeholder) 320 health, melee 28.
+- **Status effects:** burn 32 damage over 4 s; slow 50% for 4 s; chill 30% for 3 s; shock 40% for 1.5 s; health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s.
+- **Skill trees:** 6 nodes each, 1-2 points per rank, up to 3 ranks.
+- Every spell number in `Spells.json`.

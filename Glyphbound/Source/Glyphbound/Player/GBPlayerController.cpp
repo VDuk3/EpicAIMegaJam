@@ -16,7 +16,7 @@ namespace
 	// The menu context sits above the gameplay one, so during the death screen (both may be active) menu keys win.
 	constexpr int32 GameplayContextPriority = 0;
 	constexpr int32 MenuContextPriority = 1;
-	constexpr float AxisStepThreshold = 0.1f;
+	constexpr float MenuAxisStepThreshold = 0.1f;
 
 	bool IsPausingMenu(EGBMenu Menu)
 	{
@@ -231,7 +231,7 @@ void AGBPlayerController::InputMenuTab(const FInputActionValue& Value)
 		return;
 	}
 	const float Axis = Value.Get<float>();
-	if (FMath::Abs(Axis) < AxisStepThreshold)
+	if (FMath::Abs(Axis) < MenuAxisStepThreshold)
 	{
 		return;
 	}

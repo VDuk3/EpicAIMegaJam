@@ -1,0 +1,86 @@
+OpenAI Codex v0.167.2
+--------
+workdir: C:\GameJam
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a1ce91-e186-7412-aec4-97f9d9d7a2b0
+--------
+user
+# Code review: Glyphbound day 1 (read-only)
+
+You are the second-opinion reviewer for **Glyphbound**, a first-person RPG shooter in Unreal Engine 5.9.0 (C++), made for a 4-day game jam. Do not modify any file. Do not build or run anything.
+
+## Context
+- Read `Design/ARCHITECTURE.md` first (short). Design is in `Design/GDD.md` (sections 3, 4, 6, 7, 8 matter most).
+- Code: `Glyphbound/Source/Glyphbound/` (about 17,000 lines, written today by ten AI implementers in parallel against header contracts, then being compiled by another agent right now, so a missing include is NOT what we want from you).
+- Data: `Glyphbound/Content/Data/*.json`, loaded by `Data/GBDataSubsystem.cpp` into the structs of `Data/GBDataTypes.h`.
+- Engine source for checking APIs: `C:\Program Files\Epic Games\UE_5.9\Engine\Source`.
+
+## What to look for (real defects only, in this priority order)
+1. **Runtime bugs in the combat core**: `Combat/`, `Stats/`, `Weapons/`, `Spells/` (damage path, status effects, projectile collisions and lifetimes, ammo and reload state, cooldowns, mana spent / refunded wrongly, sustained spells never ending, time dilation left on after the QTE).
+2. **Mismatches between data and code**: a stat, param, string key, id, enum value or class path used in a JSON file that the code never reads or spells differently (and the reverse: code reading a key no JSON defines, so it silently falls back to a default). Check ids across files (spells, weapons, items, status effects, enemies, encounters, sprites, skills modifier keys like `Spell.Fireball.ExplosionRadius`).
+3. **Cross-module contract breaks**: one module assuming something another does not do (initialization order in `Player/GBPlayerCharacter.cpp` BeginPlay, who restores health on era travel, who saves checkpoints, who closes the death menu, delegate bindings never removed, objects kept alive only by raw pointers and collected by the GC, `TWeakObjectPtr` not checked).
+4. **Things that work in the Editor but break in a packaged build**: editor-only APIs outside guards, assets loaded by path at runtime that the cook would not include (see `Glyphbound/Config/DefaultGame.ini`), transient textures, `LoadClass` paths.
+5. **Logic errors in the QTE** (`QTE/GBQTELogic.cpp`, `QTE/GBQTEComponent.cpp`): scoring, time limit in real time, input routed while inactive.
+6. **Violations of the project rule "no gameplay numbers in code"** only when it is a real balance value (damage, cost, cooldown, speed, duration) hardcoded where data should decide.
+
+Do not report: style, naming, formatting, missing comments, micro-optimizations, hypothetical multiplayer issues (the game is single player), or anything about tests being too few.
+
+## Output format
+A numbered list, most severe first, at most 30 items. For each:
+- `file:line` (or lines),
+- what is wrong, in one or two sentences,
+- why it matters when playing (what the player would see),
+- the smallest fix you would make.
+Finish with one short paragraph: the three things you would fix first, and anything you checked and found solid.
+
+codex
+I’ll read the architecture first, then trace combat, data contracts, travel/death flow, packaging, and QTE logic. I’ll only read files; I won’t build or run the project.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Design/ARCHITECTURE.md' in C:\GameJam
+ succeeded in 465ms:
+# Glyphbound: code architecture
+
+> Written by the architect (Claude Code) on 2026-11-12. Source of truth for how the C++ is organized.
+> Design lives in `Design/GDD.md`; this file says how the code implements it. Keep it short and current.
+
+## Principles
+1. **Data, not code.** Every gameplay number lives in `Glyphbound/Content/Data/*.json` and is read through `UGBDataSubsystem`. Code never hardcodes damage, costs, speeds, durations, sizes or timings. The JSON ships as loose files, so numbers can be tuned in a packaged build with a text editor (`gb.ReloadData` reloads while playing).
+2. **One stat system.** A number is a *named stat*: base value from data, then modifiers. `UGBStatsComponent` evaluates `(Base + adds) * multipliers` (or an override). Skill-tree nodes, armor, status effects, air passives and the weapon enchant are all just groups of modifiers with a source name. Nothing else changes numbers.
+3. **One damage path.** Everything that hurts goes through `UGBCombatLibrary::DealDamage(Target, FGBDamageInfo)`. Shields, resistances, teams, on-hit effects and kill credit hook in there once.
+4. **Spells are data + a behavior.** A spell is a `FGBSpellDefinition` (params with `Base/Min/Max/ScaledBy`) plus the class of an `AGBSpellActor` behavior. The QTE result (power, reach) scales the params tagged for it. A new spell that fits an existing behavior is a JSON entry, no code.
+5. **Shared pieces.** One projectile (`AGBProjectile`) for staff bolts, spell projectiles, enemy shots and grenades. One status-effect component for slows, burns, potions and buffs. One interact interface for portals, chests, pickups and the seal.
+6. **Text in git.** No binary assets are required to run: input actions, the test arena, placeholder shapes and placeholder pixel sprites are all built in C++ from text. `Content/` is ignored by git except `Content/Data/`.
+7. **No GAS.** Unreal's Gameplay Ability System was considered and rejected for the jam: it needs a lot of boilerplate and asset setup, and the game's needs (costs, cooldowns, timed effects, stat upgrades) are covered by principles 2-4 in a few hundred lines we fully control.
+8. **PIE is human-only.** Agents build, run the pure-logic tests and package; a person plays.
+
+## Module layout (`Glyphbound/Source/Glyphbound`, one runtime module, prefix `GB`)
+Includes are relative to the module root: `#include "Stats/GBStatsComponent.h"`.
+
+| Folder | What | Key types |
+|---|---|---|
+| `Core/` | Shared enums, stat names, placeholders, game mode | `GBTypes.h`, `GBStatNames.h`, `GBPlaceholder.h`, `AGBGameMode`, `UGBGameInstance` |
+| `Data/` | Definitions and the JSON loader | `GBDataTypes.h`, `UGBDataSubsystem` |
+| `Stats/` | Stats + modifiers, health/mana | `UGBStatsComponent`, `UGBAttributeComponent` |
+| `Combat/` | Damage, status effects, projectile | `UGBCombatLibrary`, `UGBStatusEffectComponent`, `AGBProjectile` |
+| `Player/` | Character, controller, input | `AGBPlayerCharacter`, `AGBPlayerController`, `UGBInputSet` |
+| `Weapons/` | Held items and slots | `UGBEquipmentComponent`, `AGBHeldItem`, `AGBStaff`, `AGBGun`, `AGBSword` |
+| `Spells/` | Spellbook, cast resolution, behaviors | `UGBSpellbookComponent`, `FGBSpellCast`, `AGBSpellActor`, `AGBSpell_*` |
+| `QTE/` | Quick-time event | `FGBQTESession`, `FGBGestureRecognizer`, `UGBQTEComponent` |
+| `World/` | Eras, progress, interactables, test arena | `UGBEraSubsystem`, `UGBEraComponent`, `UGBProgressSubsystem`, `IGBInteractable`, `AGBPortal`, `AGBChest`, `AGBPickup`, `AGBCheckpointVolume`, `AGBTestArena` |
+| `AI/` | Enemies and encounters | `AGBEnemyCharacter`, `AGBEncounter` |
+| `Items/` | Inventory, consumables, armor, recipes | `UGBInventoryComponent` |
+| `Progression/` | Skill trees | `UGBSkillTreeComponent` |
+| `UI/` | Canvas HUD (two skins), menus, pixel sprites | `AGBHUD`, `UGBPixelSpriteLibrary` |
+| `Tests/` | Pure-logic automation tests | `Glyphbound.<Area>.<Name>` |
+
+## Data files (`Glyphbound/Content/Data`)
+`Player.json`, `QTE.json`, `Game.json`, `Spells.json`, `Weapons.json`, `StatusEffects.json`, `Items.json` (items + recipes), `Enemies.json`, `Encounters.json`, `Skills.json`, `Sprites.json`. Schemas are the structs in `Data/GBDataTypes.h` (field name = JSON key). Stat and parameter names are the constants in `Core/GBStatNames.h`.
+
+Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
+
+Standard status effect ids (

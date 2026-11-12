@@ -1111,11 +1111,11 @@ void AGBHUD::DrawDamageFlash()
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
 	const float T = 18.f * UIScale();
-	constexpr int32 Layers = 5;
-	for (int32 k = 0; k < Layers; ++k)
+	constexpr int32 DamageLayers = 5;
+	for (int32 k = 0; k < DamageLayers; ++k)
 	{
 		const float Inset = k * T;
-		const FLinearColor Color(0.8f, 0.f, 0.f, 0.4f * Strength * (1.f - (float)k / Layers));
+		const FLinearColor Color(0.8f, 0.f, 0.f, 0.4f * Strength * (1.f - (float)k / DamageLayers));
 		DrawRect(Color, Inset, Inset, W - 2.f * Inset, T);
 		DrawRect(Color, Inset, H - Inset - T, W - 2.f * Inset, T);
 		DrawRect(Color, Inset, Inset + T, T, H - 2.f * (Inset + T));
