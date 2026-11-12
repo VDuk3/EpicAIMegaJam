@@ -24,7 +24,8 @@ class GLYPHBOUND_API IGBInteractable
 
 public:
 	virtual bool CanInteract(const AGBPlayerCharacter* Player) const { return true; }
-	virtual void Interact(AGBPlayerCharacter* Player) = 0;
+	/** Not pure virtual: Unreal must be able to build a default object of every class that implements this. */
+	virtual void Interact(AGBPlayerCharacter* Player) {}
 	/** Short English text for the HUD, e.g. "Travel to the future". The HUD adds the key name. */
 	virtual FString GetInteractPrompt(const AGBPlayerCharacter* Player) const { return TEXT("Interact"); }
 };

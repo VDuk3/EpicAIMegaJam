@@ -1,0 +1,150 @@
+// The player: a medieval mage in first person (GDD 0, 3, 9).
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "Core/GBTypes.h"
+#include "GBPlayerCharacter.generated.h"
+
+class UCameraComponent;
+class UGBStatsComponent;
+class UGBAttributeComponent;
+class UGBStatusEffectComponent;
+class UGBEquipmentComponent;
+class UGBSpellbookComponent;
+class UGBQTEComponent;
+class UGBInventoryComponent;
+class UGBSkillTreeComponent;
+class UGBInputSet;
+class IGBInteractable;
+struct FInputActionValue;
+struct FGBPlayerSnapshot;
+struct FGBDamageInfo;
+
+/**
+ * Owns the components that make up the player and routes input to them. It holds no gameplay numbers:
+ * movement reads the stats (MoveSpeed, JumpVelocity, MaxJumps, AirControl, GravityScale, DashDistance,
+ * DashDuration, DashCooldown, InteractRange) from UGBStatsComponent and re-reads them on OnStatsChanged,
+ * so air passives, armor and slows work by adding modifiers.
+ *
+ * Movement (GDD 9): walk, jump, double jump (MaxJumps), dash (Ctrl / Circle) in the movement direction, no sprint.
+ * During the spell QTE: the camera is locked, W/A/S/D and the mouse go to the QTE, and the player keeps moving
+ * in the direction it was moving (the last movement input is held).
+ */
+UCLASS()
+class GLYPHBOUND_API AGBPlayerCharacter : public ACharacter
+{
+	GENERATED_BODY()
+
+public:
+	AGBPlayerCharacter();
+
+	/** The local player character, or null. */
+	static AGBPlayerCharacter* Get(const UObject* WorldContextObject);
+
+	// ---- Components ----
+	UCameraComponent* GetCamera() const { return Camera; }
+	UGBStatsComponent* GetStats() const { return Stats; }
+	UGBAttributeComponent* GetAttributes() const { return Attributes; }
+	UGBStatusEffectComponent* GetStatusEffects() const { return StatusEffects; }
+	UGBEquipmentComponent* GetEquipment() const { return Equipment; }
+	UGBSpellbookComponent* GetSpellbook() const { return Spellbook; }
+	UGBQTEComponent* GetQTE() const { return QTE; }
+	UGBInventoryComponent* GetInventory() const { return Inventory; }
+	UGBSkillTreeComponent* GetSkillTree() const { return SkillTree; }
+
+	/** Held items attach here: a scene component under the camera (right-hand side of the view). */
+	USceneComponent* GetHeldItemAnchor() const { return HeldItemAnchor; }
+
+	// ---- Aiming ----
+	/** Camera location and forward vector: where shots and spells start and point. */
+	FVector GetAimOrigin() const;
+	FVector GetAimDirection() const;
+	/** A point a little in front of the right hand, for projectiles that should not start inside the camera. */
+	FVector GetMuzzleLocation() const;
+	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
+	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
+
+	// ---- Movement state ----
+	bool IsDashing() const { return bDashing; }
+	/** Seconds until the dash is ready again; 0 when ready. */
+	float GetDashCooldownRemaining() const;
+	/** Multiplies walk speed while set (aiming down sights). 1 = normal. */
+	void SetMoveSpeedScale(float Scale);
+
+	// ---- Interaction ----
+	/** The interactable the player is looking at and can use right now, or null. The HUD shows its prompt. */
+	IGBInteractable* GetFocusedInteractable() const;
+	AActor* GetFocusedInteractableActor() const { return FocusedInteractable.Get(); }
+
+	// ---- State ----
+	bool IsDead() const;
+	/** Full health, mana and ammo (era travel, GDD 4). */
+	void RestoreAll();
+	/** Stops input-driven actions and hides the held item (death, cutscene). */
+	void SetControlEnabled(bool bEnabled);
+	bool IsControlEnabled() const { return bControlEnabled; }
+
+	/** Whole-player snapshot: transform, era, attributes, plus every component's part. */
+	void SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const;
+	void LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot);
+
+	virtual void Tick(float DeltaSeconds) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+protected:
+	virtual void BeginPlay() override;
+
+	/** Reads the movement stats into the character movement component. Bound to OnStatsChanged. */
+	void ApplyMovementStats();
+	void HandleDeath(const FGBDamageInfo& KillingBlow);
+	void UpdateFocusedInteractable();
+
+	// Input handlers (bound to the actions of UGBInputSet)
+	void InputMove(const FInputActionValue& Value);
+	void InputMoveCompleted(const FInputActionValue& Value);
+	void InputLook(const FInputActionValue& Value);
+	void InputJump();
+	void InputJumpReleased();
+	void InputDash();
+	void InputPrimaryPressed();
+	void InputPrimaryReleased();
+	void InputSecondaryPressed();
+	void InputSecondaryReleased();
+	void InputReload();
+	void InputSwitchWeapon(const FInputActionValue& Value);
+	void InputSpellSlot(int32 Slot);
+	void InputEnchant();
+	void InputInteract();
+	void InputQuickUse();
+	void InputCycleQuickUse(const FInputActionValue& Value);
+	void InputQTEKey(int32 KeyIndex);
+
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> HeldItemAnchor;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatsComponent> Stats;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBAttributeComponent> Attributes;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatusEffectComponent> StatusEffects;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBEquipmentComponent> Equipment;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBSpellbookComponent> Spellbook;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBQTEComponent> QTE;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBInventoryComponent> Inventory;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBSkillTreeComponent> SkillTree;
+
+	/** Input actions and mapping contexts, built in code (see Player/GBInputSet.h). */
+	UPROPERTY() TObjectPtr<UGBInputSet> InputSet;
+
+	TWeakObjectPtr<AActor> FocusedInteractable;
+
+	bool bControlEnabled = true;
+	bool bDashing = false;
+	float DashTimeLeft = 0.f;
+	double DashReadyTime = 0.0;
+	FVector DashVelocity = FVector::ZeroVector;
+	float MoveSpeedScale = 1.f;
+	/** Last movement input (x = right, y = forward), held during the QTE. */
+	FVector2D LastMoveInput = FVector2D::ZeroVector;
+	/** Recoil still to be recovered (degrees) and its recovery speed. */
+	FRotator PendingRecoil = FRotator::ZeroRotator;
+	float RecoilRecoverSpeed = 0.f;
+};

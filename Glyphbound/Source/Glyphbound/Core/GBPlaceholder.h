@@ -1,0 +1,42 @@
+// Placeholder looks built from engine assets only, so the game needs no art to run (GDD 0.1 "Placeholders first").
+#pragma once
+
+#include "CoreMinimal.h"
+
+class UStaticMesh;
+class UStaticMeshComponent;
+class UMaterialInstanceDynamic;
+
+enum class EGBShape : uint8
+{
+	Cube,
+	Sphere,
+	Cylinder,
+	Cone,
+	Plane
+};
+
+/**
+ * Engine basic shapes (/Engine/BasicShapes/*, 100 cm across) tinted with a dynamic material.
+ * Use it for everything 3D that has no art yet: guns, cyberpunk props, walls, floors, 3D enemies.
+ * Pixel-art things use UGBPixelSpriteLibrary instead (art rule, GDD 3).
+ * Assets are loaded at runtime with LoadObject; DefaultGame.ini keeps them in the cook.
+ */
+namespace GBPlaceholder
+{
+	GLYPHBOUND_API UStaticMesh* GetShapeMesh(EGBShape Shape);
+
+	/**
+	 * Gives a mesh component a shape, scales it to SizeCm (full extent on each axis, in the component's local
+	 * space) and tints it. bGlow uses the engine's unlit additive material (spell and neon looks) instead of
+	 * the lit one. Returns the dynamic material so the caller can change the color later ("Color" parameter).
+	 * Does not touch the component's collision settings.
+	 */
+	GLYPHBOUND_API UMaterialInstanceDynamic* SetupShape(UStaticMeshComponent* Component, EGBShape Shape, const FVector& SizeCm, const FLinearColor& Color, bool bGlow = false);
+
+	/** Changes the tint of a component set up with SetupShape. */
+	GLYPHBOUND_API void SetShapeColor(UStaticMeshComponent* Component, const FLinearColor& Color);
+
+	/** Display color of an element, for placeholders and HUD (fire = orange, lightning = yellow, ice = cyan...). */
+	GLYPHBOUND_API FLinearColor ElementColor(uint8 ElementAsByte);
+}
