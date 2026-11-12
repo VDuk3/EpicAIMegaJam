@@ -1,10 +1,11 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.3, 2026-11-12** — owner's vision plus two rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.4, 2026-11-12** — owner's vision plus three rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.4 (2026-11-12): weapon skill tree contents; two held slots (one gun + one staff) and how to switch; no spells with a gun except the enchant; enchant key; air passives always on; ice shield QTE; staffs from chests; sword blade is pixel art with a medieval HUD; final boss mixes both styles.
 - v0.3 (2026-11-12): art rule follows the object; the player is always pixel art; 5-spell loadout and controls; staffs and basic magic attack; gun aim; enchant has a QTE, player-chosen element, not on the sword; QTE grading and mana; two UI styles (90s RPG vs. modern cyberpunk) for HUD and skill trees.
 - v0.2 (2026-11-12): theme reading, art rule, shared map with era-gated zones, cross-era style mixing, QTE = power + reach, weapon enchant spell, skill points from encounters, enemy waves and sub-bosses, no early melee, architect definition.
 - v0.1 (2026-11-12): first dump of the owner's pitch.
@@ -36,7 +37,9 @@ Working title: **TBD**.
 
 ## 5. Player progression
 - **No character levels / no XP leveling.**
-- Progression is through **skill trees**: one for spells and one for weapons (see §13 for their look). What the weapon tree upgrades is **TBD** (open question 1).
+- Progression is through **skill trees**: one for spells and one for weapons (see §13 for their look).
+  - **Spell tree:** upgrades spells.
+  - **Weapon tree:** damage, fire rate, **recoil** (better aim), **damage by distance** (shotgun stronger up close, rifle stronger far away), **headshot damage**.
 - **Skill points** are given at specific points, mainly for defeating enemies:
   - defeating each **sub-boss**;
   - defeating each **boss**;
@@ -54,6 +57,8 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 
 ### Spell loadout
 - The player has **5 spells equipped** at a time and can **equip and unequip** them freely.
+- **Air passives are always active**: they are not equipped and do not take a slot.
+- **Spells can only be cast with the staff in hand.** With a gun in hand, the only spell available is the weapon enchant. To cast, the player switches to the staff mid-fight.
 - Keys: see §9.
 
 ### Weapon enchant (always equipped)
@@ -95,6 +100,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 |---|---|---|
 | Fireball | Damage | Blast radius / range |
 | Ice wall | Duration and wall health | Width and height |
+| Ice shield | Duration and block effectiveness (which part scales which: **TBD**) | |
 | Others | **TBD**, following the same idea: part 1 = strength, part 2 = size/area/range |
 
 ### Requirements for the architect
@@ -103,9 +109,15 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 
 ## 8. Weapons and items
 
+### Held slots
+- The player carries **exactly two weapons: one gun and one staff.** Never two guns or two staffs.
+- Switch between them with the **mouse wheel or Alt**; on gamepad, with a **D-pad arrow** (which one: **TBD**).
+- Staff in hand: basic magic attack + the 5 spells + the enchant. Gun in hand: shoot + aim + the enchant only.
+
 ### Staffs (medieval, pixel art)
 - With a staff in hand, **primary fire = basic magic attack**. The attack **depends on which staff** the player holds, so there is more than one staff.
-- Staff list and how they are found: **TBD**.
+- Staffs are found in **chests** around the map.
+- Staff list and what each basic attack does: **TBD**.
 
 ### Guns (cyberpunk, 3D)
 - Pistol, shotgun, assault rifle.
@@ -133,14 +145,16 @@ Weapon mechanics and spell mechanics combine. The weapon enchant (§6) is the fi
 | Move | W A S D | Left stick |
 | Look | Mouse | Right stick |
 | Primary attack (staff: basic magic attack; gun: shoot) | Left click | **TBD** |
-| Aim (gun) | Right click | **TBD** |
-| Spell slot 1 | Right click | L1 / LB |
-| Spell slots 2–5 | 1, 2, 3, 4 | Hold L2 / LT + Cross, Circle, Square, Triangle (A, B, X, Y) |
+| Aim (gun in hand) | Right click | **TBD** |
+| Spell slot 1 (staff in hand) | Right click | L1 / LB |
+| Spell slots 2–5 (staff in hand) | 1, 2, 3, 4 | Hold L2 / LT + Cross, Circle, Square, Triangle (A, B, X, Y) |
+| Weapon enchant (any held weapon) | R or T (**TBD** which) | L2 + R2 together (LT + RT) |
+| Switch staff ↔ gun | Mouse wheel or Alt | D-pad arrow (**TBD** which) |
 | QTE part 1 | W A S D | Face buttons |
 | QTE part 2 | Mouse gesture | Right stick |
-| Weapon enchant, jump, dash, switch weapon, grenade, consumables, inventory, skill tree | **TBD** | **TBD** |
+| Jump, dash, grenade, consumables, interact, inventory, skill trees | **TBD** | **TBD** |
 
-Note: right click is both "spell slot 1" and "aim". See open question 2.
+Right click means "spell slot 1" with the staff and "aim" with a gun; the two never clash because spells cannot be cast with a gun in hand.
 
 ## 10. Enemies and encounters
 - **Enemy waves (hordes).** Clearing a wave gives skill points.
@@ -163,7 +177,10 @@ Rewards:
 | Both fights | One **quest item** each (what they are: **TBD**) |
 
 - **Elemental sword:** in the inventory, the player combines the hilt with a gem and gets an elemental sword that comes out of the hilt. The player can switch the sword to the other elements from the inventory. It is the only melee weapon. The weapon enchant does not apply to it.
-- **Final portal:** combining the two quest items opens a portal to a separate map, a dimension between space and time, where the player fights the **true final boss** (**TBD**).
+  - Art (§3): the **hilt is 3D** (it comes from the future), the **blade is pixel art** (it is magic).
+  - HUD: **medieval** (provisional).
+- **Final portal:** combining the two quest items opens a portal to a separate map, a dimension between space and time, where the player fights the **true final boss**.
+- **True final boss:** a **mix of both art styles**. Undecided how: two phases with different styles, or one character in both styles at once, or something else (**TBD**).
 - This happens in mid/late game.
 
 ## 12. Inventory
@@ -176,7 +193,7 @@ The UI changes with what the player holds:
 |---|---|
 | Staff (magic) | **1990s first-person RPG** |
 | Gun | **Modern cyberpunk** |
-| Elemental sword | **TBD** |
+| Elemental sword | Medieval / 90s RPG (provisional) |
 
 - **Skill trees** follow the same split: the spell tree has its own 90s-RPG look, the weapon tree its own cyberpunk look.
 - The HUD switches when the player switches weapon. The inventory's look is **TBD**.
@@ -222,22 +239,25 @@ Not decisions, just the list of systems the design implies:
 Answers get folded into the sections above as they come.
 
 **Blocking (needed before the architect starts):**
-1. **Weapon skill tree:** what does it upgrade (damage, fire rate, magazine, reload, the enchant)? Before, the skill tree only upgraded spells.
-2. **Right click with a gun:** right click is spell slot 1 and also aim. With a gun in hand, is slot 1 lost, or does it move to another key? Same on gamepad: L1 is slot 1, so which button aims and which shoots (R2 / RT for shooting?).
-3. **Switching between staff and gun:** how many weapons does the player carry at once, and how do they switch (mouse wheel, a key, a weapon wheel)?
-4. **The enchant's key:** it is outside the 5 slots, so which key / button casts it?
+1. **Elemental sword slot:** with only two held slots (gun + staff), where does the sword go? Does it replace the staff, the gun, or is it a third slot?
+2. **Reload and ammo:** do guns have magazines and reload? If reload is R, the enchant goes on T. Is ammo limited, and where does it come from?
+3. **Rest of the controls** (keyboard & mouse and gamepad): jump, dash, grenade, quick-use of consumables, interact (chests, portals), inventory, skill trees. On gamepad: primary attack/shoot and aim (R2 shoot, L2 aim?), and which D-pad arrow switches weapons.
+4. **Health and mana:** do they regenerate on their own, or only with potions/injections? Is there mana in the future era too?
+5. **Death:** what happens when the player dies (checkpoint, restart the wave, restart the zone)?
 
 **Can wait:**
-5. **Elemental sword art:** the hilt is from the future (3D) and the blade is magic (pixel art?). And which HUD does it use?
-6. **Staffs:** how many, what each basic attack does, where they are found.
-7. **Valkyries and the final boss:** pixel art in the past and 3D in the future? What style is the final boss in the dimension between eras?
-8. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
-9. Do the ice shield and the air passives use the QTE? Do air passives take a slot of the 5?
-10. Gun ammo: does it exist, and where does it come from?
-11. Sub-bosses: how many, which era, what they are.
-12. Examples of era-gated zones and past→future unlocks.
-13. Enemy types per era.
-14. The two quest items and the true final boss.
-15. QTE: time limit, sequence length per spell, does the camera slow too.
-16. Armor/gear system: in scope, or only the time-slow modifier?
-17. Game and team name.
+6. **Skill points:** one shared pool for both trees, or separate points for spells and weapons?
+7. **Starting kit:** which gun, staff and spells does the player start with? Are the other spells unlocked in the spell tree, found, or all available from the start?
+8. **Staffs:** how many, and does each one's basic attack have an element?
+9. **Chests:** besides staffs, do they hold potions, grenades, injections?
+10. **Valkyries:** pixel art in the past and 3D in the future (by the rule, yes); confirm.
+11. **Ice shield QTE:** which part scales duration and which scales block effectiveness?
+12. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
+13. Target length of a playthrough (15 min? 30 min?) and difficulty.
+14. Sub-bosses: how many, which era, what they are.
+15. Examples of era-gated zones and past→future unlocks.
+16. Enemy types per era.
+17. The two quest items; how the final boss mixes both styles.
+18. QTE: time limit, sequence length per spell, does the camera slow too.
+19. Armor/gear system: in scope, or only the time-slow modifier?
+20. Game and team name.
