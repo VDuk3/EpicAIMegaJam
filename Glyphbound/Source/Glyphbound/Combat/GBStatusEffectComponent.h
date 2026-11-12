@@ -49,6 +49,8 @@ public:
 	void RemoveAllEffects();
 	bool HasEffect(FName EffectId) const;
 	float GetTimeRemaining(FName EffectId) const;
+	/** Sets the remaining time of every running entry of the effect (clamped to its total duration). For dev commands and smoke runs. */
+	void SetTimeRemaining(FName EffectId, float Seconds);
 
 	const TArray<FGBActiveStatusEffect>& GetActiveEffects() const { return ActiveEffects; }
 

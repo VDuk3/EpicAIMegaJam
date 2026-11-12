@@ -300,6 +300,23 @@ float UGBStatusEffectComponent::GetTimeRemaining(FName EffectId) const
 	return Remaining;
 }
 
+void UGBStatusEffectComponent::SetTimeRemaining(FName EffectId, float Seconds)
+{
+	bool bChanged = false;
+	for (FGBActiveStatusEffect& Entry : ActiveEffects)
+	{
+		if (Entry.EffectId == EffectId)
+		{
+			Entry.TimeRemaining = FMath::Clamp(Seconds, 0.f, Entry.TotalDuration);
+			bChanged = true;
+		}
+	}
+	if (bChanged)
+	{
+		OnEffectsChanged.Broadcast();
+	}
+}
+
 void UGBStatusEffectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);

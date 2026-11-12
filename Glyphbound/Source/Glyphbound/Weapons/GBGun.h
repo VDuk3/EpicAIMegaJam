@@ -8,6 +8,9 @@
 
 class UStaticMeshComponent;
 class UMaterialInstanceDynamic;
+class UCanvas;
+class UCanvasRenderTarget2D;
+struct FGBDamageInfo;
 
 /**
  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
@@ -24,6 +27,7 @@ class GLYPHBOUND_API AGBGun : public AGBHeldItem
 public:
 	virtual void InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayerCharacter* InOwner) override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void StartPrimary() override { PressTrigger(); }
 	virtual void StopPrimary() override { ReleaseTrigger(); }
@@ -47,9 +51,9 @@ public:
 	float GetCurrentSpread() const;
 	int32 GetMaxSpareMagazines() const;
 
-	/** True when the real pistol meshes were built (Definition.ViewModel == Pistol and all four loaded). */
+	/** True when the real pistol meshes were built (Definition.ViewModel == Pistol and all six loaded). */
 	bool HasPistolViewModel() const { return bPistolViewModel; }
-	/** Pistol parts with a loaded SM_Pistol_* mesh (must be 4). */
+	/** Pistol parts with a loaded SM_Pistol_* mesh (must be 6). */
 	int32 GetPistolMeshCount() const;
 	/** Dynamic materials made for the pistol parts (must be more than 4: the body alone has many slots). */
 	int32 GetPistolMIDCount() const { return PistolMIDs.Num(); }
@@ -61,6 +65,10 @@ public:
 	bool IsPistolGlowEnchanted() const { return bLastGlowEnchanted; }
 	/** Last ImbueRemaining value sent to the pistol materials. */
 	float GetPistolImbueSent() const { return LastImbueSent; }
+	/** Text currently drawn on the holographic ammo display (rounds in the magazine, "--" while reloading). */
+	const FString& GetPistolDisplayText() const { return ShownDisplayText; }
+	/** Last Flash value sent to the weak-point light (0 = off, 1 = full glow). */
+	float GetPistolWeakPointFlash() const { return LastFlashSent; }
 
 protected:
 	virtual bool AcceptsEnchant() const override { return true; }
@@ -77,20 +85,41 @@ protected:
 	void BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition);
 	UStaticMeshComponent* AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow);
 
-	/** Loads the four SM_Pistol_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
+	/** Loads the six SM_Pistol_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
 	bool TryBuildPistolViewModel();
 	/** Trigger pull, magazine slide and glow color, only while the pistol viewmodel exists. */
 	void UpdatePistolViewModel(float DeltaSeconds);
+	/** Global damage event: a weak-point hit by this gun's owner while this gun is equipped lights the weak-point light. */
+	void HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float DamageDealt);
+	/** Draws ShownDisplayText into the ammo display render target (its update delegate). */
+	UFUNCTION()
+	void DrawPistolDisplay(UCanvas* Canvas, int32 Width, int32 Height);
+	/** Sends the Flash value to the weak-point light material, only when it changed. */
+	void SetWeakPointFlash(float Value);
 
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
 
-	/** Real pistol viewmodel (only when Definition.ViewModel == Pistol): body, trigger, magazine, energy bar. */
+	/** Real pistol viewmodel (only when Definition.ViewModel == Pistol): body, trigger, magazine, energy bar, weak-point light, ammo display. */
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolBody = nullptr;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolTrigger = nullptr;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolMagazine = nullptr;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolEnergyBar = nullptr;
-	/** One dynamic instance per material slot of the four pistol parts, so glow and imbue can be set cheaply. */
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolWeakPointLight = nullptr;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolAmmoDisplay = nullptr;
+	/** One dynamic instance per material slot of the six pistol parts, so glow and imbue can be set cheaply. */
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> PistolMIDs;
+	/** Instance of the weak-point light's material (parameter Flash); also in PistolMIDs. */
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> PistolIndicatorMID = nullptr;
+	/** Instance of the ammo display's material (parameter DisplayTexture); also in PistolMIDs. */
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> PistolDisplayMID = nullptr;
+	/** Runtime render target the ammo text is drawn into (redrawn only when the text changes). */
+	UPROPERTY() TObjectPtr<UCanvasRenderTarget2D> PistolDisplayTarget = nullptr;
+	/** Text last drawn into the render target (the cache that decides whether a redraw is needed). */
+	FString ShownDisplayText;
+	/** Seconds since the last weak-point hit. Negative = the light is off. */
+	float WeakPointFlashElapsed = -1.f;
+	float LastFlashSent = -1.f;
+	FDelegateHandle DamageDealtHandle;
 	bool bPistolViewModel = false;
 	/** Seconds since the last shot started the trigger pull. Negative = the trigger is at rest. */
 	float TriggerPullElapsed = -1.f;

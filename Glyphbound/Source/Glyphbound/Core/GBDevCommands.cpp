@@ -67,6 +67,8 @@ namespace GBSmokeRun
 	static float PathStartDistance = 0.f;
 	static bool bPathOrcSpawned = false;
 	static const FName PathOrcId(TEXT("Orc_Past"));
+	static FString PistolDisplayFullText;
+	static TWeakObjectPtr<AGBEnemyCharacter> PistolFlashTarget;
 	static FName SmokeSkillNode = NAME_None;
 	static int32 SmokeSkillPointsBefore = 0;
 
@@ -1012,6 +1014,42 @@ namespace GBSmokeRun
 			}
 			Elemental->ClearAll();
 		});
+		Add(49.9f + S, TEXT("pistol display: take the pistol with a full magazine"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+			if (AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
+			{
+				Gun->RefillAmmo();
+			}
+		});
+		Add(50.1f + S, TEXT("pistol display: full magazine text, one shot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol display: no pistol in hand"));
+				return;
+			}
+			PistolDisplayFullText = Gun->GetPistolDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol display text=%s"), *PistolDisplayFullText);
+			Gun->StartPrimary();
+			Gun->StopPrimary();
+		});
+		Add(50.3f + S, TEXT("pistol display: text after one shot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol display: no pistol in hand"));
+				return;
+			}
+			const FString AfterText = Gun->GetPistolDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol display after shot text=%s"), *AfterText);
+			if (!PistolDisplayFullText.IsNumeric() || !AfterText.IsNumeric() || FCString::Atoi(*PistolDisplayFullText) - FCString::Atoi(*AfterText) != 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol display FAILED: text '%s' then '%s' after one shot (expected one round less)"), *PistolDisplayFullText, *AfterText);
+			}
+		});
 		Add(50.5f + S, TEXT("pistol: meshes and materials in hand, hip screenshot, spend rounds, reload"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
@@ -1024,9 +1062,9 @@ namespace GBSmokeRun
 			const int32 Meshes = Gun->GetPistolMeshCount();
 			const int32 Mids = Gun->GetPistolMIDCount();
 			UE_LOG(LogGB, Display, TEXT("SMOKE pistol viewmodel meshes=%d mids=%d"), Meshes, Mids);
-			if (Meshes != 4 || Mids <= 4)
+			if (Meshes != 6 || Mids <= 6)
 			{
-				UE_LOG(LogGB, Error, TEXT("SMOKE pistol viewmodel FAILED: meshes=%d (expected 4) mids=%d (expected more than 4)"), Meshes, Mids);
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol viewmodel FAILED: meshes=%d (expected 6) mids=%d (expected more than 6)"), Meshes, Mids);
 			}
 			Shot(TEXT("13a_pistol_hip"));
 			FGBAmmoState Ammo = Gun->GetAmmo();
@@ -1057,6 +1095,12 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol magazine FAILED: offset=%.1f (expected about 27.0) progress=%.2f (expected about 0.5)"), Offset, Progress);
 			}
+			const FString ReloadText = Gun->GetPistolDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol display reloading text=%s"), *ReloadText);
+			if (ReloadText != TEXT("--"))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol display FAILED: text '%s' during the reload (expected --)"), *ReloadText);
+			}
 			Shot(TEXT("13b_pistol_reload"));
 		});
 		Add(51.7f + S, TEXT("pistol enchant: cast the weapon enchant with the pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
@@ -1084,11 +1128,113 @@ namespace GBSmokeRun
 			}
 			Shot(TEXT("13c_pistol_enchanted"));
 		});
-		Add(52.9f + S, TEXT("pistol done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(52.9f + S, TEXT("pistol weak point: a head hit by the player lights the light"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+			AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+			PistolFlashTarget = Enemy;
+			if (!Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol weakpoint: could not spawn the test orc"));
+				return;
+			}
+			FGBDamageInfo Info;
+			Info.Amount = 1.f;
+			Info.Instigator = Player;
+			Info.bHeadshot = true;
+			UGBCombatLibrary::DealDamage(Enemy, Info);
+		});
+		Add(52.95f + S, TEXT("pistol weak point: flash is on, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol weakpoint: no pistol in hand"));
+				return;
+			}
+			const float Flash = Gun->GetPistolWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol weakpoint flash=%.2f"), Flash);
+			if (Flash <= 0.5f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol weakpoint FAILED: flash=%.2f right after a weak-point hit (expected more than 0.5)"), Flash);
+			}
+			Shot(TEXT("13d_pistol_weakpoint"));
+		});
+		Add(53.95f + S, TEXT("pistol weak point: flash is off again, then a body hit"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			AGBEnemyCharacter* Enemy = PistolFlashTarget.Get();
+			if (!Gun || !Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol weakpoint: no pistol in hand or no test orc"));
+				return;
+			}
+			const float After = Gun->GetPistolWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol weakpoint flash after=%.2f"), After);
+			if (After > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol weakpoint FAILED: flash=%.2f one second later (expected 0)"), After);
+			}
+			FGBDamageInfo Info;
+			Info.Amount = 1.f;
+			Info.Instigator = Player;
+			Info.bHeadshot = false;
+			UGBCombatLibrary::DealDamage(Enemy, Info);
+		});
+		Add(54.05f + S, TEXT("pistol body shot: the light stays off; half the enchant left"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol bodyshot: no pistol in hand"));
+				return;
+			}
+			const float Flash = Gun->GetPistolWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol bodyshot flash=%.2f"), Flash);
+			if (Flash > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol bodyshot FAILED: flash=%.2f after a body hit (expected 0)"), Flash);
+			}
+			if (AGBEnemyCharacter* Enemy = PistolFlashTarget.Get())
+			{
+				Enemy->Destroy();
+			}
+			PistolFlashTarget.Reset();
+			// Half the enchant left, to look at the bar draining from the muzzle end.
+			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+				{
+					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+					{
+						const FName EnchantId = Active.EffectId;
+						Effects->SetTimeRemaining(EnchantId, 0.5f * Active.TotalDuration);
+						break;
+					}
+				}
+			}
+		});
+		Add(54.35f + S, TEXT("pistol half bar: imbue about half, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol half bar: no pistol in hand"));
+				return;
+			}
+			const float Imbue = Gun->GetPistolImbueSent();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol half bar imbue=%.2f"), Imbue);
+			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
+			}
+			Shot(TEXT("13e_pistol_half_bar"));
+		});
+		Add(54.95f + S, TEXT("pistol done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
 		});
-		Add(53.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(55.55f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

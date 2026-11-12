@@ -3,6 +3,11 @@
 #include "AI/GBEnemyCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Engine/Canvas.h"
+#include "Engine/CanvasRenderTarget2D.h"
+#include "Engine/Engine.h"
+#include "Engine/Font.h"
+#include "Misc/App.h"
 #include "Combat/GBProjectile.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -35,6 +40,25 @@ namespace
 	// Material parameters set by the game on every pistol slot.
 	const FName ElementColorParam(TEXT("ElementColor"));
 	const FName ImbueRemainingParam(TEXT("ImbueRemaining"));
+	const FName FlashParam(TEXT("Flash"));
+	const FName DisplayTextureParam(TEXT("DisplayTexture"));
+	// Weak-point light: full glow for WeakPointFlashHold seconds after a weak-point hit, then a linear fade over
+	// WeakPointFlashFade seconds. Provisional, owner's note 3.
+	constexpr float WeakPointFlashHold = 0.12f;
+	constexpr float WeakPointFlashFade = 0.3f;
+	// Holographic ammo display: render target size in pixels and the share of its height the digits fill.
+	// Provisional, owner's note 1.
+	constexpr int32 AmmoDisplayWidth = 256;
+	constexpr int32 AmmoDisplayHeight = 128;
+	// The digits sit in the free window of the rear screen, measured on the model (pistol_bar_layout.py), as shares
+	// of the display from its top: the top frame line ends at 0.155, the row of dots starts at 0.724, and the two
+	// side status bars leave 0.164 .. 0.836 across. Owner: smaller, and up, so the digits never touch the dots.
+	constexpr float AmmoDisplayTextHeightShare = 0.42f;
+	constexpr float AmmoDisplayTextWidthShare = 0.6f;
+	// The side bars span 0.259 .. 0.603; the font's line box carries descender space, so the box centre sits a bit
+	// above the bars' centre (0.43) for the digits to look centred between them.
+	constexpr float AmmoDisplayTextCenterY = 0.39f;
+	const TCHAR* const AmmoDisplayReloadText = TEXT("--");
 
 	float Smoothstep01(float T)
 	{
@@ -98,7 +122,9 @@ bool AGBGun::TryBuildPistolViewModel()
 	UStaticMesh* TriggerMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Trigger.SM_Pistol_Trigger"));
 	UStaticMesh* MagazineMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Magazine.SM_Pistol_Magazine"));
 	UStaticMesh* EnergyBarMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_EnergyBar.SM_Pistol_EnergyBar"));
-	if (!BodyMesh || !TriggerMesh || !MagazineMesh || !EnergyBarMesh)
+	UStaticMesh* WeakPointLightMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_WeakPointLight.SM_Pistol_WeakPointLight"));
+	UStaticMesh* AmmoDisplayMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_AmmoDisplay.SM_Pistol_AmmoDisplay"));
+	if (!BodyMesh || !TriggerMesh || !MagazineMesh || !EnergyBarMesh || !WeakPointLightMesh || !AmmoDisplayMesh)
 	{
 		return false;
 	}
@@ -118,13 +144,17 @@ bool AGBGun::TryBuildPistolViewModel()
 	PistolBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
 	PistolBody->SetRelativeScale3D(FVector(PistolViewScale));
 	PistolEnergyBar = NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, PistolBody, FVector::ZeroVector);
+	PistolWeakPointLight = NewViewPart(TEXT("WeakPointLight"), WeakPointLightMesh, PistolBody, FVector::ZeroVector);
+	PistolAmmoDisplay = NewViewPart(TEXT("AmmoDisplay"), AmmoDisplayMesh, PistolBody, FVector::ZeroVector);
 	PistolTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, PistolBody, PistolTriggerOffset);
 	PistolMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, PistolBody, PistolMagazineRest);
 	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
 	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
 
 	PistolMIDs.Reset();
-	UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
+	PistolIndicatorMID = nullptr;
+	PistolDisplayMID = nullptr;
+	UStaticMeshComponent* PistolParts[6] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar, PistolWeakPointLight, PistolAmmoDisplay };
 	for (UStaticMeshComponent* Part : PistolParts)
 	{
 		for (int32 MaterialSlot = 0; MaterialSlot < Part->GetNumMaterials(); ++MaterialSlot)
@@ -132,9 +162,36 @@ bool AGBGun::TryBuildPistolViewModel()
 			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(MaterialSlot))
 			{
 				PistolMIDs.Add(MID);
+				if (Part == PistolWeakPointLight && !PistolIndicatorMID)
+				{
+					PistolIndicatorMID = MID;
+				}
+				else if (Part == PistolAmmoDisplay && !PistolDisplayMID)
+				{
+					PistolDisplayMID = MID;
+				}
 			}
 		}
 	}
+
+	// Holographic ammo display: the text is drawn into a small render target, only when it changes (UpdatePistolViewModel).
+	PistolDisplayTarget = nullptr;
+	ShownDisplayText.Reset();
+	if (PistolDisplayMID && FApp::CanEverRender())
+	{
+		PistolDisplayTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), AmmoDisplayWidth, AmmoDisplayHeight);
+		if (PistolDisplayTarget)
+		{
+			PistolDisplayTarget->ClearColor = FLinearColor::Black;
+			PistolDisplayTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AGBGun::DrawPistolDisplay);
+			PistolDisplayMID->SetTextureParameterValue(DisplayTextureParam, PistolDisplayTarget);
+		}
+	}
+
+	// The weak-point light listens to the global damage event (hitscan and projectile shots alike).
+	WeakPointFlashElapsed = -1.f;
+	LastFlashSent = -1.f;
+	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBGun::HandleDamageDealt);
 
 	bPistolViewModel = true;
 	TriggerPullElapsed = -1.f;
@@ -143,9 +200,23 @@ bool AGBGun::TryBuildPistolViewModel()
 	return true;
 }
 
+void AGBGun::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (DamageDealtHandle.IsValid())
+	{
+		UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
+		DamageDealtHandle.Reset();
+	}
+	if (PistolDisplayTarget)
+	{
+		PistolDisplayTarget->OnCanvasRenderTargetUpdate.RemoveAll(this);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 int32 AGBGun::GetPistolMeshCount() const
 {
-	const UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
+	const UStaticMeshComponent* PistolParts[6] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar, PistolWeakPointLight, PistolAmmoDisplay };
 	int32 Count = 0;
 	for (const UStaticMeshComponent* Part : PistolParts)
 	{
@@ -255,6 +326,84 @@ void AGBGun::UpdatePistolViewModel(float DeltaSeconds)
 	}
 	LastGlowElement = EnchantElement;
 	bLastGlowEnchanted = bEnchanted;
+
+	// Weak-point light: full for WeakPointFlashHold, then a linear fade over WeakPointFlashFade; off while not equipped.
+	float Flash = 0.f;
+	if (WeakPointFlashElapsed >= 0.f)
+	{
+		WeakPointFlashElapsed += DeltaSeconds;
+		if (!bEquipped || WeakPointFlashElapsed >= WeakPointFlashHold + WeakPointFlashFade)
+		{
+			WeakPointFlashElapsed = -1.f;
+		}
+		else if (WeakPointFlashElapsed < WeakPointFlashHold)
+		{
+			Flash = 1.f;
+		}
+		else
+		{
+			Flash = 1.f - (WeakPointFlashElapsed - WeakPointFlashHold) / WeakPointFlashFade;
+		}
+	}
+	SetWeakPointFlash(Flash);
+
+	// Holographic ammo count: redraw only when the wanted text differs from the one on the render target.
+	if (PistolDisplayTarget)
+	{
+		const FString Wanted = bReloading ? FString(AmmoDisplayReloadText) : FString::FromInt(Ammo.InMagazine);
+		if (Wanted != ShownDisplayText)
+		{
+			ShownDisplayText = Wanted;
+			PistolDisplayTarget->UpdateResource();
+		}
+	}
+}
+
+void AGBGun::SetWeakPointFlash(float Value)
+{
+	if (!PistolIndicatorMID || FMath::IsNearlyEqual(Value, LastFlashSent, 0.001f))
+	{
+		return;
+	}
+	PistolIndicatorMID->SetScalarParameterValue(FlashParam, Value);
+	LastFlashSent = Value;
+}
+
+void AGBGun::HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float DamageDealt)
+{
+	(void)Target;
+	(void)DamageDealt;
+	if (!Info.bHeadshot || !bEquipped || !bPistolViewModel)
+	{
+		return;
+	}
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	if (!Player || Info.Instigator.Get() != Player)
+	{
+		return;
+	}
+	// A new weak-point hit restarts the flash; show it right away, not on the next tick.
+	WeakPointFlashElapsed = 0.f;
+	SetWeakPointFlash(1.f);
+}
+
+void AGBGun::DrawPistolDisplay(UCanvas* Canvas, int32 Width, int32 Height)
+{
+	UFont* Font = GEngine ? GEngine->GetLargeFont() : nullptr;
+	if (!Canvas || !Font || ShownDisplayText.IsEmpty())
+	{
+		return;
+	}
+	// AmmoDisplayTextHeightShare of the height, narrowed if wider than the window between the side bars, centred on
+	// AmmoDisplayTextCenterY so the digits stay clear of the frame line above and the dots below.
+	float Scale = AmmoDisplayTextHeightShare * Height / FMath::Max(1.f, Font->GetMaxCharHeight());
+	const FVector2D Size = Canvas->K2_TextSize(Font, ShownDisplayText, FVector2D(Scale, Scale));
+	if (Size.X > AmmoDisplayTextWidthShare * Width && Size.X > KINDA_SMALL_NUMBER)
+	{
+		Scale *= AmmoDisplayTextWidthShare * Width / Size.X;
+	}
+	Canvas->K2_DrawText(Font, ShownDisplayText, FVector2D(Width * 0.5f, Height * AmmoDisplayTextCenterY), FVector2D(Scale, Scale), FLinearColor::White,
+		0.f, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2D::ZeroVector, true, true, false, FLinearColor::Black);
 }
 
 void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)
