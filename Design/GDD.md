@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.9, 2026-11-12** — owner's vision plus eight rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.10, 2026-11-12** — owner's vision plus nine rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.10 (2026-11-12): QTE lasts 3 s and the player keeps moving in the direction they were moving; CENTRAL has an NVIDIA RTX 4080 Laptop GPU, so DLSS can be tested here.
 - v0.9 (2026-11-12): code name Glyphbound; pixel-art look defined (3D geometry with low-res textures, 8-angle sprites); new §0.1 technical direction (C++, placeholders, PIE rule, data tables, travel fade, checkpoint-only saving, single player, size budget, NVIDIA award); camera locked during the QTE.
 - v0.8 (2026-11-12): enemies do not respawn; provisional game order; story questions parked; open questions narrowed to what the prototype and base systems need.
 - v0.7 (2026-11-12): full story (the entity, the false voice, the Valkyrie); elemental zones in the castle unlock the rest of each element; air passives learned the same way; shotgun and rifle dropped by enemies; era travel restores everything (bonfire-like); remaining keys confirmed.
@@ -174,6 +175,8 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - **Every spell parameter is data, not code**, and every one can be tagged as scaled by part 1, part 2, or neither. Each spell defines its own min/max per parameter.
 - The **time-slow amount is configurable** and can be modified by gear (e.g. some armor). Armor/gear as a system is otherwise **TBD**.
 - **The camera is locked during the QTE** (the mouse / right stick draws the gesture).
+- **The player keeps moving during the QTE, in the direction they were already moving** (the movement keys are busy with part 1, so the last movement input is held).
+- **QTE time limit: 3 seconds** (provisional value in data; assumed real time for the whole QTE, both parts).
 
 ## 8. Weapons and items
 
@@ -341,8 +344,8 @@ Not decisions, just the list of systems the design implies:
 Answers get folded into the sections above as they come. The prototype questions of 2026-11-12 are answered (see §0.1 and §3).
 
 ### Still open for the base systems
-1. **NVIDIA feature and hardware:** which feature (DLSS 4.5 is the simplest)? The main machine (CENTRAL) has an **AMD** GPU, where DLSS does not run; does someone on the team have an NVIDIA RTX card to test it? Is there a DLSS plugin for UE 5.9.0 (to be checked by the architect)?
-2. **QTE and movement:** the camera is locked; can the player still move while time is slowed, or does the character stand still?
+1. **NVIDIA feature:** which one? DLSS 4.5 is the simplest. CENTRAL (where the game is built) has an **NVIDIA GeForce RTX 4080 Laptop GPU**, so it can be tested here. The architect checks that a DLSS plugin exists for UE 5.9.0. (The AMD RX 7700 XT belongs to the 3D assets machine, ASSETS.)
+2. **QTE time:** are the 3 seconds for the whole QTE or for each part, and are they real time (not slowed)?
 
 ### Content questions (parked by the owner, 2026-11-12)
 Not needed for the prototype; to be answered later.
