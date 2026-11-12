@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.14, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.15, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.15 (2026-11-12): owner's second round of play-test notes. Jumps commit to their direction (no steering in the air; the second jump can pick a new direction and then commits too); the sword hits where the player aims, not the center of the target; sword hits and the staff's basic attack get the head / weak point bonus.
 - v0.14 (2026-11-12): owner's first play-test. Magic structures (ice wall) are 3D with pixel textures; the fireball always explodes with a shockwave; both jumps higher; picked-up staffs go to the inventory and are equipped by hand; the ice shield is summoned by the spell and raised with a Block key; enemies must path around obstacles; menus work with the mouse; falling out of the map kills; floating damage numbers.
 - v0.13 (2026-11-12): architect's day-1 technical decisions recorded in 0.1 (C++ only, no GAS, JSON data, code-built test arena, canvas HUD); new section 18 lists every provisional rule and number the architect had to pick. Code structure in `Design/ARCHITECTURE.md`.
 - v0.12 (2026-11-12): architect autonomy on every technical decision; iteration time is a priority (see `CLAUDE.md`).
@@ -63,7 +64,7 @@ Working title: **TBD**. Project code name: **Glyphbound**.
 - **Visual reference:** retro first-person fantasy shooters with modern lighting (the owner's reference: *Wizordum*). Reference only, nothing copied.
 - **Pixel-art environments are 3D geometry with low-resolution pixel textures** (nearest filtering, no smoothing), not flat 2D.
 - **Pixel-art characters are sprites that always face the camera.** Target: **8 view angles**; fewer if time runs short.
-- **Headshots on sprites:** the head is the top part of the sprite.
+- **Headshots on sprites:** the head is the top part of the sprite. The head / weak point bonus applies to **every aimed weapon attack** (owner, 2026-11-12): guns, the staff's basic attack and the sword. Each weapon has its own multiplier.
 - **Structures are never flat sprites** (owner, 2026-11-12). Anything that is a structure, the castle and also what magic builds (the ice wall), is a 3D object with 2D pixel textures. Camera-facing sprites are for characters, items, projectiles and effects (flames, bolts).
 
 ## 4. World and travel
@@ -227,6 +228,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 
 ### Melee
 - **No melee before the elemental sword** (§11).
+- **The sword hits where the player aims** (owner, 2026-11-12): looking at the head hits the head (and gets the head bonus), looking at the legs hits the legs. It is never "the center of the target".
 
 ### Consumables
 | Item | Era | Effect |
@@ -383,6 +385,7 @@ Not needed for the prototype; to be answered later.
 The owner asked the architect not to stop for missing design details. Everything below was chosen so the prototype could be built; **all of it is provisional** and waits for the owner's word. Numbers are in `Glyphbound/Content/Data/*.json` and can be changed there without touching code.
 
 ### Rules
+- **Jumps commit to their direction (owner, 2026-11-12):** like a real jump, the direction cannot be changed in the air (air control 0; the same when walking off a ledge). The direction is chosen at takeoff: the movement keys held at that moment. The second jump can choose a new direction and then commits again. Provisional details (architect): a jump from standing with a direction held leaves at 60% of walking speed at least; the second jump with a direction held leaves at walking speed at least, and with no direction held it keeps the current drift. The dash still works in the air and is not affected.
 - **Double jump on day 1:** the player starts knowing the air passive "Double jump" so it can be tested now. In the real game it is learned in the air zone (§6); remove it from `Player.json` `StartingSpells` then.
 - **Dash:** available from the start (the air passive only improves it). It goes in the movement direction (forward when standing still), works in the air, gives no invulnerability, and does not refill jumps.
 - **Owning weapons:** decided by the owner for staffs (section 8): picked-up weapons go to the inventory and are equipped by hand. Provisional part: guns and the sword follow the same rule; each owned gun keeps its own ammo while stored.
@@ -407,6 +410,7 @@ The owner asked the architect not to stop for missing design details. Everything
 
 ### Numbers (first pass, all in the JSON files)
 - **Jumps:** each jump rises about 2 m (was 1.2 m); the double jump adds a second one of the same height.
+- **Head bonus of the new weapons (provisional):** staffs x1.5, sword x1.5 (guns stay x2, shotgun x1.5). Spell projectiles get no head bonus unless a spell defines one.
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
 - **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
