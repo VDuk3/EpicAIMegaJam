@@ -298,7 +298,7 @@ Answers get folded into the sections above as they come.
 **Blocking (needed before the architect starts):**
 1. **The other 6 spells** (fire wall, flamethrower, rune trap, static ball, ice shield, ice floor): unlocked in the spell tree with skill points, found in chests, or given by bosses?
 2. **Air passives:** active from the very start, or unlocked during the game (e.g. double jump learned later)?
-3. **The other two guns** (the first one is dropped by an orc): where do the player get the second and third? And which gun is the first one (pistol?)
+3. **The other two guns** (the first one is dropped by an orc): where does the player get the second and third? And which gun is the first one (the pistol?)
 4. **Remaining keys — proposal, confirm or change:**
    - Use quick item on gamepad: **R1 / RB**.
    - Switch weapon on gamepad: **D-pad up**; cycle quick item: **D-pad left/right**.
