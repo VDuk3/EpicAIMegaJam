@@ -274,7 +274,8 @@ void AGBTestArena::BuildStatic()
 	Sun = World->SpawnActor<ADirectionalLight>(ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 1000.f), GBArena::SunRotation, GBArenaIds::AlwaysSpawnParams());
 	if (Sun)
 	{
-		if (UDirectionalLightComponent* SunComponent = Sun->GetComponent())
+		// ADirectionalLight::GetComponent() only exists in Editor builds; GetLightComponent() exists in every build.
+		if (UDirectionalLightComponent* SunComponent = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
 			SunComponent->SetMobility(EComponentMobility::Movable);
 			SunComponent->SetAtmosphereSunLight(true);
@@ -337,7 +338,8 @@ void AGBTestArena::ApplyEraLighting(EGBEra Era)
 	const bool bPast = Era == EGBEra::Past;
 	if (Sun)
 	{
-		if (UDirectionalLightComponent* SunComponent = Sun->GetComponent())
+		// ADirectionalLight::GetComponent() only exists in Editor builds; GetLightComponent() exists in every build.
+		if (UDirectionalLightComponent* SunComponent = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
 			SunComponent->SetLightColor(bPast ? GBArena::PastSun : GBArena::FutureSun);
 			SunComponent->SetIntensity(bPast ? GBArena::PastSunLux : GBArena::FutureSunLux);
