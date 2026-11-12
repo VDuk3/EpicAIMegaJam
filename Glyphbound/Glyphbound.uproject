@@ -237,10 +237,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "Cascade",
-			"Enabled": false
-		},
-		{
 			"Name": "ChangelistReview",
 			"Enabled": false
 		},

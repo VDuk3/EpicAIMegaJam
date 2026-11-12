@@ -43,7 +43,9 @@ const DISABLE_CANDIDATES = [
   'SpeedTreeImporter', 'InterchangeAxF', 'InterchangeTests', 'MetaHumanSDK', 'MutableAssetUserData',
   'SkeletalReduction', 'FacialAnimation', 'CharacterAI', 'ControlRigPhysics',
   // Features the game does not use
-  'ChaosCloth', 'PCG', 'Cascade', 'NiagaraSimCaching', 'NFORDenoise', 'NNEDenoiser', 'MediaPlate',
+  // Cascade must stay ON: the engine's renderer settings look up fx.GPUSimulationTextureSizeX/Y, which the
+  // Cascade plugin registers. Without it the log gets two error lines and the cook fails (exit 25).
+  'ChaosCloth', 'PCG', 'NiagaraSimCaching', 'NFORDenoise', 'NNEDenoiser', 'MediaPlate',
   'MediaCompositing', 'WebMMoviePlayer', 'ArchVisCharacter', 'AudioCapture', 'CableComponent',
   'CustomMeshComponent', 'GeometryCache', 'LocationServicesBPLibrary', 'ResonanceAudio', 'SoundFields',
   'Synthesis', 'GameplayCameras', 'CameraShakePreviewer', 'AnimationSharing', 'ActorSequence',
