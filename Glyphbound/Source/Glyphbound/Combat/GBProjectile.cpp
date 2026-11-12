@@ -179,13 +179,7 @@ bool AGBProjectile::IsValidTarget(const AActor* Other) const
 		return false;
 	}
 
-	if (!UGBAttributeComponent::Find(Other) || !UGBCombatLibrary::IsAlive(Other))
-	{
-		return false;
-	}
-
-	// No instigator (traps, world hazards): anything with attributes is a target.
-	if (IsValid(ProjectileInstigator) && !UGBCombatLibrary::AreHostile(ProjectileInstigator, Other))
+	if (!UGBCombatLibrary::CanDamage(ProjectileInstigator, Other))
 	{
 		return false;
 	}
@@ -221,7 +215,9 @@ void AGBProjectile::HitTarget(AActor* Other, const FVector& ImpactPoint)
 		UGBCombatLibrary::DealDamage(Other, Info);
 	}
 
-	if (!Config.bPierce)
+	// Neutral things with attributes (ice walls, destructibles) stop the shot even when it pierces.
+	const bool bHitNeutral = UGBCombatLibrary::GetTeam(Other) == EGBTeam::Neutral;
+	if (!Config.bPierce || bHitNeutral)
 	{
 		Finish(Other, ImpactPoint);
 	}

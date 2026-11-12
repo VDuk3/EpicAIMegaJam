@@ -61,10 +61,11 @@ AGBEnemyCharacter::AGBEnemyCharacter()
 	BodyMesh->SetCanEverAffectNavigation(false);
 	BodyMesh->SetGenerateOverlapEvents(false);
 
-	// Pawn profile ignores Visibility; hitscan guns and line-of-sight traces use it, so block it.
+	// Pawn profile ignores Visibility; line-of-sight traces use it, so block it. Guns trace ECC_Camera: keep blocking it too.
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
 
 	AIControllerClass = AAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;

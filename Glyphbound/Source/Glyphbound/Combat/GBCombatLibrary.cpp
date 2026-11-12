@@ -28,12 +28,10 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 		DamageInstigator = nullptr;
 	}
 
-	// A null instigator or a Neutral team on either side always damages; otherwise only hostile teams do.
-	if (!bAllowFriendlyFire && DamageInstigator)
+	if (!CanDamage(DamageInstigator, Target))
 	{
-		const EGBTeam InstigatorTeam = GetTeam(DamageInstigator);
-		const EGBTeam TargetTeam = Attributes->Team;
-		if (InstigatorTeam != EGBTeam::Neutral && TargetTeam != EGBTeam::Neutral && !AreTeamsHostile(InstigatorTeam, TargetTeam))
+		// Friendly fire explicitly allows same-team hits; anything without attributes or dead stays immune.
+		if (!bAllowFriendlyFire || !UGBAttributeComponent::Find(Target) || !IsAlive(Target))
 		{
 			return 0.f;
 		}
@@ -120,8 +118,7 @@ int32 UGBCombatLibrary::DealRadialDamage(const UObject* WorldContextObject, cons
 			continue;
 		}
 
-		// With no instigator (traps, world hazards) everything with attributes is a target.
-		if (DamageInstigator && !AreHostile(DamageInstigator, Target))
+		if (!CanDamage(DamageInstigator, Target))
 		{
 			continue;
 		}
@@ -178,6 +175,30 @@ bool UGBCombatLibrary::IsAlive(const AActor* Actor)
 	}
 	const UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(Actor);
 	return !Attributes || !Attributes->IsDead();
+}
+
+bool UGBCombatLibrary::CanDamage(const AActor* Instigator, const AActor* Target)
+{
+	if (!IsValid(Target))
+	{
+		return false;
+	}
+	const UGBAttributeComponent* TargetAttributes = UGBAttributeComponent::Find(Target);
+	if (!TargetAttributes || TargetAttributes->IsDead())
+	{
+		return false;
+	}
+	if (!IsValid(Instigator))
+	{
+		return true;
+	}
+	const EGBTeam InstigatorTeam = GetTeam(Instigator);
+	const EGBTeam TargetTeam = TargetAttributes->Team;
+	if (InstigatorTeam == EGBTeam::Neutral || TargetTeam == EGBTeam::Neutral)
+	{
+		return true;
+	}
+	return AreTeamsHostile(InstigatorTeam, TargetTeam);
 }
 
 float UGBCombatLibrary::DistanceFalloffMultiplier(float Distance, float FalloffStart, float FalloffEnd, float NearMult, float FarMult)

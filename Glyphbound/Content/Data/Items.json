@@ -28,7 +28,7 @@
 			"MaxStack": 5,
 			"bQuickUse": true,
 			"UseEffect": "HealthInjection",
-			"Strings": { "Sprite": "injection_health" }
+			"Strings": { "Sprite": "injection_health", "PickupLook": "3D" }
 		},
 		{
 			"Id": "ElectricGrenade",
@@ -47,7 +47,7 @@
 				"ProjectileRadius": 12,
 				"ThrowPitch": 8
 			},
-			"Strings": { "OnHitEffect": "Shock", "Sprite": "grenade_electric" }
+			"Strings": { "OnHitEffect": "Shock", "Sprite": "grenade_electric", "PickupLook": "3D" }
 		},
 		{
 			"Id": "Ammo_Magazine",
@@ -56,7 +56,7 @@
 			"Type": "Ammo",
 			"MaxStack": 1,
 			"Stats": { "SpareMagazines": 1 },
-			"Strings": { "Sprite": "ammo_magazine" }
+			"Strings": { "Sprite": "ammo_magazine", "PickupLook": "3D" }
 		},
 		{
 			"Id": "Armor_Chronoweave",
@@ -103,7 +103,7 @@
 			"Description": "A hilt from the future with no blade. A gem could give it one.",
 			"Type": "Material",
 			"MaxStack": 1,
-			"Strings": { "Sprite": "sword_hilt" }
+			"Strings": { "Sprite": "sword_hilt", "PickupLook": "3D" }
 		},
 		{
 			"Id": "QuestItem_Past",

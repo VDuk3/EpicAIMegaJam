@@ -28,6 +28,7 @@
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
 #include "CoreGlobals.h"
+#include "Misc/App.h"
 
 namespace
 {
@@ -37,8 +38,6 @@ namespace
 	constexpr float MouseUnitsPerPixel = 0.07f;
 	constexpr float StickYawDegreesPerSecond = 200.f;
 	constexpr float StickPitchDegreesPerSecond = 140.f;
-	/** Right stick to QTE gesture: screen pixels per second at full tilt. */
-	constexpr float StickGesturePixelsPerSecond = 900.f;
 	constexpr float MaxLookPitch = 89.f;
 	/** Ignore axis noise on wheel / D-pad style 1D actions. */
 	constexpr float AxisStepThreshold = 0.1f;
@@ -686,14 +685,17 @@ void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
 		return;
 	}
 	const FVector2D Stick = Value.Get<FVector2D>(); // x right, y up
+	if (IsQTEActive())
+	{
+		// Undilated: the world runs at 0.1 speed during the QTE, the gesture runs in real time.
+		const float Scale = QTE->GetStickGestureScale();
+		const float RealDelta = static_cast<float>(FApp::GetDeltaTime());
+		QTE->HandleGestureInput(FVector2D(Stick.X, -Stick.Y) * Scale * RealDelta);
+		return;
+	}
 	const UWorld* World = GetWorld();
 	// Real time: the QTE runs in real time while the world is slowed.
 	const float RealDelta = World ? World->DeltaRealTimeSeconds : 0.f;
-	if (IsQTEActive())
-	{
-		QTE->HandleGestureInput(FVector2D(Stick.X, -Stick.Y) * StickGesturePixelsPerSecond * RealDelta);
-		return;
-	}
 	AddLookDelta(static_cast<float>(Stick.X) * StickYawDegreesPerSecond * RealDelta, static_cast<float>(Stick.Y) * StickPitchDegreesPerSecond * RealDelta);
 }
 

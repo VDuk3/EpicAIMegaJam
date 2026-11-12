@@ -30,6 +30,9 @@ public:
 
 	static EGBTeam GetTeam(const AActor* Actor);
 
+	/** True when the target can be damaged by the instigator: it has attributes, is alive, and (the instigator is null, OR either team is Neutral, OR the teams are hostile). Neutral things (walls, destructibles) can be hurt by anyone; same-team hits are not damage. */
+	static bool CanDamage(const AActor* Instigator, const AActor* Target);
+
 	/** Player vs Enemy are hostile; Neutral is hostile to nobody. */
 	static bool AreHostile(const AActor* A, const AActor* B);
 	static bool AreTeamsHostile(EGBTeam A, EGBTeam B);

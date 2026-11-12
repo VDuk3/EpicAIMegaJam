@@ -3,7 +3,10 @@
 		"EraFadeOutTime": 0.35,
 		"EraHoldTime": 0.25,
 		"EraFadeInTime": 0.45,
-		"RespawnDelay": 2.5
+		"RespawnDelay": 2.5,
+		"CorpseTime": 1.5,
+		"EnemyMeleeReachTolerance": 1.2,
+		"EncounterSpawnRingRadius": 400
 	},
 	"Strings": {
 	}
