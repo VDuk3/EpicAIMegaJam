@@ -83,14 +83,23 @@ if (-not $machine) { $machine = $env:COMPUTERNAME }
     # mismo archivo. Se abre con FileShare.ReadWrite y se reintenta si choca (si no, el
     # evento se perderia en silencio).
     $target = Join-Path $dir "claude-$sid.jsonl"
+    # FileMode.Append NO es atomico entre procesos: cada uno fija la posicion al abrir y puede
+    # pisar la linea del otro (visto en la LAPTOP el 2026-11-12). Escritura bajo mutex por archivo.
+    $md5 = [Security.Cryptography.MD5]::Create()
+    $mname = 'Local\jam-devlog-' + (($md5.ComputeHash([Text.Encoding]::UTF8.GetBytes($target.ToLowerInvariant())) | ForEach-Object { $_.ToString('x2') }) -join '')
+    $mtx = New-Object System.Threading.Mutex($false, $mname)
+    $owned = $false
+    try { $owned = $mtx.WaitOne(10000) } catch [System.Threading.AbandonedMutexException] { $owned = $true }
     $written = $false
-    for ($i = 0; $i -lt 40 -and -not $written; $i++) {
-        try {
-            $fs = New-Object System.IO.FileStream($target, [IO.FileMode]::Append, [IO.FileAccess]::Write, [IO.FileShare]::ReadWrite)
-            try { $fs.Write($bytes, 0, $bytes.Length) } finally { $fs.Dispose() }
-            $written = $true
-        } catch { Start-Sleep -Milliseconds (25 + (Get-Random -Maximum 75)) }
-    }
+    try {
+        for ($i = 0; $i -lt 40 -and -not $written; $i++) {
+            try {
+                $fs = New-Object System.IO.FileStream($target, [IO.FileMode]::Append, [IO.FileAccess]::Write, [IO.FileShare]::ReadWrite)
+                try { $fs.Write($bytes, 0, $bytes.Length) } finally { $fs.Dispose() }
+                $written = $true
+            } catch { Start-Sleep -Milliseconds (25 + (Get-Random -Maximum 75)) }
+        }
+    } finally { if ($owned) { $mtx.ReleaseMutex() }; $mtx.Dispose() }
     if (-not $written) { throw "No se pudo escribir $target tras 40 intentos" }
 
     # Transcript completo: la fuente mas rica para la bitacora.
