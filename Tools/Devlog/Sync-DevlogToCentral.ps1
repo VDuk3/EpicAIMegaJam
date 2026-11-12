@@ -3,8 +3,8 @@ Sync-DevlogToCentral.ps1 - Copia los registros crudos de una maquina SIN repo (C
 a su carpeta en el recurso Incoming de la CENTRAL. La CENTRAL los pasa a Devlog\raw con
 Import-RemoteDevlog.ps1 y van al repo con los demas.
 
-- Antes de copiar, si Collect-CodexSessions.ps1 esta en la misma carpeta, recoge las sesiones
-  de Codex de esta maquina.
+- Antes de copiar ejecuta los Collect-*.ps1 que haya en su misma carpeta (sesiones de Codex,
+  transcripts de Cursor).
 - Solo copia (robocopy /E): el recurso no deja borrar ni renombrar, y no hace falta.
 - Registro en C:\JamLog\sync.log. Codigos: 0 OK, 2 error de robocopy (>= 8).
 
@@ -15,9 +15,8 @@ param(
     [string]$Dest = '\\192.168.31.188\Incoming\LAPTOP\_devlog_raw',
     [string]$Log = 'C:\JamLog\sync.log'
 )
-$collect = Join-Path $PSScriptRoot 'Collect-CodexSessions.ps1'
-if (Test-Path -LiteralPath $collect) {
-    try { $c = & $collect -LogRoot $Source 2>&1 | Out-String; Add-Content -LiteralPath $Log -Value ("{0}Z {1}" -f [DateTime]::UtcNow.ToString('s'), $c.Trim()) } catch { Add-Content -LiteralPath $Log -Value ("{0}Z codex error: {1}" -f [DateTime]::UtcNow.ToString('s'), $_.Exception.Message) }
+foreach ($collect in Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'Collect-*.ps1' -File -ErrorAction SilentlyContinue) {
+    try { $c = & $collect.FullName -LogRoot $Source 2>&1 | Out-String; Add-Content -LiteralPath $Log -Value ("{0}Z {1}" -f [DateTime]::UtcNow.ToString('s'), $c.Trim()) } catch { Add-Content -LiteralPath $Log -Value ("{0}Z {1} error: {2}" -f [DateTime]::UtcNow.ToString('s'), $collect.Name, $_.Exception.Message) }
 }
 if (-not (Test-Path -LiteralPath $Source)) { Add-Content -LiteralPath $Log -Value "$([DateTime]::UtcNow.ToString('s'))Z sin origen $Source"; exit 0 }
 $out = & robocopy $Source $Dest /E /FFT /R:1 /W:2 /NP /NJH /NDL 2>&1

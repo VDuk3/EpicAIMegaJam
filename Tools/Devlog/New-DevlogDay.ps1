@@ -39,6 +39,9 @@ foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory 
             $agentName = if ($o.agent) { [string]$o.agent } else { 'claude-code' }
             $sessions["$agentName/$($o.machine)/$($o.session)"] = $agentName
             if ($o.event -ceq 'beforeSubmitPrompt') {
+                # Si hay transcript de esta conversacion, los prompts salen de ahi (es completo; el
+                # hook perdio prompts antes del arreglo del mutex).
+                if (@(Get-ChildItem (Join-Path $dayDir 'transcripts') -Filter "cursor-$($o.session)-*.jsonl" -ErrorAction SilentlyContinue).Count -gt 0) { continue }
                 $prompts.Add([pscustomobject]@{ ts = $o.ts_utc; machine = "$($o.machine), Cursor"; text = (Redact ([string]$o.payload.prompt)) })
             } elseif ($o.event -ceq 'postToolUse') {
                 $k = 'Cursor: ' + [string]$o.payload.tool_name
@@ -73,6 +76,35 @@ foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory 
                 $name = [string]$o.payload.name; if (-not $name) { $name = 'shell' }
                 $k = 'Codex: ' + $name
                 if ($toolCount.ContainsKey($k)) { $toolCount[$k]++ } else { $toolCount[$k] = 1 }
+            }
+        }
+    }
+    # transcripts\cursor-<id>-<id>.jsonl: transcript completo de un chat de Cursor (del hook o de
+    # Collect-CursorTranscripts.ps1). Es la fuente de los prompts de esa conversacion; las
+    # herramientas salen del hook si existe (trae nombres MCP) y si no, del transcript.
+    # Los prompts van en <user_query>, con la hora en <timestamp>.
+    $tdir = Join-Path $dayDir 'transcripts'
+    if (Test-Path $tdir) {
+        foreach ($f in Get-ChildItem $tdir -File -Filter 'cursor-*.jsonl') {
+            if ($f.Name -notmatch '^cursor-([0-9a-fA-F\-]{36})-') { continue }
+            $cid = $Matches[1]
+            $hasHook = Test-Path (Join-Path $dayDir "cursor-$cid.jsonl")
+            $sessions["cursor/$($machineDir.Name)/$cid"] = 'cursor'
+            foreach ($line in [IO.File]::ReadAllLines($f.FullName, $utf8)) {
+                try { $o = $line | ConvertFrom-Json } catch { continue }
+                foreach ($c in @($o.message.content)) {
+                    if ($o.role -eq 'user' -and $c.type -eq 'text' -and ([string]$c.text) -match '(?s)<user_query>\s*(.*?)\s*</user_query>') {
+                        $q = $Matches[1]
+                        $ts = $f.LastWriteTimeUtc.ToString('o')
+                        if (([string]$c.text) -match '<timestamp>\w+, (\w+ \d+, \d{4}), (\d+:\d+ [AP]M) \(UTC([+-]\d+)\)</timestamp>') {
+                            try { $ts = ([DateTime]::ParseExact("$($Matches[1]) $($Matches[2])", 'MMM d, yyyy h:mm tt', [Globalization.CultureInfo]::InvariantCulture)).AddHours(-[int]$Matches[3]).ToString('yyyy-MM-ddTHH:mm:00Z') } catch {}
+                        }
+                        $prompts.Add([pscustomobject]@{ ts = $ts; machine = "$($machineDir.Name), Cursor"; text = (Redact $q) })
+                    } elseif (-not $hasHook -and $o.role -eq 'assistant' -and $c.type -eq 'tool_use') {
+                        $k = 'Cursor: ' + [string]$c.name
+                        if ($toolCount.ContainsKey($k)) { $toolCount[$k]++ } else { $toolCount[$k] = 1 }
+                    }
+                }
             }
         }
     }

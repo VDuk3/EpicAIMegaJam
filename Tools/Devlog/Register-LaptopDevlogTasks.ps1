@@ -31,8 +31,7 @@ if (-not (Test-Path $sync)) { throw "No existe $sync" }
 [void][IO.Directory]::CreateDirectory($BinDir)
 if ((Resolve-Path $PSScriptRoot).Path -ne (Resolve-Path $BinDir).Path) {
     Copy-Item -LiteralPath $sync -Destination $BinDir -Force
-    $collect = Join-Path $PSScriptRoot 'Collect-CodexSessions.ps1'
-    if (Test-Path $collect) { Copy-Item -LiteralPath $collect -Destination $BinDir -Force }
+    Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'Collect-*.ps1' -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $BinDir -Force }
 }
 $syncBin = Join-Path $BinDir 'Sync-DevlogToCentral.ps1'
 
