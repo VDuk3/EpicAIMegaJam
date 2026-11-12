@@ -21,7 +21,7 @@ Includes are relative to the module root: `#include "Stats/GBStatsComponent.h"`.
 | `Core/` | Shared enums, stat names, placeholders (plain shapes and pixel-textured structures), game mode, dev commands | `GBTypes.h`, `GBStatNames.h`, `GBPlaceholder.h` (`SetupTexturedShape`), `AGBGameMode`, `UGBGameInstance`, `GBDevCommands.cpp` (`gb.Smoke`) |
 | `Data/` | Definitions and the JSON loader | `GBDataTypes.h`, `UGBDataSubsystem` |
 | `Stats/` | Stats + modifiers, health/mana | `UGBStatsComponent`, `UGBAttributeComponent` |
-| `Combat/` | Damage (one path, one global `OnDamageDealt` event), status effects, projectile, explosion shockwave | `UGBCombatLibrary`, `UGBStatusEffectComponent`, `AGBProjectile`, `AGBExplosionEffect` |
+| `Combat/` | Damage (one path, one global `OnDamageDealt` event), status effects, elemental build-up, projectile, explosion shockwave | `UGBCombatLibrary`, `UGBStatusEffectComponent`, `UGBElementalStatusComponent`, `FGBBuildUpMeter` (pure, tested), `AGBProjectile`, `AGBExplosionEffect` |
 | `Player/` | Character, controller, input | `AGBPlayerCharacter`, `AGBPlayerController`, `UGBInputSet` |
 | `Weapons/` | Held items and slots | `UGBEquipmentComponent`, `AGBHeldItem`, `AGBStaff`, `AGBGun`, `AGBSword` |
 | `Spells/` | Spellbook, cast resolution, behaviors | `UGBSpellbookComponent`, `FGBSpellCast`, `AGBSpellActor`, `AGBSpell_*` |
@@ -38,13 +38,18 @@ Includes are relative to the module root: `#include "Stats/GBStatsComponent.h"`.
 
 Modifier keys: an actor stat (`MoveSpeed`), `Weapon.<Id>.<Stat>`, `Weapon.<Slot>.<Stat>` (`Weapon.Staff`, `Weapon.Gun`, `Weapon.Sword`), `Weapon.All.<Stat>`, `Spell.<Id>.<Param>`, `Spell.All.<Param>`, `QTE.TimeDilation`...
 
-Standard status effect ids (defined in `StatusEffects.json`, referenced from other files): `Burn`, `Shock`, `Slow`, `Chill`, `HealthPotion`, `ManaPotion`, `HealthInjection`, `Enchant_Fire`, `Enchant_Lightning`, `Enchant_Ice`.
+Standard status effect ids (defined in `StatusEffects.json`, referenced from other files): `Slow`, `Ignite`, `HealthPotion`, `ManaPotion`, `HealthInjection`, `Enchant_Fire`, `Enchant_Lightning`, `Enchant_Ice`. (`Burn`, `Shock`, `Chill` were removed in GDD v0.22.)
+
+Modifier ops: `Add`, `Multiply`, `Override`, and `MultiplyMin` (only the lowest one on a stat counts: slows never stack, the strongest wins).
+
+Elemental keys (GDD 6 "Elemental build-up"): per enemy in `Enemies.json` `Stats` (`<E>DamageTaken`, `<E>BuildUpTaken`, `<E>BuildUpThreshold`, `<E>BuildUpDecayDelay`, `<E>BuildUpDecayRate`, `<E>StatusDuration`, `<E>StatusImmunity`, `IgniteDamageMult`, `ShockDischargeDamage`, `FrostSlow`; E = Fire, Lightning, Ice) and `Strings` (`<E>StatusReaction`); missing keys fall back to `Game.json` `ElementalDefault.<Key>`. Sources: spell param `BuildUp`, weapon stats `FireBuildUp` / `LightningBuildUp` / `IceBuildUp` and `WeakPointBuildUpMult`, item stat `BuildUp`.
 
 ## How the main flows run
 - **Cast:** input -> `UGBSpellbookComponent::TryCastSlot` (checks staff in hand, known, cooldown, mana; spends mana) -> `UGBQTEComponent::StartQTE` (slow time, sequence = power, gesture = reach; or instant when off) -> `GBSpell::ResolveCast` (data -> QTE scaling -> modifiers) -> spawn the behavior actor -> it deals damage through `UGBCombatLibrary`.
 - **Shoot:** input -> `AGBGun` (fire interval, magazine, spread, recoil, pellets; every number via `GetStat`) -> hitscan -> headshot and distance falloff math in `UGBCombatLibrary` -> `DealDamage`.
 - **Era travel:** `AGBPortal::Interact` -> `UGBEraSubsystem::RequestTravel` (fade out, swap era for `UGBEraComponent` actors and `_Past` / `_Future` sub-levels, teleport, restore health/mana/ammo, save checkpoint, fade in).
 - **Progress:** encounters set flags in `UGBProgressSubsystem` when cleared; `UGBEraComponent` reads flags, which is how era-gated zones and past-to-future unlocks are built. Death restores the last checkpoint snapshot; flags are never rolled back (enemies do not respawn).
+- **Elemental build-up:** a hit carries `FGBDamageInfo::BuildUp` (spell param, weapon stat by element, item stat) and a `BuildUpEventId` (one per shot, cast, blast or tick). `DealDamage` passes it to the target's `UGBElementalStatusComponent` (`ApplyBuildUp`; the ice floor, which deals no damage, calls it directly), which dedupes by event id, applies the enemy's resistance and fills one of three `FGBBuildUpMeter`s. A full bar starts the status: Ignite is the `Ignite` status effect (DOT through `DealDamage`); Shock deals its discharge; Frost slow is a `MultiplyMin` modifier; stun, interrupt and freeze are done by `AGBEnemyCharacter` from the component's `OnStatusStarted` event. The component only ticks (every `ElementalTickInterval`) while a bar is not empty. Looks bind to its events; `gb.ShowElemental 1` is a debug view and `gb.BuildUp` a test command.
 - **Upgrades:** `UGBSkillTreeComponent::Unlock` adds the node's modifiers to the player's stats; weapons and spells pick them up on their next read.
 
 ## Conventions
