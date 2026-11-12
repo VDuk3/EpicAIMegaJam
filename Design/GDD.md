@@ -1,10 +1,11 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.6, 2026-11-12** — owner's vision plus five rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.7, 2026-11-12** — owner's vision plus six rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.7 (2026-11-12): full story (the entity, the false voice, the Valkyrie); elemental zones in the castle unlock the rest of each element; air passives learned the same way; shotgun and rifle dropped by enemies; era travel restores everything (bonfire-like); remaining keys confirmed.
 - v0.6 (2026-11-12): art rule clarified for characters (style of the world they belong to); story premise; opening sequence with the first gun; starting spells; enchant only with a gun in hand; key changes (F quick-use, G interact, L1 enchant on gamepad); counter-style ammo refilled on era travel; automatic checkpoints; no sprint; one full-armor slot.
 - v0.5 (2026-11-12): sword is a third slot; magazines, reload, limited ammo dropped by enemies; health and mana regenerate, no stamina; state carries across eras; checkpoints; one skill point pool; controls filled in; opening sequence; armor from chests; difficulty = hard only for now.
 - v0.4 (2026-11-12): weapon skill tree contents; two held slots (one gun + one staff) and how to switch; no spells with a gun except the enchant; enchant key; air passives always on; ice shield QTE; staffs from chests; sword blade is pixel art with a medieval HUD; final boss mixes both styles.
@@ -40,13 +41,18 @@ Working title: **TBD**.
 - **Cross-era unlocks:** some zones must be unlocked in the past so they open in the future (cause in the past, effect in the future).
 - These interactions are few (short jam) but they exist and are part of level design.
 - **Nothing is lost when changing era.** Health, mana, ammo, inventory, spells and weapons all carry over. Mana exists and works in the future; guns work in the past.
+- **Era travel restores everything** (health, mana, ammo), a bit like the rest points of classic action RPGs. Portals are the safe points of the map.
 
 - A third, separate map unlocks late: a **dimension between space and time** where the true final boss lives (see §11).
 
-### Story premise
+### Story
 - The player is a **mage** who travels to the castle out of **curiosity**: he had heard it was a mysterious place.
 - On reaching the **seal** in the castle he is **trapped** and thrown into the future.
 - In the future he hears **a woman's voice asking for help**. That voice is his reason to fix the problem.
+- **The twist:** the voice is **not the Valkyrie**. It is **the Entity**, the true final boss, pretending to be her.
+- **The Entity:** a fusion of an **apocalyptic artificial intelligence** and a **ghost that embodies disease**. It is locked in the dimension between space and time and wants out. To escape it needs two things: someone to **open the portal** and a **physical body to possess**.
+- **The Valkyrie:** someone the Entity **manipulated across time**. The plan failed, and she ended up **trapped in both eras** (runes in the past, cryogenic tube in the future).
+- **What the player does:** defeats the Valkyrie in both eras, gathers what is needed, and opens the portal: **exactly the Entity's plan**. The player walks in with the body it wants to possess. The only thing the Entity did not plan for: **the player beats it**.
 - Cutscenes: **few and short**, each one written for its situation.
 
 ### Opening sequence
@@ -56,7 +62,7 @@ Working title: **TBD**.
 4. Appears in the **future**.
 5. Fights **3D armed orcs**. One of the first ones **drops the first gun**.
 6. The player **picks up the gun** → **short cutscene #2**. The player **cannot progress** without picking it up.
-7. Rest of the game: **TBD**.
+7. Rest of the game: elemental zones in the castle (§6), the two Valkyrie fights, the final portal (§11). Exact order and map flow: **TBD**.
 
 ## 5. Player progression
 - **No character levels / no XP leveling.**
@@ -82,7 +88,14 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 ### Spell loadout
 - The player has **5 spells equipped** at a time and can **equip and unequip** them freely.
 - **Air passives are always active**: they are not equipped and do not take a slot.
-- **Starting spells:** Fireball (very early tier), Lightning bolt (early tier), Ice wall. The other spells: see open questions.
+- **Starting spells:** Fireball (very early tier), Lightning bolt (early tier), Ice wall.
+
+### Learning the other spells: elemental zones
+- The **medieval castle** has **elemental zones**, one per element.
+- Each zone has a **challenge**: a wave, a sub-boss or a boss.
+- After the challenge the player gets the element's **knowledge** (from a chest, a book or similar) and **unlocks the missing spells of that element** (fire: fire wall + flamethrower; lightning: rune trap + static ball; ice: ice shield + ice floor).
+- **Air passives** are learned the same way, in the air zone.
+- The spell tree then upgrades what the player knows.
 - **Spells can only be cast with the staff in hand.** With a gun in hand, the only spell available is the weapon enchant. To cast, the player switches to the staff mid-fight.
 - Keys: see §9.
 
@@ -149,6 +162,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 
 ### Guns (cyberpunk, 3D)
 - Pistol, shotgun, assault rifle.
+- The **first gun** is dropped by one of the first armed orcs in the future (§4). The **shotgun and the rifle** are dropped later by enemies, picked up from the floor.
 - With a gun in hand: **primary fire = shoot**, **secondary = aim**.
 - **Magazines and reload**, like any shooter.
 - **Ammo works like classic tactical shooters:** each gun has a fixed number of spare magazines, and each magazine a fixed number of bullets.
@@ -191,15 +205,17 @@ Weapon mechanics and spell mechanics combine. The weapon enchant (§6) is the fi
 | Spell slots 2–5 (staff in hand) | 1, 2, 3, 4 | Hold L2 / LT + Cross, Circle, Square, Triangle (A, B, X, Y) |
 | Reload (gun) | R | Standard shooter layout |
 | Weapon enchant (gun in hand only) | T (R is reload) | L1 / LB (free with a gun in hand) |
-| Switch staff ↔ gun (↔ sword) | Mouse wheel or Alt | D-pad arrow (**TBD** which) |
+| Switch staff ↔ gun (↔ sword) | Mouse wheel or Alt | D-pad up |
 | Jump | Space | Cross (A) |
 | Dash | Ctrl | Circle (B) |
-| Quick-use item (grenade / potion / injection share one slot) | F | **TBD** |
-| Cycle the quick-use item | Shift | D-pad |
+| Quick-use item (grenade / potion / injection share one slot) | F | R1 / RB |
+| Cycle the quick-use item | Shift | D-pad left / right |
 | Interact (chests, portals, objects) | G | Triangle (Y) |
 | QTE part 1 | W A S D | Face buttons |
 | QTE part 2 | Mouse gesture | Right stick |
-| Inventory, skill trees, pause | **TBD** | **TBD** |
+| Inventory | Tab | Options / View |
+| Skill trees | K (also a tab inside the inventory) | From the inventory |
+| Pause | Esc | Start / Menu |
 
 Gun controls on gamepad follow the standard shooter layout.
 
@@ -237,7 +253,7 @@ Rewards:
   - Art (§3): the **hilt is 3D** (it comes from the future), the **blade is pixel art** (it is magic).
   - HUD: **medieval** (provisional).
 - **Final portal:** combining the two quest items opens a portal to a separate map, a dimension between space and time, where the player fights the **true final boss**.
-- **True final boss:** a **mix of both art styles**. Undecided how: two phases with different styles, or one character in both styles at once, or something else (**TBD**).
+- **True final boss: the Entity** (story in §4). A **mix of both art styles**, which fits what it is (suggestion, not decided: the AI half in 3D, the ghost half in pixel art). Undecided how: two phases with different styles, or one character in both styles at once, or something else (**TBD**).
 - This happens in mid/late game.
 
 ## 12. Inventory
@@ -296,24 +312,20 @@ Not decisions, just the list of systems the design implies:
 Answers get folded into the sections above as they come.
 
 **Blocking (needed before the architect starts):**
-1. **The other 6 spells** (fire wall, flamethrower, rune trap, static ball, ice shield, ice floor): unlocked in the spell tree with skill points, found in chests, or given by bosses?
-2. **Air passives:** active from the very start, or unlocked during the game (e.g. double jump learned later)?
-3. **The other two guns** (the first one is dropped by an orc): where does the player get the second and third? And which gun is the first one (the pistol?)
-4. **Remaining keys — proposal, confirm or change:**
-   - Use quick item on gamepad: **R1 / RB**.
-   - Switch weapon on gamepad: **D-pad up**; cycle quick item: **D-pad left/right**.
-   - Inventory: **Tab** / Options-View; skill trees: **K** (or a tab inside the inventory); pause: **Esc** / Start-Menu.
+1. **Enemy respawn:** like rest points in classic action RPGs, does era travel also **respawn the enemies**? Or do cleared areas stay cleared?
+2. **Map flow:** what is the order after cutscene #2? Can the player pick the order of the elemental zones, or is it linear? Rough proposal to confirm or change: future intro → back to the castle → elemental zones (any order) → Valkyrie (past) → Valkyrie (future) → final portal.
+3. **What the future has:** the elemental zones are in the castle. What does the player do in the future besides the intro and the Valkyrie (zones unlocked from the past, where the shotgun and rifle drop, sub-bosses)?
+4. **Challenges per zone:** 4 elemental zones; which one ends in a wave, which in a sub-boss, which in a boss? Are the "couple of sub-bosses" the guardians of these zones?
 
 **Can wait:**
-5. **Story:** is the woman's voice the Valkyrie? If he frees her, why does he then have to fight her (corrupted, a test, a misunderstanding)?
-6. Does era travel also refill health and mana, or only ammo?
+5. **Valkyrie fight:** if she is a victim of the Entity, why does she fight the player (she thinks he serves the Entity, she is still under its control…)?
+6. **Final boss mechanics:** does the possession attempt become part of the fight (e.g. a phase where it tries to take the player's body)?
 7. **Staffs:** how many, and does each one's basic attack have an element?
 8. **Ice shield QTE:** which part scales duration and which scales block effectiveness?
 9. **Armor:** which stats besides the QTE time slow (defense, mana regen…)?
 10. How "combining styles" is rewarded beyond synergies (combo meter, bonus damage, more skill points?).
-11. Sub-bosses: how many, which era, what they are.
-12. Examples of era-gated zones and past→future unlocks.
-13. Other enemy types per era.
-14. The two quest items; how the final boss mixes both styles.
-15. QTE: time limit, sequence length per spell, does the camera slow too.
-16. Game and team name.
+11. Examples of era-gated zones and past→future unlocks.
+12. Other enemy types per era.
+13. The two quest items.
+14. QTE: time limit, sequence length per spell, does the camera slow too.
+15. Game and team name.
