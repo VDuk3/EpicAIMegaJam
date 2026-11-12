@@ -10,7 +10,7 @@ Uso:  powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Devlog/Import-Re
 #>
 param(
     [string]$JamRoot = (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent),
-    [string[]]$Machines = @('LAPTOP'),
+    [string[]]$Machines = @('LAPTOP', 'ASSETS'),
     [switch]$Register
 )
 if ($Register) {

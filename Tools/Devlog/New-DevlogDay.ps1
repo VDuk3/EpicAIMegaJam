@@ -54,6 +54,28 @@ foreach ($machineDir in Get-ChildItem (Join-Path $root 'Devlog\raw') -Directory 
             }
         }
     }
+    # codex-rollout-*.jsonl: sesiones de Codex copiadas por Collect-CodexSessions.ps1 (formato
+    # propio de Codex: una linea por item; los mensajes del usuario incluyen contexto inyectado
+    # que empieza por '<' o '# AGENTS.md', y eso no es un prompt del equipo).
+    foreach ($f in Get-ChildItem $dayDir -File -Filter 'codex-*.jsonl') {
+        $sessions["codex/$($machineDir.Name)/$($f.BaseName)"] = 'codex'
+        foreach ($line in [IO.File]::ReadAllLines($f.FullName, $utf8)) {
+            try { $o = $line | ConvertFrom-Json } catch { continue }
+            if ($o.type -ne 'response_item' -or -not $o.payload) { continue }
+            $pt = [string]$o.payload.type
+            if ($pt -eq 'message' -and $o.payload.role -eq 'user') {
+                foreach ($c in @($o.payload.content)) {
+                    $t = [string]$c.text
+                    if (-not $t -or $t -match '^\s*(<|# AGENTS\.md)') { continue }
+                    $prompts.Add([pscustomobject]@{ ts = [string]$o.timestamp; machine = "$($machineDir.Name), Codex"; text = (Redact $t) })
+                }
+            } elseif ($pt -in @('function_call', 'custom_tool_call', 'local_shell_call')) {
+                $name = [string]$o.payload.name; if (-not $name) { $name = 'shell' }
+                $k = 'Codex: ' + $name
+                if ($toolCount.ContainsKey($k)) { $toolCount[$k]++ } else { $toolCount[$k] = 1 }
+            }
+        }
+    }
     $aj = Join-Path $dayDir 'agents.jsonl'
     if (Test-Path $aj) {
         foreach ($line in [IO.File]::ReadAllLines($aj, $utf8)) {
@@ -80,11 +102,12 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine("## Automatic data")
 [void]$sb.AppendLine("- Claude Code sessions: $(@($sessions.Values | Where-Object { $_ -eq 'claude-code' }).Count)")
 [void]$sb.AppendLine("- Cursor conversations: $(@($sessions.Values | Where-Object { $_ -eq 'cursor' }).Count)")
+[void]$sb.AppendLine("- Codex sessions (desktop or IDE, collected): $(@($sessions.Values | Where-Object { $_ -eq 'codex' }).Count)")
 [void]$sb.AppendLine("- Team prompts to agents: $($prompts.Count) (automatic harness notices left out: $harnessNotices)")
 [void]$sb.AppendLine("- External agent runs: $(@($agentRuns | Where-Object event -eq 'start').Count)")
 [void]$sb.AppendLine("- MCP calls inside Unreal: $mcpCalls")
 [void]$sb.AppendLine()
-[void]$sb.AppendLine("### Tools used by the agents (Claude Code, and Cursor marked 'Cursor:')")
+[void]$sb.AppendLine("### Tools used by the agents (Claude Code; Cursor and Codex marked)")
 foreach ($k in ($toolCount.Keys | Sort-Object { -$toolCount[$_] })) { [void]$sb.AppendLine("- $k : $($toolCount[$k])") }
 [void]$sb.AppendLine()
 [void]$sb.AppendLine("### External agents")
