@@ -1,0 +1,11 @@
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   1 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl | 525 +++++++++++++++++++++
+ ...aude-38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl |   1 +
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 490 +++++++++++++++++++
+ Glyphbound/Content/Data/Game.json                  |  11 +-
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |  50 +-
+ .../Glyphbound/Items/GBInventoryComponent.cpp      |  13 +-
+ Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h |   2 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    |   6 +-
+ Glyphbound/Source/Glyphbound/World/GBChest.cpp     |  19 +-
+ 10 files changed, 1104 insertions(+), 14 deletions(-)

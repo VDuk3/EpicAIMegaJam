@@ -1,0 +1,9 @@
+ Design/HANDOFF.md                                  |  16 +-
+ Devlog/days/2026-11-12.md                          |  20 +
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   3 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl | 548 +++++++++++++++++
+ ...aude-38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl |   1 +
+ ...aude-5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl |  11 +
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 657 +++++++++++++++++++++
+ .../5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl     |  52 ++
+ 8 files changed, 1302 insertions(+), 6 deletions(-)

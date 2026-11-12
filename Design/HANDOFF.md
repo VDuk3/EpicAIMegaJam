@@ -34,10 +34,11 @@ powershell -File Tools/Devlog/New-DevlogDay.ps1 -Date 2026-11-12
 Muse Spark: `Tools/Devlog/Invoke-LoggedAgent.ps1 -Agent opencode -Model 'opencode-go/muse-spark-1.3-contributor#high' -PromptFile Prompts\X.md -Purpose "..." -Command "opencode run --auto -m 'opencode-go/muse-spark-1.3-contributor#high' (Get-Content Prompts\X.md -Raw)"`.
 Codex: same wrapper with `-Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`.
 
-## Right now (end of the first block, 2026-11-12)
-- Editor build and game build green; 22 pure-logic tests pass; the scripted smoke run (`Tools/Jam/Smoke-Jam.ps1`) ends with no errors.
-- Codex reviewed the code once (9 findings, all fixed). The fixes were verified by build, tests and smoke only.
-- **No human has played yet.** That is the next thing that must happen.
+## Right now (end of the second block, 2026-11-12)
+- Editor build and game build green; 24 pure-logic tests pass; the scripted smoke run (`Tools/Jam/Smoke-Jam.ps1`, 31 steps) ends with no errors, also on the packaged exe.
+- Codex reviewed the code twice (9 findings, then 4 on the play-test changes; all fixed). The fixes were verified by build, tests and smoke only.
+- The owner played the FIRST build and sent ten notes; all are implemented (table in the day entry). **Nobody has played the second build yet.** That is the next thing that must happen.
+- Provisional choices waiting for the owner's word (GDD 18 and section 6): Block on Q / L2; guns and the sword follow the staff rule (owned, equipped from the inventory); a "big" damage number is a headshot or a hit of at least 25% of the target's health.
 - Packaging result: see "Numbers of the day" in `Devlog/days/2026-11-12.md`.
 
 ## What the game does today
@@ -55,9 +56,10 @@ Since the first play-test: weapons are owned (a pickup goes to the hands only if
 7. Real levels: the era system already supports sub-levels named `*_Past` / `*_Future` and per-actor `UGBEraComponent`.
 
 ## Things a human must check by playing (nobody has)
+- Second build first: mouse in every menu (do clicks work while the game is paused?), one click on the death screen respawns once, Block (Q) raises the shield only with staff or sword and slows the player, gamepad L2 as Block and as spell modifier, a second staff goes to the Weapons page and can be equipped there, enemies get around the low walls and pillars in both eras and do not jump off the ramp, falling off the map kills, damage numbers (size on headshots), fireball shockwave pushing orcs, jump heights against the course.
 - Movement feel: speed, jump height, double jump, dash distance and whether the dash should have a brief invulnerability.
 - Mouse look speed, and the QTE gesture sensitivity (the mouse-to-pixels conversion assumes the legacy 0.07 scale; if gestures are judged far too early or too late, the constant is in `Player/GBPlayerCharacter.cpp`).
-- The QTE itself: is 3 s enough for 4 keys and 1 gesture; do gestures get recognized.
+- The QTE itself: is 4 s enough for 4 keys and 1 gesture; do gestures get recognized.
 - Shooting: do hitscan shots hit enemies, do headshots register on sprites, recoil feel, reload.
 - Ice wall: blocks enemies and shots, and wears down when shot.
 - Era travel: fade, restore, the era-gated room and the unlock ramp.
@@ -67,6 +69,8 @@ Since the first play-test: weapons are owned (a pickup goes to the hands only if
 
 ## Known limits (accepted for now)
 - Enemies do not attack spell walls on purpose.
+- Pixel tiles on a wall placed diagonally stretch up to about 1.4x (world-aligned projection picks one axis).
+- Enemies never drop down a ledge higher than `EnemySteerLedgeDrop` (150 cm) while steering locally; on the navmesh they follow the mesh.
 - A dropped gun comes back fully loaded when picked up again.
 - Spell cooldowns persist through death.
 - `gb.*` console commands do not exist in Shipping builds (we package Development).

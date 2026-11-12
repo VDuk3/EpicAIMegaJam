@@ -1,0 +1,21 @@
+ Design/ARCHITECTURE.md                             |   9 +-
+ Design/GDD.md                                      |   3 +
+ Design/HANDOFF.md                                  |  16 +-
+ Devlog/days/2026-11-12.md                          |  23 +
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   5 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl | 560 ++++++++++++++++
+ ...aude-38d5d26e-8eba-4a4b-8a8d-b9f20f94200f.jsonl |   1 +
+ ...aude-5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl |  21 +
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 732 +++++++++++++++++++++
+ .../5df7da57-5bde-40bc-a89f-dccc77a1adf3.jsonl     |  98 +++
+ Glyphbound/Content/Data/Game.json                  |   2 +
+ Glyphbound/Content/Data/Spells.json                |  12 -
+ .../Source/Glyphbound/AI/GBEnemyCharacter.cpp      |  86 ++-
+ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h |   2 +
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |   8 +-
+ .../Source/Glyphbound/Spells/GBSpell_Shield.h      |   3 +-
+ .../Source/Glyphbound/Spells/GBSpell_Wall.cpp      |   5 +-
+ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h |   3 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp          |  24 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    |   8 +-
+ 20 files changed, 1572 insertions(+), 49 deletions(-)
