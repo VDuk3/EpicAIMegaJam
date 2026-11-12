@@ -21,6 +21,10 @@ Build/
 # Content is ignored except Content/Data (JSON tuning files are text and belong in git).
 **/Content/*
 !**/Content/Data/
+# Source art (.blend, baked textures) lives on CENTRAL in <project>/SourceArt, like Content.
+**/SourceArt/**
+!**/SourceArt/**/
+!**/SourceArt/**/README.md
 Incoming/
 *.uasset
 *.umap
