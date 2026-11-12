@@ -1,0 +1,18 @@
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   1 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl |   1 +
+ ...aude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl |  59 ++++
+ .../5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl     | 357 +++++++++++++++++++++
+ Glyphbound/Content/Data/Spells.json                |  12 -
+ Glyphbound/Content/Data/Sprites.json               |  92 ++++--
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |  93 +++++-
+ .../Source/Glyphbound/Core/GBPlaceholder.cpp       |  69 ++++
+ Glyphbound/Source/Glyphbound/Core/GBPlaceholder.h  |  14 +
+ .../Source/Glyphbound/Spells/GBSpell_Trap.cpp      |  52 +--
+ Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h |  11 +-
+ .../Source/Glyphbound/Spells/GBSpell_Zone.cpp      |  40 ++-
+ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h |  10 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUD.h            |   3 +
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    |  27 +-
+ Tools/Jam/Make-Materials.ps1                       |   6 +-
+ Tools/Jam/make_materials.py                        |  67 +++-
+ 17 files changed, 822 insertions(+), 92 deletions(-)
