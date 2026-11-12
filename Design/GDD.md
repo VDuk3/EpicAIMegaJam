@@ -190,7 +190,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - The **time-slow amount is configurable** and can be modified by gear (e.g. some armor). Armor/gear as a system is otherwise **TBD**.
 - **The camera is locked during the QTE** (the mouse / right stick draws the gesture).
 - **The player keeps moving during the QTE, in the direction they were already moving** (the movement keys are busy with part 1, so the last movement input is held).
-- **QTE time limit: 3 seconds** for the **whole QTE** (both parts together), in real time (provisional value in data).
+- **QTE time limit: 4 seconds** for the **whole QTE** (both parts together), in real time (owner, 2026-11-12, after the first play-test: one second more than the original 3; the value is in data).
 
 ## 8. Weapons and items
 
@@ -406,7 +406,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Jumps:** each jump rises about 2 m (was 1.2 m); the double jump adds a second one of the same height.
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
-- **QTE:** 4 keys, 1 gesture, 3 s in real time, world at 10% speed.
+- **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
 - **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and burns.
 - **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots x2 (shotgun x1.5).
 - **Enemies:** past orc 60 health, melee 12; future orc 70 health, ranged 9; brute (sub-boss placeholder) 320 health, melee 28.

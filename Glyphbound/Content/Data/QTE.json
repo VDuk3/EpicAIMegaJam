@@ -2,14 +2,14 @@
 	"bEnabled": true,
 	"Stats": {
 		"QTE.TimeDilation": 0.1,
-		"QTE.TimeLimit": 3.0,
+		"QTE.TimeLimit": 4,
 		"QTE.SequenceLength": 4,
 		"QTE.GestureCount": 1,
 		"QTE.GestureMinScore": 0.35,
-		"QTE.GestureMinLength": 120.0,
+		"QTE.GestureMinLength": 120,
 		"QTE.GestureIdleSubmitTime": 0.25,
 		"QTE.LineSubmitLengthMult": 2.5,
-		"QTE.StickGestureScale": 600.0
+		"QTE.StickGestureScale": 600
 	},
 	"Gestures": [
 		"LineRight",
