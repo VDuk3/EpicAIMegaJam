@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.21, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.22, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.22 (2026-11-12): owner's spec: **elemental build-up** (fire, lightning, ice) on every enemy, with three status effects (Ignite, Shock, Frost), per-enemy resistances and reactions, a weak-point bonus for weapon hits, and every number in data. Owner's answers: the old small effects on every hit (burn, the lightning slow, the enchant's chill) are **removed**; the status effect at the full bar is the only elemental effect (the ice floor keeps its zone slow). The elemental sword and the ember staff build up their element too. See §6 "Elemental build-up".
 - v0.21 (2026-11-12): owner: a strong hit (30% of health or more) interrupts the flamethrower, with a camera shake; the spell description says "a strong hit" without the number.
 - v0.20 (2026-11-12): owner: six new spell-tree perks (one per spell that had none); the flamethrower runs while its key is held, until the key is released or the mana runs out.
 - v0.19 (2026-11-12): owner: when ground spells overlap, the one placed last covers the others completely, and they never flicker.
@@ -169,6 +170,18 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 - **Uses the QTE** like every other spell (§7).
 - **Does not work on the elemental sword.**
 - Duration, cost and exact buff per element: **TBD**.
+
+### Elemental build-up (owner's spec, 2026-11-12)
+Every enemy has three independent bars: **fire, lightning, ice**. A valid hit of an element fills its bar; a full bar starts that element's status effect.
+- **Rules for each bar:** its own threshold, duration, immunity time and decay. After a while without new build-up the bar drains little by little. When the status starts the bar goes back to zero; while the status runs that element does not build up again; after it ends there can be an immunity time before it builds up again. The three bars never affect each other. No reactions between elements yet.
+- **Ignite (fire, sustained damage):** fire damage at fixed time steps for the status duration. Sources: fireball, fire wall, flamethrower (on its 0.3 s damage ticks), the ember staff, the elemental sword and a fire-enchanted gun.
+- **Shock (lightning, interruption):** an electric discharge (a small hit of lightning damage) and the enemy's reaction: **stun** (stops moving and attacking for the duration, its attack is cancelled), **interrupt** (only cancels the attack it was winding up) or **none**. Sources: lightning bolt (every enemy it passes through, once each), lightning rune (enemies in its blast radius, so Expanded Sigil applies), static orb, the elemental sword and a lightning-enchanted gun.
+- **Frost (ice, slow and control):** the enemy's reaction: **freeze** (cannot move or attack for the duration), **slow** (a strong slow) or **none**. Sources: the **ice floor only** among spells (low build-up on each of its ticks, so standing on it fills the bar slowly and an ice-enchanted gun finishes it faster), the elemental sword and an ice-enchanted gun. The ice wall and the ice shield build up nothing. The ice floor's own slow (50%, Deep Freeze 55/60/65%, cap 80%, QTE) is unchanged. **Slows never stack:** when the ice floor and Frost both slow an enemy, only the strongest counts.
+- **Per enemy (no global multipliers by enemy type):** each enemy can set, per element, its damage taken, its build-up taken (separately, so they balance apart), its threshold, the status duration, the immunity time, the decay, and its reaction (or immunity to the status: an enemy can be immune to Shock and still take lightning damage). Values not set by an enemy fall back to defaults in `Game.json`.
+- **Per source:** each spell has its own build-up per hit or per tick (`BuildUp` in `Spells.json`); each weapon has its own build-up per element (`FireBuildUp`, `LightningBuildUp`, `IceBuildUp` in `Weapons.json`). An unenchanted gun builds up nothing; the apprentice staff (arcane) builds up nothing. One shot counts once per enemy: the eight pellets of a shotgun shot give one build-up to each enemy they hit.
+- **Weak point bonus:** a weapon hit on the head or on a weak point multiplies its build-up (`WeakPointBuildUpMult`), only once even if the head is also a weak point. It does not change the head damage bonus.
+- **Visuals:** not decided yet (Niagara, shaders or something per enemy). The code only sends events (build-up changed, status started, status ended) that each enemy's look can use later. A debug view (`gb.ShowElemental 1` in the console) prints the bars over enemies for testing; it is not the game's indicator.
+- **Removed by the owner (2026-11-12):** the small effects every elemental hit used to apply (burn on fire hits, the 40% slow on lightning hits, the enchant's chill). The bar's status effect is now the only elemental effect. The electric grenade builds up lightning instead of applying the old shock (architect).
 
 ### General
 - Spells cost **mana**.
@@ -418,8 +431,8 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Enemies and cover (after the first play-test):** enemies walk around obstacles. A melee enemy only starts its attack when it sees the player; a ranged enemy that loses sight stops aiming and moves until it sees the player again. Enemies do not walk off ledges on their own; one that falls out of the map dies without drops.
 - **Projectile explosions push enemies back** (knockback is a spell parameter, scaled by QTE power); they do not push the player.
 - **Falling:** the kill height is 2,500 cm below the floor of the level (`Game.json` `KillZ`).
-- **Weapon enchant QTE:** part 1 scales how long the buff lasts; part 2 scales how strong it is. Only one enchant at a time. The enchanted gun deals the element's damage type and applies its effect on hit (fire burns, lightning shocks, ice chills).
-- **Spell walls:** the fire wall does not block; it burns enemies that touch it. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
+- **Weapon enchant QTE:** part 1 scales how long the buff lasts; part 2 scales how strong it is. Only one enchant at a time. The enchanted gun deals the element's damage type and builds up that element's bar on every hit (§6 "Elemental build-up"; changed by the owner on 2026-11-12, it used to apply a small effect on each hit).
+- **Spell walls:** the fire wall does not block; it damages enemies that touch it and builds up fire. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
 - **QTE:** a wrong key consumes its step. A gesture is judged when the hand stops for a moment or the stroke is clearly complete. If both parts are fully missed the spell fizzles, and the mana is still spent and the cooldown still starts.
 - **New spells** go to the first free loadout slot.
 - **Ground spell figures (architect, after the owner's note):** the figure is the spell's sprite stretched to the diameter of its area, a few cm above the floor, keeping the pixels sharp; transparent pixels show the floor. It does not turn with the camera; it keeps the yaw the player was facing when casting. The rune shows dimmer until it is armed. The old colored disc is gone.
@@ -439,9 +452,12 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
 - **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
-- **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and burns.
+- **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and builds up fire.
 - **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots: pistol x2, shotgun and rifle x1.5.
 - **Enemies:** past orc 60 health, melee 12; future orc 70 health, ranged 9; brute (sub-boss placeholder) 320 health, melee 28.
-- **Status effects:** burn 32 damage over 4 s; slow 50% for 4 s; chill 30% for 3 s; shock 40% for 1.5 s; health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s.
+- **Status effects:** slow 50% for 4 s (ice floor); health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s. Burn, chill and the old shock were removed (v0.22).
+- **Elemental build-up (first pass, to balance; defaults in `Game.json`, per enemy in `Enemies.json`):** threshold 100 for each bar; decay starts 2 s after the last build-up and drains 20 per second. Ignite 4 s, 6 fire damage every 0.5 s (48 in total), then 3 s immune. Shock: a 10 lightning damage discharge and a 1.2 s stun, then 4 s immune. Frost: 2.5 s freeze (or a 60% slow for enemies that resist freezing), then 5 s immune.
+- **Build-up per source (first pass):** fireball 40 (25-55 with QTE power), fire wall 10 per 0.5 s tick, flamethrower 8 per 0.3 s tick, lightning bolt 35 (20-50), lightning rune 60 (35-85), static orb 8 per tick, ice floor 5 per 0.5 s tick (60 at most over its 6 s, so it never fills the bar alone), electric grenade 60. Weapons per hit: pistol 15, shotgun 25 per shot, rifle 8, elemental sword 20, ember staff 10 (fire). Weak point bonus x1.5.
+- **Enemies (first pass):** the castle orc uses the defaults. The orc brute (sub-boss) takes 20% less fire damage and 25% less fire build-up, its thresholds are higher (fire 160, lightning 200, ice 180), a shock only interrupts its attack and Frost only slows it (50%). The armored orc takes 25% more lightning damage and lightning build-up and 25% less fire build-up.
 - **Skill trees:** 6 nodes each, 1-2 points per rank, up to 3 ranks.
 - Every spell number in `Spells.json`.
