@@ -13,6 +13,8 @@ struct FGBPlayerSnapshot;
 namespace GBItemStat
 {
 	inline const FName ThrowPitch(TEXT("ThrowPitch"));   // degrees added above the aim direction when throwing
+	inline const FName Bounciness(TEXT("Bounciness"));   // bounce retention of a throwable (UProjectileMovementComponent default 0.6)
+	inline const FName Friction(TEXT("Friction"));       // surface friction of a throwable when bouncing (UProjectileMovementComponent default 0.2)
 }
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FGBOnItemCountChanged, FName /*ItemId*/, int32 /*NewCount*/);

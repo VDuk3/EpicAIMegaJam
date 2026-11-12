@@ -14,8 +14,6 @@ namespace
 {
 	// Visual and geometric limits only.
 	constexpr int32 MaxWallSprites = 8;
-	/** Pawns pressed against a blocking wall still count as touching it for damage ticks. */
-	constexpr float WallTouchMarginCm = 15.f;
 	constexpr float WallGroundSearchExtraCm = 2000.f;
 }
 
@@ -138,7 +136,9 @@ void AGBSpell_Wall::HandleWallDeath(const FGBDamageInfo& KillingBlow)
 void AGBSpell_Wall::DamageTick()
 {
 	TArray<AActor*> Targets;
-	const FVector Extent = Box->GetUnscaledBoxExtent() + FVector(WallTouchMarginCm);
+	// Pawns pressed against a blocking wall still count as touching it for damage ticks.
+	const float TouchMargin = ReadParam(GBSpellParam::TouchMargin, 15.f);
+	const FVector Extent = Box->GetUnscaledBoxExtent() + FVector(TouchMargin);
 	GatherHostilesInBox(GetActorLocation(), GetActorQuat(), Extent, Targets);
 	for (AActor* Target : Targets)
 	{

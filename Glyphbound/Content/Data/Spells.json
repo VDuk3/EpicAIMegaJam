@@ -16,9 +16,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 1,
-					"Min": 1,
-					"Max": 1,
+					"Base": 1.5,
+					"Min": 1.5,
+					"Max": 1.5,
 					"ScaledBy": "None"
 				},
 				"Damage": {
@@ -80,6 +80,24 @@
 					"Min": 2,
 					"Max": 2,
 					"ScaledBy": "None"
+				},
+				"ExplosionFalloff": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
+					"ScaledBy": "None"
+				},
+				"HeadshotMult": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
+					"ScaledBy": "None"
+				},
+				"Pierce": {
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -102,9 +120,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 8,
-					"Min": 8,
-					"Max": 8,
+					"Base": 10,
+					"Min": 10,
+					"Max": 10,
 					"ScaledBy": "None"
 				},
 				"Duration": {
@@ -114,15 +132,15 @@
 					"ScaledBy": "Power"
 				},
 				"DamagePerSecond": {
-					"Base": 20,
-					"Min": 10,
-					"Max": 30,
+					"Base": 60,
+					"Min": 30,
+					"Max": 90,
 					"ScaledBy": "Power"
 				},
 				"BuildUp": {
-					"Base": 10,
-					"Min": 10,
-					"Max": 10,
+					"Base": 15,
+					"Min": 15,
+					"Max": 15,
 					"ScaledBy": "None"
 				},
 				"Width": {
@@ -138,9 +156,9 @@
 					"ScaledBy": "Reach"
 				},
 				"Thickness": {
-					"Base": 60,
-					"Min": 60,
-					"Max": 60,
+					"Base": 100,
+					"Min": 100,
+					"Max": 100,
 					"ScaledBy": "None"
 				},
 				"Distance": {
@@ -150,15 +168,21 @@
 					"ScaledBy": "None"
 				},
 				"TickInterval": {
-					"Base": 0.5,
-					"Min": 0.5,
-					"Max": 0.5,
+					"Base": 0.25,
+					"Min": 0.25,
+					"Max": 0.25,
 					"ScaledBy": "None"
 				},
 				"Blocking": {
 					"Base": 0,
 					"Min": 0,
 					"Max": 0,
+					"ScaledBy": "None"
+				},
+				"TouchMargin": {
+					"Base": 15,
+					"Min": 15,
+					"Max": 15,
 					"ScaledBy": "None"
 				}
 			},
@@ -201,9 +225,9 @@
 					"ScaledBy": "None"
 				},
 				"DamagePerSecond": {
-					"Base": 40,
-					"Min": 25,
-					"Max": 55,
+					"Base": 50,
+					"Min": 30,
+					"Max": 70,
 					"ScaledBy": "Power"
 				},
 				"BuildUp": {
@@ -247,6 +271,12 @@
 					"Min": 0.3,
 					"Max": 0.3,
 					"ScaledBy": "None"
+				},
+				"Duration": {
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -270,9 +300,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 0.6,
-					"Min": 0.6,
-					"Max": 0.6,
+					"Base": 0.8,
+					"Min": 0.8,
+					"Max": 0.8,
 					"ScaledBy": "None"
 				},
 				"Damage": {
@@ -322,6 +352,24 @@
 					"Min": 2,
 					"Max": 2,
 					"ScaledBy": "None"
+				},
+				"HeadshotMult": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
+					"ScaledBy": "None"
+				},
+				"ProjectileGravity": {
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
+					"ScaledBy": "None"
+				},
+				"ExplosionKnockback": {
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -344,15 +392,15 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 5,
-					"Min": 5,
-					"Max": 5,
+					"Base": 6,
+					"Min": 6,
+					"Max": 6,
 					"ScaledBy": "None"
 				},
 				"Damage": {
-					"Base": 70,
-					"Min": 40,
-					"Max": 100,
+					"Base": 80,
+					"Min": 45,
+					"Max": 115,
 					"ScaledBy": "Power"
 				},
 				"BuildUp": {
@@ -408,6 +456,12 @@
 					"Min": 0,
 					"Max": 0,
 					"ScaledBy": "None"
+				},
+				"FigureGlow": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -442,21 +496,21 @@
 					"ScaledBy": "Power"
 				},
 				"DamagePerSecond": {
-					"Base": 25,
-					"Min": 15,
-					"Max": 35,
+					"Base": 35,
+					"Min": 20,
+					"Max": 50,
 					"ScaledBy": "Power"
 				},
 				"BuildUp": {
-					"Base": 8,
-					"Min": 8,
-					"Max": 8,
+					"Base": 12,
+					"Min": 12,
+					"Max": 12,
 					"ScaledBy": "None"
 				},
 				"Range": {
-					"Base": 2000,
-					"Min": 1200,
-					"Max": 2800,
+					"Base": 2700,
+					"Min": 1800,
+					"Max": 3600,
 					"ScaledBy": "Reach"
 				},
 				"Radius": {
@@ -466,9 +520,9 @@
 					"ScaledBy": "Reach"
 				},
 				"Speed": {
-					"Base": 400,
-					"Min": 400,
-					"Max": 400,
+					"Base": 300,
+					"Min": 300,
+					"Max": 300,
 					"ScaledBy": "None"
 				},
 				"TickInterval": {
@@ -511,9 +565,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 6,
-					"Min": 6,
-					"Max": 6,
+					"Base": 16,
+					"Min": 16,
+					"Max": 16,
 					"ScaledBy": "None"
 				},
 				"Duration": {
@@ -581,6 +635,18 @@
 					"Min": 0,
 					"Max": 0,
 					"ScaledBy": "None"
+				},
+				"HealthRegen": {
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
+					"ScaledBy": "None"
+				},
+				"TouchMargin": {
+					"Base": 15,
+					"Min": 15,
+					"Max": 15,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -598,27 +664,27 @@
 			"UnlockGroup": "Ice",
 			"Params": {
 				"ManaCost": {
-					"Base": 15,
-					"Min": 15,
-					"Max": 15,
+					"Base": 20,
+					"Min": 20,
+					"Max": 20,
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 8,
-					"Min": 8,
-					"Max": 8,
+					"Base": 24,
+					"Min": 24,
+					"Max": 24,
 					"ScaledBy": "None"
 				},
 				"Duration": {
-					"Base": 20,
-					"Min": 12,
-					"Max": 30,
+					"Base": 12,
+					"Min": 8,
+					"Max": 16,
 					"ScaledBy": "Power"
 				},
 				"Health": {
-					"Base": 150,
-					"Min": 80,
-					"Max": 220,
+					"Base": 80,
+					"Min": 40,
+					"Max": 120,
 					"ScaledBy": "Power"
 				},
 				"BlockFraction": {
@@ -631,6 +697,12 @@
 					"Base": 0.6,
 					"Min": 0.6,
 					"Max": 0.6,
+					"ScaledBy": "None"
+				},
+				"BlockArcDegrees": {
+					"Base": 180,
+					"Min": 180,
+					"Max": 180,
 					"ScaledBy": "None"
 				}
 			},
@@ -654,9 +726,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 8,
-					"Min": 8,
-					"Max": 8,
+					"Base": 12,
+					"Min": 12,
+					"Max": 12,
 					"ScaledBy": "None"
 				},
 				"Duration": {
@@ -673,9 +745,9 @@
 					"Cap": 1.6
 				},
 				"EffectDuration": {
-					"Base": 1,
-					"Min": 1,
-					"Max": 1,
+					"Base": 0.25,
+					"Min": 0.25,
+					"Max": 0.25,
 					"ScaledBy": "None"
 				},
 				"BuildUp": {
@@ -712,6 +784,12 @@
 					"Base": 0,
 					"Min": 0,
 					"Max": 0,
+					"ScaledBy": "None"
+				},
+				"FigureGlow": {
+					"Base": 1,
+					"Min": 1,
+					"Max": 1,
 					"ScaledBy": "None"
 				}
 			},
@@ -831,9 +909,9 @@
 					"ScaledBy": "None"
 				},
 				"Cooldown": {
-					"Base": 15,
-					"Min": 15,
-					"Max": 15,
+					"Base": 18,
+					"Min": 18,
+					"Max": 18,
 					"ScaledBy": "None"
 				},
 				"Duration": {

@@ -35,9 +35,6 @@ namespace GBEnemyCharacterLocal
 	// Pure layout / technical constants (not gameplay tuning).
 	constexpr float GroundProbeDepth = 1000.f;     // cm below the requested spawn point searched for a floor
 	constexpr float SpawnLift = 2.f;               // cm above the floor, so the capsule does not start inside it
-	constexpr float ChestHeightFraction = 0.5f;    // of the capsule half height, above the center
-	constexpr float SteerSweepRadiusScale = 0.9f;  // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
-	constexpr float StuckSpeedFraction = 0.25f;    // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
 	constexpr int32 MaxSteerCandidatesPerSide = 12;
 	constexpr float TelegraphSpriteScale = 1.12f;
 	constexpr float TelegraphTintBlend = 0.55f;    // towards white
@@ -439,7 +436,7 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
 			else
 			{
 				// Melee stops a bit inside its reach; ranged keeps closing in until it has line of sight.
-				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * 0.5f;
+				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f);
 				const EPathFollowingRequestResult::Type Result = AI->MoveToActor(Goal, Acceptance, true, true, false);
 				bPathing = Result == EPathFollowingRequestResult::RequestSuccessful;
 				if (Result == EPathFollowingRequestResult::Failed)
@@ -523,7 +520,7 @@ bool AGBEnemyCharacter::IsDirectionBlocked(const FVector& Direction, float Dista
 
 	// Bottom lifted by the step height (the character walks over anything lower), top unchanged, a bit thinner.
 	const float StepHeight = FMath::Max(Move->MaxStepHeight, 0.f);
-	const float Radius = Capsule->GetScaledCapsuleRadius() * GBEnemyCharacterLocal::SteerSweepRadiusScale;
+	const float Radius = Capsule->GetScaledCapsuleRadius() * GetGameValue(GBEnemyKey::SteerSweepRadiusScale, 0.9f);
 	const float HalfHeight = FMath::Max(Capsule->GetScaledCapsuleHalfHeight() - StepHeight * 0.5f, Radius);
 	const FVector Start = GetActorLocation() + FVector::UpVector * (StepHeight * 0.5f);
 
@@ -612,7 +609,7 @@ void AGBEnemyCharacter::UpdateStuck(float DeltaSeconds)
 
 	const float Moved = FVector::Dist2D(GetActorLocation(), StuckOrigin);
 	const float Speed = GetCharacterMovement() ? GetCharacterMovement()->MaxWalkSpeed : 0.f;
-	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GBEnemyCharacterLocal::StuckSpeedFraction);
+	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GetGameValue(GBEnemyKey::StuckSpeedFraction, 0.25f));
 	ResetStuck();
 	if (Moved >= Threshold)
 	{
@@ -696,7 +693,7 @@ void AGBEnemyCharacter::FaceTowards(const AActor* Goal)
 
 FVector AGBEnemyCharacter::GetChestLocation() const
 {
-	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GBEnemyCharacterLocal::ChestHeightFraction);
+	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GetGameValue(GBEnemyKey::AimHeightFraction, 0.5f));
 }
 
 bool AGBEnemyCharacter::HasLineOfSight(const AActor* Goal) const
@@ -770,7 +767,9 @@ void AGBEnemyCharacter::PerformAttack()
 		Config.Damage.Causer = nullptr;
 		Config.Speed = Stats->GetStat(GBStat::ProjectileSpeed, Config.Speed);
 		Config.Radius = Stats->GetStat(GBStat::ProjectileRadius, Config.Radius);
-		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * 1.5f;
+		Config.GravityScale = Stats->GetStat(GBStat::ProjectileGravity, 0.f);
+		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
+		Config.MaxLifetime = GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
 		Config.bPixelArt = Def->bPixelArt;
 		if (Def->bPixelArt)
 		{

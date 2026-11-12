@@ -17,7 +17,7 @@
 			"DisplayName": "Ignited",
 			"Duration": 4.0,
 			"TickInterval": 0.5,
-			"HealthPerTick": -6.0,
+			"HealthPerTick": -5.0,
 			"Element": "Fire",
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,

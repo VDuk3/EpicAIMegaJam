@@ -9,7 +9,9 @@
 		"QTE.GestureMinLength": 120,
 		"QTE.GestureIdleSubmitTime": 0.25,
 		"QTE.LineSubmitLengthMult": 2.5,
-		"QTE.StickGestureScale": 600
+		"QTE.StickGestureScale": 600,
+		"QTE.FailManaRefund": 0,
+		"QTE.FailCooldownMult": 1
 	},
 	"Gestures": [
 		"LineRight",

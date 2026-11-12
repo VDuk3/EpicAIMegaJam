@@ -22,6 +22,8 @@ class UGBAttributeComponent;
 namespace GBShieldParam
 {
 	inline const FName RaisedMoveSpeedMult(TEXT("RaisedMoveSpeedMult"));
+	/** Param "BlockArcDegrees": frontal arc (degrees) the raised shield blocks; 180 = the front hemisphere, 360 = every side. */
+	inline const FName BlockArcDegrees(TEXT("BlockArcDegrees"));
 }
 
 UCLASS()
@@ -50,7 +52,7 @@ public:
 	static const FName RaisedSource;
 
 	/** Pure rule, also usable by tests: how much of a hit the shield removes. HitDirection travels from the source to the caster. */
-	static float ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float BlockFraction, float ShieldHealthLeft);
+	static float ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float BlockFraction, float ShieldHealthLeft, float BlockArcDegrees = 180.f);
 
 protected:
 	virtual void StartSpell() override;
@@ -63,6 +65,7 @@ protected:
 	float ShieldHealth = 0.f;
 	float MaxShieldHealth = 0.f;
 	float BlockFraction = 0.f;
+	float BlockArcDegrees = 180.f;
 	float RaisedMoveSpeedMult = 1.f;
 	/** World time (dilated, like the end timer) when the shield expires. */
 	double ExpireTime = 0.0;

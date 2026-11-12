@@ -1,14 +1,9 @@
 #include "Spells/GBSpell_Projectile.h"
 #include "Combat/GBProjectile.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "Engine/World.h"
 #include "Player/GBPlayerCharacter.h"
-
-namespace
-{
-	// Extra seconds of life on top of Range / Speed, so a projectile is never removed before reaching its range.
-	constexpr float ProjectileSpellLifetimeMargin = 1.f;
-}
 
 void AGBSpell_Projectile::StartSpell()
 {
@@ -35,9 +30,13 @@ void AGBSpell_Projectile::StartSpell()
 	Config.SpriteId = GetSpriteId();
 	Config.Color = GetSpellColor();
 	Config.VisualScale = FMath::Max(0.01f, SpellCast.Get(GBSpellParam::VisualScale, 1.f));
-	if (Config.MaxRange > 0.f)
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	Config.MaxLifetime = Data ? Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime) : Config.MaxLifetime;
+	if (Config.MaxRange > 0.f && Config.Speed > 0.f)
 	{
-		Config.MaxLifetime = FMath::Max(Config.MaxLifetime, Config.MaxRange / Config.Speed + ProjectileSpellLifetimeMargin);
+		// Extra seconds of life on top of Range / Speed, so the projectile is never removed before reaching its range.
+		const float Margin = Data ? Data->GetGameValue(GBProjectileKey::SpellProjectileLifetimeMargin, 1.f) : 1.f;
+		Config.MaxLifetime = FMath::Max(Config.MaxLifetime, Config.MaxRange / Config.Speed + Margin);
 	}
 
 	// Aim at what the crosshair is on, then fire from the hand so the shot does not start inside the camera.

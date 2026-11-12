@@ -16,6 +16,10 @@ namespace GBGameValue
 	inline const FName RespawnDelay(TEXT("RespawnDelay"));   // seconds between death and the checkpoint restore
 	/** cm, world height below which the player dies (falling out of the map). Relative to the floor of the code-built arena. */
 	inline const FName KillZ(TEXT("KillZ"));
+	/** Respawn (checkpoint) restore: fractions of max health / mana, and whether guns are refilled. */
+	inline const FName RespawnHealthFraction(TEXT("RespawnHealthFraction"));
+	inline const FName RespawnManaFraction(TEXT("RespawnManaFraction"));
+	inline const FName RespawnRefillAmmo(TEXT("RespawnRefillAmmo"));
 }
 
 /** Exists so the project has its own game instance class to grow into; the state lives in the subsystems. */

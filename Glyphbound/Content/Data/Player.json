@@ -1,8 +1,8 @@
 {
 	"Stats": {
 		"MaxHealth": 100,
-		"HealthRegen": 2,
-		"HealthRegenDelay": 5,
+		"HealthRegen": 3,
+		"HealthRegenDelay": 6,
 		"MaxMana": 100,
 		"ManaRegen": 6,
 		"ManaRegenDelay": 1.5,
@@ -11,7 +11,7 @@
 		"MaxJumps": 1,
 		"AirControl": 0,
 		"JumpTakeoffMinSpeedMult": 0.6,
-		"AirJumpMinSpeedMult": 1.0,
+		"AirJumpMinSpeedMult": 1,
 		"GravityScale": 1.6,
 		"DashDistance": 700,
 		"DashDuration": 0.18,
@@ -21,7 +21,16 @@
 		"DamageDealt": 1,
 		"CapsuleRadius": 38,
 		"CapsuleHalfHeight": 90,
-		"EyeHeight": 70
+		"EyeHeight": 70,
+		"AccelerationPerSpeed": 10,
+		"BrakingPerSpeed": 8,
+		"GroundFriction": 8,
+		"InteractFacingMinDot": 0.3,
+		"LookSensitivity": 2.5,
+		"StickYawRate": 200,
+		"StickPitchRate": 140,
+		"PitchLimit": 89,
+		"DashExitSpeedMult": 1
 	},
 	"StartingWeapons": [
 		"Staff_Apprentice"

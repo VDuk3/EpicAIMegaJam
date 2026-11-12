@@ -502,13 +502,31 @@ void UGBSpellbookComponent::FinishCast(FName SpellId, const FGBQTEResult& Result
 	}
 
 	UGBStatsComponent* Stats = GetOwnerStats();
-	StartCooldown(SpellId, GBSpell::ResolveParam(*Definition, GBStat::Cooldown, Result.Power, Result.Reach, Result.bUsedQTE, Stats, 0.f));
+	const float FullCooldown = GBSpell::ResolveParam(*Definition, GBStat::Cooldown, Result.Power, Result.Reach, Result.bUsedQTE, Stats, 0.f);
 
 	if (!Result.bSuccess)
 	{
+		// Fizzle: every QTE step was missed. Part of the spent mana is refunded and the cooldown is scaled (QTE.json).
+		float RefundFraction = 0.f;
+		float CooldownMult = 1.f;
+		if (UGBQTEComponent* QTE = GetOwnerQTE())
+		{
+			RefundFraction = FMath::Clamp(QTE->GetFailManaRefund(), 0.f, 1.f);
+			CooldownMult = FMath::Max(0.f, QTE->GetFailCooldownMult());
+		}
+		StartCooldown(SpellId, FullCooldown * CooldownMult);
+		if (RefundFraction > 0.f)
+		{
+			if (UGBAttributeComponent* Attributes = GetOwnerAttributes())
+			{
+				Attributes->RestoreMana(GetManaCost(SpellId) * RefundFraction);
+			}
+		}
 		OnCastFailed.Broadcast(SpellId, EGBCastFailReason::QTEFailed);
 		return;
 	}
+
+	StartCooldown(SpellId, FullCooldown);
 
 	FGBSpellCast SpellCast = GBSpell::ResolveCast(*Definition, Result.Power, Result.Reach, Result.bUsedQTE, Stats);
 	AActor* Owner = GetOwner();

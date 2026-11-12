@@ -36,6 +36,8 @@ namespace GBSpellParam
 	inline const FName WallTileSize(TEXT("TileSize"));
 	/** Param "Glow". */
 	inline const FName WallGlow(TEXT("Glow"));
+	/** Param "TouchMargin": cm the damage box extends past the wall, so pawns pressed against it still count as touching. */
+	inline const FName TouchMargin(TEXT("TouchMargin"));
 }
 
 namespace GBSpellString

@@ -39,14 +39,19 @@
 			"bQuickUse": true,
 			"Element": "Lightning",
 			"Stats": {
-				"Damage": 70,
+				"Damage": 80,
 				"BuildUp": 60,
 				"Radius": 450,
 				"Speed": 1800,
 				"FuseTime": 1.6,
 				"ProjectileGravity": 1,
 				"ProjectileRadius": 12,
-				"ThrowPitch": 8
+				"ThrowPitch": 8,
+				"Range": 5000,
+				"ExplosionFalloff": 1,
+				"ExplosionKnockback": 0,
+				"Bounciness": 0.6,
+				"Friction": 0.2
 			},
 			"Strings": { "Sprite": "grenade_electric", "PickupLook": "3D" }
 		},

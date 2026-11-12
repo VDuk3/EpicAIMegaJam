@@ -33,6 +33,15 @@ namespace GBStat
 	inline const FName CapsuleRadius(TEXT("CapsuleRadius"));
 	inline const FName CapsuleHalfHeight(TEXT("CapsuleHalfHeight"));
 	inline const FName EyeHeight(TEXT("EyeHeight"));
+	inline const FName AccelerationPerSpeed(TEXT("AccelerationPerSpeed")); // walk-speed multiples per second (snappy movement)
+	inline const FName BrakingPerSpeed(TEXT("BrakingPerSpeed"));
+	inline const FName GroundFriction(TEXT("GroundFriction"));
+	inline const FName InteractFacingMinDot(TEXT("InteractFacingMinDot")); // interactables must be this much in front of the view
+	inline const FName LookSensitivity(TEXT("LookSensitivity"));           // mouse degrees per input unit
+	inline const FName StickYawRate(TEXT("StickYawRate"));                // gamepad look degrees per second at full tilt
+	inline const FName StickPitchRate(TEXT("StickPitchRate"));
+	inline const FName PitchLimit(TEXT("PitchLimit"));                    // max look pitch, degrees
+	inline const FName DashExitSpeedMult(TEXT("DashExitSpeedMult"));       // speed kept after a dash, as a fraction of walk speed
 	inline const FName PrecisionRecovery(TEXT("PrecisionRecovery")); // owned rank of the weapon perk (skill modifier only, base 0)
 
 	// ---- Enemy stats (Enemies.json "Stats") ----

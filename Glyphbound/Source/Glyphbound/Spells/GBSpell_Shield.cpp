@@ -12,16 +12,27 @@ AGBSpell_Shield::AGBSpell_Shield()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft)
+float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft, float BlockArcDegrees)
 {
 	if (Amount <= 0.f || ShieldHealthLeft <= 0.f || HitDirection.IsNearlyZero() || AimDirection.IsNearlyZero())
 	{
 		return 0.f;
 	}
-	// A hit from the front travels against the aim (source within 90 degrees of the aim direction).
-	if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= 0.f)
+	const float ClampedArc = FMath::Clamp(BlockArcDegrees, 0.f, 360.f);
+	if (ClampedArc <= 0.f)
 	{
 		return 0.f;
+	}
+	if (ClampedArc < 360.f)
+	{
+		// A hit blocks when the direction to the attacker is within half the arc of the aim: the dot of the
+		// hit travel direction (source to caster) with the aim is then below minus the cosine of half the arc.
+		// cos(half of 180) is snapped to 0, so 180 behaves exactly like the old "Dot >= 0" front rule.
+		const float CosHalf = FMath::IsNearlyEqual(ClampedArc, 180.f) ? 0.f : FMath::Cos(FMath::DegreesToRadians(ClampedArc * 0.5f));
+		if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= -CosHalf)
+		{
+			return 0.f;
+		}
 	}
 	return FMath::Min(Amount * FMath::Clamp(InBlockFraction, 0.f, 1.f), ShieldHealthLeft);
 }
@@ -30,6 +41,7 @@ void AGBSpell_Shield::StartSpell()
 {
 	const float Duration = FMath::Max(0.f, ReadParam(GBStat::Duration, 20.f));
 	BlockFraction = FMath::Clamp(ReadParam(GBStat::BlockFraction, 0.75f), 0.f, 1.f);
+	BlockArcDegrees = FMath::Clamp(ReadParam(GBShieldParam::BlockArcDegrees, 180.f), 0.f, 360.f);
 	MaxShieldHealth = FMath::Max(1.f, ReadParam(GBStat::Health, 150.f));
 	ShieldHealth = MaxShieldHealth;
 	RaisedMoveSpeedMult = FMath::Max(0.f, ReadParam(GBShieldParam::RaisedMoveSpeedMult, 0.6f));
@@ -148,7 +160,7 @@ void AGBSpell_Shield::HandleIncomingDamage(FGBDamageInfo& Info)
 	FVector AimDir;
 	GetCasterAim(AimOrigin, AimDir);
 
-	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth);
+	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth, BlockArcDegrees);
 	if (Blocked <= 0.f)
 	{
 		return;

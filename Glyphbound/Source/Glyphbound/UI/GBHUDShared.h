@@ -16,6 +16,7 @@ namespace GBHudKey
 	inline const FName DamageNumberFadeStart(TEXT("DamageNumberFadeStart"));               // 0..1 of the life when the fade begins
 	inline const FName DamageNumberMaxAlive(TEXT("DamageNumberMaxAlive"));
 	inline const FName DamageNumberMergeWindow(TEXT("DamageNumberMergeWindow"));           // seconds: hits on one target merge
+	inline const FName TestSkillPointAmount(TEXT("TestSkillPointAmount"));                 // skill points given by the test button in the skill menu
 }
 
 namespace GBHudText

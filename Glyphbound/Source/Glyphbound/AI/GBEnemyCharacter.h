@@ -45,6 +45,11 @@ namespace GBEnemyKey
 	inline const FName StuckTime(TEXT("EnemyStuckTime"));                      // s window of the stuck check
 	inline const FName StuckDistance(TEXT("EnemyStuckDistance"));              // cm: moved less than this in StuckTime while moving = stuck
 	inline const FName GoAroundTime(TEXT("EnemyGoAroundTime"));                // s committed to one side after being stuck
+	inline const FName MeleeAcceptanceFraction(TEXT("EnemyMeleeAcceptanceFraction")); // melee navmesh stops within AttackRange * this
+	inline const FName ProjectileRangeMult(TEXT("EnemyProjectileRangeMult"));         // ranged shots fly AggroRange * this
+	inline const FName AimHeightFraction(TEXT("EnemyAimHeightFraction"));             // of the capsule half height, above the center, where shots start
+	inline const FName StuckSpeedFraction(TEXT("EnemyStuckSpeedFraction"));           // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
+	inline const FName SteerSweepRadiusScale(TEXT("EnemySteerSweepRadiusScale"));      // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
 	// Enemies.json "Strings"
 	inline const FName ProjectileColor(TEXT("ProjectileColor"));               // "#RRGGBB", 3D projectiles of ranged enemies
 }

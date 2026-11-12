@@ -22,7 +22,6 @@ namespace GBPickupLocal
 	const FVector BookSpriteSize(40.f, 40.f, 45.f);
 	const FLinearColor DefaultGunColor(0.08f, 0.08f, 0.1f);
 	const FLinearColor DefaultItemColor(0.6f, 0.6f, 0.6f);
-	constexpr float ScatterRadius = 90.f;
 	constexpr float GroundTraceUp = 100.f;
 	constexpr float GroundTraceDown = 2000.f;
 	const FName BookSpriteId(TEXT("book"));
@@ -84,6 +83,8 @@ AGBPickup* AGBPickup::SpawnPickup(UWorld* World, const FGBDropDefinition& InDrop
 
 int32 AGBPickup::SpawnDrops(UWorld* World, TConstArrayView<FGBDropDefinition> Drops, const FVector& Location)
 {
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
+	const float ScatterRadius = Data ? Data->GetGameValue(GBPickupKey::DropScatterRadius, 90.f) : 90.f;
 	int32 Spawned = 0;
 	for (const FGBDropDefinition& Drop : Drops)
 	{
@@ -91,7 +92,7 @@ int32 AGBPickup::SpawnDrops(UWorld* World, TConstArrayView<FGBDropDefinition> Dr
 		{
 			continue;
 		}
-		const FVector2D Offset = FMath::RandPointInCircle(GBPickupLocal::ScatterRadius);
+		const FVector2D Offset = FMath::RandPointInCircle(ScatterRadius);
 		if (SpawnPickup(World, Drop, Location + FVector(Offset.X, Offset.Y, 0.f)))
 		{
 			++Spawned;
@@ -189,10 +190,12 @@ bool AGBPickup::GiveDrop(AGBPlayerCharacter* Player, FGBDropDefinition& InOutDro
 		const bool bGun = Def->Slot == EGBHeldSlot::Gun;
 		if (Equipment->OwnsWeapon(InOutDrop.WeaponId))
 		{
-			// A copy of a gun already owned is worth one spare magazine if that gun is in the slot; otherwise it is just used up.
+			// A copy of a gun already owned is worth spare magazines if that gun is in the slot; otherwise it is just used up.
 			if (bGun && Equipment->IsWeaponEquipped(InOutDrop.WeaponId))
 			{
-				Equipment->AddSpareMagazines(1);
+				const UGBDataSubsystem* GameData = UGBDataSubsystem::Get(Player);
+				const int32 Magazines = GameData ? FMath::Max(0, FMath::RoundToInt(GameData->GetGameValue(GBPickupKey::DuplicateGunMagazines, 1.f))) : 1;
+				Equipment->AddSpareMagazines(Magazines);
 			}
 		}
 		else

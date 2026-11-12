@@ -37,19 +37,9 @@ namespace
 {
 	// Feel and visual constants (not gameplay balance). Mouse2D values come scaled by the engine's
 	// default axis sensitivity (0.07 per pixel, BaseInput.ini), hence the conversions below.
-	constexpr float MouseDegreesPerUnit = 2.5f;
 	constexpr float MouseUnitsPerPixel = 0.07f;
-	constexpr float StickYawDegreesPerSecond = 200.f;
-	constexpr float StickPitchDegreesPerSecond = 140.f;
-	constexpr float MaxLookPitch = 89.f;
 	/** Ignore axis noise on wheel / D-pad style 1D actions. */
 	constexpr float AxisStepThreshold = 0.1f;
-	/** Interactables must be roughly in front of the view. */
-	constexpr float InteractFacingMinDot = 0.3f;
-	/** Snappy shooter movement: acceleration and braking as multiples of the walk speed (per second). */
-	constexpr float AccelerationPerSpeed = 10.f;
-	constexpr float BrakingPerSpeed = 8.f;
-	constexpr float GroundFrictionValue = 8.f;
 	/** Held item anchor and muzzle offsets from the camera (forward, right, up), cm. */
 	const FVector HeldItemOffset(30.f, 15.f, -15.f);
 	const FVector MuzzleOffset(40.f, 15.f, -12.f);
@@ -90,7 +80,7 @@ AGBPlayerCharacter::AGBPlayerCharacter()
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->bOrientRotationToMovement = false;
-		MoveComp->GroundFriction = GroundFrictionValue;
+		// GroundFriction comes from Player.json (UpdateWalkSpeed on BeginPlay); until then the engine default (8.0) applies.
 	}
 }
 
@@ -284,9 +274,9 @@ void AGBPlayerCharacter::UpdateWalkSpeed()
 	}
 	const float Speed = FMath::Max(0.f, ReadStat(GBStat::MoveSpeed, 750.f) * MoveSpeedScale);
 	MoveComp->MaxWalkSpeed = Speed;
-	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * AccelerationPerSpeed);
-	MoveComp->BrakingDecelerationWalking = Speed * BrakingPerSpeed;
-	MoveComp->GroundFriction = GroundFrictionValue;
+	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * ReadStat(GBStat::AccelerationPerSpeed, 10.f));
+	MoveComp->BrakingDecelerationWalking = Speed * ReadStat(GBStat::BrakingPerSpeed, 8.f);
+	MoveComp->GroundFriction = ReadStat(GBStat::GroundFriction, 8.f);
 }
 
 void AGBPlayerCharacter::SetMoveSpeedScale(float Scale)
@@ -359,7 +349,8 @@ void AGBPlayerCharacter::AddLookDelta(float YawDegrees, float PitchDegrees)
 	}
 	FRotator Rotation = Controller->GetControlRotation();
 	Rotation.Yaw = FRotator::NormalizeAxis(Rotation.Yaw + YawDegrees);
-	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -static_cast<double>(MaxLookPitch), static_cast<double>(MaxLookPitch));
+	const double PitchLimit = ReadStat(GBStat::PitchLimit, 89.f);
+	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -PitchLimit, PitchLimit);
 	Rotation.Roll = 0.f;
 	Controller->SetControlRotation(Rotation);
 }
@@ -386,7 +377,7 @@ void AGBPlayerCharacter::EndDash()
 		const int32 SavedJumpCount = JumpCurrentCount;
 		MoveComp->SetMovementMode(MOVE_Falling);
 		JumpCurrentCount = SavedJumpCount;
-		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed;
+		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed * ReadStat(GBStat::DashExitSpeedMult, 1.f);
 	}
 }
 
@@ -532,7 +523,7 @@ void AGBPlayerCharacter::UpdateFocusedInteractable()
 	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Range), QueryParams);
 
 	AActor* Best = nullptr;
-	float BestDot = InteractFacingMinDot;
+	float BestDot = ReadStat(GBStat::InteractFacingMinDot, 0.3f);
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		AActor* Actor = Overlap.GetActor();
@@ -573,10 +564,13 @@ bool AGBPlayerCharacter::IsQTEActive() const
 	return QTE && QTE->IsActive();
 }
 
-void AGBPlayerCharacter::RestoreAll()
+void AGBPlayerCharacter::RestoreAll(float HealthFraction, float ManaFraction, bool bRefillAmmo, bool bOnlyRaise)
 {
-	Attributes->RestoreAll();
-	Equipment->RefillAllAmmo();
+	Attributes->RestoreAll(HealthFraction, ManaFraction, bOnlyRaise);
+	if (bRefillAmmo)
+	{
+		Equipment->RefillAllAmmo();
+	}
 }
 
 void AGBPlayerCharacter::ReleaseHeldInputs()
@@ -837,7 +831,12 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
 	{
 		StatusEffects->RemoveAllEffects();
 	}
-	RestoreAll();
+	// Checkpoint respawn always starts from the restore fractions (health and mana are set, not raised).
+	const UGBDataSubsystem* RespawnData = UGBDataSubsystem::Get(this);
+	const float RespawnHealth = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnHealthFraction, 1.f) : 1.f;
+	const float RespawnMana = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnManaFraction, 1.f) : 1.f;
+	const bool bRespawnRefill = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnRefillAmmo, 1.f) > 0.5f : true;
+	RestoreAll(RespawnHealth, RespawnMana, bRespawnRefill, /*bOnlyRaise*/ false);
 
 	UnfreezeMovement();
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
@@ -976,7 +975,7 @@ void AGBPlayerCharacter::InputLook(const FInputActionValue& Value)
 		QTE->HandleGestureInput(FVector2D(Delta.X, -Delta.Y) / MouseUnitsPerPixel);
 		return;
 	}
-	AddLookDelta(static_cast<float>(Delta.X) * MouseDegreesPerUnit, static_cast<float>(Delta.Y) * MouseDegreesPerUnit);
+	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f), static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f));
 }
 
 void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
@@ -997,7 +996,7 @@ void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
 	const UWorld* World = GetWorld();
 	// Real time: the QTE runs in real time while the world is slowed.
 	const float RealDelta = World ? World->DeltaRealTimeSeconds : 0.f;
-	AddLookDelta(static_cast<float>(Stick.X) * StickYawDegreesPerSecond * RealDelta, static_cast<float>(Stick.Y) * StickPitchDegreesPerSecond * RealDelta);
+	AddLookDelta(static_cast<float>(Stick.X) * ReadStat(GBStat::StickYawRate, 200.f) * RealDelta, static_cast<float>(Stick.Y) * ReadStat(GBStat::StickPitchRate, 140.f) * RealDelta);
 }
 
 void AGBPlayerCharacter::InputFace(EGBQTEKey Key)

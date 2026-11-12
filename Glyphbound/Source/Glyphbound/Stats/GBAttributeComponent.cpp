@@ -181,13 +181,18 @@ bool UGBAttributeComponent::SpendMana(float Amount)
 	return true;
 }
 
-void UGBAttributeComponent::RestoreAll()
+void UGBAttributeComponent::RestoreAll(float HealthFraction, float ManaFraction, bool bOnlyRaise)
 {
 	bDead = false;
-	Health = GetMaxHealth();
-	Mana = GetMaxMana();
-	OnHealthChanged.Broadcast(Health, GetMaxHealth());
-	OnManaChanged.Broadcast(Mana, GetMaxMana());
+	const float MaxHealth = GetMaxHealth();
+	const float MaxMana = GetMaxMana();
+	const float WantHealth = FMath::Clamp(HealthFraction, 0.f, 1.f) * MaxHealth;
+	const float WantMana = FMath::Clamp(ManaFraction, 0.f, 1.f) * MaxMana;
+	// Respawn always starts from the fractions; era travel only raises towards them, never lowers.
+	Health = bOnlyRaise ? FMath::Max(Health, WantHealth) : WantHealth;
+	Mana = bOnlyRaise ? FMath::Max(Mana, WantMana) : WantMana;
+	OnHealthChanged.Broadcast(Health, MaxHealth);
+	OnManaChanged.Broadcast(Mana, MaxMana);
 }
 
 void UGBAttributeComponent::SetHealthAndMana(float NewHealth, float NewMana)

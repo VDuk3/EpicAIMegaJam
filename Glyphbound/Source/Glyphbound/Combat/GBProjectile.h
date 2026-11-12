@@ -12,6 +12,14 @@ class UBillboardComponent;
 class UStaticMeshComponent;
 class UPrimitiveComponent;
 
+/** Keys of Game.json "Values" read when a projectile is launched. */
+namespace GBProjectileKey
+{
+	inline const FName KnockbackMinLift(TEXT("KnockbackMinLift")); // smallest upward part of the blast push direction
+	inline const FName ProjectileMaxLifetime(TEXT("ProjectileMaxLifetime")); // seconds before a projectile removes itself
+	inline const FName SpellProjectileLifetimeMargin(TEXT("SpellProjectileLifetimeMargin")); // extra seconds on top of Range / Speed, so a spell bolt is never removed before reaching its range
+}
+
 /** Everything a projectile needs; filled from weapon stats, spell params or item stats by whoever fires it. */
 USTRUCT(BlueprintType)
 struct GLYPHBOUND_API FGBProjectileConfig
@@ -41,6 +49,10 @@ struct GLYPHBOUND_API FGBProjectileConfig
 	UPROPERTY() float ExplosionEffectTime = 0.35f;
 	/** > 0: it does not explode on contact with the world; it bounces and explodes after this many seconds (grenades). */
 	UPROPERTY() float FuseTime = 0.f;
+	/** Bounce retention (UProjectileMovementComponent::Bounciness). Only used when FuseTime > 0. */
+	UPROPERTY() float Bounciness = 0.6f;
+	/** Surface friction when bouncing (UProjectileMovementComponent::Friction). Only used when FuseTime > 0. */
+	UPROPERTY() float Friction = 0.2f;
 	/** Keeps going through actors it damages (each actor once). */
 	UPROPERTY() bool bPierce = false;
 

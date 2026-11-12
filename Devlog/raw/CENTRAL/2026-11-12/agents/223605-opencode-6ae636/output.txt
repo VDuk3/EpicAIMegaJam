@@ -1,0 +1,2755 @@
+[0m
+> build · muse-spark-1.3-contributor
+Moving the last hardcoded numbers into data — I'll audit every literal for a live data read.
+[0m→ [0mRead Glyphbound 
+[0m→ [0mRead Prompts/implementer_rules.md 
+[0m→ [0mRead Design/ARCHITECTURE.md 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGlob "*.json" [90min Glyphbound/Content/Data · 11 matches[0m
+[0m✱ [0mGlob "**/*.*" [90min Glyphbound/Source/Glyphbound · 100 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+> build · muse-spark-1.3-contributor
+I've mapped the data system — now I'll examine each hardcoded site.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBPickup.cpp 
+> build · muse-spark-1.3-contributor
+Found the main gameplay sites — now I'll dig into the remaining components and data files.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Game.json 
+[0m→ [0mRead Glyphbound/Content/Data/Player.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp 
+[0m→ [0mRead Glyphbound/Content/Data/QTE.json 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Enemies.json 
+[0m→ [0mRead Glyphbound/Content/Data/Items.json 
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=120, offset=780][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h 
+[0m✱ [0mGrep "GBGameValue" [90min Glyphbound/Source/Glyphbound/Core · 3 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBGameMode.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp 
+[0m✱ [0mGrep "RefillAllAmmo|AddSpareMagazines" [90min Glyphbound/Source/Glyphbound/Weapons · 8 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.cpp [90m[limit=60, offset=450][0m
+[0m✱ [0mGrep "GetGameValue\(GB" [90min Glyphbound/Source/Glyphbound · 46 matches[0m
+[0m✱ [0mGrep "FrostSlowMax|KnockbackMinLift|DropScatterRadius|DuplicateGun|TestSkill|Respawn|EraTravel|FrostSlow|ElementalTick" [90min Glyphbound/Source/Glyphbound/Combat · 9 matches[0m
+> build · muse-spark-1.3-contributor
+I've mapped most of the sites — now I'll check restore flows and engine defaults.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBGameMode.cpp 
+[0m✱ [0mGrep "RestoreAll|RefillAllAmmo|LoadFromSnapshot|RespawnAt|SaveCheckpoint|RestoreCheckpoint" [90min Glyphbound/Source/Glyphbound · 52 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBPickup.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h [90m[limit=10, offset=1][0m
+[0m✱ [0mGrep "DashExitSpeedMult|389|MaxLookPitch|MouseDegrees|StickYaw|UpdateWalkSpeed|EndDash" [90min Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp · 15 matches[0m
+[0m$ [0mgrep -rn "Bounciness\s*=\|Friction\s*=" "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Classes/GameFramework/ProjectileMovementComponent.h" | head -20; echo ---; grep -n "Bounciness\|Friction\|BounceVelocityThreshold\|bShouldBounce" "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Classes/GameFramework/ProjectileMovementComponent.h" | head -40
+---
+48:	uint8 bShouldBounce:1;
+89:	 * If false, a bounce will retain a proportion of tangential velocity equal to (1.0 - Friction), acting as a "horizontal restitution".
+92:	uint8 bBounceAngleAffectsFriction:1;
+170:	 * 1.0 = no velocity lost, 0.0 = no bounce. Ignored if bShouldBounce is false.
+173:	float Bounciness;
+179:	 * Ignored if bShouldBounce is false.
+180:	 * @see bBounceAngleAffectsFriction
+183:	float Friction;
+187:	 * Ignored if bShouldBounce is false, in which case the projectile stops simulating on the first impact.
+198:	float MinFrictionFraction;
+> build · muse-spark-1.3-contributor
+[0m$ [0mgrep -n "Bounciness\|Friction" "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Private/Components/ProjectileMovementComponent.cpp" | head -20; echo ===; sed -n '1,120p' "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Classes/GameFramework/ProjectileMovementComponent.h"
+46:	Bounciness = 0.6f;
+47:	Friction = 0.2f;
+49:	MinFrictionFraction = 0.0f;
+60:	bBounceAngleAffectsFriction = false;
+74:		// Old code used to treat Bounciness as Friction as well.
+75:		Friction = FMath::Clamp(1.f - Bounciness, 0.f, 1.f);
+428:			const FVector FrictionForce = -NewVelocity.GetSafeNormal() * FMath::Min(-ForceDotN * Friction, NewVelocity.Size());
+429:			Velocity = ConstrainDirectionToPlane(NewVelocity + FrictionForce);
+592:		const float ScaledFriction = (bBounceAngleAffectsFriction || bIsSliding) ? FMath::Clamp(-VDotNormal / TempVelocity.Size(), MinFrictionFraction, 1.f) * Friction : Friction;
+593:		TempVelocity *= FMath::Clamp(1.f - ScaledFriction, 0.f, 1.f);
+596:		TempVelocity += (ProjectedNormal * FMath::Max(Bounciness, 0.f));
+598:		// Bounciness could cause us to exceed max speed.
+===
+// Copyright Epic Games, Inc. All Rights Reserved.
+System.Management.Automation.RemoteException
+#pragma once
+System.Management.Automation.RemoteException
+#include "GameFramework/MovementComponent.h"
+#include "UObject/ObjectMacros.h"
+#include "ProjectileMovementComponent.generated.h"
+System.Management.Automation.RemoteException
+struct FHitResult;
+System.Management.Automation.RemoteException
+/**
+ * ProjectileMovementComponent updates the position of another component during its tick.
+ *
+ * Behavior such as bouncing after impacts and homing toward a target are supported.
+ *
+ * Normally the root component of the owning actor is moved, however another component may be selected (see SetUpdatedComponent()).
+ * If the updated component is simulating physics, only the initial launch parameters (when initial velocity is non-zero)
+ * will affect the projectile, and the physics sim will take over from there.
+ *
+ * @see UMovementComponent
+ */
+UCLASS(ClassGroup=Movement, meta=(BlueprintSpawnableComponent), ShowCategories=(Velocity), MinimalAPI)
+class UProjectileMovementComponent : public UMovementComponent
+{
+	GENERATED_UCLASS_BODY()
+System.Management.Automation.RemoteException
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams( FOnProjectileBounceDelegate, const FHitResult&, ImpactResult, const FVector&, ImpactVelocity );
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam( FOnProjectileStopDelegate, const FHitResult&, ImpactResult );
+System.Management.Automation.RemoteException
+	/** Initial speed of projectile. If greater than zero, this will override the initial Velocity value and instead treat Velocity as a direction. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
+	float InitialSpeed;
+System.Management.Automation.RemoteException
+	/** Limit on speed of projectile (0 means no limit). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
+	float MaxSpeed;
+System.Management.Automation.RemoteException
+	/** If true, this projectile will have its rotation updated each frame to match the direction of its velocity. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
+	uint8 bRotationFollowsVelocity:1;
+System.Management.Automation.RemoteException
+	/** If true, this projectile will have its rotation updated each frame to maintain the rotations Yaw only. (bRotationFollowsVelocity is required to be true) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile, meta = (EditCondition = "bRotationFollowsVelocity"))
+	uint8 bRotationRemainsVertical:1;
+System.Management.Automation.RemoteException
+	/** If true, simple bounces will be simulated. Set this to false to stop simulating on contact. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileBounces)
+	uint8 bShouldBounce:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, the initial Velocity is interpreted as being in local space upon startup.
+	 * @see SetVelocityInLocalSpace()
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
+	uint8 bInitialVelocityInLocalSpace:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, forces sub-stepping to break up movement into discrete smaller steps to improve accuracy of the trajectory.
+	 * Objects that move in a straight line typically do *not* need to set this, as movement always uses continuous collision detection (sweeps) so collision is not missed.
+	 * Sub-stepping is automatically enabled when under the effects of gravity or when homing towards a target.
+	 * @see MaxSimulationTimeStep, MaxSimulationIterations
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileSimulation)
+	uint8 bForceSubStepping:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, does normal simulation ticking and update. If false, simulation is halted, but component will still tick (allowing interpolation to run).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileSimulation)
+	uint8 bSimulationEnabled:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, movement uses swept collision checks.
+	 * If false, collision effectively teleports to the destination. Note that when this is disabled, movement will never generate blocking collision hits (though overlaps will be updated).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileSimulation)
+	uint8 bSweepCollision:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, we will accelerate toward our homing target. HomingTargetComponent must be set after the projectile is spawned.
+	 * @see HomingTargetComponent, HomingAccelerationMagnitude
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Homing)
+	uint8 bIsHomingProjectile:1;
+System.Management.Automation.RemoteException
+	/**
+	 * Controls the effects of friction on velocity parallel to the impact surface when bouncing.
+	 * If true, friction will be modified based on the angle of impact, making friction higher for perpendicular impacts and lower for glancing impacts.
+	 * If false, a bounce will retain a proportion of tangential velocity equal to (1.0 - Friction), acting as a "horizontal restitution".
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileBounces)
+	uint8 bBounceAngleAffectsFriction:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, projectile is sliding / rolling along a surface.
+	 */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category=ProjectileBounces)
+	uint8 bIsSliding:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true and there is an interpolated component set, location (and optionally rotation) interpolation is enabled which allows the interpolated object to smooth uneven updates
+	 * of the UpdatedComponent's location (usually to smooth network updates). This requires using SetInterpolatedComponent() to indicate the visual component that lags behind the collision,
+	 * and using MoveInterpolationTarget() when the new target location/rotation is received (usually on a net update).
+	 * @see SetInterpolatedComponent(), MoveInterpolationTarget()
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileInterpolation)
+	uint8 bInterpMovement:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true and there is an interpolated component set, rotation interpolation is enabled which allows the interpolated object to smooth uneven updates
+	 * of the UpdatedComponent's rotation (usually to smooth network updates).
+	 * Rotation interpolation is *only* applied if bInterpMovement is also enabled.
+	 * @see SetInterpolatedComponent(), MoveInterpolationTarget()
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ProjectileInterpolation)
+	uint8 bInterpRotation:1;
+System.Management.Automation.RemoteException
+	/**
+	 * If true, throttle interpolation when not relevant.
+	 * @see ThrottleInterpolationSkipFramesNotRecent, ThrottleInterpolationSkipFramesRecent, ThrottleInterpolationThresholdNotRenderedShortTime, ThrottleInterpolationThresholdNotRenderedLongTime
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp 
+[0m✱ [0mGrep "GetGameValue|ReadStat|DataSubsystem" [90min Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp · 16 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=60, offset=1][0m
+[0m✱ [0mGrep "namespace GBHudKey|GBHudKey::|TestSkill|SkillPoint" [90min Glyphbound/Source/Glyphbound · 29 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUDShared.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=60, offset=280][0m
+> build · muse-spark-1.3-contributor
+I have the full picture — now I'll verify a few remaining details before editing.
+[0m$ [0mcd /c/GameJam/Glyphbound && sed -n '60,66p' Content/Data/Game.json | cat -A | head -12; echo ====; sed -n '20,26p' Content/Data/Player.json | cat -A; echo ====; sed -n '108,116p' Content/Data/Spells.json | cat -A
+^I^I"ElementalDefault.ShockDischargeDamage": 15,$
+^I^I"ElementalDefault.FrostSlow": 0.6,$
+^I^I"PrecisionRecoveryHealFraction": 0.03,$
+^I^I"PrecisionRecoveryCooldownBase": 7,$
+^I^I"PrecisionRecoveryCooldownPerRank": 1,$
+^I^I"PrecisionRecoveryCooldownMin": 1$
+^I},$
+====
+^I^I"DamageTaken": 1,$
+^I^I"DamageDealt": 1,$
+^I^I"CapsuleRadius": 38,$
+^I^I"CapsuleHalfHeight": 90,$
+^I^I"EyeHeight": 70$
+^I},$
+^I"StartingWeapons": [$
+====
+^I^I{$
+^I^I^I"Id": "FireWall",$
+^I^I^I"DisplayName": "Fire Wall",$
+^I^I^I"Description": "Raises a wall of flames that damages every enemy who crosses it. Builds up fire.",$
+^I^I^I"Element": "Fire",$
+^I^I^I"ActorClass": "/Script/Glyphbound.GBSpell_Wall",$
+^I^I^I"UnlockGroup": "Fire",$
+^I^I^I"Params": {$
+^I^I^I^I"ManaCost": {$
+[0m$ [0mcd /c/GameJam/Glyphbound && grep -rn "SpawnProjectile" Source/Glyphbound --include=*.cpp | grep -v "AGBProjectile::SpawnProjectile\|SpawnProjectile(" | head; echo ===; grep -rn "AGBProjectile::SpawnProjectile" Source/Glyphbound --include=*.cpp; echo === ; grep -rn "ComputeBlockedDamage" Source/Glyphbound Tests 2>/dev/null; echo === ; grep -rn "AttackMode.*Ranged" Content/Data/Enemies.json; echo === ; grep -n "GroundFriction" "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h" | head
+===
+Source/Glyphbound/AI/GBEnemyCharacter.cpp:793:		AGBProjectile::SpawnProjectile(GetWorld(), Config, Origin, Direction, this);
+Source/Glyphbound/Combat/GBProjectile.cpp:66:AGBProjectile* AGBProjectile::SpawnProjectile(UWorld* World, const FGBProjectileConfig& InConfig, const FVector& Origin, const FVector& Direction, AActor* InInstigator)
+Source/Glyphbound/Items/GBInventoryComponent.cpp:292:	return AGBProjectile::SpawnProjectile(World, Config, Player->GetMuzzleLocation(), ThrowRotation.Vector(), Player) != nullptr;
+Source/Glyphbound/Spells/GBSpell_Projectile.cpp:72:	if (!AGBProjectile::SpawnProjectile(World, Config, Muzzle, ShotDir, GetCaster()))
+Source/Glyphbound/Weapons/GBGun.cpp:756:		AGBProjectile::SpawnProjectile(World, Config, Muzzle, Direction, Player);
+Source/Glyphbound/Weapons/GBStaff.cpp:53:	return AGBProjectile::SpawnProjectile(World, Config, Muzzle, Direction, Player) != nullptr;
+===
+Source/Glyphbound/Spells/GBSpell_Shield.cpp:15:float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft)
+Source/Glyphbound/Spells/GBSpell_Shield.cpp:151:	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth);
+Source/Glyphbound/Spells/GBSpell_Shield.h:53:	static float ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float BlockFraction, float ShieldHealthLeft);
+===
+67:			"AttackMode": "Ranged",
+242:			"AttackMode": "Ranged",
+276:			"AttackMode": "Ranged",
+432:			"AttackMode": "Ranged",
+475:			"AttackMode": "Ranged",
+===
+255:	float GroundFriction;
+305:	 * @see bUseSeparateBrakingFriction, GroundFriction, BrakingFriction
+315:	 * @note Only used if bUseSeparateBrakingFriction setting is true, otherwise current friction such as GroundFriction is used.
+316:	 * @see bUseSeparateBrakingFriction, BrakingFrictionFactor, GroundFriction, BrakingDecelerationWalking
+329:	 * @see GroundFriction, MaxAcceleration
+414:	 * If false, braking uses the same friction passed to CalcVelocity() (ie GroundFriction when walking), multiplied by BrakingFrictionFactor.
+> build · muse-spark-1.3-contributor
+[0m$ [0mgrep -n "GroundFriction" "C:/Program Files/Epic Games/UE_5.9/Engine/Source/Runtime/Engine/Private/Components/CharacterMovementComponent.cpp" | head -5; echo ===; grep -rn "AddPoints" /c/GameJam/Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h; echo ===; sed -n '290,310p' /c/GameJam/Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp | cat -A | head -5; echo ===; grep -c "" /c/GameJam/Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+685:	GroundFriction = 8.0f;
+5734:			CalcVelocity(timeTick, GroundFriction, false, GetMaxBrakingDeceleration());
+5939:		CalcVelocity(deltaTime, GroundFriction, false, GetMaxBrakingDeceleration());
+13688:	AsyncInput.GroundFriction = GroundFriction;
+===
+39:	void AddPoints(int32 Amount);
+===
+===
+77
+[0m$ [0mcd /c/GameJam/Glyphbound && sed -n '170,182p' Content/Data/Spells.json | cat -A; echo ====; sed -n '600,644p' Content/Data/Spells.json | cat -A; echo ====; sed -n '44,52p' Content/Data/Items.json | cat -A; echo ====; sed -n '8,14p' Content/Data/QTE.json | cat -A; echo ====; sed -n '70,80p' Content/Data/Enemies.json | cat -A
+^I^I^I^I"TickInterval": {$
+^I^I^I^I^I"Base": 0.25,$
+^I^I^I^I^I"Min": 0.25,$
+^I^I^I^I^I"Max": 0.25,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"Blocking": {$
+^I^I^I^I^I"Base": 0,$
+^I^I^I^I^I"Min": 0,$
+^I^I^I^I^I"Max": 0,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I}$
+^I^I^I},$
+====
+^I^I^I^I^I"Max": 350,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"Blocking": {$
+^I^I^I^I^I"Base": 1,$
+^I^I^I^I^I"Min": 1,$
+^I^I^I^I^I"Max": 1,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"DamageTaken": {$
+^I^I^I^I^I"Base": 1,$
+^I^I^I^I^I"Min": 1,$
+^I^I^I^I^I"Max": 1,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"DamagePerSecond": {$
+^I^I^I^I^I"Base": 0,$
+^I^I^I^I^I"Min": 0,$
+^I^I^I^I^I"Max": 0,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"TileSize": {$
+^I^I^I^I^I"Base": 100,$
+^I^I^I^I^I"Min": 100,$
+^I^I^I^I^I"Max": 100,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"Glow": {$
+^I^I^I^I^I"Base": 0,$
+^I^I^I^I^I"Min": 0,$
+^I^I^I^I^I"Max": 0,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I},$
+^I^I^I^I"HealthRegen": {$
+^I^I^I^I^I"Base": 0,$
+^I^I^I^I^I"Min": 0,$
+^I^I^I^I^I"Max": 0,$
+^I^I^I^I^I"ScaledBy": "None"$
+^I^I^I^I}$
+^I^I^I},$
+^I^I^I"Strings": {$
+^I^I^I^I"Texture": "tile_ice",$
+^I^I^I^I"Color": "#7FE0FF"$
+^I^I^I}$
+^I^I},$
+====
+^I^I^I^I"Radius": 450,$
+^I^I^I^I"Speed": 1800,$
+^I^I^I^I"FuseTime": 1.6,$
+^I^I^I^I"ProjectileGravity": 1,$
+^I^I^I^I"ProjectileRadius": 12,$
+^I^I^I^I"ThrowPitch": 8,$
+^I^I^I^I"Range": 5000$
+^I^I^I},$
+^I^I^I"Strings": { "Sprite": "grenade_electric", "PickupLook": "3D" }$
+====
+^I^I"QTE.GestureMinScore": 0.35,$
+^I^I"QTE.GestureMinLength": 120,$
+^I^I"QTE.GestureIdleSubmitTime": 0.25,$
+^I^I"QTE.LineSubmitLengthMult": 2.5,$
+^I^I"QTE.StickGestureScale": 600$
+^I},$
+^I"Gestures": [$
+====
+^I^I^I"Stats": {$
+^I^I^I^I"MaxHealth": 50,$
+^I^I^I^I"MoveSpeed": 380,$
+^I^I^I^I"AttackDamage": 8,$
+^I^I^I^I"AttackRange": 1500,$
+^I^I^I^I"AttackInterval": 1.6,$
+^I^I^I^I"AttackWindup": 0.6,$
+^I^I^I^I"AggroRange": 2600,$
+^I^I^I^I"ProjectileSpeed": 2200,$
+^I^I^I^I"ProjectileRadius": 12,$
+^I^I^I^I"HeadFraction": 0.25,$
+> build · muse-spark-1.3-contributor
+All details verified. Now I'll implement, starting with the header key declarations.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUDShared.h
+Index: Glyphbound/Source/Glyphbound/UI/GBHUDShared.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUDShared.h
++++ Glyphbound/Source/Glyphbound/UI/GBHUDShared.h
+@@ -15,8 +15,9 @@
+ 	inline const FName DamageNumberBigHealthFraction(TEXT("DamageNumberBigHealthFraction")); // hit >= this fraction of max health = big
+ 	inline const FName DamageNumberFadeStart(TEXT("DamageNumberFadeStart"));               // 0..1 of the life when the fade begins
+ 	inline const FName DamageNumberMaxAlive(TEXT("DamageNumberMaxAlive"));
+ 	inline const FName DamageNumberMergeWindow(TEXT("DamageNumberMergeWindow"));           // seconds: hits on one target merge
++	inline const FName TestSkillPointAmount(TEXT("TestSkillPointAmount"));                 // skill points given by the test button in the skill menu
+ }
+ 
+ namespace GBHudText
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+@@ -11,8 +11,16 @@
+ class UBillboardComponent;
+ class UStaticMeshComponent;
+ class UPrimitiveComponent;
+ 
++/** Keys of Game.json "Values" read when a projectile is launched. */
++namespace GBProjectileKey
++{
++	inline const FName KnockbackMinLift(TEXT("KnockbackMinLift")); // smallest upward part of the blast push direction
++	inline const FName ProjectileMaxLifetime(TEXT("ProjectileMaxLifetime")); // seconds before a projectile removes itself
++	inline const FName SpellProjectileLifetimeMargin(TEXT("SpellProjectileLifetimeMargin")); // extra seconds on top of Range / Speed, so a spell bolt is never removed before reaching its range
++}
++
+ /** Everything a projectile needs; filled from weapon stats, spell params or item stats by whoever fires it. */
+ USTRUCT(BlueprintType)
+ struct GLYPHBOUND_API FGBProjectileConfig
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBPickup.h
+Index: Glyphbound/Source/Glyphbound/World/GBPickup.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBPickup.h
++++ Glyphbound/Source/Glyphbound/World/GBPickup.h
+@@ -12,8 +12,17 @@
+ 	/** "3D" forces the 3D placeholder box even if the item has a Sprite (cyberpunk items whose Sprite is only their inventory icon). */
+ 	inline const FName PickupLook(TEXT("PickupLook"));
+ }
+ 
++/** Keys of Game.json "Values" read by pickups. */
++namespace GBPickupKey
++{
++	/** Spare magazines given for picking up a copy of the equipped gun. */
++	inline const FName DuplicateGunMagazines(TEXT("DuplicateGunMagazines"));
++	/** cm around the kill where drops are scattered. */
++	inline const FName DropScatterRadius(TEXT("DropScatterRadius"));
++}
++
+ /**
+  * One pickup = one FGBDropDefinition (item, weapon or spell group).
+  *  - Items and ammo are taken by walking over them (if there is room).
+  *  - Weapons and spell knowledge need the Interact key (GDD 4: picking up the first gun is a deliberate step).
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -44,8 +44,13 @@
+ 	inline const FName SteerLedgeDrop(TEXT("EnemySteerLedgeDrop"));            // cm down searched for ground ahead
+ 	inline const FName StuckTime(TEXT("EnemyStuckTime"));                      // s window of the stuck check
+ 	inline const FName StuckDistance(TEXT("EnemyStuckDistance"));              // cm: moved less than this in StuckTime while moving = stuck
+ 	inline const FName GoAroundTime(TEXT("EnemyGoAroundTime"));                // s committed to one side after being stuck
++	inline const FName MeleeAcceptanceFraction(TEXT("EnemyMeleeAcceptanceFraction")); // melee navmesh stops within AttackRange * this
++	inline const FName ProjectileRangeMult(TEXT("EnemyProjectileRangeMult"));         // ranged shots fly AggroRange * this
++	inline const FName AimHeightFraction(TEXT("EnemyAimHeightFraction"));             // of the capsule half height, above the center, where shots start
++	inline const FName StuckSpeedFraction(TEXT("EnemyStuckSpeedFraction"));           // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
++	inline const FName SteerSweepRadiusScale(TEXT("EnemySteerSweepRadiusScale"));      // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
+ 	// Enemies.json "Strings"
+ 	inline const FName ProjectileColor(TEXT("ProjectileColor"));               // "#RRGGBB", 3D projectiles of ranged enemies
+ }
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+@@ -48,8 +48,12 @@
+ 	/** Seconds the explosion shockwave (AGBExplosionEffect) is shown. Every explosion shows it, hit or miss. */
+ 	UPROPERTY() float ExplosionEffectTime = 0.35f;
+ 	/** > 0: it does not explode on contact with the world; it bounces and explodes after this many seconds (grenades). */
+ 	UPROPERTY() float FuseTime = 0.f;
++	/** Bounce retention (UProjectileMovementComponent::Bounciness). Only used when FuseTime > 0. */
++	UPROPERTY() float Bounciness = 0.6f;
++	/** Surface friction when bouncing (UProjectileMovementComponent::Friction). Only used when FuseTime > 0. */
++	UPROPERTY() float Friction = 0.2f;
+ 	/** Keeps going through actors it damages (each actor once). */
+ 	UPROPERTY() bool bPierce = false;
+ 
+ 	// ---- Looks (art rule: bPixelArt = camera-facing sprite, otherwise a small 3D mesh) ----
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -32,8 +32,17 @@
+ 	inline const FName DamageDealt(TEXT("DamageDealt"));            // multiplier, base 1
+ 	inline const FName CapsuleRadius(TEXT("CapsuleRadius"));
+ 	inline const FName CapsuleHalfHeight(TEXT("CapsuleHalfHeight"));
+ 	inline const FName EyeHeight(TEXT("EyeHeight"));
++	inline const FName AccelerationPerSpeed(TEXT("AccelerationPerSpeed")); // walk-speed multiples per second (snappy movement)
++	inline const FName BrakingPerSpeed(TEXT("BrakingPerSpeed"));
++	inline const FName GroundFriction(TEXT("GroundFriction"));
++	inline const FName InteractFacingMinDot(TEXT("InteractFacingMinDot")); // interactables must be this much in front of the view
++	inline const FName LookSensitivity(TEXT("LookSensitivity"));           // mouse degrees per input unit
++	inline const FName StickYawRate(TEXT("StickYawRate"));                // gamepad look degrees per second at full tilt
++	inline const FName StickPitchRate(TEXT("StickPitchRate"));
++	inline const FName PitchLimit(TEXT("PitchLimit"));                    // max look pitch, degrees
++	inline const FName DashExitSpeedMult(TEXT("DashExitSpeedMult"));       // speed kept after a dash, as a fraction of walk speed
+ 	inline const FName PrecisionRecovery(TEXT("PrecisionRecovery")); // owned rank of the weapon perk (skill modifier only, base 0)
+ 
+ 	// ---- Enemy stats (Enemies.json "Stats") ----
+ 	inline const FName AttackDamage(TEXT("AttackDamage"));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+Index: Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBGameMode.h
++++ Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+@@ -15,8 +15,12 @@
+ {
+ 	inline const FName RespawnDelay(TEXT("RespawnDelay"));   // seconds between death and the checkpoint restore
+ 	/** cm, world height below which the player dies (falling out of the map). Relative to the floor of the code-built arena. */
+ 	inline const FName KillZ(TEXT("KillZ"));
++	/** Respawn (checkpoint) restore: fractions of max health / mana, and whether guns are refilled. */
++	inline const FName RespawnHealthFraction(TEXT("RespawnHealthFraction"));
++	inline const FName RespawnManaFraction(TEXT("RespawnManaFraction"));
++	inline const FName RespawnRefillAmmo(TEXT("RespawnRefillAmmo"));
+ }
+ 
+ /** Exists so the project has its own game instance class to grow into; the state lives in the subsystems. */
+ UCLASS()
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h
+@@ -13,8 +13,12 @@
+ {
+ 	inline const FName EraFadeOutTime(TEXT("EraFadeOutTime"));
+ 	inline const FName EraHoldTime(TEXT("EraHoldTime"));
+ 	inline const FName EraFadeInTime(TEXT("EraFadeInTime"));
++	/** Era travel restore: health and mana are raised to at least this fraction of max (never lowered), and whether guns are refilled. */
++	inline const FName EraTravelHealthFraction(TEXT("EraTravelHealthFraction"));
++	inline const FName EraTravelManaFraction(TEXT("EraTravelManaFraction"));
++	inline const FName EraTravelRefillAmmo(TEXT("EraTravelRefillAmmo"));
+ }
+ 
+ /**
+  * One map, two times (GDD 4). The swap is done two ways at once, so level design can use either:
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+@@ -35,8 +35,10 @@
+ 	/** Param "TileSize" (named apart so it cannot clash with another behavior's constant). */
+ 	inline const FName WallTileSize(TEXT("TileSize"));
+ 	/** Param "Glow". */
+ 	inline const FName WallGlow(TEXT("Glow"));
++	/** Param "TouchMargin": cm the damage box extends past the wall, so pawns pressed against it still count as touching. */
++	inline const FName TouchMargin(TEXT("TouchMargin"));
+ }
+ 
+ namespace GBSpellString
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+@@ -12,8 +12,10 @@
+ /** Item stat keys (Items.json "Stats") that are not shared with weapons or spells. */
+ namespace GBItemStat
+ {
+ 	inline const FName ThrowPitch(TEXT("ThrowPitch"));   // degrees added above the aim direction when throwing
++	inline const FName Bounciness(TEXT("Bounciness"));   // bounce retention of a throwable (UProjectileMovementComponent default 0.6)
++	inline const FName Friction(TEXT("Friction"));       // surface friction of a throwable when bouncing (UProjectileMovementComponent default 0.2)
+ }
+ 
+ DECLARE_MULTICAST_DELEGATE_TwoParams(FGBOnItemCountChanged, FName /*ItemId*/, int32 /*NewCount*/);
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+@@ -21,8 +21,10 @@
+ /** Shield params that are not in GBStat. */
+ namespace GBShieldParam
+ {
+ 	inline const FName RaisedMoveSpeedMult(TEXT("RaisedMoveSpeedMult"));
++	/** Param "BlockArcDegrees": frontal arc (degrees) the raised shield blocks; 180 = the front hemisphere, 360 = every side. */
++	inline const FName BlockArcDegrees(TEXT("BlockArcDegrees"));
+ }
+ 
+ UCLASS()
+ class GLYPHBOUND_API AGBSpell_Shield : public AGBSpellActor
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+@@ -51,9 +51,9 @@
+ 	/** Modifier source of the raised-shield slow on the caster's stats. */
+ 	static const FName RaisedSource;
+ 
+ 	/** Pure rule, also usable by tests: how much of a hit the shield removes. HitDirection travels from the source to the caster. */
+-	static float ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float BlockFraction, float ShieldHealthLeft);
++	static float ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float BlockFraction, float ShieldHealthLeft, float BlockArcDegrees = 180.f);
+ 
+ protected:
+ 	virtual void StartSpell() override;
+ 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h
+@@ -64,8 +64,9 @@
+ 	FDelegateHandle DamageHandle;
+ 	float ShieldHealth = 0.f;
+ 	float MaxShieldHealth = 0.f;
+ 	float BlockFraction = 0.f;
++	float BlockArcDegrees = 180.f;
+ 	float RaisedMoveSpeedMult = 1.f;
+ 	/** World time (dilated, like the end timer) when the shield expires. */
+ 	double ExpireTime = 0.0;
+ 	bool bRaised = false;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h failed
+[91m[1mError: [0mNo changes to apply: oldString and newString are identical.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+@@ -11,8 +11,15 @@
+ DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnBuildUpChanged, EGBElement /*Element*/, float /*Value*/, float /*Threshold*/);
+ DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnElementalStatusStarted, EGBElement /*Element*/, FName /*Reaction*/, float /*Duration*/);
+ DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnElementalStatusEnded, EGBElement /*Element*/);
+ 
++/** Keys of Game.json "Values" read by the elemental status component. */
++namespace GBElementalStatusKey
++{
++	inline const FName TickInterval(TEXT("ElementalTickInterval")); // seconds between build-up ticks while a bar is not empty
++	inline const FName FrostSlowMax(TEXT("FrostSlowMax"));         // FrostSlow is clamped to this, so the slow can never fully stop the target
++}
++
+ UCLASS(ClassGroup = (Glyphbound), meta = (BlueprintSpawnableComponent))
+ class GLYPHBOUND_API UGBElementalStatusComponent : public UActorComponent
+ {
+ 	GENERATED_BODY()
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+@@ -15,8 +15,10 @@
+ 	inline const FName GestureMinLength(TEXT("QTE.GestureMinLength"));           // pixels before a stroke is judged
+ 	inline const FName GestureIdleSubmitTime(TEXT("QTE.GestureIdleSubmitTime")); // real seconds without input -> auto-submit
+ 	inline const FName LineSubmitLengthMult(TEXT("QTE.LineSubmitLengthMult"));   // line auto-submits at GestureMinLength * this
+ 	inline const FName StickGestureScale(TEXT("QTE.StickGestureScale"));         // right stick: pixels per second at full tilt
++	inline const FName FailManaRefund(TEXT("QTE.FailManaRefund"));               // share of the mana cost given back when the spell fizzles (0 = no refund)
++	inline const FName FailCooldownMult(TEXT("QTE.FailCooldownMult"));           // the cooldown of a fizzled spell is multiplied by this (1 = full cooldown)
+ }
+ 
+ /**
+  * GDD 7 requirements handled here:
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+@@ -59,8 +59,9 @@
+ 	void StartStatus(int32 Index, const FGBBuildUpConfig& Config, FName Reaction, float Duration, AActor* Instigator);
+ 	void EndStatus(int32 Index);
+ 	void UpdateTickEnabled();
+ 	void HandleOwnerDeath(const FGBDamageInfo& KillingBlow);
++	void HandleDataReloaded();
+ 
+ 	FGBBuildUpMeter Meters[3];
+ 	FGBBuildUpEventLog EventLog;
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h
+@@ -59,8 +59,12 @@
+ 	const FGBQTEResult& GetLastResult() const { return LastResult; }
+ 
+ 	/** QTE.StickGestureScale: the player character sends right-stick value * this * real delta seconds to HandleGestureInput. */
+ 	float GetStickGestureScale() const;
++	/** Share of the mana cost refunded when the spell fizzles (QTE.FailManaRefund, 0 = no refund). */
++	float GetFailManaRefund() const;
++	/** Multiplier on the cooldown of a fizzled spell (QTE.FailCooldownMult, 1 = full cooldown, 0 = no cooldown). */
++	float GetFailCooldownMult() const;
+ 
+ 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+ 
+ protected:
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+@@ -70,8 +70,9 @@
+ 	/** Game.json keys already warned about a missing default. */
+ 	mutable TSet<FName> WarnedDefaults;
+ 
+ 	FDelegateHandle DeathHandle;
++	FDelegateHandle DataReloadedHandle;
+ 
+ 	/**
+ 	 * Game time (dilated, so the QTE slow-down applies) the meters were last advanced to; -1 when idle.
+ 	 * The component keeps its own clock instead of trusting the tick's DeltaTime, so a hit between two
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h
+Index: Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h
++++ Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h
+@@ -51,10 +51,10 @@
+ 	bool HasMana(float Amount) const;
+ 	/** Spends mana if there is enough; false and nothing spent otherwise. Restarts the mana regen delay. */
+ 	bool SpendMana(float Amount);
+ 
+-	/** Full health and mana (era travel, GDD 4). Also revives. */
+-	void RestoreAll();
++	/** Restores health and mana as fractions of their maximums (1 = full). Also revives. bOnlyRaise only raises towards the fractions, never lowers (era travel). */
++	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bOnlyRaise = false);
+ 
+ 	/** For checkpoints and snapshots. Clamped to the current maximums. */
+ 	void SetHealthAndMana(float NewHealth, float NewMana);
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -96,10 +96,10 @@
+ 	AActor* GetFocusedInteractableActor() const { return FocusedInteractable.Get(); }
+ 
+ 	// ---- State ----
+ 	bool IsDead() const;
+-	/** Full health, mana and ammo (era travel, GDD 4). */
+-	void RestoreAll();
++	/** Restores health, mana and ammo (respawn and era travel, GDD 4). Fractions of the maximums (1 = full); bOnlyRaise raises health/mana towards them without lowering. */
++	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bRefillAmmo = true, bool bOnlyRaise = false);
+ 	/** Stops input-driven actions and hides the held item (death, cutscene). */
+ 	void SetControlEnabled(bool bEnabled);
+ 	bool IsControlEnabled() const { return bControlEnabled; }
+ 	/** Releases everything held down (fire, aim, held movement). Called when a menu opens or control is lost. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Headers done. Now the implementation files.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -10,12 +10,8 @@
+ #include "Engine/World.h"
+ 
+ namespace
+ {
+-	const FName ElementalTickIntervalKey(TEXT("ElementalTickInterval"));
+-	constexpr float DefaultTickInterval = 0.1f;
+-	constexpr float FrostSlowMax = 0.95f;
+-
+ 	bool IsValidReaction(int32 Index, FName Reaction)
+ 	{
+ 		using namespace GBElemental;
+ 		if (Index == 0)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -44,13 +44,16 @@
+ void UGBElementalStatusComponent::BeginPlay()
+ {
+ 	Super::BeginPlay();
+ 
+-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+-	const float Interval = Data ? Data->GetGameValue(ElementalTickIntervalKey, DefaultTickInterval) : DefaultTickInterval;
+-	SetComponentTickInterval(FMath::Max(0.01f, Interval));
++	HandleDataReloaded();
+ 	SetComponentTickEnabled(false);
+ 
++	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
++	{
++		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &UGBElementalStatusComponent::HandleDataReloaded);
++	}
++
+ 	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
+ 	{
+ 		DeathHandle = Attributes->OnDeath.AddUObject(this, &UGBElementalStatusComponent::HandleOwnerDeath);
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -60,8 +60,13 @@
+ }
+ 
+ void UGBElementalStatusComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+ {
++	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
++	{
++		Data->OnDataReloaded.Remove(DataReloadedHandle);
++	}
++	DataReloadedHandle.Reset();
+ 	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
+ 	{
+ 		Attributes->OnDeath.Remove(DeathHandle);
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -83,8 +83,15 @@
+ 	(void)KillingBlow;
+ 	ClearAll();
+ }
+ 
++void UGBElementalStatusComponent::HandleDataReloaded()
++{
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const float Interval = Data ? Data->GetGameValue(GBElementalStatusKey::TickInterval, 0.1f) : 0.1f;
++	SetComponentTickInterval(FMath::Max(0.01f, Interval));
++}
++
+ bool UGBElementalStatusComponent::ReadConfig(int32 Index, FGBBuildUpConfig& OutConfig, FName& OutReaction) const
+ {
+ 	OutConfig = FGBBuildUpConfig();
+ 	OutReaction = GBElemental::ReactionNone;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -321,9 +321,10 @@
+ 		{
+ 			float FrostSlow = 0.f;
+ 			const float GameDefault = Data ? Data->GetGameValue(GBElemental::DefaultKey(GBElemental::FrostSlow), 0.f) : 0.f;
+ 			FrostSlow = Stats->GetStat(GBElemental::FrostSlow, GameDefault);
+-			const float Clamped = FMath::Clamp(FrostSlow, 0.f, FrostSlowMax);
++			const float SlowMax = Data ? Data->GetGameValue(GBElementalStatusKey::FrostSlowMax, 0.95f) : 0.95f;
++			const float Clamped = FMath::Clamp(FrostSlow, 0.f, SlowMax);
+ 			FGBModifierDef Mod;
+ 			Mod.Stat = GBStat::MoveSpeed;
+ 			Mod.Op = EGBModOp::MultiplyMin;
+ 			Mod.Value = 1.f - Clamped;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -3,8 +3,9 @@
+ #include "AI/GBEnemyCharacter.h"
+ #include "Combat/GBCombatLibrary.h"
+ #include "Combat/GBExplosionEffect.h"
+ #include "Core/GBPlaceholder.h"
++#include "Data/GBDataSubsystem.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "UI/GBPixelSpriteLibrary.h"
+ #include "CollisionQueryParams.h"
+ #include "Components/BillboardComponent.h"
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -20,13 +20,8 @@
+ namespace GBProjectileLocal
+ {
+ 	/** Same lift as the radial damage obstruction trace (GBCombatLibrary.cpp), so a blast on the floor is not blocked by it. */
+ 	constexpr float KnockbackTraceLiftCm = 5.f;
+-	/**
+-	 * Smallest upward part of the push direction. A walking character pushed only sideways is stopped at once by
+-	 * ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
+-	 */
+-	constexpr float KnockbackMinLift = 0.35f;
+ }
+ 
+ AGBProjectile::AGBProjectile()
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -108,8 +108,10 @@
+ 	Movement->InitialSpeed = Config.Speed;
+ 	Movement->MaxSpeed = Config.Speed;
+ 	Movement->ProjectileGravityScale = Config.GravityScale;
+ 	Movement->bShouldBounce = Config.FuseTime > 0.f;
++	Movement->Bounciness = Config.Bounciness;
++	Movement->Friction = Config.Friction;
+ 	Movement->Velocity = Direction.GetSafeNormal() * Config.Speed;
+ 
+ 	const float VisualSize = Radius * 2.f * FMath::Max(Config.VisualScale, 0.01f);
+ 	if (Config.bPixelArt)
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -358,9 +358,9 @@
+ 		{
+ 			// Blast right on the target: push it back along the projectile's flight.
+ 			Direction = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
+ 		}
+-		Direction.Z = FMath::Max(Direction.Z, GBProjectileLocal::KnockbackMinLift);
++		Direction.Z = FMath::Max(Direction.Z, ReadKnockbackMinLift());
+ 		Direction = Direction.GetSafeNormal();
+ 		Character->LaunchCharacter(Direction * Strength, /*bXYOverride*/ true, /*bZOverride*/ true);
+ 	}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+I referenced a helper that doesn't exist — let me fix that with an inline live read hoisted to the top of the function.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -301,8 +301,13 @@
+ 	{
+ 		return;
+ 	}
+ 
++	// Smallest upward part of the push direction: a walking character pushed only sideways is stopped at once by
++	// ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const float KnockbackMinLift = Data ? Data->GetGameValue(GBProjectileKey::KnockbackMinLift, 0.35f) : 0.35f;
++
+ 	FCollisionObjectQueryParams ObjectParams;
+ 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+ 	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBExplosionKnockback), false, this);
+ 	TArray<FOverlapResult> Overlaps;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -363,9 +363,9 @@
+ 		{
+ 			// Blast right on the target: push it back along the projectile's flight.
+ 			Direction = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
+ 		}
+-		Direction.Z = FMath::Max(Direction.Z, ReadKnockbackMinLift());
++		Direction.Z = FMath::Max(Direction.Z, KnockbackMinLift);
+ 		Direction = Direction.GetSafeNormal();
+ 		Character->LaunchCharacter(Direction * Strength, /*bXYOverride*/ true, /*bZOverride*/ true);
+ 	}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+@@ -1,7 +1,8 @@
+ #include "Spells/GBSpell_Projectile.h"
+ #include "Combat/GBProjectile.h"
+ #include "Core/GBStatNames.h"
++#include "Data/GBDataSubsystem.h"
+ #include "Engine/World.h"
+ #include "Player/GBPlayerCharacter.h"
+ 
+ namespace
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+@@ -4,14 +4,8 @@
+ #include "Data/GBDataSubsystem.h"
+ #include "Engine/World.h"
+ #include "Player/GBPlayerCharacter.h"
+ 
+-namespace
+-{
+-	// Extra seconds of life on top of Range / Speed, so a projectile is never removed before reaching its range.
+-	constexpr float ProjectileSpellLifetimeMargin = 1.f;
+-}
+-
+ void AGBSpell_Projectile::StartSpell()
+ {
+ 	UWorld* World = GetWorld();
+ 	if (!World)
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp
+@@ -31,9 +31,13 @@
+ 	Config.Color = GetSpellColor();
+ 	Config.VisualScale = FMath::Max(0.01f, SpellCast.Get(GBSpellParam::VisualScale, 1.f));
+ 	if (Config.MaxRange > 0.f)
+ 	{
+-		Config.MaxLifetime = FMath::Max(Config.MaxLifetime, Config.MaxRange / Config.Speed + ProjectileSpellLifetimeMargin);
++		// Extra seconds of life on top of Range / Speed, so the projectile is never removed before reaching its range.
++		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++		const float BaseLifetime = Data ? Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, 10.f) : 10.f;
++		const float Margin = Data ? Data->GetGameValue(GBProjectileKey::SpellProjectileLifetimeMargin, 1.f) : 1.f;
++		Config.MaxLifetime = FMath::Max(BaseLifetime, Config.MaxRange / Config.Speed + Margin);
+ 	}
+ 
+ 	// Aim at what the crosshair is on, then fire from the hand so the shot does not start inside the camera.
+ 	const FVector AimDir = SpellCast.Direction.GetSafeNormal().IsNearlyZero() ? GetActorForwardVector() : SpellCast.Direction.GetSafeNormal();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -34,11 +34,8 @@
+ 
+ 	// Pure layout / technical constants (not gameplay tuning).
+ 	constexpr float GroundProbeDepth = 1000.f;     // cm below the requested spawn point searched for a floor
+ 	constexpr float SpawnLift = 2.f;               // cm above the floor, so the capsule does not start inside it
+-	constexpr float ChestHeightFraction = 0.5f;    // of the capsule half height, above the center
+-	constexpr float SteerSweepRadiusScale = 0.9f;  // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
+-	constexpr float StuckSpeedFraction = 0.25f;    // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
+ 	constexpr int32 MaxSteerCandidatesPerSide = 12;
+ 	constexpr float TelegraphSpriteScale = 1.12f;
+ 	constexpr float TelegraphTintBlend = 0.55f;    // towards white
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\AI\GBEnemyCharacter.cpp. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+438: 				// Melee stops a bit inside its reach; ranged keeps closing in until it has line of sight.
+439: 				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * 0.5f;
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -435,9 +435,9 @@
+ 			}
+ 			else
+ 			{
+ 				// Melee stops a bit inside its reach; ranged keeps closing in until it has line of sight.
+-				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * 0.5f;
++				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f);
+ 				const EPathFollowingRequestResult::Type Result = AI->MoveToActor(Goal, Acceptance, true, true, false);
+ 				bPathing = Result == EPathFollowingRequestResult::RequestSuccessful;
+ 				if (Result == EPathFollowingRequestResult::Failed)
+ 				{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -519,9 +519,9 @@
+ 	}
+ 
+ 	// Bottom lifted by the step height (the character walks over anything lower), top unchanged, a bit thinner.
+ 	const float StepHeight = FMath::Max(Move->MaxStepHeight, 0.f);
+-	const float Radius = Capsule->GetScaledCapsuleRadius() * GBEnemyCharacterLocal::SteerSweepRadiusScale;
++	const float Radius = Capsule->GetScaledCapsuleRadius() * GetGameValue(GBEnemyKey::SteerSweepRadiusScale, 0.9f);
+ 	const float HalfHeight = FMath::Max(Capsule->GetScaledCapsuleHalfHeight() - StepHeight * 0.5f, Radius);
+ 	const FVector Start = GetActorLocation() + FVector::UpVector * (StepHeight * 0.5f);
+ 
+ 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBEnemySteer), false, this);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -608,9 +608,9 @@
+ 	}
+ 
+ 	const float Moved = FVector::Dist2D(GetActorLocation(), StuckOrigin);
+ 	const float Speed = GetCharacterMovement() ? GetCharacterMovement()->MaxWalkSpeed : 0.f;
+-	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GBEnemyCharacterLocal::StuckSpeedFraction);
++	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GetGameValue(GBEnemyKey::StuckSpeedFraction, 0.25f));
+ 	ResetStuck();
+ 	if (Moved >= Threshold)
+ 	{
+ 		return;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -692,9 +692,9 @@
+ }
+ 
+ FVector AGBEnemyCharacter::GetChestLocation() const
+ {
+-	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GBEnemyCharacterLocal::ChestHeightFraction);
++	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GetGameValue(GBEnemyKey::AimHeightFraction, 0.5f));
+ }
+ 
+ bool AGBEnemyCharacter::HasLineOfSight(const AActor* Goal) const
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -766,9 +766,11 @@
+ 		Config.Damage = Info;
+ 		Config.Damage.Causer = nullptr;
+ 		Config.Speed = Stats->GetStat(GBStat::ProjectileSpeed, Config.Speed);
+ 		Config.Radius = Stats->GetStat(GBStat::ProjectileRadius, Config.Radius);
+-		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * 1.5f;
++		Config.GravityScale = Stats->GetStat(GBStat::ProjectileGravity, 0.f);
++		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
++		Config.MaxLifetime = GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+ 		Config.bPixelArt = Def->bPixelArt;
+ 		if (Def->bPixelArt)
+ 		{
+ 			const FString SpriteId = Def->Strings.FindRef(GBString::ProjectileSprite);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp [90m[limit=30, offset=465][0m
+> build · muse-spark-1.3-contributor
+`AddSpareMagazines(0)` is safe. Now the pickup edits.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBPickup.cpp
++++ Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+@@ -21,9 +21,8 @@
+ 	const FVector StaffSpriteSize(20.f, 20.f, 100.f);
+ 	const FVector BookSpriteSize(40.f, 40.f, 45.f);
+ 	const FLinearColor DefaultGunColor(0.08f, 0.08f, 0.1f);
+ 	const FLinearColor DefaultItemColor(0.6f, 0.6f, 0.6f);
+-	constexpr float ScatterRadius = 90.f;
+ 	constexpr float GroundTraceUp = 100.f;
+ 	constexpr float GroundTraceDown = 2000.f;
+ 	const FName BookSpriteId(TEXT("book"));
+ 	const FName StaffSpriteId(TEXT("staff"));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBPickup.cpp
++++ Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+@@ -82,8 +82,10 @@
+ }
+ 
+ int32 AGBPickup::SpawnDrops(UWorld* World, TConstArrayView<FGBDropDefinition> Drops, const FVector& Location)
+ {
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
++	const float ScatterRadius = Data ? Data->GetGameValue(GBPickupKey::DropScatterRadius, 90.f) : 90.f;
+ 	int32 Spawned = 0;
+ 	for (const FGBDropDefinition& Drop : Drops)
+ 	{
+ 		if (Drop.Chance < 1.f && FMath::FRand() > Drop.Chance)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBPickup.cpp
++++ Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+@@ -189,12 +189,14 @@
+ 		}
+ 		const bool bGun = Def->Slot == EGBHeldSlot::Gun;
+ 		if (Equipment->OwnsWeapon(InOutDrop.WeaponId))
+ 		{
+-			// A copy of a gun already owned is worth one spare magazine if that gun is in the slot; otherwise it is just used up.
++			// A copy of a gun already owned is worth spare magazines if that gun is in the slot; otherwise it is just used up.
+ 			if (bGun && Equipment->IsWeaponEquipped(InOutDrop.WeaponId))
+ 			{
+-				Equipment->AddSpareMagazines(1);
++				const UGBDataSubsystem* Data = UGBDataSubsystem::Get(Player);
++				const int32 Magazines = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBPickupKey::DuplicateGunMagazines, 1.f))) : 1;
++				Equipment->AddSpareMagazines(Magazines);
+ 			}
+ 		}
+ 		else
+ 		{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -825,10 +825,12 @@
+ 	if (!SkillTree)
+ 	{
+ 		return;
+ 	}
+-	SkillTree->AddPoints(1);
+-	ShowMessage(FString::Printf(TEXT("+1 skill point (%d)"), SkillTree->GetPoints()), 1.5f);
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const int32 Amount = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBHudKey::TestSkillPointAmount, 1.f))) : 1;
++	SkillTree->AddPoints(Amount);
++	ShowMessage(FString::Printf(TEXT("+%d skill point (%d)"), Amount, SkillTree->GetPoints()), 1.5f);
+ }
+ 
+ void AGBHUD::MenuReset()
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the player character — the biggest set of edits.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -36,21 +36,11 @@
+ namespace
+ {
+ 	// Feel and visual constants (not gameplay balance). Mouse2D values come scaled by the engine's
+ 	// default axis sensitivity (0.07 per pixel, BaseInput.ini), hence the conversions below.
+-	constexpr float MouseDegreesPerUnit = 2.5f;
+ 	constexpr float MouseUnitsPerPixel = 0.07f;
+-	constexpr float StickYawDegreesPerSecond = 200.f;
+-	constexpr float StickPitchDegreesPerSecond = 140.f;
+-	constexpr float MaxLookPitch = 89.f;
+ 	/** Ignore axis noise on wheel / D-pad style 1D actions. */
+ 	constexpr float AxisStepThreshold = 0.1f;
+-	/** Interactables must be roughly in front of the view. */
+-	constexpr float InteractFacingMinDot = 0.3f;
+-	/** Snappy shooter movement: acceleration and braking as multiples of the walk speed (per second). */
+-	constexpr float AccelerationPerSpeed = 10.f;
+-	constexpr float BrakingPerSpeed = 8.f;
+-	constexpr float GroundFrictionValue = 8.f;
+ 	/** Held item anchor and muzzle offsets from the camera (forward, right, up), cm. */
+ 	const FVector HeldItemOffset(30.f, 15.f, -15.f);
+ 	const FVector MuzzleOffset(40.f, 15.f, -12.f);
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -79,9 +79,9 @@
+ 
+ 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+ 	{
+ 		MoveComp->bOrientRotationToMovement = false;
+-		MoveComp->GroundFriction = GroundFrictionValue;
++		// GroundFriction comes from Player.json (UpdateWalkSpeed on BeginPlay); until then the engine default (8.0) applies.
+ 	}
+ }
+ 
+ AGBPlayerCharacter* AGBPlayerCharacter::Get(const UObject* WorldContextObject)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -273,11 +273,11 @@
+ 		return;
+ 	}
+ 	const float Speed = FMath::Max(0.f, ReadStat(GBStat::MoveSpeed, 750.f) * MoveSpeedScale);
+ 	MoveComp->MaxWalkSpeed = Speed;
+-	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * AccelerationPerSpeed);
+-	MoveComp->BrakingDecelerationWalking = Speed * BrakingPerSpeed;
+-	MoveComp->GroundFriction = GroundFrictionValue;
++	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * ReadStat(GBStat::AccelerationPerSpeed, 10.f));
++	MoveComp->BrakingDecelerationWalking = Speed * ReadStat(GBStat::BrakingPerSpeed, 8.f);
++	MoveComp->GroundFriction = ReadStat(GBStat::GroundFriction, 8.f);
+ }
+ 
+ void AGBPlayerCharacter::SetMoveSpeedScale(float Scale)
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -521,9 +521,9 @@
+ 	TArray<FOverlapResult> Overlaps;
+ 	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Range), QueryParams);
+ 
+ 	AActor* Best = nullptr;
+-	float BestDot = InteractFacingMinDot;
++	float BestDot = ReadStat(GBStat::InteractFacingMinDot, 0.3f);
+ 	for (const FOverlapResult& Overlap : Overlaps)
+ 	{
+ 		AActor* Actor = Overlap.GetActor();
+ 		if (!Actor || Actor == this || Actor == Best)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -562,12 +562,15 @@
+ {
+ 	return QTE && QTE->IsActive();
+ }
+ 
+-void AGBPlayerCharacter::RestoreAll()
++void AGBPlayerCharacter::RestoreAll(float HealthFraction, float ManaFraction, bool bRefillAmmo, bool bOnlyRaise)
+ {
+-	Attributes->RestoreAll();
+-	Equipment->RefillAllAmmo();
++	Attributes->RestoreAll(HealthFraction, ManaFraction, bOnlyRaise);
++	if (bRefillAmmo)
++	{
++		Equipment->RefillAllAmmo();
++	}
+ }
+ 
+ void AGBPlayerCharacter::ReleaseHeldInputs()
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp failed
+[91m[1mError: [0mUnable to edit C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=35, offset=830][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=14, offset=820][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -829,9 +829,14 @@
+ 	if (StatusEffects)
+ 	{
+ 		StatusEffects->RemoveAllEffects();
+ 	}
+-	RestoreAll();
++	// Checkpoint respawn always starts from the restore fractions (health and mana are set, not raised).
++	const UGBDataSubsystem* RespawnData = UGBDataSubsystem::Get(this);
++	const float RespawnHealth = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnHealthFraction, 1.f) : 1.f;
++	const float RespawnMana = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnManaFraction, 1.f) : 1.f;
++	const bool bRespawnRefill = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnRefillAmmo, 1.f) > 0.5f : true;
++	RestoreAll(RespawnHealth, RespawnMana, bRespawnRefill, /*bOnlyRaise*/ false);
+ 
+ 	UnfreezeMovement();
+ 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -348,9 +348,10 @@
+ 		return;
+ 	}
+ 	FRotator Rotation = Controller->GetControlRotation();
+ 	Rotation.Yaw = FRotator::NormalizeAxis(Rotation.Yaw + YawDegrees);
+-	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -static_cast<double>(MaxLookPitch), static_cast<double>(MaxLookPitch));
++	const double PitchLimit = ReadStat(GBStat::PitchLimit, 89.f);
++	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -PitchLimit, PitchLimit);
+ 	Rotation.Roll = 0.f;
+ 	Controller->SetControlRotation(Rotation);
+ }
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -376,9 +376,9 @@
+ 		// Changing movement mode may reset the jump count: keep it, so a dash never refills jumps.
+ 		const int32 SavedJumpCount = JumpCurrentCount;
+ 		MoveComp->SetMovementMode(MOVE_Falling);
+ 		JumpCurrentCount = SavedJumpCount;
+-		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed;
++		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed * ReadStat(GBStat::DashExitSpeedMult, 1.f);
+ 	}
+ }
+ 
+ // ---------------------------------------------------------------------------------------------------------------
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -974,9 +974,9 @@
+ 		// Camera locked; the mouse draws the gesture in screen space (y down).
+ 		QTE->HandleGestureInput(FVector2D(Delta.X, -Delta.Y) / MouseUnitsPerPixel);
+ 		return;
+ 	}
+-	AddLookDelta(static_cast<float>(Delta.X) * MouseDegreesPerUnit, static_cast<float>(Delta.Y) * MouseDegreesPerUnit);
++	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f), static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f));
+ }
+ 
+ void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -995,9 +995,9 @@
+ 	}
+ 	const UWorld* World = GetWorld();
+ 	// Real time: the QTE runs in real time while the world is slowed.
+ 	const float RealDelta = World ? World->DeltaRealTimeSeconds : 0.f;
+-	AddLookDelta(static_cast<float>(Stick.X) * StickYawDegreesPerSecond * RealDelta, static_cast<float>(Stick.Y) * StickPitchDegreesPerSecond * RealDelta);
++	AddLookDelta(static_cast<float>(Stick.X) * ReadStat(GBStat::StickYawRate, 200.f) * RealDelta, static_cast<float>(Stick.Y) * ReadStat(GBStat::StickPitchRate, 140.f) * RealDelta);
+ }
+ 
+ void AGBPlayerCharacter::InputFace(EGBQTEKey Key)
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+@@ -180,15 +180,20 @@
+ 	OnManaChanged.Broadcast(Mana, GetMaxMana());
+ 	return true;
+ }
+ 
+-void UGBAttributeComponent::RestoreAll()
++void UGBAttributeComponent::RestoreAll(float HealthFraction, float ManaFraction, bool bOnlyRaise)
+ {
+ 	bDead = false;
+-	Health = GetMaxHealth();
+-	Mana = GetMaxMana();
+-	OnHealthChanged.Broadcast(Health, GetMaxHealth());
+-	OnManaChanged.Broadcast(Mana, GetMaxMana());
++	const float MaxHealth = GetMaxHealth();
++	const float MaxMana = GetMaxMana();
++	const float WantHealth = FMath::Clamp(HealthFraction, 0.f, 1.f) * MaxHealth;
++	const float WantMana = FMath::Clamp(ManaFraction, 0.f, 1.f) * MaxMana;
++	// Respawn always starts from the fractions; era travel only raises towards them, never lowers.
++	Health = bOnlyRaise ? FMath::Max(Health, WantHealth) : WantHealth;
++	Mana = bOnlyRaise ? FMath::Max(Mana, WantMana) : WantMana;
++	OnHealthChanged.Broadcast(Health, MaxHealth);
++	OnManaChanged.Broadcast(Mana, MaxMana);
+ }
+ 
+ void UGBAttributeComponent::SetHealthAndMana(float NewHealth, float NewMana)
+ {
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp
+@@ -189,12 +189,17 @@
+ 
+ 	if (AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Traveller))
+ 	{
+ 		// GDD 4: era travel restores health, mana and ammo; portals are the checkpoints of the map.
+-		// Never for a dead player (death undoes the travel before this point).
++		// Health and mana are only raised towards the fractions, never lowered. Never for a dead player
++		// (death undoes the travel before this point).
+ 		if (!Player->IsDead())
+ 		{
+-			Player->RestoreAll();
++			const UGBDataSubsystem* RestoreData = UGBDataSubsystem::Get(this);
++			const float HealthFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelHealthFraction, 1.f) : 1.f;
++			const float ManaFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelManaFraction, 1.f) : 1.f;
++			const bool bRefillAmmo = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelRefillAmmo, 1.f) > 0.5f : true;
++			Player->RestoreAll(HealthFraction, ManaFraction, bRefillAmmo, /*bOnlyRaise*/ true);
+ 			if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
+ 			{
+ 				Progress->SaveCheckpoint(Player);
+ 			}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp failed
+[91m[1mError: [0mNo changes to apply: oldString and newString are identical.
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -4,8 +4,9 @@
+ #include "Core/GBStatNames.h"
+ #include "Core/GBPlaceholder.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Stats/GBStatsComponent.h"
++#include "Spells/GBSpellActor.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Combat/GBProjectile.h"
+ #include "Weapons/GBEquipmentComponent.h"
+ #include "Weapons/GBHeldItem.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -270,16 +270,25 @@
+ 		Config.Damage.OnHitEffect = FName(**OnHit);
+ 	}
+ 
+ 	Config.ExplosionRadius = ReadItemStat(Def, GBStat::Radius, 0.f);
++	// Full damage in the whole radius when 0, linear falloff when 1 (same meaning as the spell param).
++	Config.bExplosionFalloff = ReadItemStat(Def, GBSpellParam::ExplosionFalloff, 1.f) > 0.5f;
++	Config.ExplosionKnockback = FMath::Max(0.f, ReadItemStat(Def, GBSpellParam::ExplosionKnockback, 0.f));
+ 	Config.Speed = ReadItemStat(Def, GBStat::Speed, Config.Speed);
+ 	Config.FuseTime = ReadItemStat(Def, GBStat::FuseTime, 0.f);
+ 	Config.GravityScale = ReadItemStat(Def, GBStat::ProjectileGravity, 1.f);
+ 	Config.Radius = ReadItemStat(Def, GBStat::ProjectileRadius, Config.Radius);
++	Config.Bounciness = ReadItemStat(Def, GBItemStat::Bounciness, Config.Bounciness);
++	Config.Friction = ReadItemStat(Def, GBItemStat::Friction, Config.Friction);
+ 	if (const float* Range = Def.Stats.Find(GBStat::Range))
+ 	{
+ 		Config.MaxRange = *Range;
+ 	}
++	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
++	{
++		Config.MaxLifetime = Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
++	}
+ 
+ 	// Art rule (GDD 3): the grenade is cyberpunk, so it is 3D.
+ 	Config.bPixelArt = false;
+ 	const FLinearColor ElementTint = GBPlaceholder::ElementColor(static_cast<uint8>(Def.Element));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+@@ -13,10 +13,8 @@
+ namespace
+ {
+ 	// Visual and geometric limits only.
+ 	constexpr int32 MaxWallSprites = 8;
+-	/** Pawns pressed against a blocking wall still count as touching it for damage ticks. */
+-	constexpr float WallTouchMarginCm = 15.f;
+ 	constexpr float WallGroundSearchExtraCm = 2000.f;
+ }
+ 
+ AGBSpell_Wall::AGBSpell_Wall()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+@@ -135,9 +135,11 @@
+ 
+ void AGBSpell_Wall::DamageTick()
+ {
+ 	TArray<AActor*> Targets;
+-	const FVector Extent = Box->GetUnscaledBoxExtent() + FVector(WallTouchMarginCm);
++	// Pawns pressed against a blocking wall still count as touching it for damage ticks.
++	const float TouchMargin = ReadParam(GBSpellParam::TouchMargin, 15.f);
++	const FVector Extent = Box->GetUnscaledBoxExtent() + FVector(TouchMargin);
+ 	GatherHostilesInBox(GetActorLocation(), GetActorQuat(), Extent, Targets);
+ 	for (AActor* Target : Targets)
+ 	{
+ 		DamageTarget(Target, DamagePerTick, GetActorLocation());
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+@@ -11,19 +11,30 @@
+ {
+ 	PrimaryActorTick.bCanEverTick = false;
+ }
+ 
+-float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft)
++float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft, float BlockArcDegrees)
+ {
+ 	if (Amount <= 0.f || ShieldHealthLeft <= 0.f || HitDirection.IsNearlyZero() || AimDirection.IsNearlyZero())
+ 	{
+ 		return 0.f;
+ 	}
+-	// A hit from the front travels against the aim (source within 90 degrees of the aim direction).
+-	if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= 0.f)
++	const float ClampedArc = FMath::Clamp(BlockArcDegrees, 0.f, 360.f);
++	if (ClampedArc <= 0.f)
+ 	{
+ 		return 0.f;
+ 	}
++	if (ClampedArc < 360.f)
++	{
++		// A hit blocks when the direction to the attacker is within half the arc of the aim: the dot of the
++		// hit travel direction (source to caster) with the aim is then below minus the cosine of half the arc.
++		// cos(half of 180) is snapped to 0, so 180 behaves exactly like the old "Dot >= 0" front rule.
++		const float CosHalf = FMath::IsNearlyEqual(ClampedArc, 180.f) ? 0.f : FMath::Cos(FMath::DegreesToRadians(ClampedArc * 0.5f));
++		if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= -CosHalf)
++		{
++			return 0.f;
++		}
++	}
+ 	return FMath::Min(Amount * FMath::Clamp(InBlockFraction, 0.f, 1.f), ShieldHealthLeft);
+ }
+ 
+ void AGBSpell_Shield::StartSpell()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[93m[1m! [0mretrying (attempt 2): The backend is temporarily overloaded. Please retry.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+@@ -40,8 +40,9 @@
+ void AGBSpell_Shield::StartSpell()
+ {
+ 	const float Duration = FMath::Max(0.f, ReadParam(GBStat::Duration, 20.f));
+ 	BlockFraction = FMath::Clamp(ReadParam(GBStat::BlockFraction, 0.75f), 0.f, 1.f);
++	BlockArcDegrees = FMath::Clamp(ReadParam(GBShieldParam::BlockArcDegrees, 180.f), 0.f, 360.f);
+ 	MaxShieldHealth = FMath::Max(1.f, ReadParam(GBStat::Health, 150.f));
+ 	ShieldHealth = MaxShieldHealth;
+ 	RaisedMoveSpeedMult = FMath::Max(0.f, ReadParam(GBShieldParam::RaisedMoveSpeedMult, 0.6f));
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+@@ -159,9 +159,9 @@
+ 	FVector AimOrigin;
+ 	FVector AimDir;
+ 	GetCasterAim(AimOrigin, AimDir);
+ 
+-	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth);
++	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth, BlockArcDegrees);
+ 	if (Blocked <= 0.f)
+ 	{
+ 		return;
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+Index: Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
++++ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+@@ -60,8 +60,18 @@
+ {
+ 	return ReadStat(GBQTEStat::StickGestureScale, GBQTEComponentPrivate::DefaultStickGestureScale);
+ }
+ 
++float UGBQTEComponent::GetFailManaRefund() const
++{
++	return ReadStat(GBQTEStat::FailManaRefund, 0.f);
++}
++
++float UGBQTEComponent::GetFailCooldownMult() const
++{
++	return ReadStat(GBQTEStat::FailCooldownMult, 1.f);
++}
++
+ FGBQTEConfig UGBQTEComponent::BuildConfig() const
+ {
+ 	const FGBQTEConfig Defaults;
+ 	FGBQTEConfig Config;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp
+@@ -501,16 +501,34 @@
+ 		return;
+ 	}
+ 
+ 	UGBStatsComponent* Stats = GetOwnerStats();
+-	StartCooldown(SpellId, GBSpell::ResolveParam(*Definition, GBStat::Cooldown, Result.Power, Result.Reach, Result.bUsedQTE, Stats, 0.f));
++	const float FullCooldown = GBSpell::ResolveParam(*Definition, GBStat::Cooldown, Result.Power, Result.Reach, Result.bUsedQTE, Stats, 0.f);
+ 
+ 	if (!Result.bSuccess)
+ 	{
++		// Fizzle: every QTE step was missed. Part of the spent mana is refunded and the cooldown is scaled (QTE.json).
++		float RefundFraction = 0.f;
++		float CooldownMult = 1.f;
++		if (UGBQTEComponent* QTE = GetOwnerQTE())
++		{
++			RefundFraction = FMath::Clamp(QTE->GetFailManaRefund(), 0.f, 1.f);
++			CooldownMult = FMath::Max(0.f, QTE->GetFailCooldownMult());
++		}
++		StartCooldown(SpellId, FullCooldown * CooldownMult);
++		if (RefundFraction > 0.f)
++		{
++			if (UGBAttributeComponent* Attributes = GetOwnerAttributes())
++			{
++				Attributes->RestoreMana(GetManaCost(SpellId) * RefundFraction);
++			}
++		}
+ 		OnCastFailed.Broadcast(SpellId, EGBCastFailReason::QTEFailed);
+ 		return;
+ 	}
+ 
++	StartCooldown(SpellId, FullCooldown);
++
+ 	FGBSpellCast SpellCast = GBSpell::ResolveCast(*Definition, Result.Power, Result.Reach, Result.bUsedQTE, Stats);
+ 	AActor* Owner = GetOwner();
+ 	SpellCast.Caster = Owner;
+ 	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Owner))
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Code done. Now the JSON data files — appending keys only.
+[0m← [0mEdit Glyphbound/Content/Data/QTE.json
+Index: Glyphbound/Content/Data/QTE.json
+===================================================================
+--- Glyphbound/Content/Data/QTE.json
++++ Glyphbound/Content/Data/QTE.json
+@@ -8,9 +8,11 @@
+ 		"QTE.GestureMinScore": 0.35,
+ 		"QTE.GestureMinLength": 120,
+ 		"QTE.GestureIdleSubmitTime": 0.25,
+ 		"QTE.LineSubmitLengthMult": 2.5,
+-		"QTE.StickGestureScale": 600
++		"QTE.StickGestureScale": 600,
++		"QTE.FailManaRefund": 0,
++		"QTE.FailCooldownMult": 1
+ 	},
+ 	"Gestures": [
+ 		"LineRight",
+ 		"LineLeft",
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Game.json
+Index: Glyphbound/Content/Data/Game.json
+===================================================================
+--- Glyphbound/Content/Data/Game.json
++++ Glyphbound/Content/Data/Game.json
+@@ -61,9 +61,27 @@
+ 		"ElementalDefault.FrostSlow": 0.6,
+ 		"PrecisionRecoveryHealFraction": 0.03,
+ 		"PrecisionRecoveryCooldownBase": 7,
+ 		"PrecisionRecoveryCooldownPerRank": 1,
+-		"PrecisionRecoveryCooldownMin": 1
++		"PrecisionRecoveryCooldownMin": 1,
++		"FrostSlowMax": 0.95,
++		"KnockbackMinLift": 0.35,
++		"ProjectileMaxLifetime": 10,
++		"SpellProjectileLifetimeMargin": 1,
++		"EnemyMeleeAcceptanceFraction": 0.5,
++		"EnemyProjectileRangeMult": 1.5,
++		"EnemyAimHeightFraction": 0.5,
++		"EnemyStuckSpeedFraction": 0.25,
++		"EnemySteerSweepRadiusScale": 0.9,
++		"DuplicateGunMagazines": 1,
++		"DropScatterRadius": 90,
++		"TestSkillPointAmount": 1,
++		"RespawnHealthFraction": 1,
++		"RespawnManaFraction": 1,
++		"RespawnRefillAmmo": 1,
++		"EraTravelHealthFraction": 1,
++		"EraTravelManaFraction": 1,
++		"EraTravelRefillAmmo": 1
+ 	},
+ 	"Strings": {
+ 		"ElementalDefault.FireStatusReaction": "Ignite",
+ 		"ElementalDefault.LightningStatusReaction": "Stun",
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Player.json
+Index: Glyphbound/Content/Data/Player.json
+===================================================================
+--- Glyphbound/Content/Data/Player.json
++++ Glyphbound/Content/Data/Player.json
+@@ -20,9 +20,18 @@
+ 		"DamageTaken": 1,
+ 		"DamageDealt": 1,
+ 		"CapsuleRadius": 38,
+ 		"CapsuleHalfHeight": 90,
+-		"EyeHeight": 70
++		"EyeHeight": 70,
++		"AccelerationPerSpeed": 10,
++		"BrakingPerSpeed": 8,
++		"GroundFriction": 8,
++		"InteractFacingMinDot": 0.3,
++		"LookSensitivity": 2.5,
++		"StickYawRate": 200,
++		"StickPitchRate": 140,
++		"PitchLimit": 89,
++		"DashExitSpeedMult": 1
+ 	},
+ 	"StartingWeapons": [
+ 		"Staff_Apprentice"
+ 	],
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -76,8 +76,9 @@
+ 				"AttackWindup": 0.6,
+ 				"AggroRange": 2600,
+ 				"ProjectileSpeed": 2200,
+ 				"ProjectileRadius": 12,
++				"ProjectileGravity": 0,
+ 				"HeadFraction": 0.25,
+ 				"CapsuleRadius": 40,
+ 				"CapsuleHalfHeight": 95,
+ 				"FireDamageTaken": 1.25,
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -252,8 +252,9 @@
+ 				"AttackWindup": 0.5,
+ 				"AggroRange": 2600,
+ 				"ProjectileSpeed": 2600,
+ 				"ProjectileRadius": 10,
++				"ProjectileGravity": 0,
+ 				"HeadFraction": 0.22,
+ 				"CapsuleRadius": 42,
+ 				"CapsuleHalfHeight": 96,
+ 				"LightningDamageTaken": 1.25,
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -287,8 +287,9 @@
+ 				"AttackWindup": 0.6,
+ 				"AggroRange": 2800,
+ 				"ProjectileSpeed": 3000,
+ 				"ProjectileRadius": 12,
++				"ProjectileGravity": 0,
+ 				"HeadFraction": 0.2,
+ 				"CapsuleRadius": 46,
+ 				"CapsuleHalfHeight": 105,
+ 				"LightningDamageTaken": 1.25,
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -444,8 +444,9 @@
+ 				"AttackWindup": 0.45,
+ 				"AggroRange": 6000,
+ 				"ProjectileSpeed": 3200,
+ 				"ProjectileRadius": 14,
++				"ProjectileGravity": 0,
+ 				"HeadFraction": 0.2,
+ 				"CapsuleRadius": 50,
+ 				"CapsuleHalfHeight": 115,
+ 				"IceDamageTaken": 0.75,
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -488,8 +488,9 @@
+ 				"AttackWindup": 0.45,
+ 				"AggroRange": 8000,
+ 				"ProjectileSpeed": 3400,
+ 				"ProjectileRadius": 16,
++				"ProjectileGravity": 0,
+ 				"HeadFraction": 0.2,
+ 				"CapsuleRadius": 60,
+ 				"CapsuleHalfHeight": 135,
+ 				"LightningDamageTaken": 1.25,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Items.json
+Index: Glyphbound/Content/Data/Items.json
+===================================================================
+--- Glyphbound/Content/Data/Items.json
++++ Glyphbound/Content/Data/Items.json
+@@ -46,9 +46,13 @@
+ 				"FuseTime": 1.6,
+ 				"ProjectileGravity": 1,
+ 				"ProjectileRadius": 12,
+ 				"ThrowPitch": 8,
+-				"Range": 5000
++				"Range": 5000,
++				"ExplosionFalloff": 1,
++				"ExplosionKnockback": 0,
++				"Bounciness": 0.6,
++				"Friction": 0.2
+ 			},
+ 			"Strings": { "Sprite": "grenade_electric", "PickupLook": "3D" }
+ 		},
+ 		{
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -177,8 +177,14 @@
+ 					"Base": 0,
+ 					"Min": 0,
+ 					"Max": 0,
+ 					"ScaledBy": "None"
++				},
++				"TouchMargin": {
++					"Base": 15,
++					"Min": 15,
++					"Max": 15,
++					"ScaledBy": "None"
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "fire_wall",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -640,8 +640,14 @@
+ 					"Base": 0,
+ 					"Min": 0,
+ 					"Max": 0,
+ 					"ScaledBy": "None"
++				},
++				"TouchMargin": {
++					"Base": 15,
++					"Min": 15,
++					"Max": 15,
++					"ScaledBy": "None"
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Texture": "tile_ice",
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -697,8 +697,14 @@
+ 					"Base": 0.6,
+ 					"Min": 0.6,
+ 					"Max": 0.6,
+ 					"ScaledBy": "None"
++				},
++				"BlockArcDegrees": {
++					"Base": 180,
++					"Min": 180,
++					"Max": 180,
++					"ScaledBy": "None"
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "ice_shield",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+All edits applied. Now verification: JSON validity, leftover references, and re-reading key regions.
+[0m✱ [0mGrep "WallTouchMarginCm|ChestHeightFraction|SteerSweepRadiusScale|StuckSpeedFraction|ElementalTickIntervalKey|DefaultTickInterval|MouseDegreesPerUnit|StickYawDegreesPerSecond|StickPitchDegreesPerSecond|GroundFrictionValue|GBPickupLocal::ScatterRadius|ProjectileSpellLifetimeMargin" [90min Glyphbound/Source/Glyphbound · 5 matches[0m
+[0m$ [0mcd /c/GameJam/Glyphbound/Content/Data && python3 -c "
+import json
+for f in ['Game.json','Player.json','QTE.json','Enemies.json','Items.json','Spells.json']:
+    json.load(open(f))
+    print(f, 'OK')
+"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBPickup.cpp [90m[limit=20, offset=85][0m
+[0m$ [0mwhich python python3 2>/dev/null; ls /c/Python* 2>/dev/null; cmd //c where python 2>/dev/null | head -3; echo done
+/c/Users/VNasher/AppData/Local/Microsoft/WindowsApps/python
+/c/Users/VNasher/AppData/Local/Microsoft/WindowsApps/python3
+C:\Users\VNasher\AppData\Local\Microsoft\WindowsApps\python.exe
+done
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+Index: Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBPickup.cpp
++++ Glyphbound/Source/Glyphbound/World/GBPickup.cpp
+@@ -91,9 +91,9 @@
+ 		if (Drop.Chance < 1.f && FMath::FRand() > Drop.Chance)
+ 		{
+ 			continue;
+ 		}
+-		const FVector2D Offset = FMath::RandPointInCircle(GBPickupLocal::ScatterRadius);
++		const FVector2D Offset = FMath::RandPointInCircle(ScatterRadius);
+ 		if (SpawnPickup(World, Drop, Location + FVector(Offset.X, Offset.Y, 0.f)))
+ 		{
+ 			++Spawned;
+ 		}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Game.json [90m[limit=28, offset=60][0m
+[0m$ [0mwhich node deno jq 2>/dev/null; echo ---; ls "C:/Program Files/nodejs" 2>/dev/null | head -3; echo done
+/c/Program Files/nodejs/node
+---
+install_tools.bat
+node.exe
+node_modules
+done
+> build · muse-spark-1.3-contributor
+[0m$ [0mcd /c/GameJam/Glyphbound/Content/Data && node -e "
+const fs=require('fs');
+for (const f of ['Game.json','Player.json','QTE.json','Enemies.json','Items.json','Spells.json']) {
+  JSON.parse(fs.readFileSync(f,'utf8'));
+  console.log(f,'OK');
+}
+// spot-check new keys
+const g=JSON.parse(fs.readFileSync('Game.json','utf8')).Values;
+for (const k of ['FrostSlowMax','KnockbackMinLift','ProjectileMaxLifetime','SpellProjectileLifetimeMargin','EnemyMeleeAcceptanceFraction','EnemyProjectileRangeMult','EnemyAimHeightFraction','EnemyStuckSpeedFraction','EnemySteerSweepRadiusScale','DuplicateGunMagazines','DropScatterRadius','TestSkillPointAmount','RespawnHealthFraction','RespawnManaFraction','RespawnRefillAmmo','EraTravelHealthFraction','EraTravelManaFraction','EraTravelRefillAmmo']) if(!(k in g)) throw new Error('missing '+k);
+const p=JSON.parse(fs.readFileSync('Player.json','utf8')).Stats;
+for (const k of ['AccelerationPerSpeed','BrakingPerSpeed','GroundFriction','InteractFacingMinDot','LookSensitivity','StickYawRate','StickPitchRate','PitchLimit','DashExitSpeedMult']) if(!(k in p)) throw new Error('missing '+k);
+const q=JSON.parse(fs.readFileSync('QTE.json','utf8')).Stats;
+if(!('QTE.FailManaRefund' in q)||!('QTE.FailCooldownMult' in q)) throw new Error('missing QTE keys');
+const e=JSON.parse(fs.readFileSync('Enemies.json','utf8')).Enemies;
+const ranged=e.filter(x=>x.AttackMode==='Ranged');
+if(ranged.length!==5) throw new Error('ranged count '+ranged.length);
+for (const r of ranged) if(!('ProjectileGravity' in r.Stats)) throw new Error('missing gravity in '+r.Id);
+const it=JSON.parse(fs.readFileSync('Items.json','utf8')).Items.find(x=>x.Id==='ElectricGrenade').Stats;
+for (const k of ['ExplosionFalloff','ExplosionKnockback','Bounciness','Friction']) if(!(k in it)) throw new Error('missing '+k);
+const sp=JSON.parse(fs.readFileSync('Spells.json','utf8')).Spells;
+for (const id of ['FireWall','IceWall']) { const s=sp.find(x=>x.Id===id); if(!s||!s.Params.TouchMargin) throw new Error('missing TouchMargin in '+id); }
+if(!sp.find(x=>x.Id==='IceShield').Params.BlockArcDegrees) throw new Error('missing BlockArcDegrees');
+console.log('all key checks passed');
+"
+Game.json OK
+Player.json OK
+QTE.json OK
+Enemies.json OK
+Items.json OK
+Spells.json OK
+all key checks passed
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp [90m[limit=30, offset=48][0m
+[0m$ [0mcd /c/GameJam/Glyphbound/Content/Data && node -e "
+const fs=require('fs');
+const sp=JSON.parse(fs.readFileSync('Spells.json','utf8')).Spells;
+for (const id of ['FireWall','IceWall']) console.log(id, JSON.stringify(sp.find(x=>x.Id===id).Params.TouchMargin));
+console.log('IceShield', JSON.stringify(sp.find(x=>x.Id==='IceShield').Params.BlockArcDegrees));
+console.log('Grenade', JSON.stringify(JSON.parse(fs.readFileSync('Items.json','utf8')).Items.find(x=>x.Id==='ElectricGrenade').Stats));
+"
+FireWall {"Base":15,"Min":15,"Max":15,"ScaledBy":"None"}
+IceWall {"Base":15,"Min":15,"Max":15,"ScaledBy":"None"}
+IceShield {"Base":180,"Min":180,"Max":180,"ScaledBy":"None"}
+Grenade {"Damage":80,"BuildUp":60,"Radius":450,"Speed":1800,"FuseTime":1.6,"ProjectileGravity":1,"ProjectileRadius":12,"ThrowPitch":8,"Range":5000,"ExplosionFalloff":1,"ExplosionKnockback":0,"Bounciness":0.6,"Friction":0.2}
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp [90m[limit=14, offset=36][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp [90m[limit=45, offset=296][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=55, offset=560][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=20, offset=268][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=30, offset=806][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=65, offset=463][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp [90m[limit=30, offset=15][0m
+[0m✱ [0mGrep "RestoreAll\(|RefillAllAmmo\(\)" [90min Glyphbound/Source/Glyphbound · 19 matches[0m
+> build · muse-spark-1.3-contributor
+All callers are compatible. Final review of the complete diff.
+[0m$ [0mcd /c/GameJam && git status --short | head -30; echo ===; git diff --stat | tail -30
+M Design/GDD.md
+ M Devlog/raw/CENTRAL/2026-11-12/agents.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/claude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/claude-7c83ebdc-db9f-4d2a-a6cf-83322c35b386.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/transcripts/5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/transcripts/7c83ebdc-db9f-4d2a-a6cf-83322c35b386.jsonl
+ M Devlog/raw/_import.log
+ M Glyphbound/Content/Data/Encounters.json
+ M Glyphbound/Content/Data/Enemies.json
+ M Glyphbound/Content/Data/Game.json
+ M Glyphbound/Content/Data/Items.json
+ M Glyphbound/Content/Data/Player.json
+ M Glyphbound/Content/Data/QTE.json
+ M Glyphbound/Content/Data/Skills.json
+ M Glyphbound/Content/Data/Spells.json
+ M Glyphbound/Content/Data/StatusEffects.json
+ M Glyphbound/Content/Data/Weapons.json
+ M Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+ M Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+ M Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+ M Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+ M Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+ M Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+ M Glyphbound/Source/Glyphbound/Core/GBGameMode.h
+ M Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+ M Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+ M Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+ M Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp
+===
+warning: in the working copy of 'Design/GDD.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Encounters.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Enemies.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Game.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Player.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/QTE.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Skills.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/StatusEffects.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Content/Data/Weapons.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBProjectile.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBGameMode.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBStatNames.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUDShared.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/World/GBEraSubsystem.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/World/GBEraSubsystem.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/World/GBPickup.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/World/GBPickup.h', LF will be replaced by CRLF the next time Git touches it
+ Glyphbound/Content/Data/Weapons.json               |  38 +-
+ .../Source/Glyphbound/AI/GBEnemyCharacter.cpp      |  15 +-
+ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h |   5 +
+ .../Combat/GBElementalStatusComponent.cpp          |  28 +-
+ .../Glyphbound/Combat/GBElementalStatusComponent.h |   9 +
+ .../Source/Glyphbound/Combat/GBProjectile.cpp      |  15 +-
+ Glyphbound/Source/Glyphbound/Combat/GBProjectile.h |  12 +
+ Glyphbound/Source/Glyphbound/Core/GBGameMode.h     |   4 +
+ Glyphbound/Source/Glyphbound/Core/GBStatNames.h    |   9 +
+ .../Glyphbound/Items/GBInventoryComponent.cpp      |  10 +
+ .../Source/Glyphbound/Items/GBInventoryComponent.h |   2 +
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp |  45 +-
+ .../Source/Glyphbound/Player/GBPlayerCharacter.h   |   4 +-
+ .../Source/Glyphbound/QTE/GBQTEComponent.cpp       |  10 +
+ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h  |   6 +
+ .../Glyphbound/Spells/GBSpell_Projectile.cpp       |  13 +-
+ .../Source/Glyphbound/Spells/GBSpell_Shield.cpp    |  20 +-
+ .../Source/Glyphbound/Spells/GBSpell_Shield.h      |   5 +-
+ .../Source/Glyphbound/Spells/GBSpell_Wall.cpp      |   6 +-
+ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h |   2 +
+ .../Glyphbound/Spells/GBSpellbookComponent.cpp     |  20 +-
+ .../Glyphbound/Stats/GBAttributeComponent.cpp      |  15 +-
+ .../Source/Glyphbound/Stats/GBAttributeComponent.h |   4 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUDShared.h      |   1 +
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    |   6 +-
+ .../Source/Glyphbound/World/GBEraSubsystem.cpp     |   9 +-
+ .../Source/Glyphbound/World/GBEraSubsystem.h       |   4 +
+ Glyphbound/Source/Glyphbound/World/GBPickup.cpp    |  11 +-
+ Glyphbound/Source/Glyphbound/World/GBPickup.h      |   9 +
+ 45 files changed, 2272 insertions(+), 210 deletions(-)
+> build · muse-spark-1.3-contributor
+[0m$ [0mcd /c/GameJam && git diff Glyphbound/Source/Glyphbound/Combat/GBProjectile.h Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp | head -150
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Combat/GBProjectile.h', LF will be replaced by CRLF the next time Git touches it
+diff --git a/Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp b/Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+index 11a12b1..4d0503f 100644
+--- a/Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ b/Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -35,9 +35,6 @@ namespace GBEnemyCharacterLocal
+ 	// Pure layout / technical constants (not gameplay tuning).
+ 	constexpr float GroundProbeDepth = 1000.f;     // cm below the requested spawn point searched for a floor
+ 	constexpr float SpawnLift = 2.f;               // cm above the floor, so the capsule does not start inside it
+-	constexpr float ChestHeightFraction = 0.5f;    // of the capsule half height, above the center
+-	constexpr float SteerSweepRadiusScale = 0.9f;  // the steering sweep capsule is a bit thinner, so a wall it slides along is not "ahead"
+-	constexpr float StuckSpeedFraction = 0.25f;    // a slowed enemy is not stuck: the stuck distance never exceeds this share of its possible travel
+ 	constexpr int32 MaxSteerCandidatesPerSide = 12;
+ 	constexpr float TelegraphSpriteScale = 1.12f;
+ 	constexpr float TelegraphTintBlend = 0.55f;    // towards white
+@@ -439,7 +436,7 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
+ 			else
+ 			{
+ 				// Melee stops a bit inside its reach; ranged keeps closing in until it has line of sight.
+-				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * 0.5f;
++				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f);
+ 				const EPathFollowingRequestResult::Type Result = AI->MoveToActor(Goal, Acceptance, true, true, false);
+ 				bPathing = Result == EPathFollowingRequestResult::RequestSuccessful;
+ 				if (Result == EPathFollowingRequestResult::Failed)
+@@ -523,7 +520,7 @@ bool AGBEnemyCharacter::IsDirectionBlocked(const FVector& Direction, float Dista
+ 
+ 	// Bottom lifted by the step height (the character walks over anything lower), top unchanged, a bit thinner.
+ 	const float StepHeight = FMath::Max(Move->MaxStepHeight, 0.f);
+-	const float Radius = Capsule->GetScaledCapsuleRadius() * GBEnemyCharacterLocal::SteerSweepRadiusScale;
++	const float Radius = Capsule->GetScaledCapsuleRadius() * GetGameValue(GBEnemyKey::SteerSweepRadiusScale, 0.9f);
+ 	const float HalfHeight = FMath::Max(Capsule->GetScaledCapsuleHalfHeight() - StepHeight * 0.5f, Radius);
+ 	const FVector Start = GetActorLocation() + FVector::UpVector * (StepHeight * 0.5f);
+ 
+@@ -612,7 +609,7 @@ void AGBEnemyCharacter::UpdateStuck(float DeltaSeconds)
+ 
+ 	const float Moved = FVector::Dist2D(GetActorLocation(), StuckOrigin);
+ 	const float Speed = GetCharacterMovement() ? GetCharacterMovement()->MaxWalkSpeed : 0.f;
+-	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GBEnemyCharacterLocal::StuckSpeedFraction);
++	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GetGameValue(GBEnemyKey::StuckSpeedFraction, 0.25f));
+ 	ResetStuck();
+ 	if (Moved >= Threshold)
+ 	{
+@@ -696,7 +693,7 @@ void AGBEnemyCharacter::FaceTowards(const AActor* Goal)
+ 
+ FVector AGBEnemyCharacter::GetChestLocation() const
+ {
+-	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GBEnemyCharacterLocal::ChestHeightFraction);
++	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GetGameValue(GBEnemyKey::AimHeightFraction, 0.5f));
+ }
+ 
+ bool AGBEnemyCharacter::HasLineOfSight(const AActor* Goal) const
+@@ -770,7 +767,9 @@ void AGBEnemyCharacter::PerformAttack()
+ 		Config.Damage.Causer = nullptr;
+ 		Config.Speed = Stats->GetStat(GBStat::ProjectileSpeed, Config.Speed);
+ 		Config.Radius = Stats->GetStat(GBStat::ProjectileRadius, Config.Radius);
+-		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * 1.5f;
++		Config.GravityScale = Stats->GetStat(GBStat::ProjectileGravity, 0.f);
++		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
++		Config.MaxLifetime = GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+ 		Config.bPixelArt = Def->bPixelArt;
+ 		if (Def->bPixelArt)
+ 		{
+diff --git a/Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp b/Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+index 7d52a2a..7568641 100644
+--- a/Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
++++ b/Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp
+@@ -4,6 +4,7 @@
+ #include "Combat/GBCombatLibrary.h"
+ #include "Combat/GBExplosionEffect.h"
+ #include "Core/GBPlaceholder.h"
++#include "Data/GBDataSubsystem.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "UI/GBPixelSpriteLibrary.h"
+ #include "CollisionQueryParams.h"
+@@ -20,11 +21,6 @@ namespace GBProjectileLocal
+ {
+ 	/** Same lift as the radial damage obstruction trace (GBCombatLibrary.cpp), so a blast on the floor is not blocked by it. */
+ 	constexpr float KnockbackTraceLiftCm = 5.f;
+-	/**
+-	 * Smallest upward part of the push direction. A walking character pushed only sideways is stopped at once by
+-	 * ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
+-	 */
+-	constexpr float KnockbackMinLift = 0.35f;
+ }
+ 
+ AGBProjectile::AGBProjectile()
+@@ -113,6 +109,8 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
+ 	Movement->MaxSpeed = Config.Speed;
+ 	Movement->ProjectileGravityScale = Config.GravityScale;
+ 	Movement->bShouldBounce = Config.FuseTime > 0.f;
++	Movement->Bounciness = Config.Bounciness;
++	Movement->Friction = Config.Friction;
+ 	Movement->Velocity = Direction.GetSafeNormal() * Config.Speed;
+ 
+ 	const float VisualSize = Radius * 2.f * FMath::Max(Config.VisualScale, 0.01f);
+@@ -304,6 +302,11 @@ void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
+ 		return;
+ 	}
+ 
++	// Smallest upward part of the push direction: a walking character pushed only sideways is stopped at once by
++	// ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const float KnockbackMinLift = Data ? Data->GetGameValue(GBProjectileKey::KnockbackMinLift, 0.35f) : 0.35f;
++
+ 	FCollisionObjectQueryParams ObjectParams;
+ 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+ 	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBExplosionKnockback), false, this);
+@@ -361,7 +364,7 @@ void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
+ 			// Blast right on the target: push it back along the projectile's flight.
+ 			Direction = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
+ 		}
+-		Direction.Z = FMath::Max(Direction.Z, GBProjectileLocal::KnockbackMinLift);
++		Direction.Z = FMath::Max(Direction.Z, KnockbackMinLift);
+ 		Direction = Direction.GetSafeNormal();
+ 		Character->LaunchCharacter(Direction * Strength, /*bXYOverride*/ true, /*bZOverride*/ true);
+ 	}
+diff --git a/Glyphbound/Source/Glyphbound/Combat/GBProjectile.h b/Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+index a124cef..df1ed92 100644
+--- a/Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
++++ b/Glyphbound/Source/Glyphbound/Combat/GBProjectile.h
+@@ -12,6 +12,14 @@ class UBillboardComponent;
+ class UStaticMeshComponent;
+ class UPrimitiveComponent;
+ 
++/** Keys of Game.json "Values" read when a projectile is launched. */
++namespace GBProjectileKey
++{
++	inline const FName KnockbackMinLift(TEXT("KnockbackMinLift")); // smallest upward part of the blast push direction
++	inline const FName ProjectileMaxLifetime(TEXT("ProjectileMaxLifetime")); // seconds before a projectile removes itself
++	inline const FName SpellProjectileLifetimeMargin(TEXT("SpellProjectileLifetimeMargin")); // extra seconds on top of Range / Speed, so a spell bolt is never removed before reaching its range
++}
++
+ /** Everything a projectile needs; filled from weapon stats, spell params or item stats by whoever fires it. */
+ USTRUCT(BlueprintType)
+ struct GLYPHBOUND_API FGBProjectileConfig
+@@ -41,6 +49,10 @@ struct GLYPHBOUND_API FGBProjectileConfig
+ 	UPROPERTY() float ExplosionEffectTime = 0.35f;
+ 	/** > 0: it does not explode on contact with the world; it bounces and explodes after this many seconds (grenades). */
+ 	UPROPERTY() float FuseTime = 0.f;
++	/** Bounce retention (UProjectileMovementComponent::Bounciness). Only used when FuseTime > 0. */
++	UPROPERTY() float Bounciness = 0.6f;
++	/** Surface friction when bouncing (UProjectileMovementComponent::Friction). Only used when FuseTime > 0. */
++	UPROPERTY() float Friction = 0.2f;
+ 	/** Keeps going through actors it damages (each actor once). */
+ 	UPROPERTY() bool bPierce = false;
+> build · muse-spark-1.3-contributor
+[0m$ [0mcd /c/GameJam && git diff Glyphbound/Source/Glyphbound/Player/ Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp Glyphbound/Source/Glyphbound/Items/ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp | head -260
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+diff --git a/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp b/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+index 0c50a2d..0a290fb 100644
+--- a/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ b/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -5,6 +5,7 @@
+ #include "Core/GBPlaceholder.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Stats/GBStatsComponent.h"
++#include "Spells/GBSpellActor.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Combat/GBProjectile.h"
+ #include "Weapons/GBEquipmentComponent.h"
+@@ -270,14 +271,23 @@ bool UGBInventoryComponent::UseThrowable(const FGBItemDefinition& Def)
+ 	}
+ 
+ 	Config.ExplosionRadius = ReadItemStat(Def, GBStat::Radius, 0.f);
++	// Full damage in the whole radius when 0, linear falloff when 1 (same meaning as the spell param).
++	Config.bExplosionFalloff = ReadItemStat(Def, GBSpellParam::ExplosionFalloff, 1.f) > 0.5f;
++	Config.ExplosionKnockback = FMath::Max(0.f, ReadItemStat(Def, GBSpellParam::ExplosionKnockback, 0.f));
+ 	Config.Speed = ReadItemStat(Def, GBStat::Speed, Config.Speed);
+ 	Config.FuseTime = ReadItemStat(Def, GBStat::FuseTime, 0.f);
+ 	Config.GravityScale = ReadItemStat(Def, GBStat::ProjectileGravity, 1.f);
+ 	Config.Radius = ReadItemStat(Def, GBStat::ProjectileRadius, Config.Radius);
++	Config.Bounciness = ReadItemStat(Def, GBItemStat::Bounciness, Config.Bounciness);
++	Config.Friction = ReadItemStat(Def, GBItemStat::Friction, Config.Friction);
+ 	if (const float* Range = Def.Stats.Find(GBStat::Range))
+ 	{
+ 		Config.MaxRange = *Range;
+ 	}
++	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
++	{
++		Config.MaxLifetime = Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
++	}
+ 
+ 	// Art rule (GDD 3): the grenade is cyberpunk, so it is 3D.
+ 	Config.bPixelArt = false;
+diff --git a/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h b/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+index 9a12ff0..cfd52b8 100644
+--- a/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
++++ b/Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h
+@@ -13,6 +13,8 @@ struct FGBPlayerSnapshot;
+ namespace GBItemStat
+ {
+ 	inline const FName ThrowPitch(TEXT("ThrowPitch"));   // degrees added above the aim direction when throwing
++	inline const FName Bounciness(TEXT("Bounciness"));   // bounce retention of a throwable (UProjectileMovementComponent default 0.6)
++	inline const FName Friction(TEXT("Friction"));       // surface friction of a throwable when bouncing (UProjectileMovementComponent default 0.2)
+ }
+ 
+ DECLARE_MULTICAST_DELEGATE_TwoParams(FGBOnItemCountChanged, FName /*ItemId*/, int32 /*NewCount*/);
+diff --git a/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp b/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+index 1c9dc5e..2d91a06 100644
+--- a/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ b/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -37,19 +37,9 @@ namespace
+ {
+ 	// Feel and visual constants (not gameplay balance). Mouse2D values come scaled by the engine's
+ 	// default axis sensitivity (0.07 per pixel, BaseInput.ini), hence the conversions below.
+-	constexpr float MouseDegreesPerUnit = 2.5f;
+ 	constexpr float MouseUnitsPerPixel = 0.07f;
+-	constexpr float StickYawDegreesPerSecond = 200.f;
+-	constexpr float StickPitchDegreesPerSecond = 140.f;
+-	constexpr float MaxLookPitch = 89.f;
+ 	/** Ignore axis noise on wheel / D-pad style 1D actions. */
+ 	constexpr float AxisStepThreshold = 0.1f;
+-	/** Interactables must be roughly in front of the view. */
+-	constexpr float InteractFacingMinDot = 0.3f;
+-	/** Snappy shooter movement: acceleration and braking as multiples of the walk speed (per second). */
+-	constexpr float AccelerationPerSpeed = 10.f;
+-	constexpr float BrakingPerSpeed = 8.f;
+-	constexpr float GroundFrictionValue = 8.f;
+ 	/** Held item anchor and muzzle offsets from the camera (forward, right, up), cm. */
+ 	const FVector HeldItemOffset(30.f, 15.f, -15.f);
+ 	const FVector MuzzleOffset(40.f, 15.f, -12.f);
+@@ -90,7 +80,7 @@ AGBPlayerCharacter::AGBPlayerCharacter()
+ 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+ 	{
+ 		MoveComp->bOrientRotationToMovement = false;
+-		MoveComp->GroundFriction = GroundFrictionValue;
++		// GroundFriction comes from Player.json (UpdateWalkSpeed on BeginPlay); until then the engine default (8.0) applies.
+ 	}
+ }
+ 
+@@ -284,9 +274,9 @@ void AGBPlayerCharacter::UpdateWalkSpeed()
+ 	}
+ 	const float Speed = FMath::Max(0.f, ReadStat(GBStat::MoveSpeed, 750.f) * MoveSpeedScale);
+ 	MoveComp->MaxWalkSpeed = Speed;
+-	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * AccelerationPerSpeed);
+-	MoveComp->BrakingDecelerationWalking = Speed * BrakingPerSpeed;
+-	MoveComp->GroundFriction = GroundFrictionValue;
++	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * ReadStat(GBStat::AccelerationPerSpeed, 10.f));
++	MoveComp->BrakingDecelerationWalking = Speed * ReadStat(GBStat::BrakingPerSpeed, 8.f);
++	MoveComp->GroundFriction = ReadStat(GBStat::GroundFriction, 8.f);
+ }
+ 
+ void AGBPlayerCharacter::SetMoveSpeedScale(float Scale)
+@@ -359,7 +349,8 @@ void AGBPlayerCharacter::AddLookDelta(float YawDegrees, float PitchDegrees)
+ 	}
+ 	FRotator Rotation = Controller->GetControlRotation();
+ 	Rotation.Yaw = FRotator::NormalizeAxis(Rotation.Yaw + YawDegrees);
+-	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -static_cast<double>(MaxLookPitch), static_cast<double>(MaxLookPitch));
++	const double PitchLimit = ReadStat(GBStat::PitchLimit, 89.f);
++	Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch + PitchDegrees), -PitchLimit, PitchLimit);
+ 	Rotation.Roll = 0.f;
+ 	Controller->SetControlRotation(Rotation);
+ }
+@@ -386,7 +377,7 @@ void AGBPlayerCharacter::EndDash()
+ 		const int32 SavedJumpCount = JumpCurrentCount;
+ 		MoveComp->SetMovementMode(MOVE_Falling);
+ 		JumpCurrentCount = SavedJumpCount;
+-		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed;
++		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed * ReadStat(GBStat::DashExitSpeedMult, 1.f);
+ 	}
+ }
+ 
+@@ -532,7 +523,7 @@ void AGBPlayerCharacter::UpdateFocusedInteractable()
+ 	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Range), QueryParams);
+ 
+ 	AActor* Best = nullptr;
+-	float BestDot = InteractFacingMinDot;
++	float BestDot = ReadStat(GBStat::InteractFacingMinDot, 0.3f);
+ 	for (const FOverlapResult& Overlap : Overlaps)
+ 	{
+ 		AActor* Actor = Overlap.GetActor();
+@@ -573,10 +564,13 @@ bool AGBPlayerCharacter::IsQTEActive() const
+ 	return QTE && QTE->IsActive();
+ }
+ 
+-void AGBPlayerCharacter::RestoreAll()
++void AGBPlayerCharacter::RestoreAll(float HealthFraction, float ManaFraction, bool bRefillAmmo, bool bOnlyRaise)
+ {
+-	Attributes->RestoreAll();
+-	Equipment->RefillAllAmmo();
++	Attributes->RestoreAll(HealthFraction, ManaFraction, bOnlyRaise);
++	if (bRefillAmmo)
++	{
++		Equipment->RefillAllAmmo();
++	}
+ }
+ 
+ void AGBPlayerCharacter::ReleaseHeldInputs()
+@@ -837,7 +831,12 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
+ 	{
+ 		StatusEffects->RemoveAllEffects();
+ 	}
+-	RestoreAll();
++	// Checkpoint respawn always starts from the restore fractions (health and mana are set, not raised).
++	const UGBDataSubsystem* RespawnData = UGBDataSubsystem::Get(this);
++	const float RespawnHealth = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnHealthFraction, 1.f) : 1.f;
++	const float RespawnMana = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnManaFraction, 1.f) : 1.f;
++	const bool bRespawnRefill = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnRefillAmmo, 1.f) > 0.5f : true;
++	RestoreAll(RespawnHealth, RespawnMana, bRespawnRefill, /*bOnlyRaise*/ false);
+ 
+ 	UnfreezeMovement();
+ 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+@@ -976,7 +975,7 @@ void AGBPlayerCharacter::InputLook(const FInputActionValue& Value)
+ 		QTE->HandleGestureInput(FVector2D(Delta.X, -Delta.Y) / MouseUnitsPerPixel);
+ 		return;
+ 	}
+-	AddLookDelta(static_cast<float>(Delta.X) * MouseDegreesPerUnit, static_cast<float>(Delta.Y) * MouseDegreesPerUnit);
++	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f), static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f));
+ }
+ 
+ void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
+@@ -997,7 +996,7 @@ void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)
+ 	const UWorld* World = GetWorld();
+ 	// Real time: the QTE runs in real time while the world is slowed.
+ 	const float RealDelta = World ? World->DeltaRealTimeSeconds : 0.f;
+-	AddLookDelta(static_cast<float>(Stick.X) * StickYawDegreesPerSecond * RealDelta, static_cast<float>(Stick.Y) * StickPitchDegreesPerSecond * RealDelta);
++	AddLookDelta(static_cast<float>(Stick.X) * ReadStat(GBStat::StickYawRate, 200.f) * RealDelta, static_cast<float>(Stick.Y) * ReadStat(GBStat::StickPitchRate, 140.f) * RealDelta);
+ }
+ 
+ void AGBPlayerCharacter::InputFace(EGBQTEKey Key)
+diff --git a/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h b/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+index b495a5b..9b99477 100644
+--- a/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ b/Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -97,8 +97,8 @@ public:
+ 
+ 	// ---- State ----
+ 	bool IsDead() const;
+-	/** Full health, mana and ammo (era travel, GDD 4). */
+-	void RestoreAll();
++	/** Restores health, mana and ammo (respawn and era travel, GDD 4). Fractions of the maximums (1 = full); bOnlyRaise raises health/mana towards them without lowering. */
++	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bRefillAmmo = true, bool bOnlyRaise = false);
+ 	/** Stops input-driven actions and hides the held item (death, cutscene). */
+ 	void SetControlEnabled(bool bEnabled);
+ 	bool IsControlEnabled() const { return bControlEnabled; }
+diff --git a/Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp b/Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+index 3c9918b..1328752 100644
+--- a/Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
++++ b/Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.cpp
+@@ -12,17 +12,28 @@ AGBSpell_Shield::AGBSpell_Shield()
+ 	PrimaryActorTick.bCanEverTick = false;
+ }
+ 
+-float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft)
++float AGBSpell_Shield::ComputeBlockedDamage(float Amount, const FVector& HitDirection, const FVector& AimDirection, float InBlockFraction, float ShieldHealthLeft, float BlockArcDegrees)
+ {
+ 	if (Amount <= 0.f || ShieldHealthLeft <= 0.f || HitDirection.IsNearlyZero() || AimDirection.IsNearlyZero())
+ 	{
+ 		return 0.f;
+ 	}
+-	// A hit from the front travels against the aim (source within 90 degrees of the aim direction).
+-	if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= 0.f)
++	const float ClampedArc = FMath::Clamp(BlockArcDegrees, 0.f, 360.f);
++	if (ClampedArc <= 0.f)
+ 	{
+ 		return 0.f;
+ 	}
++	if (ClampedArc < 360.f)
++	{
++		// A hit blocks when the direction to the attacker is within half the arc of the aim: the dot of the
++		// hit travel direction (source to caster) with the aim is then below minus the cosine of half the arc.
++		// cos(half of 180) is snapped to 0, so 180 behaves exactly like the old "Dot >= 0" front rule.
++		const float CosHalf = FMath::IsNearlyEqual(ClampedArc, 180.f) ? 0.f : FMath::Cos(FMath::DegreesToRadians(ClampedArc * 0.5f));
++		if (FVector::DotProduct(HitDirection.GetSafeNormal(), AimDirection.GetSafeNormal()) >= -CosHalf)
++		{
++			return 0.f;
++		}
++	}
+ 	return FMath::Min(Amount * FMath::Clamp(InBlockFraction, 0.f, 1.f), ShieldHealthLeft);
+ }
+ 
+@@ -30,6 +41,7 @@ void AGBSpell_Shield::StartSpell()
+ {
+ 	const float Duration = FMath::Max(0.f, ReadParam(GBStat::Duration, 20.f));
+ 	BlockFraction = FMath::Clamp(ReadParam(GBStat::BlockFraction, 0.75f), 0.f, 1.f);
++	BlockArcDegrees = FMath::Clamp(ReadParam(GBShieldParam::BlockArcDegrees, 180.f), 0.f, 360.f);
+ 	MaxShieldHealth = FMath::Max(1.f, ReadParam(GBStat::Health, 150.f));
+ 	ShieldHealth = MaxShieldHealth;
+ 	RaisedMoveSpeedMult = FMath::Max(0.f, ReadParam(GBShieldParam::RaisedMoveSpeedMult, 0.6f));
+@@ -148,7 +160,7 @@ void AGBSpell_Shield::HandleIncomingDamage(FGBDamageInfo& Info)
+ 	FVector AimDir;
+ 	GetCasterAim(AimOrigin, AimDir);
+ 
+-	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth);
++	const float Blocked = ComputeBlockedDamage(Info.Amount, HitDirection, AimDir, BlockFraction, ShieldHealth, BlockArcDegrees);
+ 	if (Blocked <= 0.f)
+ 	{
+ 		return;
+diff --git a/Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp b/Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+index 313e533..c179c9c 100644
+--- a/Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
++++ b/Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp
+@@ -14,8 +14,6 @@ namespace
+ {
+ 	// Visual and geometric limits only.
+ 	constexpr int32 MaxWallSprites = 8;
+-	/** Pawns pressed against a blocking wall still count as touching it for damage ticks. */
+-	constexpr float WallTouchMarginCm = 15.f;
+ 	constexpr float WallGroundSearchExtraCm = 2000.f;
+ }
+ 
+@@ -138,7 +136,9 @@ void AGBSpell_Wall::HandleWallDeath(const FGBDamageInfo& KillingBlow)
+ void AGBSpell_Wall::DamageTick()
+ {
+ 	TArray<AActor*> Targets;
+-	const FVector Extent = Box->GetUnscaledBoxExtent() + FVector(WallTouchMarginCm);
++	// Pawns pressed against a blocking wall still count as touching it for damage ticks.
++	const float TouchMargin = ReadParam(GBSpellParam::TouchMargin, 15.f);
+> build · muse-spark-1.3-contributor
+Everything checks out. Let me grab final line numbers for the report.
+[0m$ [0mcd /c/GameJam/Glyphbound/Source/Glyphbound && grep -n "GetGameValue(GBProjectileKey::ProjectileMaxLifetime\|GetGameValue(GBProjectileKey::SpellProjectileLifetimeMargin\|GetGameValue(GBProjectileKey::KnockbackMinLift\|GetGameValue(GBEnemyKey::\|GetGameValue(GBElementalStatusKey::\|GetGameValue(GBPickupKey::\|GetGameValue(GBHudKey::TestSkillPointAmount\|GetGameValue(GBGameValue::Respawn\|GetGameValue(GBGameValue::EraTravel\|GetStat(GBStat::ProjectileGravity\|ReadStat(GBStat::\|ReadParam(GBSpellParam::TouchMargin\|ReadParam(GBShieldParam::BlockArcDegrees\|ReadItemStat(Def, GBSpellParam::\|ReadItemStat(Def, GBItemStat::\|GetFailManaRefund\|GetFailCooldownMult\|RestoreAll(RespawnHealth\|RestoreAll(HealthFraction\|Stats->GetStat(GBStat::ProjectileGravity" Combat/GBProjectile.cpp AI/GBEnemyCharacter.cpp Combat/GBElementalStatusComponent.cpp World/GBPickup.cpp UI/GBHUD_Menus.cpp World/GBEraSubsystem.cpp Player/GBPlayerCharacter.cpp Items/GBInventoryComponent.cpp Spells/GBSpell_Projectile.cpp Spells/GBSpell_Wall.cpp Spells/GBSpell_Shield.cpp Spells/GBSpellbookComponent.cpp QTE/GBQTEComponent.cpp | grep -v "^\s*//"
+Combat/GBProjectile.cpp:308:	const float KnockbackMinLift = Data ? Data->GetGameValue(GBProjectileKey::KnockbackMinLift, 0.35f) : 0.35f;
+AI/GBEnemyCharacter.cpp:439:				const float Acceptance = IsRanged() ? 0.f : Stats->GetStat(GBStat::AttackRange, 0.f) * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f);
+AI/GBEnemyCharacter.cpp:444:					NavRetryTimer = GetGameValue(GBEnemyKey::NavRetryDelay, 1.f);
+AI/GBEnemyCharacter.cpp:477:	const float Feeler = FMath::Max(GetGameValue(GBEnemyKey::SteerFeelerLength, 150.f), 1.f);
+AI/GBEnemyCharacter.cpp:478:	const float AngleStep = FMath::Clamp(GetGameValue(GBEnemyKey::SteerAngleStep, 25.f), 1.f, 180.f);
+AI/GBEnemyCharacter.cpp:479:	const int32 PerSide = FMath::Clamp(FMath::RoundToInt(GetGameValue(GBEnemyKey::SteerCandidatesPerSide, 6.f)), 1, GBEnemyCharacterLocal::MaxSteerCandidatesPerSide);
+AI/GBEnemyCharacter.cpp:506:		SteerSideHoldTimer = FMath::Max(SteerSideHoldTimer, GetGameValue(GBEnemyKey::SteerSideHoldTime, 1.f));
+AI/GBEnemyCharacter.cpp:523:	const float Radius = Capsule->GetScaledCapsuleRadius() * GetGameValue(GBEnemyKey::SteerSweepRadiusScale, 0.9f);
+AI/GBEnemyCharacter.cpp:559:	const float ProbeDistance = FMath::Max(GetGameValue(GBEnemyKey::SteerLedgeProbeDistance, 80.f), 0.f);
+AI/GBEnemyCharacter.cpp:560:	const float LedgeDrop = FMath::Max(GetGameValue(GBEnemyKey::SteerLedgeDrop, 150.f), 0.f);
+AI/GBEnemyCharacter.cpp:604:	const float Window = FMath::Max(GetGameValue(GBEnemyKey::StuckTime, 0.8f), 0.1f);
+AI/GBEnemyCharacter.cpp:612:	const float Threshold = FMath::Min(GetGameValue(GBEnemyKey::StuckDistance, 50.f), Speed * Window * GetGameValue(GBEnemyKey::StuckSpeedFraction, 0.25f));
+AI/GBEnemyCharacter.cpp:620:	const float GoAround = FMath::Max(GetGameValue(GBEnemyKey::GoAroundTime, 1.5f), 0.f);
+AI/GBEnemyCharacter.cpp:624:		NavRetryTimer = FMath::Max(GetGameValue(GBEnemyKey::NavRetryDelay, 1.f), GoAround);
+AI/GBEnemyCharacter.cpp:696:	return GetActorLocation() + FVector::UpVector * (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * GetGameValue(GBEnemyKey::AimHeightFraction, 0.5f));
+AI/GBEnemyCharacter.cpp:754:		const float Tolerance = Data ? Data->GetGameValue(GBEnemyKey::MeleeReachTolerance, 1.2f) : 1.2f;
+AI/GBEnemyCharacter.cpp:770:		Config.GravityScale = Stats->GetStat(GBStat::ProjectileGravity, 0.f);
+AI/GBEnemyCharacter.cpp:771:		Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 0.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
+AI/GBEnemyCharacter.cpp:772:		Config.MaxLifetime = GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+AI/GBEnemyCharacter.cpp:856:	const float CorpseTime = Data ? Data->GetGameValue(GBEnemyKey::CorpseTime, 1.5f) : 1.5f;
+Combat/GBElementalStatusComponent.cpp:90:	const float Interval = Data ? Data->GetGameValue(GBElementalStatusKey::TickInterval, 0.1f) : 0.1f;
+Combat/GBElementalStatusComponent.cpp:325:			const float SlowMax = Data ? Data->GetGameValue(GBElementalStatusKey::FrostSlowMax, 0.95f) : 0.95f;
+World/GBPickup.cpp:87:	const float ScatterRadius = Data ? Data->GetGameValue(GBPickupKey::DropScatterRadius, 90.f) : 90.f;
+World/GBPickup.cpp:197:				const int32 Magazines = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBPickupKey::DuplicateGunMagazines, 1.f))) : 1;
+UI/GBHUD_Menus.cpp:830:	const int32 Amount = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBHudKey::TestSkillPointAmount, 1.f))) : 1;
+World/GBEraSubsystem.cpp:198:			const float HealthFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelHealthFraction, 1.f) : 1.f;
+World/GBEraSubsystem.cpp:199:			const float ManaFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelManaFraction, 1.f) : 1.f;
+World/GBEraSubsystem.cpp:200:			const bool bRefillAmmo = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelRefillAmmo, 1.f) > 0.5f : true;
+World/GBEraSubsystem.cpp:201:			Player->RestoreAll(HealthFraction, ManaFraction, bRefillAmmo, /*bOnlyRaise*/ true);
+Player/GBPlayerCharacter.cpp:241:	MoveComp->JumpZVelocity = FMath::Max(0.f, ReadStat(GBStat::JumpVelocity, 620.f));
+Player/GBPlayerCharacter.cpp:242:	MoveComp->AirControl = FMath::Max(0.f, ReadStat(GBStat::AirControl, 0.f));
+Player/GBPlayerCharacter.cpp:243:	MoveComp->GravityScale = ReadStat(GBStat::GravityScale, 1.6f);
+Player/GBPlayerCharacter.cpp:247:	JumpMaxCount = FMath::Max(1, FMath::RoundToInt(ReadStat(GBStat::MaxJumps, 1.f)));
+Player/GBPlayerCharacter.cpp:250:	const float Radius = FMath::Max(1.f, ReadStat(GBStat::CapsuleRadius, 38.f));
+Player/GBPlayerCharacter.cpp:251:	const float HalfHeight = FMath::Max(Radius, ReadStat(GBStat::CapsuleHalfHeight, 90.f));
+Player/GBPlayerCharacter.cpp:264:	BaseEyeHeight = ReadStat(GBStat::EyeHeight, 70.f);
+Player/GBPlayerCharacter.cpp:275:	const float Speed = FMath::Max(0.f, ReadStat(GBStat::MoveSpeed, 750.f) * MoveSpeedScale);
+Player/GBPlayerCharacter.cpp:277:	MoveComp->MaxAcceleration = FMath::Max(1.f, Speed * ReadStat(GBStat::AccelerationPerSpeed, 10.f));
+Player/GBPlayerCharacter.cpp:278:	MoveComp->BrakingDecelerationWalking = Speed * ReadStat(GBStat::BrakingPerSpeed, 8.f);
+Player/GBPlayerCharacter.cpp:279:	MoveComp->GroundFriction = ReadStat(GBStat::GroundFriction, 8.f);
+Player/GBPlayerCharacter.cpp:352:	const double PitchLimit = ReadStat(GBStat::PitchLimit, 89.f);
+Player/GBPlayerCharacter.cpp:380:		MoveComp->Velocity = DashVelocity.GetSafeNormal() * MoveComp->MaxWalkSpeed * ReadStat(GBStat::DashExitSpeedMult, 1.f);
+Player/GBPlayerCharacter.cpp:507:	const float Range = ReadStat(GBStat::InteractRange, 250.f);
+Player/GBPlayerCharacter.cpp:526:	float BestDot = ReadStat(GBStat::InteractFacingMinDot, 0.3f);
+Player/GBPlayerCharacter.cpp:569:	Attributes->RestoreAll(HealthFraction, ManaFraction, bOnlyRaise);
+Player/GBPlayerCharacter.cpp:836:	const float RespawnHealth = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnHealthFraction, 1.f) : 1.f;
+Player/GBPlayerCharacter.cpp:837:	const float RespawnMana = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnManaFraction, 1.f) : 1.f;
+Player/GBPlayerCharacter.cpp:838:	const bool bRespawnRefill = RespawnData ? RespawnData->GetGameValue(GBGameValue::RespawnRefillAmmo, 1.f) > 0.5f : true;
+Player/GBPlayerCharacter.cpp:839:	RestoreAll(RespawnHealth, RespawnMana, bRespawnRefill, /*bOnlyRaise*/ false);
+Player/GBPlayerCharacter.cpp:978:	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f), static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f));
+Player/GBPlayerCharacter.cpp:999:	AddLookDelta(static_cast<float>(Stick.X) * ReadStat(GBStat::StickYawRate, 200.f) * RealDelta, static_cast<float>(Stick.Y) * ReadStat(GBStat::StickPitchRate, 140.f) * RealDelta);
+Player/GBPlayerCharacter.cpp:1069:	const float Distance = ReadStat(GBStat::DashDistance, 700.f);
+Player/GBPlayerCharacter.cpp:1070:	const float Duration = ReadStat(GBStat::DashDuration, 0.18f);
+Player/GBPlayerCharacter.cpp:1071:	const float Cooldown = ReadStat(GBStat::DashCooldown, 1.2f);
+Items/GBInventoryComponent.cpp:275:	Config.bExplosionFalloff = ReadItemStat(Def, GBSpellParam::ExplosionFalloff, 1.f) > 0.5f;
+Items/GBInventoryComponent.cpp:276:	Config.ExplosionKnockback = FMath::Max(0.f, ReadItemStat(Def, GBSpellParam::ExplosionKnockback, 0.f));
+Items/GBInventoryComponent.cpp:281:	Config.Bounciness = ReadItemStat(Def, GBItemStat::Bounciness, Config.Bounciness);
+Items/GBInventoryComponent.cpp:282:	Config.Friction = ReadItemStat(Def, GBItemStat::Friction, Config.Friction);
+Items/GBInventoryComponent.cpp:289:		Config.MaxLifetime = Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+Items/GBInventoryComponent.cpp:299:	const float Tilt = ReadItemStat(Def, GBItemStat::ThrowPitch, 8.f);
+Spells/GBSpell_Projectile.cpp:37:		const float BaseLifetime = Data ? Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, 10.f) : 10.f;
+Spells/GBSpell_Projectile.cpp:38:		const float Margin = Data ? Data->GetGameValue(GBProjectileKey::SpellProjectileLifetimeMargin, 1.f) : 1.f;
+Spells/GBSpell_Wall.cpp:140:	const float TouchMargin = ReadParam(GBSpellParam::TouchMargin, 15.f);
+Spells/GBSpell_Shield.cpp:44:	BlockArcDegrees = FMath::Clamp(ReadParam(GBShieldParam::BlockArcDegrees, 180.f), 0.f, 360.f);
+Spells/GBSpellbookComponent.cpp:514:			RefundFraction = FMath::Clamp(QTE->GetFailManaRefund(), 0.f, 1.f);
+Spells/GBSpellbookComponent.cpp:515:			CooldownMult = FMath::Max(0.f, QTE->GetFailCooldownMult());
+QTE/GBQTEComponent.cpp:64:float UGBQTEComponent::GetFailManaRefund() const
+QTE/GBQTEComponent.cpp:69:float UGBQTEComponent::GetFailCooldownMult() const
+QTE/GBQTEComponent.cpp:78:	Config.SequenceLength = FMath::Max(0, FMath::RoundToInt(ReadStat(GBStat::QTESequenceLength, static_cast<float>(Defaults.SequenceLength))));
+QTE/GBQTEComponent.cpp:79:	Config.GestureCount = FMath::Max(0, FMath::RoundToInt(ReadStat(GBStat::QTEGestureCount, static_cast<float>(Defaults.GestureCount))));
+QTE/GBQTEComponent.cpp:80:	Config.TimeLimit = ReadStat(GBStat::QTETimeLimit, Defaults.TimeLimit);
+QTE/GBQTEComponent.cpp:121:	const float TimeDilation = ReadStat(GBStat::QTETimeDilation, GBQTEComponentPrivate::DefaultTimeDilation);
+> build · muse-spark-1.3-contributor
+Done. All changes are in the working tree, uncommitted. JSON files validate (parsed with node) and only gained new keys.
+
+1. Keys added (name, file, code default, reader)
+
+Game.json Values (all appended after PrecisionRecoveryCooldownMin, tabs kept):
+- FrostSlowMax 0.95: Combat/GBElementalStatusComponent.cpp:325 (StartStatus clamp)
+- KnockbackMinLift 0.35: Combat/GBProjectile.cpp:308 (ApplyExplosionKnockback, read once per blast)
+- ProjectileMaxLifetime 10: Spells/GBSpell_Projectile.cpp:37, AI/GBEnemyCharacter.cpp:772, Items/GBInventoryComponent.cpp:289
+- SpellProjectileLifetimeMargin 1.0: Spells/GBSpell_Projectile.cpp:38 (max(BaseLifetime, Range/Speed + Margin))
+- EnemyMeleeAcceptanceFraction 0.5: AI/GBEnemyCharacter.cpp:439 (AttackRange * this)
+- EnemyProjectileRangeMult 1.5: AI/GBEnemyCharacter.cpp:771 (AggroRange * this)
+- EnemyAimHeightFraction 0.5: AI/GBEnemyCharacter.cpp:696 (GetChestLocation)
+- EnemyStuckSpeedFraction 0.25: AI/GBEnemyCharacter.cpp:612
+- EnemySteerSweepRadiusScale 0.9: AI/GBEnemyCharacter.cpp:523
+- DuplicateGunMagazines 1: World/GBPickup.cpp:197 (GiveDrop)
+- DropScatterRadius 90: World/GBPickup.cpp:87 (SpawnDrops)
+- TestSkillPointAmount 1: UI/GBHUD_Menus.cpp:830 (AddTestSkillPoint; message prints the amount, identical text when 1)
+- RespawnHealthFraction/ManaFraction/RefillAmmo 1/1/1: Player/GBPlayerCharacter.cpp:836-839 (RespawnAt, set semantics)
+- EraTravelHealthFraction/ManaFraction/RefillAmmo 1/1/1: World/GBEraSubsystem.cpp:198-201 (PerformSwap, raise-only semantics)
+- Key constants: GBProjectileKey (GBProjectile.h), GBEnemyKey (GBEnemyCharacter.h), GBPickupKey (new, GBPickup.h), GBElementalStatusKey (new, GBElementalStatusComponent.h), GBHudKey.TestSkillPointAmount (GBHUDShared.h), GBGameValue respawn keys (GBGameMode.h) and era keys (GBEraSubsystem.h).
+
+Player.json Stats: AccelerationPerSpeed 10 (:277), BrakingPerSpeed 8 (:278), GroundFriction 8 (:279, via UpdateWalkSpeed), InteractFacingMinDot 0.3 (:526), LookSensitivity 2.5 (:978), StickYawRate 200 / StickPitchRate 140 (:999), PitchLimit 89 (:352), DashExitSpeedMult 1 (:380). Constants in GBStat. MouseUnitsPerPixel 0.07 kept in code (engine axis-sensitivity conversion, not gameplay).
+
+Enemies.json: ProjectileGravity 0 added to the 5 Ranged enemies (Orc_Past_Shaman, Orc_Future, Orc_Future_Enforcer, Valkyrie_Future, Entity_Phase1); read at AI/GBEnemyCharacter.cpp:770 into Config.GravityScale. Reuses existing GBStat::ProjectileGravity.
+
+Items.json ElectricGrenade: ExplosionFalloff 1 (GBSpellParam, same meaning as spell param; Items/GBInventoryComponent.cpp:275), ExplosionKnockback 0 (:276), Bounciness 0.6 / Friction 0.2 (new GBItemStat; engine UProjectileMovementComponent defaults verified in Engine/Source; struct FGBProjectileConfig gained Bounciness/Friction fields, applied in InitProjectile). Range already present.
+
+Spells.json Params: TouchMargin {15,15,15,None} on FireWall + IceWall (new GBSpellParam in GBSpell_Wall.h; read in DamageTick :140); BlockArcDegrees {180,180,180,None} on IceShield (new GBShieldParam; read in StartSpell :44, block iff dot(hitDir,aim) < -cos(arc/2), 180 snapped to exactly the old Dot>=0 rule, 360 skips the check).
+
+QTE.json: QTE.FailManaRefund 0, QTE.FailCooldownMult 1 (new GBQTEStat; public getters UGBQTEComponent::GetFailManaRefund/GetFailCooldownMult; applied in GBSpellbookComponent::FinishCast :507-527 only on fizzle; RefillRefund path clamps 0..1, cooldown mult >= 0; QTE-refused-to-start path untouched).
+
+Shared-restore refactor (no copy): UGBAttributeComponent::RestoreAll(fH=1,fM=1,bOnlyRaise=false) and AGBPlayerCharacter::RestoreAll(fH=1,fM=1,bRefill=true,bOnlyRaise=false). Defaults keep GBDevCommands and LoadFromSnapshot compiling unchanged.
+
+ElementalTickInterval: now re-read in HandleDataReloaded, subscribed in BeginPlay, unsubscribed in EndPlay.
+
+2. Literals NOT moved
+- FGBProjectileConfig::MaxLifetime struct default (= 10.f) stays as the fallback: a USTRUCT default has no world access. All three spawners that rely on it (spell, enemy, grenade) now read ProjectileMaxLifetime live.
+- AGBPlayerCharacter constructor no longer sets GroundFriction (engine default 8.0 verified in CharacterMovementComponent.cpp:685); UpdateWalkSpeed sets the data value on BeginPlay/OnStatsChanged.
+- Grenade "+1 magazine" HUD text in TryPickUp kept (display string, not a number).
+- Guards kept in code: StuckSpeedFraction clamp via Min(), shield arc clamp 0..360, refund clamp 0..1, MaxSteerCandidatesPerSide, NumSlots, TickInterval SafeInterval.
+
+3. Compile risks
+- GBSpellActor.h include added to GBInventoryComponent.cpp (for GBSpellParam): no cycle (SpellActor only includes SpellTypes/Core/Data), but not compiled here.
+- FMath::IsNearlyEqual / DegreesToRadians / FDelegateHandle::Remove usage are standard; UGBDataSubsystem::Get(world typenames) follows existing call sites.
+- FMath::RoundToInt on int32 Amount paths matches existing style; no Tests/ or forbidden files touched.

@@ -12,6 +12,13 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnBuildUpChanged, EGBElement /*Element
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnElementalStatusStarted, EGBElement /*Element*/, FName /*Reaction*/, float /*Duration*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnElementalStatusEnded, EGBElement /*Element*/);
 
+/** Keys of Game.json "Values" read by the elemental status component. */
+namespace GBElementalStatusKey
+{
+	inline const FName TickInterval(TEXT("ElementalTickInterval")); // seconds between build-up ticks while a bar is not empty
+	inline const FName FrostSlowMax(TEXT("FrostSlowMax"));         // FrostSlow is clamped to this, so the slow can never fully stop the target
+}
+
 UCLASS(ClassGroup = (Glyphbound), meta = (BlueprintSpawnableComponent))
 class GLYPHBOUND_API UGBElementalStatusComponent : public UActorComponent
 {
@@ -53,6 +60,7 @@ private:
 	void EndStatus(int32 Index);
 	void UpdateTickEnabled();
 	void HandleOwnerDeath(const FGBDamageInfo& KillingBlow);
+	void HandleDataReloaded();
 
 	FGBBuildUpMeter Meters[3];
 	FGBBuildUpEventLog EventLog;
@@ -63,6 +71,7 @@ private:
 	mutable TSet<FName> WarnedDefaults;
 
 	FDelegateHandle DeathHandle;
+	FDelegateHandle DataReloadedHandle;
 
 	/**
 	 * Game time (dilated, so the QTE slow-down applies) the meters were last advanced to; -1 when idle.

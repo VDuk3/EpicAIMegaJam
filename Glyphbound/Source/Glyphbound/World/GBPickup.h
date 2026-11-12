@@ -13,6 +13,15 @@ namespace GBPickupString
 	inline const FName PickupLook(TEXT("PickupLook"));
 }
 
+/** Keys of Game.json "Values" read by pickups. */
+namespace GBPickupKey
+{
+	/** Spare magazines given for picking up a copy of the equipped gun. */
+	inline const FName DuplicateGunMagazines(TEXT("DuplicateGunMagazines"));
+	/** cm around the kill where drops are scattered. */
+	inline const FName DropScatterRadius(TEXT("DropScatterRadius"));
+}
+
 /**
  * One pickup = one FGBDropDefinition (item, weapon or spell group).
  *  - Items and ammo are taken by walking over them (if there is room).

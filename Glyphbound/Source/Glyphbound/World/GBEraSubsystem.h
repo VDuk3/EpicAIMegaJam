@@ -14,6 +14,10 @@ namespace GBGameValue
 	inline const FName EraFadeOutTime(TEXT("EraFadeOutTime"));
 	inline const FName EraHoldTime(TEXT("EraHoldTime"));
 	inline const FName EraFadeInTime(TEXT("EraFadeInTime"));
+	/** Era travel restore: health and mana are raised to at least this fraction of max (never lowered), and whether guns are refilled. */
+	inline const FName EraTravelHealthFraction(TEXT("EraTravelHealthFraction"));
+	inline const FName EraTravelManaFraction(TEXT("EraTravelManaFraction"));
+	inline const FName EraTravelRefillAmmo(TEXT("EraTravelRefillAmmo"));
 }
 
 /**

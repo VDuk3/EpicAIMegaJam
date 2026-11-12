@@ -40,7 +40,7 @@
 				"Range": 6000,
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
-				"FireBuildUp": 10
+				"FireBuildUp": 18
 			},
 			"Strings": {
 				"Sprite": "staff_ember",
@@ -57,10 +57,10 @@
 			"FireMode": "Hitscan",
 			"bAutomatic": false,
 			"Stats": {
-				"Damage": 18,
-				"FireInterval": 0.22,
-				"MagazineSize": 12,
-				"SpareMagazines": 4,
+				"Damage": 20,
+				"FireInterval": 0.25,
+				"MagazineSize": 15,
+				"SpareMagazines": 6,
 				"ReloadTime": 1.2,
 				"Range": 8000,
 				"Spread": 1.2,
@@ -96,10 +96,10 @@
 			"bAutomatic": false,
 			"Stats": {
 				"Damage": 10,
-				"FireInterval": 0.85,
+				"FireInterval": 0.8,
 				"MagazineSize": 6,
 				"SpareMagazines": 4,
-				"ReloadTime": 2.0,
+				"ReloadTime": 2,
 				"Range": 3000,
 				"Spread": 6,
 				"AimSpread": 4.5,
@@ -118,9 +118,9 @@
 				"AimMoveSpeedMult": 0.75,
 				"AimTime": 0.18,
 				"EnchantBuildUpMult": 1,
-				"FireBuildUp": 25,
-				"LightningBuildUp": 25,
-				"IceBuildUp": 25
+				"FireBuildUp": 40,
+				"LightningBuildUp": 40,
+				"IceBuildUp": 40
 			},
 			"Strings": {}
 		},
@@ -133,10 +133,10 @@
 			"FireMode": "Hitscan",
 			"bAutomatic": true,
 			"Stats": {
-				"Damage": 14,
+				"Damage": 12,
 				"FireInterval": 0.1,
 				"MagazineSize": 30,
-				"SpareMagazines": 4,
+				"SpareMagazines": 5,
 				"ReloadTime": 1.8,
 				"Range": 12000,
 				"Spread": 1.8,
@@ -156,9 +156,9 @@
 				"AimMoveSpeedMult": 0.65,
 				"AimTime": 0.2,
 				"EnchantBuildUpMult": 1,
-				"FireBuildUp": 8,
-				"LightningBuildUp": 8,
-				"IceBuildUp": 8
+				"FireBuildUp": 6,
+				"LightningBuildUp": 6,
+				"IceBuildUp": 6
 			},
 			"Strings": {}
 		},
@@ -171,14 +171,14 @@
 			"FireMode": "Melee",
 			"bAutomatic": false,
 			"Stats": {
-				"Damage": 45,
+				"Damage": 50,
 				"FireInterval": 0.5,
 				"MeleeRange": 260,
 				"MeleeArc": 90,
 				"HeadshotMult": 1.5,
-				"FireBuildUp": 20,
-				"LightningBuildUp": 20,
-				"IceBuildUp": 20
+				"FireBuildUp": 25,
+				"LightningBuildUp": 25,
+				"IceBuildUp": 25
 			},
 			"Strings": {
 				"Sprite": "sword_blade"

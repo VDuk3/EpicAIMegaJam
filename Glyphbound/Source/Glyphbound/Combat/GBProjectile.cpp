@@ -4,6 +4,7 @@
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBExplosionEffect.h"
 #include "Core/GBPlaceholder.h"
+#include "Data/GBDataSubsystem.h"
 #include "Stats/GBAttributeComponent.h"
 #include "UI/GBPixelSpriteLibrary.h"
 #include "CollisionQueryParams.h"
@@ -20,11 +21,6 @@ namespace GBProjectileLocal
 {
 	/** Same lift as the radial damage obstruction trace (GBCombatLibrary.cpp), so a blast on the floor is not blocked by it. */
 	constexpr float KnockbackTraceLiftCm = 5.f;
-	/**
-	 * Smallest upward part of the push direction. A walking character pushed only sideways is stopped at once by
-	 * ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
-	 */
-	constexpr float KnockbackMinLift = 0.35f;
 }
 
 AGBProjectile::AGBProjectile()
@@ -113,6 +109,8 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
 	Movement->MaxSpeed = Config.Speed;
 	Movement->ProjectileGravityScale = Config.GravityScale;
 	Movement->bShouldBounce = Config.FuseTime > 0.f;
+	Movement->Bounciness = Config.Bounciness;
+	Movement->Friction = Config.Friction;
 	Movement->Velocity = Direction.GetSafeNormal() * Config.Speed;
 
 	const float VisualSize = Radius * 2.f * FMath::Max(Config.VisualScale, 0.01f);
@@ -304,6 +302,11 @@ void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
 		return;
 	}
 
+	// Smallest upward part of the push direction: a walking character pushed only sideways is stopped at once by
+	// ground friction; a little lift makes it fly, so the push is felt even for a blast at the target's height.
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const float KnockbackMinLift = Data ? Data->GetGameValue(GBProjectileKey::KnockbackMinLift, 0.35f) : 0.35f;
+
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
 	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBExplosionKnockback), false, this);
@@ -361,7 +364,7 @@ void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
 			// Blast right on the target: push it back along the projectile's flight.
 			Direction = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
 		}
-		Direction.Z = FMath::Max(Direction.Z, GBProjectileLocal::KnockbackMinLift);
+		Direction.Z = FMath::Max(Direction.Z, KnockbackMinLift);
 		Direction = Direction.GetSafeNormal();
 		Character->LaunchCharacter(Direction * Strength, /*bXYOverride*/ true, /*bZOverride*/ true);
 	}

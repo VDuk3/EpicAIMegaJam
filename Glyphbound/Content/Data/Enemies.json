@@ -1,6 +1,38 @@
 {
 	"Enemies": [
 		{
+			"Id": "Imp_Past",
+			"DisplayName": "Castle Imp",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 30,
+				"MoveSpeed": 600,
+				"AttackDamage": 6,
+				"AttackRange": 130,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.3,
+				"AggroRange": 2400,
+				"HeadFraction": 0.3,
+				"CapsuleRadius": 30,
+				"CapsuleHalfHeight": 65,
+				"IceDamageTaken": 1.25,
+				"IceBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 60,
+				"LightningBuildUpThreshold": 60,
+				"IceBuildUpThreshold": 60
+			},
+			"Strings": {
+				"Sprite": "orc_past"
+			},
+			"Drops": [
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.04 },
+				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.04 },
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.03 }
+			]
+		},
+		{
 			"Id": "Orc_Past",
 			"DisplayName": "Castle Orc",
 			"AttackMode": "Melee",
@@ -8,22 +40,130 @@
 			"bPixelArt": true,
 			"Stats": {
 				"MaxHealth": 60,
-				"MoveSpeed": 420,
-				"AttackDamage": 12,
+				"MoveSpeed": 450,
+				"AttackDamage": 10,
 				"AttackRange": 150,
 				"AttackInterval": 1.0,
 				"AttackWindup": 0.45,
 				"AggroRange": 2200,
 				"HeadFraction": 0.25,
 				"CapsuleRadius": 40,
-				"CapsuleHalfHeight": 95
+				"CapsuleHalfHeight": 95,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5
 			},
 			"Strings": {
 				"Sprite": "orc_past"
 			},
 			"Drops": [
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.15 },
-				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.15 }
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.08 },
+				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.08 },
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 }
+			]
+		},
+		{
+			"Id": "Orc_Past_Shaman",
+			"DisplayName": "Orc Shaman",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 50,
+				"MoveSpeed": 380,
+				"AttackDamage": 8,
+				"AttackRange": 1500,
+				"AttackInterval": 1.6,
+				"AttackWindup": 0.6,
+				"AggroRange": 2600,
+				"ProjectileSpeed": 2200,
+				"ProjectileRadius": 12,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.25,
+				"CapsuleRadius": 40,
+				"CapsuleHalfHeight": 95,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5
+			},
+			"Strings": {
+				"Sprite": "orc_past",
+				"ProjectileColor": "#B060FF"
+			},
+			"Drops": [
+				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.15 },
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.05 },
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 }
+			]
+		},
+		{
+			"Id": "Orc_Past_Champion",
+			"DisplayName": "Orc Champion",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 180,
+				"MoveSpeed": 400,
+				"AttackDamage": 18,
+				"AttackRange": 170,
+				"AttackInterval": 1.3,
+				"AttackWindup": 0.55,
+				"AggroRange": 2400,
+				"HeadFraction": 0.22,
+				"CapsuleRadius": 46,
+				"CapsuleHalfHeight": 105,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5,
+				"IceDamageTaken": 0.75,
+				"IceBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 150,
+				"LightningBuildUpThreshold": 150,
+				"IceBuildUpThreshold": 150
+			},
+			"Strings": {
+				"Sprite": "orc_past"
+			},
+			"Drops": [
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.2 },
+				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.2 },
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.15 }
+			]
+		},
+		{
+			"Id": "Orc_Past_Juggernaut",
+			"DisplayName": "Orc Juggernaut",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 480,
+				"MoveSpeed": 260,
+				"AttackDamage": 20,
+				"AttackRange": 200,
+				"AttackInterval": 2.2,
+				"AttackWindup": 0.9,
+				"AggroRange": 2400,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 58,
+				"CapsuleHalfHeight": 125,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5,
+				"LightningDamageTaken": 0.75,
+				"LightningBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 200,
+				"LightningBuildUpThreshold": 200,
+				"IceBuildUpThreshold": 200,
+				"FrostSlow": 0.4,
+				"SlowTaken": 0.6,
+				"IgniteDamageMult": 2
+			},
+			"Strings": {
+				"Sprite": "orc_boss",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.5 },
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.35 }
 			]
 		},
 		{
@@ -33,9 +173,9 @@
 			"Element": "Physical",
 			"bPixelArt": true,
 			"Stats": {
-				"MaxHealth": 320,
-				"MoveSpeed": 320,
-				"AttackDamage": 28,
+				"MaxHealth": 2700,
+				"MoveSpeed": 340,
+				"AttackDamage": 32,
 				"AttackRange": 210,
 				"AttackInterval": 1.6,
 				"AttackWindup": 0.7,
@@ -43,12 +183,19 @@
 				"HeadFraction": 0.2,
 				"CapsuleRadius": 60,
 				"CapsuleHalfHeight": 135,
-				"FireDamageTaken": 0.8,
-				"FireBuildUpTaken": 0.75,
-				"FireBuildUpThreshold": 160,
-				"LightningBuildUpThreshold": 200,
-				"IceBuildUpThreshold": 180,
-				"FrostSlow": 0.5
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"IceDamageTaken": 1.25,
+				"IceBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 250,
+				"LightningBuildUpThreshold": 250,
+				"IceBuildUpThreshold": 250,
+				"FireStatusImmunity": 5,
+				"LightningStatusImmunity": 6,
+				"IceStatusImmunity": 8,
+				"FrostSlow": 0.4,
+				"SlowTaken": 0.6,
+				"IgniteDamageMult": 4
 			},
 			"Strings": {
 				"Sprite": "orc_boss",
@@ -56,7 +203,40 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 }
+				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 },
+				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 1.0 },
+				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Drone_Future",
+			"DisplayName": "Scrap Drone",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 30,
+				"MoveSpeed": 600,
+				"AttackDamage": 6,
+				"AttackRange": 130,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.3,
+				"AggroRange": 2600,
+				"HeadFraction": 0.3,
+				"CapsuleRadius": 30,
+				"CapsuleHalfHeight": 65,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 60,
+				"LightningBuildUpThreshold": 60,
+				"IceBuildUpThreshold": 60
+			},
+			"Strings": {
+				"Color": "#8A8F99"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.04 }
 			]
 		},
 		{
@@ -67,30 +247,319 @@
 			"bPixelArt": false,
 			"Stats": {
 				"MaxHealth": 70,
-				"MoveSpeed": 380,
-				"AttackDamage": 9,
+				"MoveSpeed": 400,
+				"AttackDamage": 8,
 				"AttackRange": 1600,
 				"AttackInterval": 1.4,
 				"AttackWindup": 0.5,
 				"AggroRange": 2600,
 				"ProjectileSpeed": 2600,
 				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
 				"HeadFraction": 0.22,
 				"CapsuleRadius": 42,
 				"CapsuleHalfHeight": 96,
 				"LightningDamageTaken": 1.25,
-				"LightningBuildUpTaken": 1.25,
-				"FireBuildUpTaken": 0.75
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5
 			},
 			"Strings": {
 				"Color": "#4A6A7A",
 				"ProjectileColor": "#FF5A3A"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.6 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.15 },
-				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.1 }
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.12 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.08 },
+				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.06 }
 			]
+		},
+		{
+			"Id": "Orc_Future_Enforcer",
+			"DisplayName": "Orc Enforcer",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 180,
+				"MoveSpeed": 380,
+				"AttackDamage": 16,
+				"AttackRange": 1800,
+				"AttackInterval": 1.6,
+				"AttackWindup": 0.6,
+				"AggroRange": 2800,
+				"ProjectileSpeed": 3000,
+				"ProjectileRadius": 12,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 46,
+				"CapsuleHalfHeight": 105,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 150,
+				"LightningBuildUpThreshold": 150,
+				"IceBuildUpThreshold": 150
+			},
+			"Strings": {
+				"Color": "#2F4858",
+				"ProjectileColor": "#FF2A2A"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.3 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.2 },
+				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.15 }
+			]
+		},
+		{
+			"Id": "Orc_Future_Siege",
+			"DisplayName": "Siege Orc",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 480,
+				"MoveSpeed": 260,
+				"AttackDamage": 20,
+				"AttackRange": 200,
+				"AttackInterval": 2.2,
+				"AttackWindup": 0.9,
+				"AggroRange": 2600,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 58,
+				"CapsuleHalfHeight": 125,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 200,
+				"LightningBuildUpThreshold": 200,
+				"IceBuildUpThreshold": 200,
+				"FrostSlow": 0.4,
+				"SlowTaken": 0.6,
+				"IgniteDamageMult": 2
+			},
+			"Strings": {
+				"Color": "#5A5F4A",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.7 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.5 }
+			]
+		},
+		{
+			"Id": "Orc_Future_Warlord",
+			"DisplayName": "Orc Warlord",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 3000,
+				"MoveSpeed": 360,
+				"AttackDamage": 32,
+				"AttackRange": 220,
+				"AttackInterval": 1.5,
+				"AttackWindup": 0.65,
+				"AggroRange": 2800,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 60,
+				"CapsuleHalfHeight": 135,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 250,
+				"LightningBuildUpThreshold": 250,
+				"IceBuildUpThreshold": 250,
+				"FireStatusImmunity": 5,
+				"LightningStatusImmunity": 6,
+				"IceStatusImmunity": 8,
+				"FrostSlow": 0.4,
+				"SlowTaken": 0.6,
+				"IgniteDamageMult": 4
+			},
+			"Strings": {
+				"Color": "#7A2F2F",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Valkyrie_Past",
+			"DisplayName": "The Valkyrie",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 7200,
+				"MoveSpeed": 480,
+				"AttackDamage": 22,
+				"AttackRange": 230,
+				"AttackInterval": 1.2,
+				"AttackWindup": 0.5,
+				"AggroRange": 6000,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 50,
+				"CapsuleHalfHeight": 115,
+				"LightningDamageTaken": 0.75,
+				"LightningBuildUpTaken": 0.5,
+				"IceDamageTaken": 1.25,
+				"IceBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 400,
+				"LightningBuildUpThreshold": 400,
+				"IceBuildUpThreshold": 400,
+				"FireStatusImmunity": 8,
+				"LightningStatusImmunity": 10,
+				"IceStatusImmunity": 12,
+				"FrostSlow": 0.25,
+				"SlowTaken": 0.4,
+				"IgniteDamageMult": 8
+			},
+			"Strings": {
+				"Sprite": "orc_boss",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "QuestItem_Past", "Count": 1, "Chance": 1.0 },
+				{ "ItemId": "Gem_Fire", "Count": 1, "Chance": 1.0 },
+				{ "ItemId": "Gem_Ice", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Valkyrie_Future",
+			"DisplayName": "The Valkyrie",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 7600,
+				"MoveSpeed": 480,
+				"AttackDamage": 18,
+				"AttackRange": 2200,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.45,
+				"AggroRange": 6000,
+				"ProjectileSpeed": 3200,
+				"ProjectileRadius": 14,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 50,
+				"CapsuleHalfHeight": 115,
+				"IceDamageTaken": 0.75,
+				"IceBuildUpTaken": 0.5,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 400,
+				"LightningBuildUpThreshold": 400,
+				"IceBuildUpThreshold": 400,
+				"FireStatusImmunity": 8,
+				"LightningStatusImmunity": 10,
+				"IceStatusImmunity": 12,
+				"FrostSlow": 0.25,
+				"SlowTaken": 0.4,
+				"IgniteDamageMult": 8
+			},
+			"Strings": {
+				"Color": "#9FD8FF",
+				"ProjectileColor": "#7FE0FF",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "QuestItem_Future", "Count": 1, "Chance": 1.0 },
+				{ "ItemId": "SwordHilt", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Entity_Phase1",
+			"DisplayName": "The Entity",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 8000,
+				"MoveSpeed": 420,
+				"AttackDamage": 20,
+				"AttackRange": 2600,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.45,
+				"AggroRange": 8000,
+				"ProjectileSpeed": 3400,
+				"ProjectileRadius": 16,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 60,
+				"CapsuleHalfHeight": 135,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 400,
+				"LightningBuildUpThreshold": 400,
+				"IceBuildUpThreshold": 400,
+				"FireStatusImmunity": 8,
+				"LightningStatusImmunity": 10,
+				"IceStatusImmunity": 12,
+				"FrostSlow": 0.25,
+				"SlowTaken": 0.4,
+				"IgniteDamageMult": 8
+			},
+			"Strings": {
+				"Color": "#3AFFB0",
+				"ProjectileColor": "#3AFFB0",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Entity_Phase2",
+			"DisplayName": "The Entity",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": true,
+			"Stats": {
+				"MaxHealth": 8000,
+				"MoveSpeed": 520,
+				"AttackDamage": 26,
+				"AttackRange": 240,
+				"AttackInterval": 1.2,
+				"AttackWindup": 0.5,
+				"AggroRange": 8000,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 60,
+				"CapsuleHalfHeight": 135,
+				"FireDamageTaken": 1.25,
+				"FireBuildUpTaken": 1.5,
+				"IceDamageTaken": 0.75,
+				"IceBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 400,
+				"LightningBuildUpThreshold": 400,
+				"IceBuildUpThreshold": 400,
+				"FireStatusImmunity": 8,
+				"LightningStatusImmunity": 10,
+				"IceStatusImmunity": 12,
+				"FrostSlow": 0.25,
+				"SlowTaken": 0.4,
+				"IgniteDamageMult": 8
+			},
+			"Strings": {
+				"Sprite": "orc_boss",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": []
 		},
 		{
 			"Id": "TrainingDummy",

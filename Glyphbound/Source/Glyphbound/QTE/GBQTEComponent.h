@@ -16,6 +16,8 @@ namespace GBQTEStat
 	inline const FName GestureIdleSubmitTime(TEXT("QTE.GestureIdleSubmitTime")); // real seconds without input -> auto-submit
 	inline const FName LineSubmitLengthMult(TEXT("QTE.LineSubmitLengthMult"));   // line auto-submits at GestureMinLength * this
 	inline const FName StickGestureScale(TEXT("QTE.StickGestureScale"));         // right stick: pixels per second at full tilt
+	inline const FName FailManaRefund(TEXT("QTE.FailManaRefund"));               // share of the mana cost given back when the spell fizzles (0 = no refund)
+	inline const FName FailCooldownMult(TEXT("QTE.FailCooldownMult"));           // the cooldown of a fizzled spell is multiplied by this (1 = full cooldown)
 }
 
 /**
@@ -58,6 +60,10 @@ public:
 
 	/** QTE.StickGestureScale: the player character sends right-stick value * this * real delta seconds to HandleGestureInput. */
 	float GetStickGestureScale() const;
+	/** Share of the mana cost refunded when the spell fizzles (QTE.FailManaRefund, 0 = no refund). */
+	float GetFailManaRefund() const;
+	/** Multiplier on the cooldown of a fizzled spell (QTE.FailCooldownMult, 1 = full cooldown, 0 = no cooldown). */
+	float GetFailCooldownMult() const;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

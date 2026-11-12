@@ -3,6 +3,7 @@
 #include "Combat/GBProjectile.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
 
@@ -40,6 +41,10 @@ bool AGBStaff::PerformAttack()
 	Config.Radius = GetStat(GBStat::ProjectileRadius, 10.f);
 	Config.GravityScale = GetStat(GBStat::ProjectileGravity, 0.f);
 	Config.MaxRange = Range;
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		Config.MaxLifetime = Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+	}
 	Config.bPixelArt = true;
 	Config.Color = GBPlaceholder::ElementColor(static_cast<uint8>(Config.Damage.Element));
 	if (const FGBWeaponDefinition* Def = GetDefinition())

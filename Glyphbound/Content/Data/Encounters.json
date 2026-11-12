@@ -6,22 +6,83 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 4 },
 						{ "EnemyId": "Orc_Past", "Count": 3 }
 					]
 				},
 				{
 					"DelayBefore": 2.0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Brute", "Count": 1 }
+						{ "EnemyId": "Orc_Past", "Count": 3 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Imp_Past", "Count": 3 },
+						{ "EnemyId": "Orc_Past", "Count": 2 }
 					]
 				}
 			],
-			"SkillPoints": 2,
+			"SkillPoints": 1,
 			"Rewards": []
 		},
 		{
 			"Id": "Test_FutureWave",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Drone_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
+						{ "EnemyId": "Drone_Future", "Count": 3 },
+						{ "EnemyId": "Orc_Future", "Count": 2 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Opening_Past",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 3 },
+						{ "EnemyId": "Orc_Past", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 3 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Opening_Future",
 			"Waves": [
 				{
 					"DelayBefore": 0,
@@ -32,14 +93,543 @@
 				{
 					"DelayBefore": 2.0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 }
+						{ "EnemyId": "Drone_Future", "Count": 2 },
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+			]
+		},
+		{
+			"Id": "Wave_Past_1",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 5 },
+						{ "EnemyId": "Orc_Past", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
+						{ "EnemyId": "Orc_Past", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Wave_Past_2",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Imp_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Orc_Past", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Orc_Past", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Wave_Past_3",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
+						{ "EnemyId": "Orc_Past", "Count": 3 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 5 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 5 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Wave_Future_1",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Drone_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 5 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
+						{ "EnemyId": "Drone_Future", "Count": 3 },
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
+						{ "EnemyId": "Drone_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
+						{ "EnemyId": "Drone_Future", "Count": 3 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Wave_Future_2",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Drone_Future", "Count": 6 },
+						{ "EnemyId": "Orc_Future", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
+						{ "EnemyId": "Drone_Future", "Count": 4 },
+						{ "EnemyId": "Orc_Future", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
+						{ "EnemyId": "Orc_Future", "Count": 3 },
+						{ "EnemyId": "Drone_Future", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
+						{ "EnemyId": "Orc_Future", "Count": 3 },
+						{ "EnemyId": "Drone_Future", "Count": 4 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Wave_Future_3",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Drone_Future", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
+						{ "EnemyId": "Orc_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
+						{ "EnemyId": "Orc_Future", "Count": 3 },
+						{ "EnemyId": "Drone_Future", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
+						{ "EnemyId": "Drone_Future", "Count": 5 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
+						{ "EnemyId": "Drone_Future", "Count": 5 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "SubBoss_Past",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Brute", "Count": 1 },
+						{ "EnemyId": "Orc_Past", "Count": 3 }
 					]
 				}
 			],
 			"SkillPoints": 2,
-			"Rewards": [
-				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
-			]
+			"Rewards": []
+		},
+		{
+			"Id": "SubBoss_Future",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future_Warlord", "Count": 1 },
+						{ "EnemyId": "Orc_Future", "Count": 2 },
+						{ "EnemyId": "Drone_Future", "Count": 2 }
+					]
+				}
+			],
+			"SkillPoints": 2,
+			"Rewards": []
+		},
+		{
+			"Id": "Zone_Fire",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
+						{ "EnemyId": "Orc_Past", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": []
+		},
+		{
+			"Id": "Zone_Lightning",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Orc_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": []
+		},
+		{
+			"Id": "Zone_Ice",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past", "Count": 5 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 8 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past", "Count": 3 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Imp_Past", "Count": 6 },
+						{ "EnemyId": "Orc_Past", "Count": 3 }
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": []
+		},
+		{
+			"Id": "Zone_Air",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Imp_Past", "Count": 8 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 4 },
+						{ "EnemyId": "Imp_Past", "Count": 4 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Champion", "Count": 3 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				},
+				{
+					"DelayBefore": 2.0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
+						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
+						{ "EnemyId": "Imp_Past", "Count": 4 }
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": []
+		},
+		{
+			"Id": "Valkyrie_Past",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Valkyrie_Past", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 5,
+			"Rewards": []
+		},
+		{
+			"Id": "Valkyrie_Future",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Valkyrie_Future", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 5,
+			"Rewards": []
+		},
+		{
+			"Id": "Entity",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Entity_Phase1", "Count": 1 }
+					]
+				},
+				{
+					"DelayBefore": 3.0,
+					"Spawns": [
+						{ "EnemyId": "Entity_Phase2", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 0,
+			"Rewards": []
 		}
 	]
 }

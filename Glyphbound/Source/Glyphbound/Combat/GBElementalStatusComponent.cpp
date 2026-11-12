@@ -11,10 +11,6 @@
 
 namespace
 {
-	const FName ElementalTickIntervalKey(TEXT("ElementalTickInterval"));
-	constexpr float DefaultTickInterval = 0.1f;
-	constexpr float FrostSlowMax = 0.95f;
-
 	bool IsValidReaction(int32 Index, FName Reaction)
 	{
 		using namespace GBElemental;
@@ -49,10 +45,13 @@ void UGBElementalStatusComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
-	const float Interval = Data ? Data->GetGameValue(ElementalTickIntervalKey, DefaultTickInterval) : DefaultTickInterval;
-	SetComponentTickInterval(FMath::Max(0.01f, Interval));
+	HandleDataReloaded();
 	SetComponentTickEnabled(false);
+
+	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &UGBElementalStatusComponent::HandleDataReloaded);
+	}
 
 	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
 	{
@@ -62,6 +61,11 @@ void UGBElementalStatusComponent::BeginPlay()
 
 void UGBElementalStatusComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		Data->OnDataReloaded.Remove(DataReloadedHandle);
+	}
+	DataReloadedHandle.Reset();
 	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
 	{
 		Attributes->OnDeath.Remove(DeathHandle);
@@ -78,6 +82,13 @@ void UGBElementalStatusComponent::HandleOwnerDeath(const FGBDamageInfo& KillingB
 {
 	(void)KillingBlow;
 	ClearAll();
+}
+
+void UGBElementalStatusComponent::HandleDataReloaded()
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const float Interval = Data ? Data->GetGameValue(GBElementalStatusKey::TickInterval, 0.1f) : 0.1f;
+	SetComponentTickInterval(FMath::Max(0.01f, Interval));
 }
 
 bool UGBElementalStatusComponent::ReadConfig(int32 Index, FGBBuildUpConfig& OutConfig, FName& OutReaction) const
@@ -311,7 +322,8 @@ void UGBElementalStatusComponent::StartStatus(int32 Index, const FGBBuildUpConfi
 			float FrostSlow = 0.f;
 			const float GameDefault = Data ? Data->GetGameValue(GBElemental::DefaultKey(GBElemental::FrostSlow), 0.f) : 0.f;
 			FrostSlow = Stats->GetStat(GBElemental::FrostSlow, GameDefault);
-			const float Clamped = FMath::Clamp(FrostSlow, 0.f, FrostSlowMax);
+			const float SlowMax = Data ? Data->GetGameValue(GBElementalStatusKey::FrostSlowMax, 0.95f) : 0.95f;
+			const float Clamped = FMath::Clamp(FrostSlow, 0.f, SlowMax);
 			FGBModifierDef Mod;
 			Mod.Stat = GBStat::MoveSpeed;
 			Mod.Op = EGBModOp::MultiplyMin;

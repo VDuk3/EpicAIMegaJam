@@ -61,6 +61,16 @@ float UGBQTEComponent::GetStickGestureScale() const
 	return ReadStat(GBQTEStat::StickGestureScale, GBQTEComponentPrivate::DefaultStickGestureScale);
 }
 
+float UGBQTEComponent::GetFailManaRefund() const
+{
+	return ReadStat(GBQTEStat::FailManaRefund, 0.f);
+}
+
+float UGBQTEComponent::GetFailCooldownMult() const
+{
+	return ReadStat(GBQTEStat::FailCooldownMult, 1.f);
+}
+
 FGBQTEConfig UGBQTEComponent::BuildConfig() const
 {
 	const FGBQTEConfig Defaults;

@@ -52,8 +52,8 @@ public:
 	/** Spends mana if there is enough; false and nothing spent otherwise. Restarts the mana regen delay. */
 	bool SpendMana(float Amount);
 
-	/** Full health and mana (era travel, GDD 4). Also revives. */
-	void RestoreAll();
+	/** Restores health and mana as fractions of their maximums (1 = full). Also revives. bOnlyRaise only raises towards the fractions, never lowers (era travel). */
+	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bOnlyRaise = false);
 
 	/** For checkpoints and snapshots. Clamped to the current maximums. */
 	void SetHealthAndMana(float NewHealth, float NewMana);

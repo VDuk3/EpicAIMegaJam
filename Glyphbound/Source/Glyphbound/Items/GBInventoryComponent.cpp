@@ -5,6 +5,7 @@
 #include "Core/GBPlaceholder.h"
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBStatsComponent.h"
+#include "Spells/GBSpell_Projectile.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Combat/GBProjectile.h"
 #include "Weapons/GBEquipmentComponent.h"
@@ -270,13 +271,22 @@ bool UGBInventoryComponent::UseThrowable(const FGBItemDefinition& Def)
 	}
 
 	Config.ExplosionRadius = ReadItemStat(Def, GBStat::Radius, 0.f);
+	// Full damage in the whole radius when 0, linear falloff when 1 (same meaning as the spell param).
+	Config.bExplosionFalloff = ReadItemStat(Def, GBSpellParam::ExplosionFalloff, 1.f) > 0.5f;
+	Config.ExplosionKnockback = FMath::Max(0.f, ReadItemStat(Def, GBSpellParam::ExplosionKnockback, 0.f));
 	Config.Speed = ReadItemStat(Def, GBStat::Speed, Config.Speed);
 	Config.FuseTime = ReadItemStat(Def, GBStat::FuseTime, 0.f);
 	Config.GravityScale = ReadItemStat(Def, GBStat::ProjectileGravity, 1.f);
 	Config.Radius = ReadItemStat(Def, GBStat::ProjectileRadius, Config.Radius);
+	Config.Bounciness = ReadItemStat(Def, GBItemStat::Bounciness, Config.Bounciness);
+	Config.Friction = ReadItemStat(Def, GBItemStat::Friction, Config.Friction);
 	if (const float* Range = Def.Stats.Find(GBStat::Range))
 	{
 		Config.MaxRange = *Range;
+	}
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+	{
+		Config.MaxLifetime = Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
 	}
 
 	// Art rule (GDD 3): the grenade is cyberpunk, so it is 3D.

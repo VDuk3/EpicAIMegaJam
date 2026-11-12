@@ -190,10 +190,15 @@ void UGBEraSubsystem::PerformSwap()
 	if (AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Traveller))
 	{
 		// GDD 4: era travel restores health, mana and ammo; portals are the checkpoints of the map.
-		// Never for a dead player (death undoes the travel before this point).
+		// Health and mana are only raised towards the fractions, never lowered. Never for a dead player
+		// (death undoes the travel before this point).
 		if (!Player->IsDead())
 		{
-			Player->RestoreAll();
+			const UGBDataSubsystem* RestoreData = UGBDataSubsystem::Get(this);
+			const float HealthFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelHealthFraction, 1.f) : 1.f;
+			const float ManaFraction = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelManaFraction, 1.f) : 1.f;
+			const bool bRefillAmmo = RestoreData ? RestoreData->GetGameValue(GBGameValue::EraTravelRefillAmmo, 1.f) > 0.5f : true;
+			Player->RestoreAll(HealthFraction, ManaFraction, bRefillAmmo, /*bOnlyRaise*/ true);
 			if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
 			{
 				Progress->SaveCheckpoint(Player);

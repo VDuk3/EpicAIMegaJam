@@ -97,8 +97,8 @@ public:
 
 	// ---- State ----
 	bool IsDead() const;
-	/** Full health, mana and ammo (era travel, GDD 4). */
-	void RestoreAll();
+	/** Restores health, mana and ammo (respawn and era travel, GDD 4). Fractions of the maximums (1 = full); bOnlyRaise raises health/mana towards them without lowering. */
+	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bRefillAmmo = true, bool bOnlyRaise = false);
 	/** Stops input-driven actions and hides the held item (death, cutscene). */
 	void SetControlEnabled(bool bEnabled);
 	bool IsControlEnabled() const { return bControlEnabled; }

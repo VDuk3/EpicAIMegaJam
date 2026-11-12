@@ -62,7 +62,14 @@ bool UGBStatusEffectComponent::ApplyEffect(FName EffectId, AActor* Instigator, f
 		return false;
 	}
 
-	const float Strength = FMath::Max(0.f, StrengthScale);
+	// Resistance to one effect: an optional stat "<EffectId>Taken" on the target scales the strength it receives
+	// (Enemies.json "SlowTaken": 0.4 = a boss takes 40% of the ice floor's slow). Missing = 1.
+	float Taken = 1.f;
+	if (const UGBStatsComponent* OwnerStats = UGBStatsComponent::Find(Owner))
+	{
+		Taken = FMath::Max(0.f, OwnerStats->GetStat(FName(*(EffectId.ToString() + TEXT("Taken"))), 1.f));
+	}
+	const float Strength = FMath::Max(0.f, StrengthScale) * Taken;
 	const float Duration = Definition.Duration * FMath::Max(0.f, DurationScale);
 
 	ApplyHealthAndMana(EffectId, Definition.InstantHealth * Strength, Definition.InstantMana * Strength, Definition.Element, Instigator);

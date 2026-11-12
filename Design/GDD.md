@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.27, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.28, 2026-11-12** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.28 (2026-11-12): owner asked the architect to balance every number of the game with maths (the skill-tree percentages stay as they are) and to leave no hardcoded value. New §19 "Balance": the method, the enemy templates (swarm, soldier, elite, slow tank, sub-boss, the two Valkyries, the Entity), resistances and weaknesses, the ammo and mana economy, and a budget of 36 skill points. The numbers in §18 are updated. The last gameplay numbers that lived in code moved to the data files. A calculator, `Tools/Balance/balance_model.js`, prints every table from the data. Reviewed by a second model before the first build.
 - v0.27 (2026-11-12): owner: the spell tree is reorganized in four columns (fire, lightning, ice, casting) with only two links kept; Precision Recovery costs 2 points per rank. See §18 "Spell tree".
 - v0.25 (2026-11-12): owner approved the first real gun model: the pistol replaces its placeholder (§8 "Guns"). Architect, provisional: its glow follows the enchant element and its energy bar shows the enchant time left.
 - v0.24 (2026-11-12): owner: the weapon tree is reorganized (Heavy Rounds on top; a handling branch and a precision branch; three weapon specializations on one row) and gets four new perks: Rapid Reload, Precision Recovery, Arcane Conduit, Deadeye. See §18 "Weapon tree".
@@ -459,14 +460,128 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Jumps:** each jump rises about 2 m (was 1.2 m); the double jump adds a second one of the same height.
 - **Head / weak point bonus per weapon** (owner, 2026-11-12): pistol x2; shotgun, rifle, staffs and sword x1.5. **Perks can raise it**: the weapon tree node "Marksman" adds +0.25 per rank (3 ranks) to every weapon, staff and sword included (provisional numbers). Spell projectiles get no head bonus unless a spell defines one.
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
-- **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
+- **Player:** 100 health (regenerates 3/s after 6 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s. Health and mana stay at 100 for the whole game (no levels), so every hit reads as a percentage (§19).
 - **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
 - **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and builds up fire.
-- **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots: pistol x2, shotgun and rifle x1.5.
-- **Enemies:** past orc 60 health, melee 12; future orc 70 health, ranged 9; brute (sub-boss placeholder) 320 health, melee 28.
+- **Guns (v0.28):** pistol 20 damage every 0.25 s, 15 rounds, 6 spare magazines; shotgun 8 pellets of 10 every 0.8 s, 6 rounds, 4 spare, strong up close; rifle automatic, 12 damage every 0.1 s, 30 rounds, 5 spare, stronger far away. Headshots: pistol x2, shotgun and rifle x1.5. Elemental sword 50 every 0.5 s. Why: §19.
+- **Enemies:** see the templates in §19 (v0.28).
 - **Status effects:** slow 50% for 4 s (ice floor); health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s. Burn, chill and the old shock were removed (v0.22).
-- **Elemental build-up (first pass, to balance; defaults in `Game.json`, per enemy in `Enemies.json`):** threshold 100 for each bar; decay starts 2 s after the last build-up and drains 20 per second. Ignite 4 s, 6 fire damage every 0.5 s (48 in total), then 3 s immune. Shock: a 10 lightning damage discharge and a 1.2 s stun, then 4 s immune. Frost: 2.5 s freeze (or a 60% slow for enemies that resist freezing), then 5 s immune.
-- **Build-up per source (first pass):** fireball 40 (25-55 with QTE power), fire wall 10 per 0.5 s tick, flamethrower 8 per 0.3 s tick, lightning bolt 35 (20-50), lightning rune 60 (35-85), static orb 8 per tick, ice floor 5 per 0.5 s tick (60 at most over its 6 s, so it never fills the bar alone), electric grenade 60. Weapons per hit: pistol 15, shotgun 25 per shot, rifle 8, elemental sword 20, ember staff 10 (fire). Weak point bonus x1.5.
-- **Enemies (first pass):** the castle orc uses the defaults. The orc brute (sub-boss) takes 20% less fire damage and 25% less fire build-up, its thresholds are higher (fire 160, lightning 200, ice 180), a shock only interrupts its attack and Frost only slows it (50%). The armored orc takes 25% more lightning damage and lightning build-up and 25% less fire build-up.
+- **Elemental build-up (first pass, to balance; defaults in `Game.json`, per enemy in `Enemies.json`):** threshold 100 for each bar; decay starts 2 s after the last build-up and drains 20 per second. Ignite 4 s, 5 fire damage every 0.5 s (40 in total, times each enemy's `IgniteDamageMult`), then 3 s immune. Shock: a 15 lightning damage discharge and a 1.2 s stun, then 4 s immune. Frost: 2.5 s freeze (or a 60% slow for enemies that resist freezing), then 5 s immune.
+- **Build-up per source (v0.28):** fireball 40 (25-55 with QTE power), fire wall 15 per 0.25 s tick, flamethrower 8 per 0.3 s tick, lightning bolt 35 (20-50), lightning rune 60 (35-85), static orb 12 per tick, ice floor 5 per 0.5 s tick (60 at most over its 6 s, so it never fills the bar alone), electric grenade 60. Weapons per hit: pistol 15, shotgun 40 per shot, rifle 6, elemental sword 25, ember staff 18 (fire): every weapon fills about 50-60 per second of fire. Weak point bonus x1.5.
+- **Enemies:** resistances, weaknesses and thresholds per enemy are in §19 (v0.28).
 - **Skill trees:** 6 nodes each, 1-2 points per rank, up to 3 ranks.
-- Every spell number in `Spells.json`.
+- Every spell number in `Spells.json`; the v0.28 values and their reasons are in §19.
+
+## 19. Balance (v0.28, architect, 2026-11-12)
+The owner's brief: fights a little long but not too long; a fast shooter where enemies die all the time in the waves; no bullet sponges, except an enemy that is slow and hits softly; two Valkyries and then a final boss fought with every tool; no levels; not enough skill points for the whole tree, but enough for a well-armed mage plus one gun and a half well upgraded. Approved by the owner: waves of 60-90 s, Valkyries of about 2 min, the Entity about 3 min, 36 skill points.
+
+**Every number here is provisional and lives in `Glyphbound/Content/Data/*.json`.** Nothing needs a recompile: edit the file and run `gb.ReloadData` in the console (it also works in the packaged game). `node Tools/Balance/balance_model.js` prints every table below from the data, so after changing a number the tables can be checked again in a second. The numbers were reviewed by a second model (GPT-6-Astra, medium effort) before the first build; what it found is at the end.
+
+### Method
+- **Three anchors.** The player has 100 health and 100 mana for the whole game. The reference damage is the base pistol on the body: 80 per second. An enemy's health is "seconds it should last x the damage a player really deals".
+- **Real damage is about half the paper damage:** the model takes 70% of the time attacking, 60-75% of the shots hitting and a quarter of the hits on the head. Each base gun then deals about 40 per second.
+- **Builds are calculated, not guessed.** The calculator applies the perks of six reference builds (one per point of the game, mixing both trees) to the weapon and spell data: about 65 real damage per second from the gun at the start, 86 at 16 points, 99-107 at the Valkyries, 117 at the Entity. A perk's percentage stacks in a straight line with its rank (+10% per rank is +30% at rank 3).
+- **Ammo runs out.** A fight uses the gun until the ammo carried and dropped is gone, then the staff or the sword. Spells run all the time, as often as the mana allows: mana only comes back after 1.5 s without spending, so the steady rhythm is one 15-mana spell every 4 seconds.
+- **The QTE costs real time.** Each cast is about 2 real seconds while the world runs at 10%, so a fight with many spells lasts longer on the clock than in game time. Lengths below are real seconds.
+- **The QTE maps its score in a straight line from Min (score 0) to Max (perfect).** `Base` is the value with the QTE off. For damage, Min is half of Base and Max one and a half. The model uses a score of 0.75.
+
+### Player
+| | Value | Why |
+|---|---|---|
+| Health | 100, +3/s after 6 s without damage | No regeneration inside a fight; a clean disengage (dash, ice wall) is rewarded |
+| Mana | 100, +6/s after 1.5 s without spending | Six or seven spells in a burst, then one every 4 s |
+| Largest single hit | 32 (sub-bosses) | Never more than 45% of the bar: no one-shots. 30% or more is a "strong hit" and stops the flamethrower (the old brute hit 28 and never did) |
+
+### Weapons (no perks)
+| Weapon | Hit | Sustained damage/s (with reloads) | Role |
+|---|---|---|---|
+| Apprentice staff | 12 every 0.35 s | 34, free | The fallback that never runs out: about half a gun |
+| Ember staff | 22 every 0.6 s | 37 + Ignite, free | Slower, sets enemies on fire |
+| Pistol | 20 every 0.25 s, 15 rounds, 6 spare magazines | 61 (121 on the head) | Precision: the best head bonus (x2) |
+| Shotgun | 8 x 10 every 0.8 s, 6 shells, 4 spare | 71 up close, 14 far | Risk: one shell kills a soldier at arm's length |
+| Rifle | 12 every 0.1 s, 30 rounds, 5 spare | 60 near, 86 far | Range and volume; less accurate, weak up close |
+| Elemental sword | 50 every 0.5 s | 100, free | Late game, melee risk, hits a 90 degree arc |
+
+The three guns come out even (about 40 real damage per second each). The rifle was the outlier before (140 burst against 82 and 94).
+
+**Ammo.** A full load really deals 2,600 to 4,300 damage depending on the build: about one long wave shooting only. Magazine drops are set so that a base gun gets back about half of the rounds it spends in the future and a quarter in the past, and a gun with 16 points in it gets back almost all of them in the future and half in the past. Drop chance of a magazine in the future: swarm 6%, soldier 12%, elite 30%, tank 70%, sub-boss 3 magazines; in the past: 3%, 6%, 15%, 35%, sub-boss 2. The past pushes the player to the staff and the spells; nobody is ever stuck, because the staff is free.
+
+### Spells (Base; damage Min/Max is 50% / 150%)
+| Spell | Mana | Cooldown | Effect | Notes |
+|---|---|---|---|---|
+| Fireball | 15 | 1.5 s | 40 in a 2 m blast | 2.7 damage per mana, times the enemies caught |
+| Lightning bolt | 10 | 0.8 s | 30, goes through enemies | 3.0 per mana |
+| Lightning rune | 20 | 6 s | 80 in a 3 m blast | 4.0 per mana, the best: it needs setting up |
+| Flamethrower | 10 + 15/s | 6 s | 50/s in a short cone | 3.0 per mana; a full bar is 300 per enemy |
+| Fire wall | 25 | 10 s | 60/s for 6 s, ticks every 0.25 s | A soldier crossing it loses a quarter to a half of its health |
+| Static orb | 25 | 7 s | 35/s within 2.5 m, travels at 3 m/s for 6 s, up to 27 m | About 60 to each enemy it passes |
+| Ice wall | 20 | 16 s | Blocks for 8 s (5-11) | Up half of the time; 98% with every perk and a perfect QTE |
+| Ice shield | 20 | 24 s | 12 s (8-16), 80 health (40-120), blocks 75% from the front | Up half of the time. Its health is the real limit; with 15 points in it (Quick Recall, Enduring Guard) it can always be up |
+| Ice floor | 20 | 12 s | 50% slow for 6 s; the slow lingers 1 s after leaving it | Up half of the time |
+| Weapon enchant | 20 | 18 s | +25% gun damage (15-35%) for 15 s (8-22), element build-up | About a fifth of the mana regeneration |
+
+Rules behind them: a direct spell gives about 3 damage per mana; a spell that needs setup gives more; area spells give less per target because they hit several. **A control spell is up about half of the time; keeping it up all the time has to be bought with perks** (before, the ice wall and the ice shield had a cooldown shorter than their duration). Fixed with data: the fire wall ticked every 0.5 s and an orc crossed it in 0.4 s untouched (now 0.25 s and a little thicker); the ice floor's slow lasted 4 s after leaving the floor (now 1 s); the static orb reached the end of its range before its duration perk could matter.
+
+### Enemy templates
+| Template | Past (pixel art) | Future (3D) | Health | Speed | Hit | Lasts (base gun -> 16-point build) |
+|---|---|---|---|---|---|---|
+| Swarm | Castle Imp | Scrap Drone | 30 | 600 | 6 | 2 pistol shots |
+| Soldier | Castle Orc (melee), Orc Shaman (ranged) | Armored Orc (ranged) | 50-70 | 380-450 | 8-10 | 3-4 pistol shots, 1 shell |
+| Elite | Orc Champion | Orc Enforcer (ranged) | 180 | 380-400 | 16-18 | 4 s -> 1.7 s |
+| Slow tank (the one sponge) | Orc Juggernaut | Siege Orc | 480 | 260 | 20 every 3.1 s | 12 s -> 4.5 s |
+| Sub-boss | Orc Brute | Orc Warlord | 2,700 / 3,000 | 340-360 | 32 | 40-45 s |
+| Boss | Valkyrie (medieval) | Valkyrie (cyberpunk) | 7,200 / 7,600 | 480 | 18-22 | about 2 min |
+| Final boss | The Entity, two phases of 8,000 | | 16,000 | 420-520 | 20-26 | about 3 min |
+
+An enemy attacks once every `AttackWindup + AttackInterval`. The player (750) is faster than everything, so melee enemies only hit a player who stops; the pressure comes from numbers, ranged enemies and the swarm. The tank is the only sponge and it is the slowest and softest hitter for its size. Bosses and sub-bosses are stat blocks for the generic enemy until their own behavior exists; their heavy attacks, when written, should stay at 40 or less.
+
+**Boss health follows the ammo.** A build of that point of the game empties its gun in about 40 seconds (about 4,000 damage, a bit more than half a Valkyrie); the spells give another quarter and the staff or the sword the rest. That is the "combine both eras" pillar in numbers, and it is why a Valkyrie has 7,200 and not 10,000: with more health the second half of the fight is a staff-only chore. By build, against the medieval Valkyrie: the reference build 120 s, a gun specialist 57 s, a pure mage 146 s. A player who lands half of the shots on the weak point is about 1.5 times faster. Boss arenas can still offer a magazine now and then.
+
+### Resistances and weaknesses
+- **Weakness:** +25% damage and +50% build-up of that element. **Resistance:** -25% damage and -50% build-up. An enemy never resists two elements; bosses change between phases.
+- **Past (flesh): weak to fire.** **Future (armor, electronics): weak to lightning, resists fire.** The swarm of the past is weak to ice (a freeze stops a rush). The Orc Champion also resists ice; the Juggernaut resists lightning.
+- **Orc Brute:** resists fire, weak to ice. **Valkyrie, medieval (bound by runes):** resists lightning, weak to ice. **Valkyrie, cyberpunk (cryogenic tube):** resists ice, weak to fire. **Entity:** phase 1 (the machine) weak to lightning and resists fire; phase 2 (the ghost) weak to fire and resists ice.
+- **Build-up threshold by template:** swarm 60, soldier 100, elite 150, tank 200, sub-boss 250, boss 400. Tanks, sub-bosses and bosses are never stunned or frozen: Shock only interrupts their attack and Frost only slows them (40% tanks and sub-bosses, 25% bosses), with longer immunity after each status.
+- **Slow resistance (new, `SlowTaken`):** tanks and sub-bosses take 60% of the ice floor's slow and bosses 40%, so a 50% slow is 30% on a tank and 20% on a boss. It is general: any enemy can have `<EffectId>Taken` for any status effect.
+- **Ignite scales with the template** (`IgniteDamageMult`: tank x2, sub-boss x4, boss x8): about 17-22% of an elite or a tank and 4% of a boss per proc.
+
+### Encounters and length
+Sub-waves of 5 to 10 enemies, so something dies every 2 seconds. With every enemy of a sub-wave attacking, a player who avoids most of it (85% of melee, 60% of shots) takes 6 to 14 damage per second: 7 to 18 seconds to die without healing or defending. That is the "hard" setting; the levers are the counts in `Encounters.json`.
+
+| Encounter | Enemies | Health | Length (real s) |
+|---|---|---|---|
+| Opening fights | 8 | 400-500 | about 20 |
+| Waves 1 to 3 of each era | 35-40 in five sub-waves | 2,200 -> 3,900 | 60 -> 74 |
+| Elemental zones | 35-45 in five sub-waves | 3,300-3,500 | about 72 |
+| Sub-bosses (with a small escort) | 4-5 | 2,900-3,200 | 41-45 |
+| Valkyries | 1 | 7,200 / 7,600 | about 120 |
+| Entity | 2 phases | 16,000 | about 190 (it has the sword) |
+
+`Encounters.json` holds one ready-made encounter of each kind (placeholders for the level designers: `Opening_*`, `Wave_Past_1..3`, `Wave_Future_1..3`, `SubBoss_*`, `Zone_Fire/Lightning/Ice/Air`, `Valkyrie_*`, `Entity`), besides the two shorter test waves of the arena.
+
+### Skill points
+Both trees cost 78 points (weapons 36, spells 42). **Budget: 36 points before the Entity (46%).** Example: Heavy Rounds, Quick Trigger, Rapid Reload, Marksman and Deadeye at rank 3 (18 points, a finished pistol), Point Blank 3 (the shotgun half-way), Frugal Casting 3 (6 points) and three spell upgrades at rank 3 (9 points): a build, not the whole tree.
+
+| Source | Points |
+|---|---|
+| Start | 2 |
+| Each of the two opening fights | 1 |
+| Each wave (6) | 1 |
+| Each sub-boss (2) | 2 |
+| Each elemental zone (4) | 3 |
+| Each Valkyrie | 5 |
+| **Total** | **36** |
+
+If the number of encounters changes, the points per encounter are adjusted to keep the total (the calculator prints the sum and flags it).
+
+### Suggestions for the owner (not applied: the tree's percentages are the owner's)
+- **Marksman + Deadeye is the strongest thing in the tree:** the pistol's head bonus goes from x2 to x3.5, and with Heavy Rounds and Quick Trigger the pistol triples its damage for 18 points. It is aim-gated, so it may be exactly what is wanted; if the pistol dominates in play-tests, Deadeye at +0.15x per rank is the smallest fix.
+- **Long Shot** (+0.15x per rank) gives the rifle +39% at long range, against +60% for Point Blank. +0.2x per rank would level them.
+- **Free skill reset at any time** removes the build choice the point budget is there to create. Suggested: reset only at portals, or keep it as a test option.
+- **Chest contents** of the test arena are still written in code (`GBTestArena.cpp`); they move to data when real levels exist.
+
+### Values moved from code to data in v0.28
+Enemy AI fractions, projectile lifetime and knockback lift, grenade blast falloff and bounce, the fire wall's touch margin, the ice shield's block arc, player acceleration, friction and look speed, what a respawn and an era travel restore, and what a failed QTE costs. All keep their old value; the list is in the day entry. A spell already in the world keeps the numbers it was cast with: cast it again after `gb.ReloadData`.
+
+### Second opinion (GPT-6-Astra, before the first build)
+Taken: builds calculated from the perks instead of a flat multiplier (the old guess was half of the real damage); the ammo limit inside the boss maths (the Valkyries went from 9,000-10,000 to 7,200-7,600); the real time of the QTE; mana that only regenerates between casts; enemy attack cycles with their windup; lower magazine drops (a mid-game pistol was getting back more rounds than it spent); longer cooldowns for the ice wall, shield and floor; the lingering ice floor slow; the orb's range; a fifth sub-wave; and two code notes (the staff ignored the new projectile lifetime key). Not taken: an ice shield cooldown of 34 s (too harsh for a player without perks; its health already limits it) and a magazine drop of 8% for the armored orc (a base gun would starve; 12% keeps a specialized pistol just under break-even).

@@ -826,8 +826,10 @@ void AGBHUD::AddTestSkillPoint(AGBPlayerCharacter* Player)
 	{
 		return;
 	}
-	SkillTree->AddPoints(1);
-	ShowMessage(FString::Printf(TEXT("+1 skill point (%d)"), SkillTree->GetPoints()), 1.5f);
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const int32 Amount = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBHudKey::TestSkillPointAmount, 1.f))) : 1;
+	SkillTree->AddPoints(Amount);
+	ShowMessage(FString::Printf(TEXT("+%d skill point (%d)"), Amount, SkillTree->GetPoints()), 1.5f);
 }
 
 void AGBHUD::MenuReset()
