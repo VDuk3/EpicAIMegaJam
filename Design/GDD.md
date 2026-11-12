@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.13, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.14, 2026-11-12** — owner's vision plus eleven rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.14 (2026-11-12): owner's first play-test. Magic structures (ice wall) are 3D with pixel textures; the fireball always explodes with a shockwave; both jumps higher; picked-up staffs go to the inventory and are equipped by hand; the ice shield is summoned by the spell and raised with a Block key; enemies must path around obstacles; menus work with the mouse; falling out of the map kills; floating damage numbers.
 - v0.13 (2026-11-12): architect's day-1 technical decisions recorded in 0.1 (C++ only, no GAS, JSON data, code-built test arena, canvas HUD); new section 18 lists every provisional rule and number the architect had to pick. Code structure in `Design/ARCHITECTURE.md`.
 - v0.12 (2026-11-12): architect autonomy on every technical decision; iteration time is a priority (see `CLAUDE.md`).
 - v0.11 (2026-11-12): the 3 s QTE limit covers the whole QTE.
@@ -63,6 +64,7 @@ Working title: **TBD**. Project code name: **Glyphbound**.
 - **Pixel-art environments are 3D geometry with low-resolution pixel textures** (nearest filtering, no smoothing), not flat 2D.
 - **Pixel-art characters are sprites that always face the camera.** Target: **8 view angles**; fewer if time runs short.
 - **Headshots on sprites:** the head is the top part of the sprite.
+- **Structures are never flat sprites** (owner, 2026-11-12). Anything that is a structure, the castle and also what magic builds (the ice wall), is a 3D object with 2D pixel textures. Camera-facing sprites are for characters, items, projectiles and effects (flames, bolts).
 
 ## 4. World and travel
 - **One map, two times** (past and future). The player travels between them **only through predefined portals** placed on the map.
@@ -115,9 +117,9 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 
 | Element | 1 | 2 | 3 |
 |---|---|---|---|
-| **Fire** | Fireball (projectile) | Fire wall | Flamethrower (sustained DPS) |
+| **Fire** | Fireball (projectile; **always explodes with a shockwave**, on an enemy, on the world or at the end of its range) | Fire wall | Flamethrower (sustained DPS) |
 | **Lightning** | Lightning bolt (projectile) | Lightning rune trap on the ground; triggers when an enemy walks over it | Static-electricity ball: moves and damages every enemy around it |
-| **Ice** | Ice shield (held block, like a first-person RPG shield, but with a cooldown and limits) | Ice wall | Ice floor: slows enemies, light crowd control |
+| **Ice** | Ice shield (**summoned by the spell, then raised by holding the Block key**, like the shield of a first-person RPG; it only protects while raised; cooldown and limits) | Ice wall | Ice floor: slows enemies, light crowd control |
 | **Air** (passives) | Double jump | Improved dash | Increased movement speed |
 
 ### Spell loadout
@@ -133,6 +135,11 @@ Each element has 3 entries. Air is passives only; the other three are active spe
 - The spell tree then upgrades what the player knows.
 - **Spells can only be cast with the staff in hand.** With a gun in hand, the only spell available is the weapon enchant. To cast, the player switches to the staff mid-fight.
 - Keys: see §9.
+
+### Ice shield (owner, 2026-11-12)
+- Casting it (with its QTE) **summons** the shield for a time. It is not a force field in front of the player.
+- The player **raises it by holding a secondary key** (Block) and lowers it by letting go. It protects from the front **only while raised**.
+- Provisional details (architect): Block is **Q** on keyboard and **L2** on gamepad; it needs the staff or the sword in hand (with a gun, L2 is aim); while raised the player moves slower and cannot attack or cast; the shield has health and breaks when it runs out; other spells can be cast while it is summoned and lowered.
 
 ### Weapon enchant (always equipped)
 - A spell that **cannot be unequipped**.
@@ -196,6 +203,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 ### Staffs (medieval, pixel art)
 - With a staff in hand, **primary fire = basic magic attack**. The attack **depends on which staff** the player holds, so there is more than one staff.
 - Staffs are found in **chests** around the map.
+- **A staff that is picked up goes to the inventory** (owner, 2026-11-12). Nothing is dropped on the floor and the staff in hand is not replaced: the player opens the inventory and equips the new one by hand. (Provisional, architect: guns and the sword follow the same rule; the first weapon of each kind goes straight to its empty slot.)
 - Staff list and what each basic attack does: **TBD**.
 
 ### Guns (cyberpunk, 3D)
@@ -249,6 +257,7 @@ Weapon mechanics and spell mechanics combine. The weapon enchant (§6) is the fi
 | Quick-use item (grenade / potion / injection share one slot) | F | R1 / RB |
 | Cycle the quick-use item | Shift | D-pad left / right |
 | Interact (chests, portals, objects) | G | Triangle (Y) |
+| Block: raise the summoned ice shield (staff or sword in hand; provisional keys) | Q (hold) | L2 / LT (hold) |
 | QTE part 1 | W A S D | Face buttons |
 | QTE part 2 | Mouse gesture | Right stick |
 | Inventory | Tab | Options / View |
@@ -261,17 +270,21 @@ Right click / L1 change meaning with the held weapon and never clash: staff = sp
 
 No sprint (the air speed passive covers movement speed).
 
+Menus (inventory, skill trees, pause) work with keyboard, gamepad **and mouse**: the cursor is visible while a menu is open and a click does what confirm does.
+
 ## 10. Enemies and encounters
 - **Enemy waves (hordes).** Clearing a wave gives skill points.
 - **A couple of sub-bosses.**
 - **Two bosses** (the Valkyrie in each era, §11).
 - **The true final boss.**
+- **Enemies must get around obstacles** to reach the player (owner, 2026-11-12): never stand stuck against a wall.
 - Known enemies: **orcs** (past) and **armed orcs** (future). Other types and behavior: **TBD**. Their art follows §3 (medieval = pixel art, cyberpunk = 3D).
 - Enemies **drop ammo** on the floor.
 - **Enemies do not respawn.** A cleared zone stays cleared, also after era travel.
 
 ### Death and difficulty
 - On death the player **returns to the last checkpoint**. Checkpoints are **automatic**.
+- **Falling out of the map kills** the player (and any enemy).
 - **Difficulty: hard**, the only one for now. A separate normal mode is possible later (for example, the spell QTE only in hard); out of scope until the owner says otherwise.
 - No target length: we build as much as the time allows.
 
@@ -309,6 +322,7 @@ The UI changes with what the player holds:
 
 - **Skill trees** follow the same split: the spell tree has its own 90s-RPG look, the weapon tree its own cyberpunk look.
 - The HUD switches when the player switches weapon. The inventory's look is **TBD**.
+- **Damage numbers** (owner, 2026-11-12): every hit on an enemy shows a number that comes out of the enemy, rises with a slightly random drift and fades. **Especially effective hits show a bigger number** (provisional, architect: headshots, and hits that take a large share of the enemy's health).
 
 ## 14. Theme fit (DIRECTOR'S CUT)
 Our reading (owner, 2026-11-12): the theme is effectively **open**; what the organizers ask for is a game with an **author's signature**, a personal vision. We answer it with the game's own identity:
@@ -371,9 +385,9 @@ The owner asked the architect not to stop for missing design details. Everything
 ### Rules
 - **Double jump on day 1:** the player starts knowing the air passive "Double jump" so it can be tested now. In the real game it is learned in the air zone (§6); remove it from `Player.json` `StartingSpells` then.
 - **Dash:** available from the start (the air passive only improves it). It goes in the movement direction (forward when standing still), works in the air, gives no invulnerability, and does not refill jumps.
-- **Swapping weapons:** picking up a gun or a staff replaces the one held; the old one is left on the floor. A gun that is picked up comes fully loaded.
+- **Owning weapons:** decided by the owner for staffs (section 8): picked-up weapons go to the inventory and are equipped by hand. Provisional part: guns and the sword follow the same rule; each owned gun keeps its own ammo while stored.
 - **Reload:** the bullets left in the old magazine are lost (classic tactical style). A gun reloads by itself when its magazine runs dry. Ammo pickups give one spare magazine, up to the gun's maximum.
-- **Sustained spells (flamethrower, ice shield):** after the QTE they run for their Duration, or until the same spell key is pressed again, the weapon is switched, or the player dies. Mana is paid once, at the start.
+- **Sustained spells (flamethrower):** after the QTE they run for their Duration, or until the same spell key is pressed again, the weapon is switched, or the player dies. Mana is paid once, at the start.
 - **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.
 - **Modifier keys by weapon type:** besides one weapon (`Weapon.Pistol.Damage`) and all weapons (`Weapon.All.Damage`), a modifier can target a slot: `Weapon.Gun.*`, `Weapon.Staff.*`, `Weapon.Sword.*`. The enchant uses `Weapon.Gun.Damage`, so it never buffs the staff or the sword.
 - **Explosions and enemy melee need a clear line** to their target: no damage through walls or through the ice wall.
@@ -389,6 +403,8 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Art rule on pickups:** cyberpunk items (injection, grenade, magazine, sword hilt) lie on the floor as 3D shapes; medieval ones (potions, gems, books, staffs) as pixel-art sprites.
 
 ### Numbers (first pass, all in the JSON files)
+- **Jumps:** each jump rises about 2 m (was 1.2 m); the double jump adds a second one of the same height.
+- **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
 - **QTE:** 4 keys, 1 gesture, 3 s in real time, world at 10% speed.
 - **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and burns.
