@@ -5,6 +5,7 @@
 #include "Player/GBPlayerCharacter.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
+#include "Weapons/GBGun.h"
 #include "Spells/GBSpellbookComponent.h"
 #include "Spells/GBSpellActor.h"
 #include "QTE/GBQTEComponent.h"
@@ -1088,7 +1089,8 @@ void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, const FGBHudSkinStyle& St
 	{
 		// Dot + four ticks at the current spread cone (degrees -> pixels with the camera FOV).
 		DrawRect(Color, CX - T, CY - T, 2.f * T, 2.f * T);
-		const float SpreadDeg = Item->GetStat(Item->IsAiming() ? GBStat::AimSpread : GBStat::Spread, 0.f);
+		const AGBGun* Gun = Cast<AGBGun>(Item);
+		const float SpreadDeg = Gun ? Gun->GetCurrentSpread() : Item->GetStat(Item->IsAiming() ? GBStat::AimSpread : GBStat::Spread, 0.f);
 		const float FOV = (PlayerOwner && PlayerOwner->PlayerCameraManager) ? PlayerOwner->PlayerCameraManager->GetFOVAngle() : 90.f;
 		const float HalfFOVTan = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(FOV, 5.f, 170.f) * 0.5f));
 		float Offset = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(SpreadDeg, 0.f, 80.f))) / HalfFOVTan * Canvas->ClipX * 0.5f;

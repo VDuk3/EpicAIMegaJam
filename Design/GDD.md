@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.22, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.23, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.23 (2026-11-12): owner: guns are less accurate while the player moves than while standing still.
 - v0.22 (2026-11-12): owner's spec: **elemental build-up** (fire, lightning, ice) on every enemy, with three status effects (Ignite, Shock, Frost), per-enemy resistances and reactions, a weak-point bonus for weapon hits, and every number in data. Owner's answers: the old small effects on every hit (burn, the lightning slow, the enchant's chill) are **removed**; the status effect at the full bar is the only elemental effect (the ice floor keeps its zone slow). The elemental sword and the ember staff build up their element too. See §6 "Elemental build-up".
 - v0.21 (2026-11-12): owner: a strong hit (30% of health or more) interrupts the flamethrower, with a camera shake; the spell description says "a strong hit" without the number.
 - v0.20 (2026-11-12): owner: six new spell-tree perks (one per spell that had none); the flamethrower runs while its key is held, until the key is released or the mana runs out.
@@ -242,6 +243,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - Pistol, shotgun, assault rifle.
 - The **first gun** is dropped by one of the first armed orcs in the future (§4). The **shotgun and the rifle** are dropped later by enemies, picked up from the floor.
 - With a gun in hand: **primary fire = shoot**, **secondary = aim**.
+- **Moving costs accuracy (owner, 2026-11-12):** shots spread more while the player moves than while standing still; the crosshair opens to show it. See §18.
 - **Magazines and reload**, like any shooter.
 - **Ammo works like classic tactical shooters:** each gun has a fixed number of spare magazines, and each magazine a fixed number of bullets.
 - **All ammo refills completely every time the player travels between eras.**
@@ -423,6 +425,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Reload:** the bullets left in the old magazine are lost (classic tactical style). A gun reloads by itself when its magazine runs dry. Ammo pickups give one spare magazine, up to the gun's maximum.
 - **Sustained spells (flamethrower), changed by the owner (2026-11-12):** after the QTE the flamethrower runs **while its spell key is held**, until the key is released or the mana runs out (also on weapon switch or death). No time limit. Provisional (architect): it pays a smaller cost at the start (10 mana, always spent, like every QTE spell) and then drains 15 mana per second; if the key was already released when the QTE ends, it still burns for a short minimum (0.75 s) so the cast is never wasted; the cooldown starts at the cast. All values in `Spells.json` (`ManaCost`, `ManaPerSecond`, `MinDuration`).
 - **Strong hit interrupts the flamethrower (owner, 2026-11-12):** a single hit that takes **30% or more of the player's maximum health** stops it at once, and the camera shakes. The in-game description says "a strong hit", never the number. Provisional (architect): measured against maximum health (not current health), on the damage actually taken after the ice shield and armor; the threshold is a spell parameter (`InterruptHitFraction`, so any sustained spell can use it); the shake is short (about 0.35 s, a few degrees, values in `Game.json`), only moves the view, never the aim; the mana already spent is not refunded and the cooldown is unchanged.
+- **Spread while moving (owner, 2026-11-12; numbers by the architect, provisional):** each gun adds `MoveSpread` (hip fire) or `AimMoveSpread` (aiming) degrees to its spread, scaled by the player's horizontal speed over the current walk speed (0 standing still, full bonus at full walk speed or faster; aiming already lowers the walk speed, so a slow aimed walk counts as full). Pistol 1.2 -> 3.7 hip, 0.25 -> 1.25 aimed; shotgun 6 -> 9, 4.5 -> 6.5; rifle 1.8 -> 4.8, 0.35 -> 1.55 (`Weapons.json`, modifiable by perks as `Weapon.<Id>.MoveSpread`). Jumping counts by its horizontal speed only.
 - **Flamethrower damage ticks (owner, 2026-11-12):** damage is dealt in fixed time steps, never per frame, so it does not depend on the frame rate: one tick every **0.3 s** (`TickInterval`), each dealing `DamagePerSecond x 0.3` (the mana drain follows the same ticks). If a frame is longer than a tick, the missed ticks still happen.
 - **New spell perks (owner's list, placement by the architect):** in the spell tree, each under its element's column (fire, lightning, ice), with no prerequisite so they can be tested right away. Deep Freeze: the ice floor slows by 50% at normal QTE power (the slow effect, `StatusEffects.json`), so +5 points per rank makes 55 / 60 / 65%; the cap is **80%** (also reached by a perfect QTE with 3 ranks). The cap is a general rule: any spell parameter can declare a `Cap` in `Spells.json`, applied after QTE scaling and perks.
 - **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.

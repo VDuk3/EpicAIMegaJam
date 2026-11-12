@@ -70,7 +70,7 @@
 powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
 powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
 powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 30          # whole suite (30 tests)
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 35          # whole suite (35 tests)
 powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
 powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
@@ -82,7 +82,8 @@ Codex (read-only review):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent codex -Model 'gpt-6.1-sol (medium)' -PromptFile Prompts\X.md -Purpose '...' -Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`
 A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
 
-## Right now (end of the seventh block, 2026-11-12)
+## Right now (end of the eighth block, 2026-11-12)
+- **Eighth block (GDD v0.23, owner's note):** guns spread more while the player moves (`UGBCombatLibrary::ComputeMovementSpread`, `AGBGun::GetCurrentSpread`, used by the shots and the crosshair; stats `MoveSpread` / `AimMoveSpread` in `Weapons.json`, scaled by horizontal speed over the current walk speed). Small change made by the architect directly. 35 tests. Package 10. Not played yet.
 - **Seventh block (GDD v0.22, owner's spec `Prompts/feedback8_elemental_spec_owner.md`):** elemental build-up on every enemy (three bars, Ignite / Shock / Frost, per-enemy resistances and reactions, spell and weapon build-up, one count per event, weak-point bonus, `MultiplyMin` slows). The old per-hit Burn / Shock slow / Chill were removed (owner's answer). Debug: `gb.ShowElemental 1`, `gb.BuildUp <Element> <Amount>`. 34 tests; smoke fills each bar on a training dummy. Not played yet. Not reviewed by Codex (one Muse batch, read by the architect; one fix: spell projectiles no longer flag head hits as headshots).
 - Everything is committed on `main` (last commits: perks and flamethrower, beam interrupt, then the seventh package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
 - Editor build and game build green; 30 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
@@ -111,6 +112,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
+- Build 10 (spread while moving): the crosshair opens while walking and closes when standing still, hip and aimed; shooting a far target while walking misses more than standing; the shotgun's pattern widens; aimed walking still spreads a little.
 - Build 8 (elemental): with `gb.ShowElemental 1`: fire spells fill the fire bar and Ignite burns 4 s then 3 s immune; a lightning bolt through a line of orcs gives each one build-up; a full lightning bar stuns an orc (stops, attack cancelled) but only interrupts the brute; the ice floor alone fills slowly and decays, an ice-enchanted gun finishes it; frozen orcs stop, the brute only slows; Frost on the ice floor does not slow more than the strongest of the two; a shotgun shot counts once; head shots fill faster; the flamethrower and the ice floor (Deep Freeze) feel the same as before.
 - Build 7: the six new perks (each at rank 3), the flamethrower held / released / out of mana, a strong hit interrupting it (shake, message, aim unchanged), a small hit not interrupting it, with the ice shield raised the blocked part not counting.
 - Build 6: overlapping rune and ice floor in both orders (the last one fully on top, no flicker, also while moving).

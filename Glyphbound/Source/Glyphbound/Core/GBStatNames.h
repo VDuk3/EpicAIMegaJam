@@ -51,6 +51,8 @@ namespace GBStat
 	inline const FName Range(TEXT("Range"));
 	inline const FName Spread(TEXT("Spread"));                      // degrees, hip fire
 	inline const FName AimSpread(TEXT("AimSpread"));                // degrees, aiming
+	inline const FName MoveSpread(TEXT("MoveSpread"));              // extra degrees at full speed, hip fire
+	inline const FName AimMoveSpread(TEXT("AimMoveSpread"));        // extra degrees at full speed, aiming
 	inline const FName RecoilPitch(TEXT("RecoilPitch"));            // degrees per shot
 	inline const FName RecoilYaw(TEXT("RecoilYaw"));                // +- degrees per shot
 	inline const FName RecoilRecovery(TEXT("RecoilRecovery"));      // degrees per second

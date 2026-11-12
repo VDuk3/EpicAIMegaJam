@@ -67,6 +67,13 @@ public:
 	static FVector ApplySpread(const FVector& Direction, float SpreadHalfAngleDegrees, FRandomStream& Random);
 
 	/**
+	 * Spread while moving (GDD 4): BaseSpread + MoveSpread scaled by how fast the shooter moves.
+	 * Speed / FullSpeed is clamped to 0..1, so standing still gives BaseSpread and full speed or more gives
+	 * BaseSpread + MoveSpread. FullSpeed <= 0 or MoveSpread <= 0 gives BaseSpread.
+	 */
+	static float ComputeMovementSpread(float BaseSpread, float MoveSpread, float Speed, float FullSpeed);
+
+	/**
 	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
 	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
 	 * whose IsHeadshotLocation(Info.HitLocation) is true, via IsWeakPointHit), multiplies Info.Amount

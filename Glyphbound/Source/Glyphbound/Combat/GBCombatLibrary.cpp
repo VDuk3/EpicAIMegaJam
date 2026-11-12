@@ -272,6 +272,16 @@ FVector UGBCombatLibrary::ApplySpread(const FVector& Direction, float SpreadHalf
 	return Random.VRandCone(Dir, FMath::DegreesToRadians(SpreadHalfAngleDegrees));
 }
 
+float UGBCombatLibrary::ComputeMovementSpread(float BaseSpread, float MoveSpread, float Speed, float FullSpeed)
+{
+	const float Base = FMath::Max(0.f, BaseSpread);
+	if (FullSpeed <= 0.f || MoveSpread <= 0.f)
+	{
+		return Base;
+	}
+	return Base + MoveSpread * FMath::Clamp(Speed / FullSpeed, 0.f, 1.f);
+}
+
 bool UGBCombatLibrary::ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult)
 {
 	Info.bHeadshot = IsWeakPointHit(Target, Info.HitLocation);

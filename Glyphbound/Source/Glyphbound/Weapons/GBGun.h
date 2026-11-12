@@ -42,6 +42,8 @@ public:
 	virtual float GetReloadProgress() const override;
 
 	int32 GetMagazineSize() const;
+	/** Spread half-angle in degrees right now: hip or aim, plus the moving bonus (GDD 4). Shots and crosshair use it. */
+	float GetCurrentSpread() const;
 	int32 GetMaxSpareMagazines() const;
 
 protected:

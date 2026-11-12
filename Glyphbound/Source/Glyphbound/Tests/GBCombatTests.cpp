@@ -52,6 +52,21 @@ bool FGBCombatHeadshotTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatMovementSpreadTest, "Glyphbound.Combat.MovementSpread",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBCombatMovementSpreadTest::RunTest(const FString& Parameters)
+{
+	// Base 1.2, +2.5 at full speed 600.
+	TestEqual(TEXT("Standing still: base only"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 2.5f, 0.f, 600.f), 1.2f, 0.001f);
+	TestEqual(TEXT("Half speed: half the bonus"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 2.5f, 300.f, 600.f), 2.45f, 0.001f);
+	TestEqual(TEXT("Full speed: whole bonus"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 2.5f, 600.f, 600.f), 3.7f, 0.001f);
+	TestEqual(TEXT("Faster than full (falling, knockback): capped"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 2.5f, 1500.f, 600.f), 3.7f, 0.001f);
+	TestEqual(TEXT("No full speed (rooted): base only"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 2.5f, 300.f, 0.f), 1.2f, 0.001f);
+	TestEqual(TEXT("No move bonus: base only"), UGBCombatLibrary::ComputeMovementSpread(1.2f, 0.f, 600.f, 600.f), 1.2f, 0.001f);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatTeamHostilityTest, "Glyphbound.Combat.TeamHostility",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 

@@ -8,6 +8,7 @@
 #include "Core/GBStatNames.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
 
@@ -271,7 +272,7 @@ bool AGBGun::PerformAttack()
 	}
 
 	const FGBDamageInfo BaseInfo = MakeDamageInfo();
-	const float SpreadDegrees = bAiming ? GetStat(GBStat::AimSpread, 0.f) : GetStat(GBStat::Spread, 0.f);
+	const float SpreadDegrees = GetCurrentSpread();
 
 	--Ammo.InMagazine;
 
@@ -295,6 +296,20 @@ bool AGBGun::PerformAttack()
 		Reload();
 	}
 	return true;
+}
+
+float AGBGun::GetCurrentSpread() const
+{
+	const float Base = bAiming ? GetStat(GBStat::AimSpread, 0.f) : GetStat(GBStat::Spread, 0.f);
+	const float Move = bAiming ? GetStat(GBStat::AimMoveSpread, 0.f) : GetStat(GBStat::MoveSpread, 0.f);
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	const UCharacterMovementComponent* MoveComp = Player ? Player->GetCharacterMovement() : nullptr;
+	if (!MoveComp)
+	{
+		return FMath::Max(0.f, Base);
+	}
+	// Full bonus at the current max walk speed (already lowered while aiming), so slow aimed steps still count.
+	return UGBCombatLibrary::ComputeMovementSpread(Base, Move, MoveComp->Velocity.Size2D(), MoveComp->MaxWalkSpeed);
 }
 
 void AGBGun::FireHitscan(const FGBDamageInfo& BaseInfo, float SpreadDegrees)
