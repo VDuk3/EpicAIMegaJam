@@ -1,0 +1,1070 @@
+[0m
+> build · muse-spark-1.3-contributor
+Starting the skill reset — reading the architecture and rules first.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+[0m→ [0mRead Design/GDD.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBInputSet.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+> build · muse-spark-1.3-contributor
+I've got the skill system layout — now planning the reset tracking, button, and shortcuts.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+[0m✱ [0mGlob "*.ps1" [90min Tools/Jam · 11 matches[0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+@@ -37,8 +37,10 @@
+ 
+ 	int32 GetPoints() const { return Points; }
+ 	void AddPoints(int32 Amount);
+ 
++	int32 GetPointsSpent() const { return PointsSpent; }
++
+ 	int32 GetRank(FName NodeId) const;
+ 	EGBSkillUnlockResult CanUnlock(FName NodeId) const;
+ 	/** Spends the points and applies the modifiers. */
+ 	EGBSkillUnlockResult Unlock(FName NodeId);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+@@ -43,8 +43,14 @@
+ 	int32 GetRank(FName NodeId) const;
+ 	EGBSkillUnlockResult CanUnlock(FName NodeId) const;
+ 	/** Spends the points and applies the modifiers. */
+ 	EGBSkillUnlockResult Unlock(FName NodeId);
++	/**
++	 * Free, any time (GDD 18, provisional): removes every owned node and refunds exactly what was paid
++	 * for them (the tracked PointsSpent, not the current Skills.json costs: costs may change while
++	 * testing via gb.ReloadData). Returns the refunded points (0 when nothing was owned).
++	 */
++	int32 ResetAll();
+ 
+ 	/** Pure rule, also used by the tests. Ranks = node id -> owned rank. */
+ 	static EGBSkillUnlockResult EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& Ranks, int32 AvailablePoints);
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+@@ -74,8 +74,9 @@
+ 	void RemoveAllModifiers();
+ 	void HandleDataReloaded();
+ 
+ 	UPROPERTY() int32 Points = 0;
++	UPROPERTY() int32 PointsSpent = 0;
+ 	UPROPERTY() TMap<FName, int32> Ranks;
+ 
+ 	FDelegateHandle DataReloadedHandle;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -33,8 +33,9 @@
+ void UGBSkillTreeComponent::InitializeFromData()
+ {
+ 	RemoveAllModifiers();
+ 	Ranks.Reset();
++	PointsSpent = 0;
+ 
+ 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+ 	if (!Data)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -87,8 +87,9 @@
+ 		return Result;
+ 	}
+ 
+ 	Points -= FMath::Max(0, Node->Cost);
++	PointsSpent += FMath::Max(0, Node->Cost);
+ 	Ranks.FindOrAdd(NodeId) += 1;
+ 	ApplyNodeModifiers(NodeId);
+ 	OnSkillsChanged.Broadcast();
+ 	return EGBSkillUnlockResult::Ok;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -169,16 +169,18 @@
+ 
+ void UGBSkillTreeComponent::SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const
+ {
+ 	Snapshot.SkillPoints = Points;
++	Snapshot.SkillPointsSpent = PointsSpent;
+ 	Snapshot.SkillRanks = Ranks;
+ }
+ 
+ void UGBSkillTreeComponent::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
+ {
+ 	RemoveAllModifiers();
+ 
+ 	Points = FMath::Max(0, Snapshot.SkillPoints);
++	PointsSpent = FMath::Max(0, Snapshot.SkillPointsSpent);
+ 	Ranks.Reset();
+ 	for (const TPair<FName, int32>& Pair : Snapshot.SkillRanks)
+ 	{
+ 		if (Pair.Value > 0)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -94,10 +94,9 @@
+ 	OnSkillsChanged.Broadcast();
+ 	return EGBSkillUnlockResult::Ok;
+ }
+ 
+-EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints)
+-{
++EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints){
+ 	if (InRanks.FindRef(Node.Id) >= Node.MaxRank)
+ 	{
+ 		return EGBSkillUnlockResult::MaxRank;
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp [90m[limit=30, offset=90][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -94,9 +94,10 @@
+ 	OnSkillsChanged.Broadcast();
+ 	return EGBSkillUnlockResult::Ok;
+ }
+ 
+-EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints){
++EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints)
++{
+ 	if (InRanks.FindRef(Node.Id) >= Node.MaxRank)
+ 	{
+ 		return EGBSkillUnlockResult::MaxRank;
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Core refund logic is in place — now adding the reset button and input bindings.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+@@ -94,8 +94,23 @@
+ 	OnSkillsChanged.Broadcast();
+ 	return EGBSkillUnlockResult::Ok;
+ }
+ 
++int32 UGBSkillTreeComponent::ResetAll()
++{
++	if (Ranks.Num() == 0)
++	{
++		return 0;
++	}
++	RemoveAllModifiers();
++	const int32 Refunded = PointsSpent;
++	Points += PointsSpent;
++	PointsSpent = 0;
++	Ranks.Reset();
++	OnSkillsChanged.Broadcast();
++	return Refunded;
++}
++
+ EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints)
+ {
+ 	if (InRanks.FindRef(Node.Id) >= Node.MaxRank)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+Index: Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
++++ Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+@@ -47,8 +47,9 @@
+ 	UPROPERTY() FName EquippedArmor = NAME_None;
+ 
+ 	// Skill trees
+ 	UPROPERTY() int32 SkillPoints = 0;
++	UPROPERTY() int32 SkillPointsSpent = 0;
+ 	UPROPERTY() TMap<FName, int32> SkillRanks;
+ };
+ 
+ DECLARE_MULTICAST_DELEGATE_OneParam(FGBOnFlagChanged, FName /*Flag*/);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.h
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.h
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.h
+@@ -67,8 +67,12 @@
+ 	/** Returns true if the menu handled it (e.g. left a sub-page); false = the controller should close the menu. */
+ 	bool MenuBack();
+ 	/** Switches page inside a menu (inventory tabs). */
+ 	void MenuTab(int32 Direction);
++	/** Keyboard / gamepad shortcut for the skill reset button (R / top face button). */
++	void MenuReset();
++	/** Refunds every owned skill node (see UGBSkillTreeComponent::ResetAll). The cursor stays on its node. */
++	void ResetSkills(AGBPlayerCharacter* Player);
+ 	/**
+ 	 * Mouse in menus: the cursor is visible while a menu is open, the entry under it is highlighted (the HUD
+ 	 * reads the mouse position itself while drawing), and a left click on an entry does what confirm does there
+ 	 * (tabs and buttons included). ScreenPosition is in viewport pixels. Returns true if something was clicked.
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.h
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.h
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.h
+@@ -143,8 +143,9 @@
+ 		WeaponRow,
+ 		SpellSlot,
+ 		SpellChoice,
+ 		SkillNode,
++		SkillReset,
+ 		DeathScreen
+ 	};
+ 	/** One clickable thing drawn this frame, in canvas coordinates. */
+ 	struct FMenuHit
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -250,10 +250,12 @@
+ 		break;
+ 	case EMenuHitKind::SkillNode:
+ 		MenuState.SkillCursor = Hit.Id;
+ 		break;
++	case EMenuHitKind::Tab:
++	case EMenuHitKind::SkillReset:
+ 	default:
+-		// Tabs and the death screen only react to clicks.
++		// Tabs, the skill reset button and the death screen only react to clicks.
+ 		break;
+ 	}
+ }
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -295,8 +295,11 @@
+ 	case EMenuHitKind::SkillNode:
+ 		MenuState.SkillCursor = Hit.Id;
+ 		ConfirmSkill(Player);
+ 		break;
++	case EMenuHitKind::SkillReset:
++		ResetSkills(Player);
++		break;
+ 	case EMenuHitKind::DeathScreen:
+ 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
+ 		// so a click respawns exactly once.
+ 		break;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Button wiring is done — now building the on-screen reset control.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=35, offset=775][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -796,8 +796,37 @@
+ 		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, Result), 2.f);
+ 	}
+ }
+ 
++void AGBHUD::ResetSkills(AGBPlayerCharacter* Player)
++{
++	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
++	if (!SkillTree)
++	{
++		return;
++	}
++	const int32 Refunded = SkillTree->ResetAll();
++	if (Refunded > 0)
++	{
++		ShowMessage(FString::Printf(TEXT("Skills reset: %d points refunded"), Refunded), 2.f);
++	}
++	else
++	{
++		ShowMessage(TEXT("No skills to reset"), 1.5f);
++	}
++}
++
++void AGBHUD::MenuReset()
++{
++	const EGBMenu Menu = GetOpenMenu();
++	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
++	if (!bShowsSkills)
++	{
++		return;
++	}
++	ResetSkills(GetPlayer());
++}
++
+ // ======================================================================== drawing
+ 
+ float AGBHUD::DrawWrapped(const FString& Text, const FLinearColor& Color, float X, float Y, float MaxWidth, float SizePx, bool bShadow)
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "DrawLabel|MeasureLabel|UIScale" [90min Glyphbound/Source/Glyphbound/UI · 30 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "void AGBHUD::(DrawLabel|MeasureLabel|UIScale|DrawRect|DrawOutline)" [90min Glyphbound/Source/Glyphbound/UI/GBHUD.cpp · 2 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=100, offset=280][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=45, offset=1321][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -1331,8 +1331,34 @@
+ 	}
+ 	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+ 
+ 	DrawLabel(FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints()), MenuWhite, W * 0.5f, Top, 22.f, 0.5f, true, true);
++	// Skill reset button, just right of the Skill points label (same row, above the tree panels).
++	{
++		const int32 Spent = SkillTree->GetPointsSpent();
++		const FString PointsText = FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints());
++		const FVector2D PointsSize = MeasureLabel(PointsText, 22.f, true);
++		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d pt)"), Spent);
++		const FVector2D ResetSize = MeasureLabel(ResetText, 16.f);
++		const float BtnX = W * 0.5f + PointsSize.X * 0.5f + 24.f * S;
++		const float BtnY = Top;
++		const float BtnW = ResetSize.X + 20.f * S;
++		const float BtnH = ResetSize.Y + 10.f * S;
++		const bool bActive = Spent > 0;
++		const FLinearColor BtnColor = bActive ? MenuWhite : MenuGrey;
++		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), BtnX, BtnY, BtnW, BtnH);
++		DrawOutline(BtnX, BtnY, BtnW, BtnH, BtnColor, 1.f * S);
++		if (bActive)
++		{
++			AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
++		}
++		else
++		{
++			// Greyed and inert: still recorded so a click clearly hits nothing else, but activation is refused.
++			AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
++		}
++		DrawLabel(ResetText, BtnColor, BtnX + BtnW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
++	}
+ 	if (Nodes.Num() == 0)
+ 	{
+ 		DrawLabel(TEXT("No skills defined (Skills.json)."), MenuWhite, W * 0.5f, Top + 50.f * S, 20.f, 0.5f);
+ 		return;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Reset button placed — now wiring the keyboard shortcut and help text.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -1346,17 +1346,9 @@
+ 		const bool bActive = Spent > 0;
+ 		const FLinearColor BtnColor = bActive ? MenuWhite : MenuGrey;
+ 		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), BtnX, BtnY, BtnW, BtnH);
+ 		DrawOutline(BtnX, BtnY, BtnW, BtnH, BtnColor, 1.f * S);
+-		if (bActive)
+-		{
+-			AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
+-		}
+-		else
+-		{
+-			// Greyed and inert: still recorded so a click clearly hits nothing else, but activation is refused.
+-			AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
+-		}
++		AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
+ 		DrawLabel(ResetText, BtnColor, BtnX + BtnW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
+ 	}
+ 	if (Nodes.Num() == 0)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=25, offset=875][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -884,9 +884,9 @@
+ 		if (Player)
+ 		{
+ 			DrawSkillTrees(Player, Canvas->ClipY * 0.1f);
+ 		}
+-		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   Esc: close"), GBHudMenuLocal::MenuWhite,
++		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   R: reset skills   Esc: close"), GBHudMenuLocal::MenuWhite,
+ 			Canvas->ClipX * 0.5f, Canvas->ClipY - 40.f * S, 16.f, 0.5f);
+ 		break;
+ 	}
+ 	default:
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBInputSet.h
+Index: Glyphbound/Source/Glyphbound/Player/GBInputSet.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBInputSet.h
++++ Glyphbound/Source/Glyphbound/Player/GBInputSet.h
+@@ -69,5 +69,6 @@
+ 	UPROPERTY() TObjectPtr<UInputAction> MenuConfirm;  // Enter / Space / Cross (A)
+ 	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Tab / Circle (B)
+ 	UPROPERTY() TObjectPtr<UInputAction> MenuTab;      // Axis1D: Q-E / L1-R1, switches menu page
+ 	UPROPERTY() TObjectPtr<UInputAction> MenuClick;    // left mouse button (menu context only)
++	UPROPERTY() TObjectPtr<UInputAction> MenuReset;    // R / gamepad top face button (menu context only): reset skills
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+@@ -139,8 +139,9 @@
+ 	MenuConfirm = MakeAction(this, TEXT("IA_MenuConfirm"), EType::Boolean, true);
+ 	MenuBack = MakeAction(this, TEXT("IA_MenuBack"), EType::Boolean, true);
+ 	MenuTab = MakeAction(this, TEXT("IA_MenuTab"), EType::Axis1D, true);
+ 	MenuClick = MakeAction(this, TEXT("IA_MenuClick"), EType::Boolean, true);
++	MenuReset = MakeAction(this, TEXT("IA_MenuReset"), EType::Boolean, true);
+ 
+ 	// ---- Gameplay context (GDD 9) ----
+ 	GameplayContext = NewObject<UInputMappingContext>(this, MakeUniqueObjectName(this, UInputMappingContext::StaticClass(), TEXT("IMC_Gameplay")));
+ 	UInputMappingContext* G = GameplayContext;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+@@ -231,8 +231,14 @@
+ 	MapAxis1D(M, MenuTab, EKeys::Gamepad_RightShoulder);
+ 
+ 	MapButton(M, MenuClick, EKeys::LeftMouseButton);
+ 
++	// Skill reset shortcut (menu context only): R and the gamepad top face button. Neither is mapped
++	// to another menu action (R is Reload only in the gameplay context; the top face button is only
++	// a raw FaceUp gameplay input), so no existing menu binding is changed.
++	MapButton(M, MenuReset, EKeys::R);
++	MapButton(M, MenuReset, EKeys::Gamepad_FaceButton_Top);
++
+ 	// Inside menus: the gamepad Menu / View buttons and K still toggle their screens (Esc and Tab are "back" here).
+ 	MapButton(M, Pause, EKeys::Gamepad_Special_Right);
+ 	MapButton(M, Inventory, EKeys::Gamepad_Special_Left);
+ 	MapButton(M, SkillTrees, EKeys::K);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Shortcut action created — now hooking it up to the controller.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+@@ -56,10 +56,11 @@
+ 	void InputMenuNavigate(const FInputActionValue& Value);
+ 	void InputMenuConfirm();
+ 	void InputMenuBack();
+ 	void InputMenuTab(const FInputActionValue& Value);
+-	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */
+-	void InputMenuClick();
+++	void InputMenuReset();
++ 	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */
++ 	void InputMenuClick();
+ 
+ 	UPROPERTY() TObjectPtr<UGBInputSet> InputSet;
+ 	EGBMenu OpenMenu = EGBMenu::None;
+ 	/** The cursor is centered again on the next tick: Slate may move it back while releasing the mouse capture. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.h [90m[limit=15, offset=53][0m
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerController.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerController.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+59: 	void InputMenuTab(const FInputActionValue& Value);
+60: +	void InputMenuReset();
+61:  	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */
+62:  	void InputMenuClick();
+> build · muse-spark-1.3-contributor
+[0m$ [0mpython3 -c "p=open('C:/GameJam/Glyphbound/Source/Glyphbound/Player/GBPlayerController.h','rb').read(); i=p.find(b'InputMenuReset'); print(repr(p[i-80:i+120]))"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "$b=[IO.File]::ReadAllBytes('C:/GameJam/Glyphbound/Source/Glyphbound/Player/GBPlayerController.h'); $s=[Text.Encoding]::UTF8.GetString($b); $i=$s.IndexOf('InputMenuReset'); Write-Output ($s.Substring($i-100,200) | Format-Hex | Out-String)"
+At line:1 char:131
++ ... yer/GBPlayerController.h'); =[Text.Encoding]::UTF8.GetString(); =.Ind ...
++                                                                  ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+> build · muse-spark-1.3-contributor
+Hit a formatting snag in the header — trying a different fix.
+[0m$ [0msed -n '55,65p' Glyphbound/Source/Glyphbound/Player/GBPlayerController.h | cat -A
+sed : The term 'sed' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ sed -n '55,65p' Glyphbound/Source/Glyphbound/Player/GBPlayerControlle ...
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (sed:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m$ [0mGet-Content Glyphbound/Source/Glyphbound/Player/GBPlayerController.h | Select-Object -Skip 54 -First 12
+void InputPause();
+	void InputMenuNavigate(const FInputActionValue& Value);
+	void InputMenuConfirm();
+	void InputMenuBack();
+	void InputMenuTab(const FInputActionValue& Value);
++	void InputMenuReset();
+ 	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */
+ 	void InputMenuClick();
+System.Management.Automation.RemoteException
+	UPROPERTY() TObjectPtr<UGBInputSet> InputSet;
+	EGBMenu OpenMenu = EGBMenu::None;
+	/** The cursor is centered again on the next tick: Slate may move it back while releasing the mouse capture. */
+> build · muse-spark-1.3-contributor
+[0m$ [0m$p='Glyphbound/Source/Glyphbound/Player/GBPlayerController.h'; $t=[IO.File]::ReadAllText($p); $t=$t -replace "\r?\n\+\tvoid InputMenuReset\(\);\r?\n  \t", \"`r`n`tvoid InputMenuReset();`r`n`t\"; [IO.File]::WriteAllText($p,$t); Get-Content $p | Select-Object -Skip 54 -First 12
+At line:1 char:155
++ ...  $t=$t -replace "\r?\n\+\tvoid InputMenuReset\(\);\r?\n  \t", \"`r`n` ...
++                                                                  ~
+Missing expression after ','.
+At line:1 char:156
++ ... uReset\(\);\r?\n  \t", \"`r`n`tvoid InputMenuReset();`r`n`t\"; [IO.Fi ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '\"`r`n`tvoid InputMenuReset();`r`n`t\"' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingExpressionAfterToken
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+Wrote file successfully: Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+> build · muse-spark-1.3-contributor
+Header repaired — now finishing the controller binding.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+@@ -129,8 +129,9 @@
+ 	EIC->BindAction(InputSet->MenuNavigate, ETriggerEvent::Started, this, &ThisClass::InputMenuNavigate);
+ 	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
+ 	EIC->BindAction(InputSet->MenuBack, ETriggerEvent::Started, this, &ThisClass::InputMenuBack);
+ 	EIC->BindAction(InputSet->MenuTab, ETriggerEvent::Started, this, &ThisClass::InputMenuTab);
++	EIC->BindAction(InputSet->MenuReset, ETriggerEvent::Started, this, &ThisClass::InputMenuReset);
+ 	EIC->BindAction(InputSet->MenuClick, ETriggerEvent::Started, this, &ThisClass::InputMenuClick);
+ }
+ 
+ void AGBPlayerController::SetMenu(EGBMenu Menu)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+@@ -301,10 +301,9 @@
+ 	}
+ }
+ 
+ void AGBPlayerController::InputMenuClick()
+-{
+-	if (OpenMenu == EGBMenu::None)
++{	if (OpenMenu == EGBMenu::None)
+ 	{
+ 		return;
+ 	}
+ 	if (OpenMenu == EGBMenu::Death)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp [90m[limit=15, offset=300][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+@@ -300,10 +300,23 @@
+ 		HUD->MenuTab(Axis > 0.f ? 1 : -1);
+ 	}
+ }
+ 
++void AGBPlayerController::InputMenuReset()
++{
++	if (OpenMenu == EGBMenu::None || OpenMenu == EGBMenu::Death)
++	{
++		return;
++	}
++	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
++	{
++		HUD->MenuReset();
++	}
++}
++
+ void AGBPlayerController::InputMenuClick()
+-{	if (OpenMenu == EGBMenu::None)
++{
++	if (OpenMenu == EGBMenu::None)
+ 	{
+ 		return;
+ 	}
+ 	if (OpenMenu == EGBMenu::Death)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Inputs are wired — now adding the smoke test coverage.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -60,8 +60,10 @@
+ 	static TWeakObjectPtr<AGBEnemyCharacter> PathOrc;
+ 	static float PathStartDistance = 0.f;
+ 	static bool bPathOrcSpawned = false;
+ 	static const FName PathOrcId(TEXT("Orc_Past"));
++	static FName SmokeSkillNode = NAME_None;
++	static int32 SmokeSkillPointsBefore = 0;
+ 
+ 	static void Shot(const TCHAR* Name)
+ 	{
+ 		const FString Path = FPaths::ProjectSavedDir() / TEXT("Screenshots/Smoke") / (FString(Name) + TEXT(".png"));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -350,19 +350,34 @@
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+ 				PC->SetMenu(EGBMenu::SkillTrees);
+ 			}
++			SmokeSkillNode = NAME_None;
++			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
+ 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+ 			{
+ 				if (Data->GetSkillNodes().Num() > 0)
+ 				{
+ 					const FName Node = Data->GetSkillNodes()[0].Id;
++					SmokeSkillNode = Node;
+ 					const EGBSkillUnlockResult Result = Player->GetSkillTree()->Unlock(Node);
+ 					UE_LOG(LogGB, Display, TEXT("SMOKE unlock %s result=%d rank=%d points=%d"), *Node.ToString(), static_cast<int32>(Result), Player->GetSkillTree()->GetRank(Node), Player->GetSkillTree()->GetPoints());
+ 				}
+ 			}
+ 		});
+ 		Add(13.9f + S, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
++		Add(14.9f + S, TEXT("reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			const int32 Refunded = Player->GetSkillTree()->ResetAll();
++			const int32 Points = Player->GetSkillTree()->GetPoints();
++			const int32 Rank = SmokeSkillNode == NAME_None ? 0 : Player->GetSkillTree()->GetRank(SmokeSkillNode);
++			UE_LOG(LogGB, Display, TEXT("SMOKE skill reset refunded=%d points=%d rank=%d"), Refunded, Points, Rank);
++			if (Points != SmokeSkillPointsBefore || Rank != 0)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE skill reset FAILED: points=%d (expected %d) rank=%d (expected 0)"), Points, SmokeSkillPointsBefore, Rank);
++			}
++		});
++		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+ 		Add(15.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=90, offset=378][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -376,9 +376,9 @@
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE skill reset FAILED: points=%d (expected %d) rank=%d (expected 0)"), Points, SmokeSkillPointsBefore, Rank);
+ 			}
+ 		});
+ 		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+-		Add(15.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(17.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+ 				PC->SetMenu(EGBMenu::None);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -388,9 +388,9 @@
+ 			SetQTEEnabled(true);
+ 			const bool bOk = Player->GetSpellbook()->TryCastSlot(3);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE cast slot3 (%s) with QTE ok=%d qteActive=%d"), *Player->GetSpellbook()->GetSlotSpell(3).ToString(), bOk ? 1 : 0, Player->GetQTE()->IsActive() ? 1 : 0);
+ 		});
+-		Add(15.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(17.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+ 			{
+ 				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -395,10 +395,10 @@
+ 			{
+ 				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+ 			}
+ 		});
+-		Add(15.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
+-		Add(19.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
++		Add(17.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
++		Add(21.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
+ 			// 4.8 s after the cast with the QTE on (the limit is 4 s of real time): it must be over by now.
+ 			const FGBQTEResult& Result = Player->GetQTE()->GetLastResult();
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE qte finished active=%d power=%.2f reach=%.2f success=%d timedOut=%d dilation=%.2f"),
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -404,9 +404,9 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE qte finished active=%d power=%.2f reach=%.2f success=%d timedOut=%d dilation=%.2f"),
+ 				Player->GetQTE()->IsActive() ? 1 : 0, Result.Power, Result.Reach, Result.bSuccess ? 1 : 0, Result.bTimedOut ? 1 : 0,
+ 				World->GetWorldSettings() ? World->GetWorldSettings()->GetEffectiveTimeDilation() : -1.f);
+ 		});
+-		Add(20.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(22.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			FGBDamageInfo Info;
+ 			Info.Amount = 10000000.f;
+ 			UGBCombatLibrary::DealDamage(Player, Info, true);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -411,10 +411,10 @@
+ 			Info.Amount = 10000000.f;
+ 			UGBCombatLibrary::DealDamage(Player, Info, true);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE player dead=%d"), Player->IsDead() ? 1 : 0);
+ 		});
+-		Add(21.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+-		Add(24.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
++		Add(23.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
++		Add(26.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
+ 			LogState(World, Player, TEXT("after respawn"));
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+ 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -419,9 +419,9 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+ 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+ 			Shot(TEXT("8_respawn"));
+ 		});
+-		Add(25.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+ 			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+ 			const AGBHeldItem* InSlot = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -434,9 +434,9 @@
+ 				bEquipped ? 1 : 0,
+ 				InSlotAfter ? *InSlotAfter->GetWeaponId().ToString() : TEXT("none"),
+ 				Equipment->IsWeaponEquipped(TEXT("Staff_Ember")) ? 1 : 0);
+ 		});
+-		Add(26.4f + S, TEXT("summon the ice shield and raise it"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(28.4f + S, TEXT("summon the ice shield and raise it"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			SetQTEEnabled(false);
+ 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+ 			if (!Player->GetSpellbook()->KnowsSpell(TEXT("IceShield")))
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -450,10 +450,10 @@
+ 				bOk ? 1 : 0,
+ 				Player->GetSpellbook()->HasShield() ? 1 : 0,
+ 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
+ 		});
+-		Add(27.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
+-		Add(28.1f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(29.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
++		Add(30.1f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			Player->GetSpellbook()->SetBlockHeld(false);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE shield lowered hasShield=%d raised=%d"),
+ 				Player->GetSpellbook()->HasShield() ? 1 : 0,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -458,9 +458,9 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE shield lowered hasShield=%d raised=%d"),
+ 				Player->GetSpellbook()->HasShield() ? 1 : 0,
+ 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
+ 		});
+-		Add(29.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(31.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+All pieces are in — building to verify.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 45 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 47 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 26
+Tests: 26 run, 0 failed, test time 0.43 s, wall time 36 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-151200
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-151240.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-151240.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 33 steps
+LogGB: Display: SMOKE step 1/33 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=12 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/33 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/33 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/33 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/33 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/33 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/33 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/33 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/33 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/33 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/33 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/33 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/33 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=145 (start 1550, needed <= 250) orc at V(X=-2455.38, Y=-138.10, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/33 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/33 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/33 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/33 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/33 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/33 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/33 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/33 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/33 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 23/33 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 24/33 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 25/33 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 26/33 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 27/33 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 28/33 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 29/33 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 30/33 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 31/33 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 32/33 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 33/33 (37.7 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 10 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=54 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-151240.log
+> build · muse-spark-1.3-contributor
+All green — doing a final check of the changes.
+[0m$ [0mgit status --short; git diff --stat
+M Devlog/raw/CENTRAL/2026-11-12/agents.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/claude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl
+ M Devlog/raw/CENTRAL/2026-11-12/transcripts/23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl
+ M Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+ M Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp
+ M Glyphbound/Source/Glyphbound/Player/GBInputSet.h
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerController.h
+ M Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp
+ M Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h
+ M Glyphbound/Source/Glyphbound/UI/GBHUD.h
+ M Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+ M Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h
+?? Devlog/raw/CENTRAL/2026-11-12/agents/150553-opencode-433d4e/
+?? Devlog/raw/CENTRAL/2026-11-12/claude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl
+?? Devlog/raw/CENTRAL/2026-11-12/transcripts/5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBInputSet.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Player/GBPlayerController.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/World/GBProgressSubsystem.h', LF will be replaced by CRLF the next time Git touches it
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |  1 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl | 15 ++++
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 96 ++++++++++++++++++++++
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       | 41 ++++++---
+ Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp |  7 ++
+ Glyphbound/Source/Glyphbound/Player/GBInputSet.h   |  1 +
+ .../Glyphbound/Player/GBPlayerController.cpp       | 13 +++
+ .../Source/Glyphbound/Player/GBPlayerController.h  |  1 +
+ .../Progression/GBSkillTreeComponent.cpp           | 19 +++++
+ .../Glyphbound/Progression/GBSkillTreeComponent.h  |  9 ++
+ Glyphbound/Source/Glyphbound/UI/GBHUD.h            |  5 ++
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    | 56 ++++++++++++-
+ .../Source/Glyphbound/World/GBProgressSubsystem.h  |  1 +
+ 13 files changed, 251 insertions(+), 14 deletions(-)
+> build · muse-spark-1.3-contributor
+1. Result lines (verbatim)
+Build 1: `Result: Succeeded` / `Build time: 45 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log`
+Build 2 (Target Glyphbound): `Result: Succeeded` / `Build time: 47 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log`
+Tests: `Tests: 26 run, 0 failed, test time 0.43 s, wall time 36 s, ensures in log: 0` / `Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-151200`
+Smoke: `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=54 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-151240.log`
+`LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1`
+`LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0`
+Smoke also contained `SMOKE path check passed`, `SMOKE screenshot .../5b_skills_reset.png`, `---- problems in our code (LogGB warnings/errors, asserts, crashes) ----` / `(none)`.
+
+2. What I changed (no commit)
+- Progression/GBSkillTreeComponent.h/.cpp: new `UPROPERTY() int32 PointsSpent`; `Unlock` adds `FMath::Max(0, Node->Cost)`; `InitializeFromData` resets it to 0; new `int32 GetPointsSpent() const`; new `int32 ResetAll()` (RemoveAllModifiers before clearing Ranks, refunds tracked PointsSpent, resets PointsSpent/Ranks, broadcasts only when Ranks was non-empty); Save/Load carry PointsSpent.
+- World/GBProgressSubsystem.h: new `UPROPERTY() int32 SkillPointsSpent` in FGBPlayerSnapshot (save/load clamped >= 0).
+- UI/GBHUD.h: new `EMenuHitKind::SkillReset`; new `MenuReset()` and `ResetSkills(AGBPlayerCharacter*)`.
+- UI/GBHUD_Menus.cpp: ApplyMenuHover ignores SkillReset like tabs; ActivateMenuHit routes it to ResetSkills; ResetSkills calls ResetAll with messages `Skills reset: N points refunded` (2 s) / `No skills to reset` (1.5 s), cursor untouched; DrawSkillTrees draws `Reset skills (+N pt)` just right of the Skill points label on the same row (above the tree panels), greyed via MenuGrey when spent is 0; K-screen help line now ends `R: reset skills   Esc: close`.
+- Player/GBInputSet.h/.cpp: new Boolean `MenuReset` (bTriggerWhenPaused), menu context only: R + Gamepad_FaceButton_Top.
+- Player/GBPlayerController.h/.cpp: `InputMenuReset` bound on Started, forwards to `AGBHUD::MenuReset()`, which only acts on SkillTrees or Inventory/PageSkills.
+- Core/GBDevCommands.cpp: unlock step remembers points before unlock; new step ~1.0 s after 5_skills calls ResetAll and logs `SMOKE skill reset refunded=%d points=%d rank=%d`, with UE_LOG Error if points differ from pre-unlock or rank != 0; new screenshot `5b_skills_reset` one step later; all later steps shifted +2.0 s keeping spacing.
+
+3. What I could not do / conflicts
+- Key conflict check: R and Gamepad_FaceButton_Top were both free in the menu context (R was only Reload in gameplay; top face button only a raw FaceUp gameplay input). No remapping needed, nothing blocked.
+
+4. Check by playing
+- Open K and the inventory Skills page at 1280x720 and 1920x1080: reset button sits right of `Skill points: N`, never overlaps trees or the details panel; greyed with 0 spent, clickable otherwise.
+- Unlock nodes, edit costs in Skills.json, `gb.ReloadData`, then reset: refund equals what was paid, not recomputed; modifiers actually come off (damage/speed back to base).
+- R key and gamepad top button reset only on the two skill screens, do nothing elsewhere; messages and cursor behavior as above; checkpoint save/load keeps SkillPointsSpent.

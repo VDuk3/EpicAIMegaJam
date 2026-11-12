@@ -1,0 +1,14 @@
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |  1 +
+ ...aude-23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl | 15 ++++
+ .../23adb9cb-2d63-466a-a1a2-57199d0c3df2.jsonl     | 96 ++++++++++++++++++++++
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       | 41 ++++++---
+ Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp |  7 ++
+ Glyphbound/Source/Glyphbound/Player/GBInputSet.h   |  1 +
+ .../Glyphbound/Player/GBPlayerController.cpp       | 13 +++
+ .../Source/Glyphbound/Player/GBPlayerController.h  |  1 +
+ .../Progression/GBSkillTreeComponent.cpp           | 19 +++++
+ .../Glyphbound/Progression/GBSkillTreeComponent.h  |  9 ++
+ Glyphbound/Source/Glyphbound/UI/GBHUD.h            |  5 ++
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    | 56 ++++++++++++-
+ .../Source/Glyphbound/World/GBProgressSubsystem.h  |  1 +
+ 13 files changed, 251 insertions(+), 14 deletions(-)
