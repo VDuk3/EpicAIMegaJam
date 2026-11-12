@@ -1,7 +1,7 @@
 # Handoff between architect chats
 
-> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.19) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
-> Last update: 2026-11-12 (day 1, fifth block and its follow-up: ground spell figures and their layering, +1 skill point), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
+> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.21) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
+> Last update: 2026-11-12 (day 1, sixth block: six new spell perks, hold-to-sustain flamethrower with strong-hit interrupt), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
 
 ## Standing instructions from the owner (2026-11-12)
 - Do not stop to ask for go-aheads or yes/no questions. Decide, do, log. If the architect stops, the project stops.
@@ -69,7 +69,7 @@
 powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
 powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
 powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 27          # whole suite (27 tests)
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 30          # whole suite (30 tests)
 powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
 powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
@@ -81,16 +81,17 @@ Codex (read-only review):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent codex -Model 'gpt-6.1-sol (medium)' -PromptFile Prompts\X.md -Purpose '...' -Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`
 A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
 
-## Right now (end of the fifth block, 2026-11-12)
-- Everything is committed on `main` (last commits: ground spell figures and the +1 skill point button, then the fifth package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
-- Editor build and game build green; 27 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
-- Five blocks done today:
+## Right now (end of the sixth block, 2026-11-12)
+- Everything is committed on `main` (last commits: perks and flamethrower, beam interrupt, then the seventh package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
+- Editor build and game build green; 30 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
+- Six blocks done today:
   1. The whole code base (ten parallel implementers, integration, Codex review with 9 findings fixed).
   2. The owner's first ten play-test notes, GDD v0.14 (pixel-textured 3D structures, fireball shockwave, higher jumps, owned weapons and the Weapons page, held ice shield on Block, enemy pathing, mouse in menus, kill height, damage numbers, QTE 4 s); Codex review with 4 findings fixed.
+  6. GDD v0.20-v0.21: six new spell perks (data only; 18 skill nodes now); optional `Cap` per spell param (`GBSpell` resolve; ice floor slow capped at 80%); every modifier key in the data is validated at load (`UGBDataSubsystem`, warning on a typo); the flamethrower runs while its key is held (`AGBSpell_Beam::ShouldBeamContinue`, `AGBPlayerCharacter::IsSpellInputHeld`, params `HoldToSustain`, `MinDuration`, `ManaPerSecond`, no `Duration`), ticks every 0.3 s, and a single hit of 30%+ of max health interrupts it (`IsInterruptingHit`, param `InterruptHitFraction`) with a view shake (`AGBPlayerCharacter::StartViewShake`, `InterruptShake*` in `Game.json`). Not played yet.
   5. GDD v0.17-v0.18: the lightning rune and the ice floor draw their sprite flat over the whole area (`SetupFlatSprite`, `M_PixelDecal`, sprites redrawn top-down 32x32; param `FigureGlow`); overlapping figures stack, the last placed on top (`AGBSpellActor::PlaceGroundFigure` / `ComputeGroundFigureZ`, keys `GroundFigure*` in `Game.json`, test `Glyphbound.Spells.GroundFigureLayering`); a "+1 skill point" test button on the skill tree screen (`AGBHUD::AddTestSkillPoint`; **remove or hide it before submission**). Not played yet.
   4. Perk reset, GDD v0.16 (by the second architect chat): `UGBSkillTreeComponent::ResetAll` refunds the tracked `PointsSpent` (saved in the checkpoint snapshot); a "Reset skills (+N pt)" button next to the skill points on both skill tree screens, plus R / gamepad Y there (`MenuReset` input action, menu context only). The smoke run checks the refund. Not played yet.
   3. The owner's second round, GDD v0.15: jumps commit to their direction (`AGBPlayerCharacter::ComputeJumpHorizontalVelocity`; stats `AirControl` 0, `JumpTakeoffMinSpeedMult` 0.6, `AirJumpMinSpeedMult` 1.0), the sword hits where the player aims (`UGBCombatLibrary::ClosestBodyPointToAim`), one weak-point rule for gun, staff and sword (`ApplyWeakPointBonus`; `HeadshotMult` pistol 2, everything else 1.5, raised by the Marksman perk through `Weapon.All.HeadshotMult`). **Not reviewed by Codex. Not played yet.**
-- The owner has played builds 1 and 2. Builds 3 and 4 were never played as such; build 6 (the current zip: everything above, including the ground layering) is waiting for him; he played build 5 and sent the layering note.
+- The owner has played builds 1 and 2. Builds 3 and 4 were never played as such; build 7 (the current zip: everything above) is waiting for him; he played builds 5 and 6 and sent notes on both.
 - Provisional choices waiting for the owner's word (GDD 18 and section 6): the skill reset is free, any time, without confirmation; the +1 skill point button is a test option; Block on Q / L2; guns and the sword follow the staff rule (owned, equipped from the inventory); a "big" damage number is a headshot or a hit of at least 25% of the target's health; staff / sword / rifle head bonus numbers; a standing jump with a direction held leaves at 60% of walking speed.
 
 ## What the game does today
@@ -108,6 +109,7 @@ Systems added after the first play-test: owned weapons (a pickup goes to the han
 7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
 
 ## Things a human must check by playing
+- Build 7: the six new perks (each at rank 3), the flamethrower held / released / out of mana, a strong hit interrupting it (shake, message, aim unchanged), a small hit not interrupting it, with the ice shield raised the blocked part not counting.
 - Build 6: overlapping rune and ice floor in both orders (the last one fully on top, no flicker, also while moving).
 - Build 5: the rune and ice floor figures (full area, flat, sharp, floor visible through them, rune dim until armed), the +1 skill point button.
 - Build 4 (perk reset): the button and R on the K screen and the inventory Skills page, that stats really go back to base after a reset.

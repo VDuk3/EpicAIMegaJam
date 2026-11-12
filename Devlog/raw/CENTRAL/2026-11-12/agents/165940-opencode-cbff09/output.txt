@@ -1,0 +1,1438 @@
+[0m
+> build · muse-spark-1.3-contributor
+Switching to flamethrower sustain, six perks, and validation — first reading the design constraints.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Skills.json 
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp 
+> build · muse-spark-1.3-contributor
+Core config mapped — now digging into the spell engine and HUD to check perk hooks.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGlob "*.h" [90min Glyphbound/Source/Glyphbound/UI · 3 matches[0m
+[0m✱ [0mGlob "*.h" [90min Glyphbound/Source/Glyphbound/Spells · 11 matches[0m
+[0m✱ [0mGlob "*.h" [90min Glyphbound/Source/Glyphbound/Player · 3 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Shield.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBInputSet.h 
+[0m→ [0mRead Glyphbound/Content/Data/StatusEffects.json 
+> build · muse-spark-1.3-contributor
+Perk data checks out — now mapping the UI layout and input wiring for the flamethrower changes.
+[0m✱ [0mGrep "SpellSlot|BindAction|GetActionValue|EnhancedInput" [90min Glyphbound/Source/Glyphbound/Player · 69 matches[0m
+[0m✱ [0mGlob "*.cpp" [90min Glyphbound/Source/Glyphbound/Tests · 11 matches[0m
+[0m✱ [0mGrep "DrawSkillTrees" [90min Glyphbound/Source/Glyphbound/UI · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp [90m[limit=260, offset=1335][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=120, offset=740][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp [90m[limit=130, offset=100][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+[0m✱ [0mGrep "StrengthScale|AddModifiers|EvaluateKeys" [90min Glyphbound/Source/Glyphbound/Stats · 5 matches[0m
+[0m✱ [0mGrep "GetActionValue|GetBoundActionValue|QueryKeys|GetPlayerInput" [90min Glyphbound/Source/Glyphbound · 0 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp 
+[0m✱ [0mGrep "ReadParam\(GBStat::(Duration|Radius)|Get\(GBStat::(Duration|Radius)|TriggerRadius" [90min Glyphbound/Source/Glyphbound/Spells · 20 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=140, offset=1000][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp 
+[0m$ [0mls Tools/Jam/; cat Tools/Jam/Test-Jam.ps1 | head -80; echo ---; cat Tools/Jam/Smoke-Jam.ps1 | head -120
+Directory: C:\GameJam\Tools\Jam
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----        11/11/2026   5:11 PM           2479 Backup-Content.ps1                                                   
+-a----        11/12/2026   2:21 AM           1855 Build-Jam.ps1                                                        
+-a----        11/12/2026   3:28 AM           1581 fix_sprite_palette_case.js                                           
+-a----        11/12/2026  11:40 AM           3161 Make-Materials.ps1                                                   
+-a----        11/12/2026  11:40 AM          13360 make_materials.py                                                    
+-a----        11/12/2026   2:27 AM           2214 Measure-EditorBoot.ps1                                               
+-a----        11/11/2026   5:16 PM           3237 Package-Jam.ps1                                                      
+-a----        11/11/2026   5:13 PM           6508 Setup-IncomingShare.ps1                                              
+-a----        11/12/2026   3:13 AM           4027 Smoke-Jam.ps1                                                        
+-a----         11/9/2026   6:51 PM           1417 Start-EditorMcp.ps1                                                  
+-a----        11/10/2026   5:07 AM           5182 Stop-EditorMcp.ps1                                                   
+-a----        11/12/2026   2:43 AM           3398 Test-Jam.ps1                                                         
+-a----         11/9/2026   6:54 PM           3435 Test-UnrealMcp.ps1                                                   
+-a----        11/12/2026   3:32 AM           6537 trim_plugins.js                                                      
+head : The term 'head' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:45
++ ls Tools/Jam/; cat Tools/Jam/Test-Jam.ps1 | head -80; echo ---; cat T ...
++                                             ~~~~
+    + CategoryInfo          : ObjectNotFound: (head:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+---
+head : The term 'head' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:95
++ ... Jam.ps1 | head -80; echo ---; cat Tools/Jam/Smoke-Jam.ps1 | head -120
++                                                                 ~~~~
+    + CategoryInfo          : ObjectNotFound: (head:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\EnhancedInput\Public\EnhancedInputComponent.h' -Pattern 'GetActionValue|GetBoundAction' | Select-Object -First 20 | ForEach-Object { $_.Line.Trim() }; echo '---SUBSYSTEM---'; Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\EnhancedInput\Public\EnhancedInputLocalPlayerSubsystem.h' -Pattern 'GetActionValue|GetPlayerInput|Query|ActionValue' | Select-Object -First 20 | ForEach-Object { $_.Line.Trim() }
+Select-String : Cannot find path 'C:\Program Files\Epic 
+Games\UE_5.9\Engine\Source\Runtime\EnhancedInput\Public\EnhancedInputComponent.h' because it does not exist.
+At line:1 char:1
++ Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Program File...nputComponent.h:String) [Select-String], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SelectStringCommand
+ 
+---SUBSYSTEM---
+Select-String : Cannot find path 'C:\Program Files\Epic 
+Games\UE_5.9\Engine\Source\Runtime\EnhancedInput\Public\EnhancedInputLocalPlayerSubsystem.h' because it does not exist.
+At line:1 char:254
++ ... SYSTEM---'; Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\E ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Program File...ayerSubsystem.h:String) [Select-String], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SelectStringCommand
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=60, offset=1][0m
+[0m$ [0mGet-ChildItem 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public' -Filter *.h | Select-Object -ExpandProperty Name; echo '---'; Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\*.h' -Pattern 'GetActionValue' | Select-Object -First 10 | ForEach-Object { $_.Line.Trim() }
+EnhancedActionKeyMapping.h
+EnhancedInputActionDelegateBinding.h
+EnhancedInputComponent.h
+EnhancedInputDeveloperSettings.h
+EnhancedInputLibrary.h
+EnhancedInputModule.h
+EnhancedInputPlatformSettings.h
+EnhancedInputSubsystemInterface.h
+EnhancedInputSubsystems.h
+EnhancedInputWorldProcessor.h
+EnhancedPlayerInput.h
+InputAction.h
+InputActionValue.h
+InputDebugKeyDelegateBinding.h
+InputMappingContext.h
+InputMappingQuery.h
+InputModifiers.h
+InputTriggers.h
+PlayerMappableInputConfig.h
+PlayerMappableKeySettings.h
+---
+const TArray<FEnhancedInputActionValueBinding>& GetActionValueBindings() const { return EnhancedActionValueBindings; }
+UE_API FInputActionValue GetActionValue(TObjectPtr<const UInputAction> ForAction) const;
+// The type that this action returns from a GetActionValue query or action event
+> build · muse-spark-1.3-contributor
+Input lookup pattern confirmed — now finalizing the design checks.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=130, offset=860][0m
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\InputTriggers.h' -Pattern 'class.*Chord|ChordAction' | Select-Object -First 10 | ForEach-Object { $_.Line.Trim() }
+* UInputTriggerChordAction
+UCLASS(MinimalAPI, NotBlueprintable, meta = (DisplayName = "Chorded Action", NotInputConfigurable = "true"))
+class UInputTriggerChordAction : public UInputTrigger
+TObjectPtr<const UInputAction> ChordAction = nullptr;
+Automatically instantiated  to block mappings that are masked by a UInputTriggerChordAction chord from firing whilst the chording key is active.
+class UInputTriggerChordBlocker final : public UInputTriggerChordAction
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp [90m[limit=130][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep ""Stat": "[^"]+"" [90min Glyphbound/Content/Data/Items.json · 2 matches[0m
+[0m✱ [0mGrep "SkillPoints" [90min Glyphbound/Content/Data/Encounters.json · 2 matches[0m
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\InputActionValue.h' -Pattern 'T Get|bool GetBool|Get\(\)' | Select-Object -First 10 | ForEach-Object { $_.Line.Trim() }; echo '---'; grep -c 'IMPLEMENT_SIMPLE_AUTOMATION_TEST' Glyphbound/Source/Glyphbound/Tests/*.cpp
+inline T Get() const { static_assert(sizeof(T) == 0, "Unsupported conversion for type"); }
+float GetMagnitudeSq() const
+float GetMagnitude() const
+inline bool FInputActionValue::Get() const
+inline FInputActionValue::Axis1D FInputActionValue::Get() const
+inline FInputActionValue::Axis2D FInputActionValue::Get() const
+inline FInputActionValue::Axis3D FInputActionValue::Get() const
+---
+grep : The term 'grep' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:247
++ ... irst 10 | ForEach-Object { $_.Line.Trim() }; echo '---'; grep -c 'IMP ...
++                                                              ~~~~
+    + CategoryInfo          : ObjectNotFound: (grep:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path Glyphbound/Source/Glyphbound/Tests/*.cpp -Pattern 'IMPLEMENT_SIMPLE_AUTOMATION_TEST' | Group-Object Path | ForEach-Object { $_.Name + ': ' + $_.Count }
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBAITests.cpp: 1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBCombatTests.cpp: 4
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBEraTests.cpp: 2
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBInventoryTests.cpp: 1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBPlayerTests.cpp: 1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBProgressionTests.cpp: 1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBQTETests.cpp: 6
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBSpellTests.cpp: 4
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBSpriteTests.cpp: 1
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBStatsTests.cpp: 5
+C:\GameJam\Glyphbound\Source\Glyphbound\Tests\GBWeaponsTests.cpp: 1
+> build · muse-spark-1.3-contributor
+All checks done — the new perk keys map to real params. Now implementing.
+[0m← [0mEdit Glyphbound/Content/Data/Skills.json
+Index: Glyphbound/Content/Data/Skills.json
+===================================================================
+--- Glyphbound/Content/Data/Skills.json
++++ Glyphbound/Content/Data/Skills.json
+@@ -138,7 +138,73 @@
+ 			"Requires": [ "Spell_ManaCost" ],
+ 			"ModifiersPerRank": [ { "Stat": "Spell.All.Cooldown", "Op": "Multiply", "Value": 0.9 } ],
+ 			"Column": 1,
+ 			"Row": 2
++		},
++		{
++			"Id": "Spell_FireWallDuration",
++			"Tree": "Spell",
++			"DisplayName": "Lingering Flames",
++			"Description": "+15% fire wall duration per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.FireWall.Duration", "Op": "Multiply", "Value": 1.15 } ],
++			"Column": 0,
++			"Row": 2
++		},
++		{
++			"Id": "Spell_FlamethrowerDamage",
++			"Tree": "Spell",
++			"DisplayName": "Intense Heat",
++			"Description": "+12% flamethrower damage per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.Flamethrower.DamagePerSecond", "Op": "Multiply", "Value": 1.12 } ],
++			"Column": 0,
++			"Row": 3
++		},
++		{
++			"Id": "Spell_RuneRadius",
++			"Tree": "Spell",
++			"DisplayName": "Expanded Sigil",
++			"Description": "+10% lightning rune blast radius per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.LightningRune.Radius", "Op": "Multiply", "Value": 1.1 } ],
++			"Column": 1,
++			"Row": 3
++		},
++		{
++			"Id": "Spell_OrbDuration",
++			"Tree": "Spell",
++			"DisplayName": "Persistent Charge",
++			"Description": "+15% static orb duration per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.StaticOrb.Duration", "Op": "Multiply", "Value": 1.15 } ],
++			"Column": 1,
++			"Row": 4
++		},
++		{
++			"Id": "Spell_ShieldDuration",
++			"Tree": "Spell",
++			"DisplayName": "Enduring Guard",
++			"Description": "+15% ice shield duration per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.IceShield.Duration", "Op": "Multiply", "Value": 1.15 } ],
++			"Column": 2,
++			"Row": 1
++		},
++		{
++			"Id": "Spell_IceFloorSlow",
++			"Tree": "Spell",
++			"DisplayName": "Deep Freeze",
++			"Description": "Ice floor slows 5 points more per rank (up to 80%).",
++			"Cost": 1,
++			"MaxRank": 3,
++			"ModifiersPerRank": [ { "Stat": "Spell.IceFloor.EffectStrength", "Op": "Add", "Value": 0.1 } ],
++			"Column": 2,
++			"Row": 2
+ 		}
+ 	]
+ }
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+Index: Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
++++ Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+@@ -27,8 +27,12 @@
+ 
+ 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+ 	EGBScaleSource ScaledBy = EGBScaleSource::None;
+ 
++	/** Upper limit applied after QTE scaling AND modifiers. 0 = no cap. */
++	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
++	float Cap = 0.f;
++
+ 	/** bUseQTE false = fixed default strength (Base). Power and Reach are clamped to 0..1. */
+ 	float Resolve(float Power, float Reach, bool bUseQTE) const;
+ };
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+@@ -50,8 +50,14 @@
+ 		const FName Keys[] = { GBStat::SpellKey(SpellId, Param), GBStat::SpellAllKey(Param) };
+ 		return Stats->EvaluateKeys(Keys, Value);
+ 	}
+ 
++	/** Upper limit applied after QTE scaling AND modifiers. Cap <= 0 = no cap. */
++	static float ApplyParamCap(const FGBScaledParam& Scaled, float Value)
++	{
++		return Scaled.Cap > 0.f ? FMath::Min(Value, Scaled.Cap) : Value;
++	}
++
+ 	FGBSpellCast ResolveCast(const FGBSpellDefinition& Definition, float Power, float Reach, bool bUseQTE, const UGBStatsComponent* Stats)
+ 	{
+ 		FGBSpellCast Result;
+ 		Result.SpellId = Definition.Id;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+@@ -69,9 +69,9 @@
+ 		Result.Values.Reserve(Definition.Params.Num());
+ 		for (const TPair<FName, FGBScaledParam>& Pair : Definition.Params)
+ 		{
+ 			const float Value = Pair.Value.Resolve(Power, Reach, bUseQTE);
+-			Result.Values.Add(Pair.Key, ApplySpellModifiers(Definition.Id, Pair.Key, Value, Stats));
++			Result.Values.Add(Pair.Key, ApplyParamCap(Pair.Value, ApplySpellModifiers(Definition.Id, Pair.Key, Value, Stats)));
+ 		}
+ 		return Result;
+ 	}
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+@@ -81,7 +81,7 @@
+ 		if (!Scaled)
+ 		{
+ 			return DefaultValue;
+ 		}
+-		return ApplySpellModifiers(Definition.Id, Param, Scaled->Resolve(Power, Reach, bUseQTE), Stats);
++		return ApplyParamCap(*Scaled, ApplySpellModifiers(Definition.Id, Param, Scaled->Resolve(Power, Reach, bUseQTE), Stats));
+ 	}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Perk data and param cap core done — now adding the modifier key validation.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h
+Index: Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h
++++ Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h
+@@ -92,8 +92,11 @@
+ private:
+ 	/** Reads every file and rebuilds the indices (no broadcast). */
+ 	void LoadAll();
+ 
++	/** Warns about "Spell.<Id>.<Param>" / "Weapon.<Scope>.<Stat>" modifier keys that name nothing, so a typo can never silently do nothing. */
++	void ValidateModifierKeys() const;
++
+ 	// Id -> position in the matching array, rebuilt by LoadAll().
+ 	TMap<FName, int32> SpellIndex;
+ 	TMap<FName, int32> WeaponIndex;
+ 	TMap<FName, int32> StatusEffectIndex;
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+@@ -185,8 +185,10 @@
+ 	TMap<FName, int32> RecipeIndex;
+ 	BuildIndex(Recipes, RecipeIndex, TEXT("Items.json (Recipes)"));
+ 
+ 	WarnedGameKeys.Reset();
++
++	ValidateModifierKeys();
+ }
+ 
+ const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }
+ const FGBWeaponDefinition* UGBDataSubsystem::FindWeapon(FName Id) const { return GBDataPrivate::FindIn(Weapons, WeaponIndex, Id); }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+@@ -189,10 +189,9 @@
+ 
+ 	ValidateModifierKeys();
+ }
+ 
+-const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }
+-const FGBWeaponDefinition* UGBDataSubsystem::FindWeapon(FName Id) const { return GBDataPrivate::FindIn(Weapons, WeaponIndex, Id); }
++const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }const FGBWeaponDefinition* UGBDataSubsystem::FindWeapon(FName Id) const { return GBDataPrivate::FindIn(Weapons, WeaponIndex, Id); }
+ const FGBStatusEffectDefinition* UGBDataSubsystem::FindStatusEffect(FName Id) const { return GBDataPrivate::FindIn(StatusEffects, StatusEffectIndex, Id); }
+ const FGBItemDefinition* UGBDataSubsystem::FindItem(FName Id) const { return GBDataPrivate::FindIn(Items, ItemIndex, Id); }
+ const FGBEnemyDefinition* UGBDataSubsystem::FindEnemy(FName Id) const { return GBDataPrivate::FindIn(Enemies, EnemyIndex, Id); }
+ const FGBEncounterDefinition* UGBDataSubsystem::FindEncounter(FName Id) const { return GBDataPrivate::FindIn(Encounters, EncounterIndex, Id); }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp [90m[limit=15, offset=188][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+@@ -189,9 +189,10 @@
+ 
+ 	ValidateModifierKeys();
+ }
+ 
+-const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }const FGBWeaponDefinition* UGBDataSubsystem::FindWeapon(FName Id) const { return GBDataPrivate::FindIn(Weapons, WeaponIndex, Id); }
++const FGBSpellDefinition* UGBDataSubsystem::FindSpell(FName Id) const { return GBDataPrivate::FindIn(Spells, SpellIndex, Id); }
++const FGBWeaponDefinition* UGBDataSubsystem::FindWeapon(FName Id) const { return GBDataPrivate::FindIn(Weapons, WeaponIndex, Id); }
+ const FGBStatusEffectDefinition* UGBDataSubsystem::FindStatusEffect(FName Id) const { return GBDataPrivate::FindIn(StatusEffects, StatusEffectIndex, Id); }
+ const FGBItemDefinition* UGBDataSubsystem::FindItem(FName Id) const { return GBDataPrivate::FindIn(Items, ItemIndex, Id); }
+ const FGBEnemyDefinition* UGBDataSubsystem::FindEnemy(FName Id) const { return GBDataPrivate::FindIn(Enemies, EnemyIndex, Id); }
+ const FGBEncounterDefinition* UGBDataSubsystem::FindEncounter(FName Id) const { return GBDataPrivate::FindIn(Encounters, EncounterIndex, Id); }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+Index: Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
++++ Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp
+@@ -198,8 +198,119 @@
+ const FGBEncounterDefinition* UGBDataSubsystem::FindEncounter(FName Id) const { return GBDataPrivate::FindIn(Encounters, EncounterIndex, Id); }
+ const FGBSkillNodeDefinition* UGBDataSubsystem::FindSkillNode(FName Id) const { return GBDataPrivate::FindIn(SkillNodes, SkillNodeIndex, Id); }
+ const FGBSpriteDefinition* UGBDataSubsystem::FindSprite(FName Id) const { return GBDataPrivate::FindIn(Sprites, SpriteIndex, Id); }
+ 
++void UGBDataSubsystem::ValidateModifierKeys() const
++{
++	auto SpellParamExists = [this](const FName& SpellId, const FName& Param) -> bool
++	{
++		if (SpellId == FName(TEXT("All")))
++		{
++			for (const FGBSpellDefinition& Definition : Spells)
++			{
++				if (Definition.Params.Contains(Param))
++				{
++					return true;
++				}
++			}
++			return false;
++		}
++		const FGBSpellDefinition* Definition = FindSpell(SpellId);
++		return Definition && Definition->Params.Contains(Param);
++	};
++
++	auto WeaponStatExists = [this](const FString& Scope, const FName& Stat) -> bool
++	{
++		// The weapon stat names are the "Stats" keys of Weapons.json; "All" and the slot
++		// names ("Staff", "Gun", "Sword") match when at least one weapon has the stat.
++		if (Scope == TEXT("All") || Scope == TEXT("Staff") || Scope == TEXT("Gun") || Scope == TEXT("Sword"))
++		{
++			for (const FGBWeaponDefinition& Definition : Weapons)
++			{
++				if (Scope != TEXT("All"))
++				{
++					const TCHAR* SlotName = TEXT("");
++					switch (Definition.Slot)
++					{
++					case EGBHeldSlot::Staff: SlotName = TEXT("Staff"); break;
++					case EGBHeldSlot::Gun:   SlotName = TEXT("Gun"); break;
++					case EGBHeldSlot::Sword:  SlotName = TEXT("Sword"); break;
++					}
++					if (Scope != SlotName)
++					{
++						continue;
++					}
++				}
++				if (Definition.Stats.Contains(Stat))
++				{
++					return true;
++				}
++			}
++			return false;
++		}
++		const FGBWeaponDefinition* Definition = FindWeapon(FName(*Scope));
++		return Definition && Definition->Stats.Contains(Stat);
++	};
++
++	auto CheckKey = [&](const FString& Context, const FGBModifierDef& Modifier)
++	{
++		const FString Key = Modifier.Stat.ToString();
++		TArray<FString> Parts;
++		if (Key.StartsWith(TEXT("Spell.")))
++		{
++			Key.ParseIntoArray(Parts, TEXT("."), true);
++			if (Parts.Num() != 3 || Parts[1].IsEmpty() || Parts[2].IsEmpty() ||
++				!SpellParamExists(FName(*Parts[1]), FName(*Parts[2])))
++			{
++				UE_LOG(LogGB, Warning, TEXT("Data: %s has unknown spell modifier key '%s'."), *Context, *Key);
++			}
++		}
++		else if (Key.StartsWith(TEXT("Weapon.")))
++		{
++			Key.ParseIntoArray(Parts, TEXT("."), true);
++			if (Parts.Num() != 3 || Parts[1].IsEmpty() || Parts[2].IsEmpty() ||
++				!WeaponStatExists(Parts[1], FName(*Parts[2])))
++			{
++				UE_LOG(LogGB, Warning, TEXT("Data: %s has unknown weapon modifier key '%s'."), *Context, *Key);
++			}
++		}
++		// Anything else (actor stats like "MoveSpeed", "QTE.*"...) is not a data id lookup: skip.
++	};
++
++	for (const FGBSkillNodeDefinition& Node : SkillNodes)
++	{
++		const FString Context = FString::Printf(TEXT("skill node '%s'"), *Node.Id.ToString());
++		for (const FGBModifierDef& Modifier : Node.ModifiersPerRank)
++		{
++			CheckKey(Context, Modifier);
++		}
++	}
++	for (const FGBItemDefinition& Item : Items)
++	{
++		const FString Context = FString::Printf(TEXT("item '%s'"), *Item.Id.ToString());
++		for (const FGBModifierDef& Modifier : Item.Modifiers)
++		{
++			CheckKey(Context, Modifier);
++		}
++	}
++	for (const FGBStatusEffectDefinition& Effect : StatusEffects)
++	{
++		const FString Context = FString::Printf(TEXT("status effect '%s'"), *Effect.Id.ToString());
++		for (const FGBModifierDef& Modifier : Effect.Modifiers)
++		{
++			CheckKey(Context, Modifier);
++		}
++	}
++	for (const FGBSpellDefinition& Spell : Spells)
++	{
++		const FString Context = FString::Printf(TEXT("passive spell '%s'"), *Spell.Id.ToString());
++		for (const FGBModifierDef& Modifier : Spell.PassiveModifiers)
++		{
++			CheckKey(Context, Modifier);
++		}
++	}
++}
++
+ float UGBDataSubsystem::GetGameValue(FName Key, float DefaultValue) const
+ {
+ 	if (const float* Found = Game.Values.Find(Key))
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Validation wired — now the hold-to-sustain beam behavior.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+@@ -1,18 +1,24 @@
+ // Spell behavior: a sustained cone from the caster's aim that damages what is in front (flamethrower).
+-// Runs until Duration ends or the cast input is pressed again (the spellbook calls OnCastReleased).
++// Runs until Duration ends (Duration <= 0 = no time limit) or the sustain rule ends it; with HoldToSustain
++// the beam only keeps going while the cast key is held (the spellbook's press-again-to-stop also still applies).
+ //
+ // Params (Spells.json "Params"):
+ //   Range             cm; length of the cone
+ //   ConeAngle         degrees; half-angle of the cone
+ //   DamagePerSecond   damage per second to each hostile actor in the cone (dealt every TickInterval)
+ //   TickInterval      seconds between damage ticks
+-//   Duration          seconds the beam can last
++//   Duration          seconds the beam can last at most; <= 0 = no time limit
++//   MinDuration       seconds the beam always runs at least (so a cast released during the QTE is not wasted)
++//   HoldToSustain     1 = the beam only keeps going while the cast key is held; 0 = old behavior (key ignored)
+ //   ManaPerSecond     optional; > 0 = mana drained while it runs; it stops when mana runs out (default 0)
++//   ManaCost          paid once at the cast (handled by the spellbook, as for every spell)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+ //   SpriteSize        optional; height of the sprite nearest to the hand (default 40); the farther ones grow with the cone
+ // Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
+ // Targets behind world geometry (visibility check against world static) are not hit.
++// Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
++// Targets behind world geometry (visibility check against world static) are not hit.
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+@@ -29,8 +29,10 @@
+ namespace GBSpellParam
+ {
+ 	inline const FName ConeAngle(TEXT("ConeAngle"));
+ 	inline const FName ManaPerSecond(TEXT("ManaPerSecond"));
++	inline const FName HoldToSustain(TEXT("HoldToSustain"));
++	inline const FName MinDuration(TEXT("MinDuration"));
+ }
+ 
+ UCLASS()
+ class GLYPHBOUND_API AGBSpell_Beam : public AGBSpellActor
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+@@ -44,18 +44,32 @@
+ 
+ 	virtual void Tick(float DeltaSeconds) override;
+ 	virtual bool IsSustaining() const override { return bSpellStarted && !bEnded; }
+ 
++	/**
++	 * Pure sustain rule: MaxDuration <= 0 = no time limit. False once Elapsed reaches MaxDuration;
++	 * true while Elapsed is still below MinDuration; otherwise the beam keeps going only when
++	 * hold mode is off or the cast key is still held.
++	 */
++	static bool ShouldBeamContinue(bool bHoldToSustain, bool bKeyHeld, float Elapsed, float MinDuration, float MaxDuration);
++
+ protected:
+ 	virtual void StartSpell() override;
+ 
+ 	void DamageTick();
+ 	void FollowAim();
++	/** Ends the spell when the sustain rule says it is over. */
++	void CheckSustain();
+ 
+ 	UPROPERTY() TArray<TObjectPtr<UBillboardComponent>> Sprites;
+ 
+ 	FTimerHandle TickTimer;
+ 	float BeamRange = 0.f;
+ 	float ConeHalfAngleDeg = 0.f;
+ 	float DamagePerTick = 0.f;
+ 	float ManaPerTick = 0.f;
++	bool bHoldToSustain = false;
++	float BeamMinDuration = 0.f;
++	float BeamMaxDuration = 0.f;
++	/** World time when the beam started (for Elapsed in the sustain rule). */
++	double BeamStartTime = 0.0;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+@@ -23,9 +23,13 @@
+ void AGBSpell_Beam::StartSpell()
+ {
+ 	BeamRange = FMath::Max(1.f, ReadParam(GBStat::Range, 600.f));
+ 	ConeHalfAngleDeg = FMath::Clamp(ReadParam(GBSpellParam::ConeAngle, 20.f), 1.f, 89.f);
+-	const float Duration = ReadParam(GBStat::Duration, 4.f);
++	// Duration <= 0 (or missing) = no time limit: Get, not ReadParam, so no warning is logged.
++	BeamMaxDuration = FMath::Max(0.f, SpellCast.Get(GBStat::Duration, 0.f));
++	BeamMinDuration = FMath::Max(0.f, SpellCast.Get(GBSpellParam::MinDuration, 0.f));
++	bHoldToSustain = SpellCast.Get(GBSpellParam::HoldToSustain, 0.f) > 0.5f;
++	BeamStartTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+ 	const float Interval = SafeInterval(ReadParam(GBStat::TickInterval, 0.2f));
+ 	DamagePerTick = FMath::Max(0.f, ReadParam(GBStat::DamagePerSecond, 30.f)) * Interval;
+ 	ManaPerTick = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ManaPerSecond, 0.f)) * Interval;
+ 
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+@@ -55,11 +55,46 @@
+ 
+ 	FollowAim();
+ 	SetActorTickEnabled(true);
+ 	GetWorldTimerManager().SetTimer(TickTimer, this, &AGBSpell_Beam::DamageTick, Interval, true, 0.f);
+-	EndSpellAfter(Duration);
++	if (BeamMaxDuration > 0.f)
++	{
++		EndSpellAfter(BeamMaxDuration);
++	}
+ }
+ 
++bool AGBSpell_Beam::ShouldBeamContinue(bool bHoldToSustain, bool bKeyHeld, float Elapsed, float MinDuration, float MaxDuration)
++{
++	if (MaxDuration > 0.f && Elapsed >= MaxDuration)
++	{
++		return false;
++	}
++	if (Elapsed < MinDuration)
++	{
++		return true;
++	}
++	return !bHoldToSustain || bKeyHeld;
++}
++
++void AGBSpell_Beam::CheckSustain()
++{
++	if (bEnded)
++	{
++		return;
++	}
++	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : BeamStartTime;
++	const float Elapsed = static_cast<float>(Now - BeamStartTime);
++	bool bKeyHeld = true;
++	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetCaster()))
++	{
++		bKeyHeld = Player->IsSpellInputHeld(SpellCast.SpellId);
++	}
++	if (!ShouldBeamContinue(bHoldToSustain, bKeyHeld, Elapsed, BeamMinDuration, BeamMaxDuration))
++	{
++		EndSpell();
++	}
++}
++
+ void AGBSpell_Beam::Tick(float DeltaSeconds)
+ {
+ 	Super::Tick(DeltaSeconds);
+ 	if (!bEnded)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+@@ -99,8 +99,9 @@
+ 	Super::Tick(DeltaSeconds);
+ 	if (!bEnded)
+ 	{
+ 		FollowAim();
++		CheckSustain();
+ 	}
+ }
+ 
+ void AGBSpell_Beam::FollowAim()
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp
+@@ -124,8 +124,13 @@
+ 	{
+ 		EndSpell();
+ 		return;
+ 	}
++	CheckSustain();
++	if (bEnded)
++	{
++		return;
++	}
+ 	if (ManaPerTick > 0.f)
+ 	{
+ 		UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(Caster);
+ 		if (!Attributes || !Attributes->SpendMana(ManaPerTick))
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Beam logic in place — now wiring key-held detection to the player.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -62,10 +62,9 @@
+ 	USceneComponent* GetHeldItemAnchor() const { return HeldItemAnchor; }
+ 
+ 	// ---- Aiming ----
+ 	/** Camera location and forward vector: where shots and spells start and point. */
+-	FVector GetAimOrigin() const;
+-	FVector GetAimDirection() const;
++	FVector GetAimOrigin() const;	FVector GetAimDirection() const;
+ 	/** A point a little in front of the right hand, for projectiles that should not start inside the camera. */
+ 	FVector GetMuzzleLocation() const;
+ 	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
+ 	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h [90m[limit=14, offset=64][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -62,9 +62,10 @@
+ 	USceneComponent* GetHeldItemAnchor() const { return HeldItemAnchor; }
+ 
+ 	// ---- Aiming ----
+ 	/** Camera location and forward vector: where shots and spells start and point. */
+-	FVector GetAimOrigin() const;	FVector GetAimDirection() const;
++	FVector GetAimOrigin() const;
++	FVector GetAimDirection() const;
+ 	/** A point a little in front of the right hand, for projectiles that should not start inside the camera. */
+ 	FVector GetMuzzleLocation() const;
+ 	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
+ 	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -68,8 +68,15 @@
+ 	/** A point a little in front of the right hand, for projectiles that should not start inside the camera. */
+ 	FVector GetMuzzleLocation() const;
+ 	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
+ 	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
++	/**
++	 * True while the input action of the loadout slot holding SpellId is currently held
++	 * (slot 1 = right click / L1, slots 2-5 = keys 1-4, gamepad L2 + face button).
++	 * A caster that is not this player, or a spell that is not in the loadout, counts as
++	 * held (then a sustained spell only ends by mana, death, switch or its duration rules).
++	 */
++	bool IsSpellInputHeld(FName SpellId) const;
+ 
+ 	// ---- Movement state ----
+ 	bool IsDashing() const { return bDashing; }
+ 	/** Seconds until the dash is ready again; 0 when ready. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -1063,8 +1063,53 @@
+ 	}
+ 	Spellbook->TryCastEnchant();
+ }
+ 
++bool AGBPlayerCharacter::IsSpellInputHeld(FName SpellId) const
++{
++	if (!Spellbook || SpellId.IsNone() || !InputSet)
++	{
++		return true;
++	}
++	int32 Slot = INDEX_NONE;
++	for (int32 Index = 0; Index < UGBSpellbookComponent::NumSlots; ++Index)
++	{
++		if (Spellbook->GetSlotSpell(Index) == SpellId)
++		{
++			Slot = Index;
++			break;
++		}
++	}
++	if (Slot == INDEX_NONE)
++	{
++		return true;
++	}
++	const UInputAction* SlotActions[UGBSpellbookComponent::NumSlots] = {
++		InputSet->SpellSlot1, InputSet->SpellSlot2, InputSet->SpellSlot3, InputSet->SpellSlot4, InputSet->SpellSlot5
++	};
++	const UInputAction* SlotAction = SlotActions[Slot];
++	const UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
++	if (!EIC || !SlotAction)
++	{
++		return true;
++	}
++	if (EIC->GetActionValue(SlotAction).Get<bool>())
++	{
++		return true;
++	}
++	// Gamepad chord for slots 2-5 (see InputFace): L2 held plus the face button of that slot.
++	if (Slot >= 1 && Slot <= 4 && InputSet->Secondary)
++	{
++		const UInputAction* FaceActions[4] = { InputSet->FaceDown, InputSet->FaceRight, InputSet->FaceLeft, InputSet->FaceUp };
++		const UInputAction* FaceAction = FaceActions[Slot - 1];
++		if (FaceAction && EIC->GetActionValue(InputSet->Secondary).Get<bool>() && EIC->GetActionValue(FaceAction).Get<bool>())
++		{
++			return true;
++		}
++	}
++	return false;
++}
++
+ bool AGBPlayerCharacter::IsBlocking() const
+ {
+ 	return Spellbook && Spellbook->IsBlockRaised();
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Player input check done — now updating the spell data.
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -171,32 +171,38 @@
+ 		},
+ 		{
+ 			"Id": "Flamethrower",
+ 			"DisplayName": "Flamethrower",
+-			"Description": "A stream of fire from your hand. Cast again to stop it.",
++			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana.",
+ 			"Element": "Fire",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
+ 			"bSustained": true,
+ 			"UnlockGroup": "Fire",
+ 			"Params": {
+ 				"ManaCost": {
+-					"Base": 20,
+-					"Min": 20,
+-					"Max": 20,
++					"Base": 10,
++					"Min": 10,
++					"Max": 10,
+ 					"ScaledBy": "None"
+ 				},
+ 				"Cooldown": {
+ 					"Base": 6,
+ 					"Min": 6,
+ 					"Max": 6,
+ 					"ScaledBy": "None"
+ 				},
+-				"Duration": {
+-					"Base": 4,
+-					"Min": 2.5,
+-					"Max": 5.5,
+-					"ScaledBy": "Power"
++				"HoldToSustain": {
++					"Base": 1,
++					"Min": 1,
++					"Max": 1,
++					"ScaledBy": "None"
+ 				},
++				"MinDuration": {
++					"Base": 0.75,
++					"Min": 0.75,
++					"Max": 0.75,
++					"ScaledBy": "None"
++				},
+ 				"DamagePerSecond": {
+ 					"Base": 40,
+ 					"Min": 25,
+ 					"Max": 55,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -232,11 +232,11 @@
+ 					"Max": 0.2,
+ 					"ScaledBy": "None"
+ 				},
+ 				"ManaPerSecond": {
+-					"Base": 0,
+-					"Min": 0,
+-					"Max": 0,
++					"Base": 15,
++					"Min": 15,
++					"Max": 15,
+ 					"ScaledBy": "None"
+ 				},
+ 				"SpriteSize": {
+ 					"Base": 40,
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -668,9 +668,10 @@
+ 				"EffectStrength": {
+ 					"Base": 1,
+ 					"Min": 0.7,
+ 					"Max": 1.3,
+-					"ScaledBy": "Power"
++					"ScaledBy": "Power",
++					"Cap": 1.6
+ 				},
+ 				"EffectDuration": {
+ 					"Base": 1,
+ 					"Min": 1,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path Glyphbound/Content/Data/Player.json -Pattern 'MaxMana|MaxHealth|StartingSkill|StartingLoadout' | Select-Object -First 10 | ForEach-Object { $_.Line.Trim() }
+"MaxHealth": 100,
+"MaxMana": 100,
+"StartingLoadout": [
+"StartingSkillPoints": 2,
+> build · muse-spark-1.3-contributor
+Data done — now the smoke script additions.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -26,8 +26,9 @@
+ #include "Player/GBPlayerCharacter.h"
+ #include "Player/GBPlayerController.h"
+ #include "Progression/GBSkillTreeComponent.h"
+ #include "QTE/GBQTEComponent.h"
++#include "Spells/GBSpell_Beam.h"
+ #include "Spells/GBSpell_Trap.h"
+ #include "Spells/GBSpell_Zone.h"
+ #include "Spells/GBSpellbookComponent.h"
+ #include "Stats/GBAttributeComponent.h"
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -357,8 +357,13 @@
+ 			SmokeSkillNode = NAME_None;
+ 			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
+ 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+ 			{
++				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
++				if (Data->GetSkillNodes().Num() != 18)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 18 skill nodes, found %d"), Data->GetSkillNodes().Num());
++				}
+ 				if (Data->GetSkillNodes().Num() > 0)
+ 				{
+ 					const FName Node = Data->GetSkillNodes()[0].Id;
+ 					SmokeSkillNode = Node;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -594,9 +594,8 @@
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+-	}
+ 
+ 	static bool Tick(float)
+ 	{
+ 		UWorld* World = SmokeWorld.Get();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=20, offset=588][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -589,13 +589,51 @@
+ 			}
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE ground spells runes=%d floors=%d"), Runes, Floors);
+ 			Shot(TEXT("10_ground_spells"));
+ 		});
++		Add(35.4f + S, TEXT("flamethrower: cast with the QTE off and no key held"), [](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			// The automated run holds no key, so the hold-to-sustain beam must stop after MinDuration.
++			SetQTEEnabled(false);
++			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
++			Player->GetAttributes()->RestoreAll();
++			if (!Player->GetSpellbook()->KnowsSpell(TEXT("Flamethrower")))
++			{
++				Player->GetSpellbook()->LearnSpell(TEXT("Flamethrower"));
++			}
++			Player->GetSpellbook()->EquipSpell(2, TEXT("Flamethrower"));
++			const bool bOk = Player->GetSpellbook()->TryCastSlot(2);
++			int32 Beams = 0;
++			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
++			{
++				++Beams;
++			}
++			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower started=%d"), (bOk && Beams > 0) ? 1 : 0);
++			if (!bOk || Beams == 0)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower: the beam actor did not spawn (ok=%d beams=%d)"), bOk ? 1 : 0, Beams);
++			}
++		});
++		Add(36.9f + S, TEXT("flamethrower: it must have stopped after MinDuration"), [](UWorld* World, AGBPlayerCharacter*)
++		{
++			int32 Beams = 0;
++			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
++			{
++				++Beams;
++			}
++			const double Elapsed = FPlatformTime::Seconds() - StartSeconds;
++			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower after=%.2fs alive=%d"), Elapsed - (35.4 + PathCheckShift), Beams);
++			if (Beams != 0)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower: the beam is still alive with no key held (beams=%d)"), Beams);
++			}
++		});
+ 		Add(37.7f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
++	}
+ 
+ 	static bool Tick(float)
+ 	{
+ 		UWorld* World = SmokeWorld.Get();
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Smoke steps added — now the two pure-logic tests.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+@@ -1,7 +1,8 @@
+ // Pure-logic tests of spell cast resolution (no world, no data files).
+ #include "Misc/AutomationTest.h"
+ #include "Core/GBStatNames.h"
++#include "Spells/GBSpell_Beam.h"
+ #include "Spells/GBSpellActor.h"
+ #include "Spells/GBSpellTypes.h"
+ 
+ #if WITH_DEV_AUTOMATION_TESTS
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp
+@@ -149,5 +149,57 @@
+ 	TestEqual(TEXT("The layered figure sits one step above the highest overlap"), Layered, 59.5f, 0.001f);
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellParamCapTest, "Glyphbound.Spells.ParamCap",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++bool FGBSpellParamCapTest::RunTest(const FString& Parameters)
++{
++	FGBSpellDefinition Definition = GBSpellTestUtil::MakeDefinition();
++	FGBScaledParam Capped = GBSpellTestUtil::MakeParam(10.f, 0.f, 100.f, EGBScaleSource::Power);
++	Capped.Cap = 5.f;
++	Definition.Params.Add(TEXT("CappedParam"), Capped);
++
++	// Power 1 lerps to Max (100), which is above the cap: the resolved value is capped.
++	const FGBSpellCast CappedCast = GBSpell::ResolveCast(Definition, 1.f, 0.f, true, nullptr);
++	TestEqual(TEXT("A value above the cap is clamped"), CappedCast.Get(TEXT("CappedParam")), 5.f, 0.001f);
++	TestEqual(TEXT("ResolveParam agrees with ResolveCast on the cap"),
++		GBSpell::ResolveParam(Definition, TEXT("CappedParam"), 1.f, 0.f, true, nullptr), 5.f, 0.001f);
++
++	// Power 0 lerps to Min (0), below the cap: unchanged.
++	const FGBSpellCast BelowCast = GBSpell::ResolveCast(Definition, 0.f, 0.f, true, nullptr);
++	TestEqual(TEXT("A value below the cap is unchanged"), BelowCast.Get(TEXT("CappedParam")), 0.f, 0.001f);
++
++	// Cap 0 means no cap: a large value passes through.
++	FGBScaledParam Uncapped = GBSpellTestUtil::MakeParam(10.f, 0.f, 100.f, EGBScaleSource::Power);
++	Uncapped.Cap = 0.f;
++	Definition.Params.Add(TEXT("UncappedParam"), Uncapped);
++	const FGBSpellCast UncappedCast = GBSpell::ResolveCast(Definition, 1.f, 0.f, true, nullptr);
++	TestEqual(TEXT("Cap 0 means no cap"), UncappedCast.Get(TEXT("UncappedParam")), 100.f, 0.001f);
++	return true;
++}
++
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellBeamHoldTest, "Glyphbound.Spells.BeamHold",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++bool FGBSpellBeamHoldTest::RunTest(const FString& Parameters)
++{
++	// Hold mode, key held, no time limit: keeps going.
++	TestTrue(TEXT("Held keeps going"),
++		AGBSpell_Beam::ShouldBeamContinue(true, true, 5.f, 0.75f, 0.f));
++	// Hold mode, key released after the minimum: stops.
++	TestFalse(TEXT("Released after the minimum stops"),
++		AGBSpell_Beam::ShouldBeamContinue(true, false, 1.f, 0.75f, 0.f));
++	// Hold mode, key released before the minimum: keeps going.
++	TestTrue(TEXT("Released before the minimum keeps going"),
++		AGBSpell_Beam::ShouldBeamContinue(true, false, 0.5f, 0.75f, 0.f));
++	// The time limit stops the beam even while the key is held.
++	TestFalse(TEXT("Max duration stops the beam even if held"),
++		AGBSpell_Beam::ShouldBeamContinue(true, true, 10.f, 0.75f, 4.f));
++	// Hold mode off: the key is ignored (only the time limit ends it).
++	TestTrue(TEXT("Hold mode off ignores the key"),
++		AGBSpell_Beam::ShouldBeamContinue(false, false, 5.f, 0.f, 0.f));
++	TestFalse(TEXT("Hold mode off still ends at the time limit"),
++		AGBSpell_Beam::ShouldBeamContinue(false, false, 5.f, 0.f, 4.f));
++	return true;
++}
++
+ #endif
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpython3 -c "import json; [json.load(open(f)) for f in ['Glyphbound/Content/Data/Skills.json','Glyphbound/Content/Data/Spells.json']]; print('JSON OK')"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m$ [0mGet-Content Glyphbound/Content/Data/Skills.json | ConvertFrom-Json | ForEach-Object { $_.Skills.Count }; Get-Content Glyphbound/Content/Data/Spells.json | ConvertFrom-Json | ForEach-Object { $_.Spells.Count }
+18
+13
+> build · muse-spark-1.3-contributor
+JSON valid, 18 skills — starting the build.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1095,11): error C2039: 'GetActionValue': is not a member of 'UEnhancedInputComponent'
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1095,42): error C2062: type 'bool' unexpected
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1096,2): error C2143: syntax error: missing ';' before '{'
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1104,26): error C2039: 'GetActionValue': is not a member of 'UEnhancedInputComponent'
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1104,66): error C2062: type 'bool' unexpected
+C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp(1105,3): error C2143: syntax error: missing ';' before '{'
+Result: Failed (OtherCompilationError)
+Build time: 31 s  (exit 6)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\*.h' -Pattern 'GetActionValue' | ForEach-Object { $_.Filename + ': ' + $_.Line.Trim() }
+EnhancedInputComponent.h: const TArray<FEnhancedInputActionValueBinding>& GetActionValueBindings() const { return EnhancedActionValueBindings; }
+EnhancedPlayerInput.h: UE_API FInputActionValue GetActionValue(TObjectPtr<const UInputAction> ForAction) const;
+InputAction.h: // The type that this action returns from a GetActionValue query or action event
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\EnhancedPlayerInput.h' -Pattern 'GetActionValue|class UEnhancedPlayerInput' | ForEach-Object { $_.Line.Trim() }; echo '---'; Select-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Plugins\EnhancedInput\Source\EnhancedInput\Public\EnhancedInputSubsystemInterface.h' -Pattern 'GetActionValue|PlayerInput|GetPlayerInput' | ForEach-Object { $_.Line.Trim() }
+class UEnhancedPlayerInput : public UPlayerInput
+UE_API FInputActionValue GetActionValue(TObjectPtr<const UInputAction> ForAction) const;
+---
+#include "EnhancedPlayerInput.h"
+class UEnhancedPlayerInput;
+virtual UEnhancedPlayerInput* GetPlayerInput() const = 0;
+UE_API void ShowMappingContextDebugInfo(UCanvas* Canvas, const UEnhancedPlayerInput* PlayerInput);
+UE_API void ApplyAxisPropertyModifiers(UEnhancedPlayerInput* PlayerInput, struct FEnhancedActionKeyMapping& Mapping) const;
+static UE_API void GetAllRelevantInputModifiersForDebug(const UEnhancedPlayerInput* PlayerInput, const FInputActionInstance* InstanceData, OUT TArray<UInputModifier*>& OutModifiers);
+> build · muse-spark-1.3-contributor
+The value API lives on the player input object in 5.9, not the component — fixing the lookup.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -1086,23 +1086,24 @@
+ 	const UInputAction* SlotActions[UGBSpellbookComponent::NumSlots] = {
+ 		InputSet->SpellSlot1, InputSet->SpellSlot2, InputSet->SpellSlot3, InputSet->SpellSlot4, InputSet->SpellSlot5
+ 	};
+ 	const UInputAction* SlotAction = SlotActions[Slot];
+-	const UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
+-	if (!EIC || !SlotAction)
++	const APlayerController* PC = Cast<APlayerController>(GetController());
++	const UEnhancedPlayerInput* EI = PC ? Cast<UEnhancedPlayerInput>(PC->PlayerInput) : nullptr;
++	if (!EI || !SlotAction)
+ 	{
+ 		return true;
+ 	}
+-	if (EIC->GetActionValue(SlotAction).Get<bool>())
++	if (EI->GetActionValue(SlotAction).Get<bool>())
+ 	{
+ 		return true;
+ 	}
+ 	// Gamepad chord for slots 2-5 (see InputFace): L2 held plus the face button of that slot.
+ 	if (Slot >= 1 && Slot <= 4 && InputSet->Secondary)
+ 	{
+ 		const UInputAction* FaceActions[4] = { InputSet->FaceDown, InputSet->FaceRight, InputSet->FaceLeft, InputSet->FaceUp };
+ 		const UInputAction* FaceAction = FaceActions[Slot - 1];
+-		if (FaceAction && EIC->GetActionValue(InputSet->Secondary).Get<bool>() && EIC->GetActionValue(FaceAction).Get<bool>())
++		if (FaceAction && EI->GetActionValue(InputSet->Secondary).Get<bool>() && EI->GetActionValue(FaceAction).Get<bool>())
+ 		{
+ 			return true;
+ 		}
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -21,8 +21,9 @@
+ #include "Camera/CameraComponent.h"
+ #include "Components/CapsuleComponent.h"
+ #include "GameFramework/CharacterMovementComponent.h"
+ #include "EnhancedInputComponent.h"
++#include "EnhancedPlayerInput.h"
+ #include "InputActionValue.h"
+ #include "Engine/Engine.h"
+ #include "Engine/World.h"
+ #include "Engine/OverlapResult.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 6 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+Editor build passes — now the game target.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 32 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 29
+Tests: 29 run, 0 failed, test time 0.47 s, wall time 16 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-170728
+All 29 tests pass — running the smoke check.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-170748.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-170748.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 39 steps
+LogGB: Display: SMOKE step 1/39 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=10 items=12 recipes=4 enemies=4 encounters=2 skills=18 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/39 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/39 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/39 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/39 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/39 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/39 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/39 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/39 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/39 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/39 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/39 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/39 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=150 (start 1550, needed <= 250) orc at V(X=-2454.01, Y=-142.44, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/39 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/39 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/39 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/39 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/39 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=18
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/39 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/39 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/39 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/39 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 23/39 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 24/39 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 25/39 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 26/39 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 27/39 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 28/39 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 29/39 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 30/39 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 31/39 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 32/39 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 33/39 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 34/39 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 35/39 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 36/39 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 37/39 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 38/39 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 39/39 (44.1 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 11 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=56 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-170748.log
+> build · muse-spark-1.3-contributor
+Smoke passes clean — now checking the skill tree screenshot.
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/5_skills.png 
+> build · muse-spark-1.3-contributor
+All verification steps pass. Final report:
+
+1. Result lines (verbatim) plus the new SMOKE lines
+- `Result: Succeeded` (Build-Jam.ps1, Editor target)
+- `Result: Succeeded` (Build-Jam.ps1 -Target Glyphbound)
+- `Tests: 29 run, 0 failed, test time 0.47 s, wall time 16 s, ensures in log: 0` (Test-Jam.ps1 -MinTests 29)
+- `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=56 s` with `SMOKE path check passed`, `SMOKE skills loaded=18`, `SMOKE flamethrower started=1`, `SMOKE flamethrower after=1.50s alive=0`, and no LogGB warning or error anywhere in the log.
+
+2. What changed (files) and the item-1 code checks
+- `Glyphbound/Content/Data/Skills.json`: added the six spell nodes exactly per the table (Tree Spell, Cost 1, MaxRank 3, no Requires; columns 0/0/1/1/2/2, rows 2/3/3/4/1/2). Valid JSON, 18 nodes total.
+- `Glyphbound/Source/Glyphbound/Data/GBDataTypes.h`: `FGBScaledParam` gained `float Cap = 0.f` (0 = no cap; comment says applied after QTE scaling AND modifiers).
+- `Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp`: one small pure helper `ApplyParamCap` used in both `GBSpell::ResolveCast` and `GBSpell::ResolveParam` (clamp after `ApplySpellModifiers`).
+- `Glyphbound/Content/Data/Spells.json`: Flamethrower got `HoldToSustain` 1, `MinDuration` 0.75, `ManaPerSecond` 15, `ManaCost` 10, `Duration` removed (no time limit), new description; `IceFloor.Params.EffectStrength` got `Cap: 1.6`.
+- `Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h/.cpp`: new data-driven params documented in the header (`HoldToSustain`, `MinDuration`, `Duration <= 0` = no limit); pure static `ShouldBeamContinue(bHoldToSustain, bKeyHeld, Elapsed, MinDuration, MaxDuration)`; sustain checked every tick and every damage tick via `CheckSustain()`; `Duration` read with `Get` (no missing-param warning). Mana drain, weapon switch, death, QTE rules and cooldown-at-cast are unchanged; press-again-to-stop still works.
+- `Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h/.cpp`: new `IsSpellInputHeld(FName SpellId) const`; finds the spell's loadout slot and reads that slot's input action value; non-player caster, missing spell, or spell not in loadout counts as held. Gamepad L2+face for slots 2-5 is covered by also reading Secondary+Face action values (same mapping `InputFace` uses).
+- `Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h/.cpp`: after every load (including `gb.ReloadData`), every `FGBModifierDef` in skill nodes, items, status effects, and passive spells is validated: `Spell.<Id>.<Param>` must name a real spell (or `All`) plus a param in its `Params` (`All` = in at least one spell); `Weapon.<Id|All|Staff|Gun|Sword>.<Stat>` is checked against the loaded `Weapons.json` Stats (this turned out to be easy, so weapons are validated, not skipped). Anything else (actor stats, `QTE.*`) is skipped. Failures log `LogGB Warning` naming the node/item/effect and the key.
+- `Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp`: unlock step logs `SMOKE skills loaded=%d` (errors if not 18); new end-of-run steps cast Flamethrower with QTE off and no key held, logging `started=` then `after=... alive=` 1.5 s later (errors if still alive).
+- `Glyphbound/Source/Glyphbound/Tests/GBSpellTests.cpp`: added `Glyphbound.Spells.ParamCap` (above capped, below unchanged, cap 0 = no cap) and `Glyphbound.Spells.BeamHold` (held continues, released-after-min stops, released-before-min continues, max stops even if held, hold-off ignores key). Names comply with the naming rule (no name is a prefix of another).
+- Item-1 checks, all confirmed true (no gameplay code changed for them): the rune's blast is the `Radius` param (`GBSpell_Trap.cpp` line 111; `TriggerRadius` is only the trigger disc); orb (`GBSpell_Orb.cpp`) and shield (`GBSpell_Shield.cpp`) read `Duration` through the resolved cast, so `Spell.<Id>.Duration` modifiers reach them; ice floor slow is `Slow` (`MoveSpeed` Multiply 0.5) scaled by `EffectStrength` around 1 (`GBStatsComponent::AddModifiers`), so +0.1 strength = 5 more points of slow and cap 1.6 = 80% slow.
+- HUD check: with 5 spell-tree rows at 1280x720 the grid math already divides by `MaxRow+1` and clamps cell height, so no layout change was needed (verified visually, see 3).
+
+3. `5_skills.png` description
+The skill-trees menu shows both panels fully inside the screen. The SPELLS panel (left, tan 90s style) holds all 12 nodes in a 3-column x 5-row grid: Searing Fireball / Wide Blast / Lingering Flames / Intense Heat; Overcharge / Frugal Casting / Quick Recall / Expanded Sigil / Persistent Charge; Glacier Wall / Enduring Guard / Deep Freeze. Every box is fully inside the panel with its full name and `0/3 1 pt` rank/cost line readable (no abbreviation was even needed). The WEAPONS panel (right, cyberpunk style) shows its 6 nodes with requirement links. Bottom detail strip and top skill-points row render normally. No row overflows the panel.
+
+4. What I could not do exactly as described, and why
+- `GetActionValue` is not on `UEnhancedInputComponent` in UE 5.9 (it lives on `UEnhancedPlayerInput`), so `IsSpellInputHeld` reads values via the controller's `PlayerInput` cast, not the component. Same semantics.
+- The spec's "action value already includes those mappings and chords" is only half true in this codebase: `SpellSlot2-5` actions bind keyboard keys 1-4 only; the gamepad L2+face chord lives in `InputFace` logic, not in mappings. I did not add new input mappings (that would double-cast); the function reads the slot action value plus the Secondary+Face action values for the same chord. No input behavior changed.
+- Strictly extra: the smoke errors if skill count is not 18 (enforces the "expect 18"), and the beam reads `Duration` with `Get` instead of `ReadParam` so the removed param logs no warning.
+
+5. What a person should check by playing
+- Hold the flamethrower key: beam persists while held and drains mana; release it: beam stops (but never before 0.75 s); with an empty mana pool it stops from mana; press-again still stops it; cooldown starts at cast.
+- Unlock each new perk to rank 3 and eyeball: longer fire wall, hotter flamethrower, bigger rune blast, longer orb, longer shield, stronger ice-floor slow (up to the hard 80%).
+- Open skill trees at 1280x720 and confirm readability; reload data (`gb.ReloadData`) with a deliberately wrong `Spell.*` key and confirm a LogGB warning names the node (then revert).

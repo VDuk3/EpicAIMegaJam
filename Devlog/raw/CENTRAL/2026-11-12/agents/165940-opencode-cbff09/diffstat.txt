@@ -1,0 +1,17 @@
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   1 +
+ ...aude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl |  22 ++++
+ .../5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl     | 140 +++++++++++++++++++++
+ Devlog/raw/_import.log                             |   4 +
+ Glyphbound/Content/Data/Skills.json                |  66 ++++++++++
+ Glyphbound/Content/Data/Spells.json                |  33 +++--
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |  43 +++++++
+ .../Source/Glyphbound/Data/GBDataSubsystem.cpp     | 113 +++++++++++++++++
+ .../Source/Glyphbound/Data/GBDataSubsystem.h       |   3 +
+ Glyphbound/Source/Glyphbound/Data/GBDataTypes.h    |   4 +
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp |  47 +++++++
+ .../Source/Glyphbound/Player/GBPlayerCharacter.h   |   7 ++
+ .../Source/Glyphbound/Spells/GBSpellTypes.cpp      |  10 +-
+ .../Source/Glyphbound/Spells/GBSpell_Beam.cpp      |  49 +++++++-
+ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h |  26 +++-
+ .../Source/Glyphbound/Tests/GBSpellTests.cpp       |  53 ++++++++
+ 16 files changed, 602 insertions(+), 19 deletions(-)
