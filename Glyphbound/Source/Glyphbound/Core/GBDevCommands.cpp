@@ -380,27 +380,69 @@ namespace GBSmokeRun
 			}
 		});
 		Add(15.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
-		Add(19.0f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(19.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
+			// 4.8 s after the cast with the QTE on (the limit is 4 s of real time): it must be over by now.
 			const FGBQTEResult& Result = Player->GetQTE()->GetLastResult();
 			UE_LOG(LogGB, Display, TEXT("SMOKE qte finished active=%d power=%.2f reach=%.2f success=%d timedOut=%d dilation=%.2f"),
 				Player->GetQTE()->IsActive() ? 1 : 0, Result.Power, Result.Reach, Result.bSuccess ? 1 : 0, Result.bTimedOut ? 1 : 0,
 				World->GetWorldSettings() ? World->GetWorldSettings()->GetEffectiveTimeDilation() : -1.f);
 		});
-		Add(19.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(20.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			FGBDamageInfo Info;
 			Info.Amount = 10000000.f;
 			UGBCombatLibrary::DealDamage(Player, Info, true);
 			UE_LOG(LogGB, Display, TEXT("SMOKE player dead=%d"), Player->IsDead() ? 1 : 0);
 		});
-		Add(20.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+		Add(21.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
 		Add(24.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			LogState(World, Player, TEXT("after respawn"));
+			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
 			Shot(TEXT("8_respawn"));
 		});
-		Add(25.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(25.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+			const AGBHeldItem* InSlot = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+			UE_LOG(LogGB, Display, TEXT("SMOKE staff in slot=%s emberOwned=%d returnedItem=%d"),
+				InSlot ? *InSlot->GetWeaponId().ToString() : TEXT("none"),
+				Equipment->OwnsWeapon(TEXT("Staff_Ember")) ? 1 : 0, Returned ? 1 : 0);
+			const bool bEquipped = Equipment->EquipOwnedWeapon(TEXT("Staff_Ember"));
+			const AGBHeldItem* InSlotAfter = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+			UE_LOG(LogGB, Display, TEXT("SMOKE equip ember ok=%d staff in slot=%s emberEquipped=%d"),
+				bEquipped ? 1 : 0,
+				InSlotAfter ? *InSlotAfter->GetWeaponId().ToString() : TEXT("none"),
+				Equipment->IsWeaponEquipped(TEXT("Staff_Ember")) ? 1 : 0);
+		});
+		Add(26.4f + S, TEXT("summon the ice shield, raise it, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			SetQTEEnabled(false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			if (!Player->GetSpellbook()->KnowsSpell(TEXT("IceShield")))
+			{
+				Player->GetSpellbook()->LearnSpell(TEXT("IceShield"));
+			}
+			Player->GetSpellbook()->EquipSpell(4, TEXT("IceShield"));
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(4);
+			Player->GetSpellbook()->SetBlockHeld(true);
+			UE_LOG(LogGB, Display, TEXT("SMOKE shield cast=%d hasShield=%d raised=%d"),
+				bOk ? 1 : 0,
+				Player->GetSpellbook()->HasShield() ? 1 : 0,
+				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
+			Shot(TEXT("9_shield"));
+		});
+		Add(27.6f + S, TEXT("lower the shield"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetSpellbook()->SetBlockHeld(false);
+			UE_LOG(LogGB, Display, TEXT("SMOKE shield lowered hasShield=%d raised=%d"),
+				Player->GetSpellbook()->HasShield() ? 1 : 0,
+				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
+		});
+		Add(28.8f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

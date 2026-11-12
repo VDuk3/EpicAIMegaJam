@@ -32,7 +32,7 @@ namespace GBSpellParam
  *   AGBSpell_Trap        lightning rune                (arms on the ground, triggers when an enemy steps on it)
  *   AGBSpell_Orb         static-electricity ball       (moves forward and damages everything around it)
  *   AGBSpell_Beam        flamethrower                  (sustained cone from the caster's aim)
- *   AGBSpell_Shield      ice shield                    (sustained frontal block on the caster)
+ *   AGBSpell_Shield      ice shield                    (summoned shield, raised with the Block input)
  *   AGBSpell_Enchant     weapon enchant                (timed status effect on the caster that buffs the gun)
  * To add a spell that fits an existing behavior: only add an entry to Spells.json.
  * To add a new behavior: subclass this, document its params, and reference the class from Spells.json.

@@ -459,10 +459,17 @@ bool UGBInventoryComponent::TryCombine(FName ItemA, FName ItemB)
 	FString Message;
 	if (!Recipe.ResultWeapon.IsNone())
 	{
-		if (AGBHeldItem* Weapon = Equipment->GiveWeapon(Recipe.ResultWeapon, true, false))
+		AGBHeldItem* Weapon = Equipment->GiveWeapon(Recipe.ResultWeapon, true, false);
+		// GiveWeapon returns null when the weapon is stored (slot taken) or already owned and stored:
+		// the element still applies to the owned weapon either way.
+		Equipment->SetWeaponElement(Recipe.ResultWeapon, Recipe.ResultElement);
+		if (Equipment->OwnsWeapon(Recipe.ResultWeapon))
 		{
-			Weapon->SetElement(Recipe.ResultElement);
-			Message = FString::Printf(TEXT("Forged: %s (%s)"), *Weapon->GetDisplayName(), *ElementName(Recipe.ResultElement));
+			const UGBDataSubsystem* DataNow2 = UGBDataSubsystem::Get(this);
+			const FGBWeaponDefinition* WeaponDef = DataNow2 ? DataNow2->FindWeapon(Recipe.ResultWeapon) : nullptr;
+			const FString WeaponName = (WeaponDef && !WeaponDef->DisplayName.IsEmpty()) ? WeaponDef->DisplayName : Recipe.ResultWeapon.ToString();
+			(void)Weapon;
+			Message = FString::Printf(TEXT("Forged: %s (%s)"), *WeaponName, *ElementName(Recipe.ResultElement));
 		}
 	}
 	if (!Recipe.ResultItem.IsNone())

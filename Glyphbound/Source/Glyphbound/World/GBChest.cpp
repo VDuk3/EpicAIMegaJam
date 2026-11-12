@@ -6,6 +6,7 @@
 #include "Core/GBPlaceholder.h"
 #include "Player/GBPlayerCharacter.h"
 #include "UI/GBHUD.h"
+#include "Weapons/GBEquipmentComponent.h"
 #include "World/GBPickup.h"
 #include "World/GBProgressSubsystem.h"
 
@@ -120,7 +121,23 @@ void AGBChest::Interact(AGBPlayerCharacter* Player)
 			{
 				TakenPart.Count = FMath::Max(1, Entry.Count) - FMath::Max(0, Remaining.Count);
 			}
-			Found.Add(AGBPickup::GetDropDisplayName(this, TakenPart, true));
+			if (!Entry.WeaponId.IsNone())
+			{
+				// A weapon that did not make it into the hands is stored: say so (owner's rule, 2026-11-12).
+				const UGBEquipmentComponent* Equipment = Player->GetEquipment();
+				if (Equipment && Equipment->OwnsWeapon(Entry.WeaponId) && !Equipment->IsWeaponEquipped(Entry.WeaponId))
+				{
+					Found.Add(FString::Printf(TEXT("%s added to the inventory"), *AGBPickup::GetDropDisplayName(this, TakenPart, true)));
+				}
+				else
+				{
+					Found.Add(AGBPickup::GetDropDisplayName(this, TakenPart, true));
+				}
+			}
+			else
+			{
+				Found.Add(AGBPickup::GetDropDisplayName(this, TakenPart, true));
+			}
 		}
 		if (!bAllTaken)
 		{

@@ -295,10 +295,8 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 		ConfirmSkill(Player);
 		break;
 	case EMenuHitKind::DeathScreen:
-		if (AGBGameMode* GameMode = AGBGameMode::Get(this))
-		{
-			GameMode->RespawnPlayer();
-		}
+		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
+		// so a click respawns exactly once.
 		break;
 	}
 }

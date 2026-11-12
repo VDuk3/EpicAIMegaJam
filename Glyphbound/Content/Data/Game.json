@@ -15,7 +15,16 @@
 		"EnemyStuckDistance": 50,
 		"EnemyGoAroundTime": 1.5,
 		"EncounterSpawnRingRadius": 400,
-		"KillZ": -2500
+		"KillZ": -2500,
+		"DamageNumberLifetime": 0.9,
+		"DamageNumberRiseSpeed": 90,
+		"DamageNumberDriftSpeed": 40,
+		"DamageNumberTextSize": 22,
+		"DamageNumberBigScale": 1.7,
+		"DamageNumberBigHealthFraction": 0.25,
+		"DamageNumberFadeStart": 0.6,
+		"DamageNumberMaxAlive": 40,
+		"DamageNumberMergeWindow": 0.08
 	},
 	"Strings": {}
 }
