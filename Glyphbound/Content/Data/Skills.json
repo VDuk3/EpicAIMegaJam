@@ -64,7 +64,7 @@
 			"Tree": "Weapon",
 			"DisplayName": "Precision Recovery",
 			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
-			"Cost": 1,
+			"Cost": 2,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Headshot" ],
 			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
@@ -171,10 +171,9 @@
 			"Description": "10% less mana cost for every spell per rank.",
 			"Cost": 2,
 			"MaxRank": 3,
-			"Requires": [ "Spell_LightningDamage" ],
 			"ModifiersPerRank": [ { "Stat": "Spell.All.ManaCost", "Op": "Multiply", "Value": 0.9 } ],
-			"Column": 1,
-			"Row": 1
+			"Column": 3,
+			"Row": 0
 		},
 		{
 			"Id": "Spell_Cooldown",
@@ -185,8 +184,8 @@
 			"MaxRank": 3,
 			"Requires": [ "Spell_ManaCost" ],
 			"ModifiersPerRank": [ { "Stat": "Spell.All.Cooldown", "Op": "Multiply", "Value": 0.9 } ],
-			"Column": 1,
-			"Row": 2
+			"Column": 3,
+			"Row": 1
 		},
 		{
 			"Id": "Spell_FireWallDuration",
@@ -219,7 +218,7 @@
 			"MaxRank": 3,
 			"ModifiersPerRank": [ { "Stat": "Spell.LightningRune.Radius", "Op": "Multiply", "Value": 1.1 } ],
 			"Column": 1,
-			"Row": 3
+			"Row": 1
 		},
 		{
 			"Id": "Spell_OrbDuration",
@@ -230,7 +229,7 @@
 			"MaxRank": 3,
 			"ModifiersPerRank": [ { "Stat": "Spell.StaticOrb.Duration", "Op": "Multiply", "Value": 1.15 } ],
 			"Column": 1,
-			"Row": 4
+			"Row": 2
 		},
 		{
 			"Id": "Spell_ShieldDuration",
