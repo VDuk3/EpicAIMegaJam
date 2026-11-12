@@ -172,7 +172,7 @@
 		{
 			"Id": "Flamethrower",
 			"DisplayName": "Flamethrower",
-			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana.",
+			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it.",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
 			"bSustained": true,
@@ -227,9 +227,9 @@
 					"ScaledBy": "Reach"
 				},
 				"TickInterval": {
-					"Base": 0.2,
-					"Min": 0.2,
-					"Max": 0.2,
+					"Base": 0.3,
+					"Min": 0.3,
+					"Max": 0.3,
 					"ScaledBy": "None"
 				},
 				"ManaPerSecond": {
@@ -242,6 +242,12 @@
 					"Base": 40,
 					"Min": 40,
 					"Max": 40,
+					"ScaledBy": "None"
+				},
+				"InterruptHitFraction": {
+					"Base": 0.3,
+					"Min": 0.3,
+					"Max": 0.3,
 					"ScaledBy": "None"
 				}
 			},

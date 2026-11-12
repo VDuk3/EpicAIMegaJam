@@ -202,4 +202,38 @@ bool FGBSpellBeamHoldTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBSpellBeamInterruptTest, "Glyphbound.Spells.BeamInterrupt",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBSpellBeamInterruptTest::RunTest(const FString& Parameters)
+{
+	const float Fraction = 0.25f;
+	const float MaxHealth = 80.f;
+	// Below the threshold: no interrupt.
+	TestFalse(TEXT("Below the threshold does not interrupt"),
+		AGBSpell_Beam::IsInterruptingHit(19.9f, MaxHealth, Fraction));
+	// Exactly at the threshold: interrupts.
+	TestTrue(TEXT("Exactly at the threshold interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(20.f, MaxHealth, Fraction));
+	// Above the threshold: interrupts.
+	TestTrue(TEXT("Above the threshold interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(20.1f, MaxHealth, Fraction));
+	// The real numbers: 0.3f * 100 is 30.000001 in float, and a hit of exactly 30 must still interrupt.
+	TestTrue(TEXT("A hit of exactly 30% of 100 health interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(30.f, 100.f, 0.3f));
+	TestFalse(TEXT("A hit of 29.9 of 100 health does not interrupt"),
+		AGBSpell_Beam::IsInterruptingHit(29.9f, 100.f, 0.3f));
+	// Fraction 0 never interrupts, even for a huge hit.
+	TestFalse(TEXT("Fraction 0 never interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(1000.f, MaxHealth, 0.f));
+	// A hit that kills (full health of damage) counts.
+	TestTrue(TEXT("A killing hit counts as interrupting"),
+		AGBSpell_Beam::IsInterruptingHit(MaxHealth, MaxHealth, Fraction));
+	// Degenerate inputs never interrupt.
+	TestFalse(TEXT("Negative fraction never interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(50.f, MaxHealth, -0.3f));
+	TestFalse(TEXT("Zero max health never interrupts"),
+		AGBSpell_Beam::IsInterruptingHit(50.f, 0.f, Fraction));
+	return true;
+}
+
 #endif

@@ -27,6 +27,9 @@
 		"DamageNumberFadeStart": 0.6,
 		"DamageNumberMaxAlive": 40,
 		"DamageNumberMergeWindow": 0.08,
+		"InterruptShakeDuration": 0.35,
+		"InterruptShakeAmplitude": 2.5,
+		"InterruptShakeFrequency": 22,
 		"GroundFigureLift": 3,
 		"GroundFigureLayerStep": 1.5,
 		"GroundFigureLayerMaxRise": 60

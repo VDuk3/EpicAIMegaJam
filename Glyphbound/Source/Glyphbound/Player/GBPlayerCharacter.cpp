@@ -214,6 +214,7 @@ void AGBPlayerCharacter::Tick(float DeltaSeconds)
 	}
 
 	TickRecoil(DeltaSeconds);
+	TickViewShake(DeltaSeconds);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -435,6 +436,59 @@ void AGBPlayerCharacter::TickRecoil(float DeltaSeconds)
 	PendingRecoil.Pitch -= BackPitch;
 	PendingRecoil.Yaw -= BackYaw;
 	AddLookDelta(-BackYaw, -BackPitch);
+}
+
+void AGBPlayerCharacter::StartViewShake(float Duration, float AmplitudeDeg, float Frequency)
+{
+	if (!Camera)
+	{
+		return;
+	}
+	if (Duration <= 0.f || AmplitudeDeg <= 0.f)
+	{
+		ViewShakeTimeLeft = 0.f;
+		ViewShakeDuration = 0.f;
+		ViewShakeAmplitudeDeg = 0.f;
+		Camera->SetRelativeRotation(FRotator::ZeroRotator);
+		return;
+	}
+	if (ViewShakeTimeLeft > 0.f)
+	{
+		ViewShakeAmplitudeDeg = FMath::Max(ViewShakeAmplitudeDeg, AmplitudeDeg);
+	}
+	else
+	{
+		ViewShakeAmplitudeDeg = AmplitudeDeg;
+	}
+	ViewShakeDuration = Duration;
+	ViewShakeTimeLeft = Duration;
+	ViewShakeFrequency = FMath::Max(0.f, Frequency);
+}
+
+void AGBPlayerCharacter::TickViewShake(float DeltaSeconds)
+{
+	if (ViewShakeTimeLeft <= 0.f || !Camera)
+	{
+		return;
+	}
+	ViewShakeTimeLeft -= DeltaSeconds;
+	if (ViewShakeTimeLeft <= 0.f || ViewShakeDuration <= 0.f)
+	{
+		ViewShakeTimeLeft = 0.f;
+		ViewShakeDuration = 0.f;
+		ViewShakeAmplitudeDeg = 0.f;
+		if (Camera)
+		{
+			Camera->SetRelativeRotation(FRotator::ZeroRotator);
+		}
+		return;
+	}
+	const float Elapsed = ViewShakeDuration - ViewShakeTimeLeft;
+	const float Fade = FMath::Clamp(ViewShakeTimeLeft / ViewShakeDuration, 0.f, 1.f);
+	const float Omega = ViewShakeFrequency * 2.f * UE_PI;
+	const float Pitch = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * Elapsed);
+	const float Yaw = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * 1.13f * Elapsed + 1.3f);
+	Camera->SetRelativeRotation(FRotator(Pitch, Yaw, 0.f));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -687,6 +741,13 @@ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	LastMoveInput = FVector2D::ZeroVector;
 	SetControlEnabled(true);
 	ApplyMovementStats();
+	ViewShakeTimeLeft = 0.f;
+	ViewShakeDuration = 0.f;
+	ViewShakeAmplitudeDeg = 0.f;
+	if (Camera)
+	{
+		Camera->SetRelativeRotation(FRotator::ZeroRotator);
+	}
 
 	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
 	{
@@ -734,6 +795,13 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
 	PendingRecoil = FRotator::ZeroRotator;
 	LastMoveInput = FVector2D::ZeroVector;
 	SetControlEnabled(true);
+	ViewShakeTimeLeft = 0.f;
+	ViewShakeDuration = 0.f;
+	ViewShakeAmplitudeDeg = 0.f;
+	if (Camera)
+	{
+		Camera->SetRelativeRotation(FRotator::ZeroRotator);
+	}
 
 	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
 	{

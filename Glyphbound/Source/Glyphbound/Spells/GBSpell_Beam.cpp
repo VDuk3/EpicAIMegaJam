@@ -2,10 +2,12 @@
 #include "Combat/GBCombatLibrary.h"
 #include "Components/BillboardComponent.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "Engine/World.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
 #include "TimerManager.h"
+#include "UI/GBHUD.h"
 #include "UI/GBPixelSpriteLibrary.h"
 
 namespace
@@ -29,6 +31,7 @@ void AGBSpell_Beam::StartSpell()
 	BeamMinDuration = FMath::Max(0.f, SpellCast.Get(GBSpellParam::MinDuration, 0.f));
 	bHoldToSustain = SpellCast.Get(GBSpellParam::HoldToSustain, 0.f) > 0.5f;
 	BeamStartTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	InterruptFraction = SpellCast.Get(GBSpellParam::InterruptHitFraction, 0.f);
 	const float Interval = SafeInterval(ReadParam(GBStat::TickInterval, 0.2f));
 	DamagePerTick = FMath::Max(0.f, ReadParam(GBStat::DamagePerSecond, 30.f)) * Interval;
 	ManaPerTick = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ManaPerSecond, 0.f)) * Interval;
@@ -56,6 +59,7 @@ void AGBSpell_Beam::StartSpell()
 	FollowAim();
 	SetActorTickEnabled(true);
 	GetWorldTimerManager().SetTimer(TickTimer, this, &AGBSpell_Beam::DamageTick, Interval, true, 0.f);
+	SubscribeCasterDamage();
 	if (BeamMaxDuration > 0.f)
 	{
 		EndSpellAfter(BeamMaxDuration);
@@ -73,6 +77,90 @@ bool AGBSpell_Beam::ShouldBeamContinue(bool bHoldToSustain, bool bKeyHeld, float
 		return true;
 	}
 	return !bHoldToSustain || bKeyHeld;
+}
+
+bool AGBSpell_Beam::IsInterruptingHit(float DamageTaken, float MaxHealth, float InterruptHitFraction)
+{
+	if (InterruptHitFraction <= 0.f || MaxHealth <= 0.f)
+	{
+		return false;
+	}
+	// Small tolerance so "30% or more" holds in float math (0.3f * 100 is 30.000001, which would miss a hit of 30).
+	const float Threshold = InterruptHitFraction * MaxHealth;
+	return DamageTaken >= Threshold - KINDA_SMALL_NUMBER * FMath::Max(1.f, Threshold);
+}
+
+void AGBSpell_Beam::SubscribeCasterDamage()
+{
+	if (InterruptFraction <= 0.f)
+	{
+		return;
+	}
+	UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetCaster());
+	if (!Attributes)
+	{
+		return;
+	}
+	UnsubscribeCasterDamage();
+	BoundCasterAttributes = Attributes;
+	CasterDamagedHandle = Attributes->OnDamaged.AddUObject(this, &AGBSpell_Beam::HandleCasterDamaged);
+}
+
+void AGBSpell_Beam::UnsubscribeCasterDamage()
+{
+	if (UGBAttributeComponent* Attributes = BoundCasterAttributes.Get())
+	{
+		Attributes->OnDamaged.Remove(CasterDamagedHandle);
+	}
+	CasterDamagedHandle.Reset();
+	BoundCasterAttributes.Reset();
+}
+
+void AGBSpell_Beam::HandleCasterDamaged(const FGBDamageInfo& Info, float ActualDamage)
+{
+	if (bEnded || InterruptFraction <= 0.f)
+	{
+		return;
+	}
+	const UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetCaster());
+	const float MaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
+	if (IsInterruptingHit(ActualDamage, MaxHealth, InterruptFraction))
+	{
+		HandleInterrupt();
+	}
+}
+
+void AGBSpell_Beam::HandleInterrupt()
+{
+	if (bEnded)
+	{
+		return;
+	}
+	if (AGBHUD* Hud = AGBHUD::Get(this))
+	{
+		Hud->ShowMessage(TEXT("Interrupted!"), 1.5f);
+	}
+	if (AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetCaster()))
+	{
+		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+		const float Duration = Data ? Data->GetGameValue(GBInterruptShake::Duration, 0.35f) : 0.35f;
+		const float Amplitude = Data ? Data->GetGameValue(GBInterruptShake::Amplitude, 2.5f) : 2.5f;
+		const float Frequency = Data ? Data->GetGameValue(GBInterruptShake::Frequency, 22.f) : 22.f;
+		Player->StartViewShake(Duration, Amplitude, Frequency);
+	}
+	EndSpell();
+}
+
+void AGBSpell_Beam::EndSpell()
+{
+	UnsubscribeCasterDamage();
+	Super::EndSpell();
+}
+
+void AGBSpell_Beam::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UnsubscribeCasterDamage();
+	Super::EndPlay(EndPlayReason);
 }
 
 void AGBSpell_Beam::CheckSustain()

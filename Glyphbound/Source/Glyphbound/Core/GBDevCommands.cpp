@@ -627,7 +627,101 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower: the beam is still alive with no key held (beams=%d)"), Beams);
 			}
 		});
-		Add(37.7f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// The flamethrower cooldown is 6 s, so the interrupt checks wait until it is ready again.
+		Add(42.0f + S, TEXT("flamethrower interrupt: start a beam for the strong hit"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			SetQTEEnabled(false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			Player->GetSpellbook()->SetBlockHeld(false);
+			if (!Player->GetSpellbook()->KnowsSpell(TEXT("Flamethrower")))
+			{
+				Player->GetSpellbook()->LearnSpell(TEXT("Flamethrower"));
+			}
+			Player->GetSpellbook()->EquipSpell(2, TEXT("Flamethrower"));
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(2);
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower interrupt setup ok=%d beams=%d"), bOk ? 1 : 0, Beams);
+			if (!bOk || Beams == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower interrupt: the beam did not start (ok=%d beams=%d)"), bOk ? 1 : 0, Beams);
+			}
+		});
+		Add(42.2f + S, TEXT("flamethrower interrupt: a 35% hit must end the beam"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Player->GetSpellbook()->SetBlockHeld(false);
+			UGBAttributeComponent* Attributes = Player->GetAttributes();
+			const float MaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
+			FGBDamageInfo Hit;
+			Hit.Amount = 0.35f * MaxHealth;
+			Hit.Element = EGBElement::Physical;
+			Hit.SourceId = TEXT("SmokeInterrupt");
+			UGBCombatLibrary::DealDamage(Player, Hit);
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower interrupt alive=%d health=%.0f"), Beams, Attributes ? Attributes->GetHealth() : -1.f);
+			if (Beams != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower interrupt: the beam survived a 35%% max-health hit (beams=%d)"), Beams);
+			}
+			if (Attributes)
+			{
+				Attributes->RestoreAll();
+			}
+		});
+		Add(42.3f + S, TEXT("screenshot: interrupt shake"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("11_interrupt_shake")); });
+		Add(48.5f + S, TEXT("flamethrower small hit: start a second beam"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			SetQTEEnabled(false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			Player->GetSpellbook()->SetBlockHeld(false);
+			Player->GetSpellbook()->EquipSpell(2, TEXT("Flamethrower"));
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(2);
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower small hit setup ok=%d beams=%d"), bOk ? 1 : 0, Beams);
+			if (!bOk || Beams == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower small hit: the beam did not start (ok=%d beams=%d)"), bOk ? 1 : 0, Beams);
+			}
+		});
+		Add(48.7f + S, TEXT("flamethrower small hit: a 10% hit must not end the beam"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Player->GetSpellbook()->SetBlockHeld(false);
+			UGBAttributeComponent* Attributes = Player->GetAttributes();
+			const float MaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
+			FGBDamageInfo Hit;
+			Hit.Amount = 0.10f * MaxHealth;
+			Hit.Element = EGBElement::Physical;
+			Hit.SourceId = TEXT("SmokeSmallHit");
+			UGBCombatLibrary::DealDamage(Player, Hit);
+			int32 Beams = 0;
+			for (TActorIterator<AGBSpell_Beam> It(World); It; ++It)
+			{
+				++Beams;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower small hit alive=%d"), Beams);
+			if (Beams != 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE flamethrower small hit: expected the beam to survive a 10%% hit (beams=%d)"), Beams);
+			}
+			if (Attributes)
+			{
+				Attributes->RestoreAll();
+			}
+		});
+		Add(49.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

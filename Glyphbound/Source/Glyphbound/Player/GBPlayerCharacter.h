@@ -70,6 +70,12 @@ public:
 	/** Kicks the view (degrees). It recovers on its own at RecoverPerSecond. */
 	void AddRecoil(float Pitch, float Yaw, float RecoverPerSecond);
 	/**
+	 * View-only shake of the first-person camera (GDD 18): offsets the camera component's relative
+	 * rotation with a decaying shake for Duration seconds, then returns it exactly to zero. The aim
+	 * (control rotation) does not move. Calling it again while shaking restarts with the stronger amplitude.
+	 */
+	void StartViewShake(float Duration, float AmplitudeDeg, float Frequency);
+	/**
 	 * True while the input action of the loadout slot holding SpellId is currently held
 	 * (slot 1 = right click / L1, slots 2-5 = keys 1-4, gamepad L2 + face button).
 	 * A caster that is not this player, or a spell that is not in the loadout, counts as
@@ -155,6 +161,7 @@ protected:
 	void UpdateWalkSpeed();
 	void EndDash();
 	void TickRecoil(float DeltaSeconds);
+	void TickViewShake(float DeltaSeconds);
 
 	// Input handlers (bound to the actions of UGBInputSet)
 	void InputMove(const FInputActionValue& Value);
@@ -221,4 +228,9 @@ protected:
 	/** Recoil still to be recovered (degrees) and its recovery speed. */
 	FRotator PendingRecoil = FRotator::ZeroRotator;
 	float RecoilRecoverSpeed = 0.f;
+	/** View shake (visual only): time left / total, initial amplitude (degrees) and frequency (Hz). */
+	float ViewShakeTimeLeft = 0.f;
+	float ViewShakeDuration = 0.f;
+	float ViewShakeAmplitudeDeg = 0.f;
+	float ViewShakeFrequency = 0.f;
 };
