@@ -18,7 +18,9 @@ Build/
 
 # Decision del equipo (2026-11-10): git solo lleva codigo y texto.
 # Los assets viajan por la carpeta compartida Incoming de la CENTRAL (SETUP F1c).
-Content/
+# Content is ignored except Content/Data (JSON tuning files are text and belong in git).
+**/Content/*
+!**/Content/Data/
 Incoming/
 *.uasset
 *.umap
