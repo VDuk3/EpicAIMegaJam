@@ -8,10 +8,10 @@
 //   Duration          seconds
 //   TickInterval      seconds between applications
 //   DamagePerSecond   optional; > 0 = damage each tick (DamagePerSecond * TickInterval) with the on-hit effect
+//   FigureGlow        optional; emissive amount of the ground figure (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the status effect (default 1)
-//   SpriteSize        optional; height of the center sprite (default 60)
-// Strings: OnHitEffect (status effect applied every tick, e.g. Slow), Color (disc tint, default = element
-// color), Sprite (optional center sprite).
+// Strings: OnHitEffect (status effect applied every tick, e.g. Slow), Color (figure tint, default = white,
+// the sprite's own colors are the look), Sprite (the ground figure; without it a flat tinted disc shows).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -19,7 +19,6 @@
 #include "GBSpell_Zone.generated.h"
 
 class UStaticMeshComponent;
-class UBillboardComponent;
 
 UCLASS()
 class GLYPHBOUND_API AGBSpell_Zone : public AGBSpellActor
@@ -34,8 +33,7 @@ protected:
 
 	void ZoneTick();
 
-	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Disc;
-	UPROPERTY(VisibleAnywhere) TObjectPtr<UBillboardComponent> Sprite;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Figure;
 
 	FTimerHandle TickTimer;
 	float ZoneRadius = 0.f;

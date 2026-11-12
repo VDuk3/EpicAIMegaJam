@@ -27,6 +27,8 @@
 #include "Player/GBPlayerController.h"
 #include "Progression/GBSkillTreeComponent.h"
 #include "QTE/GBQTEComponent.h"
+#include "Spells/GBSpell_Trap.h"
+#include "Spells/GBSpell_Zone.h"
 #include "Spells/GBSpellbookComponent.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
@@ -459,7 +461,96 @@ namespace GBSmokeRun
 				Player->GetSpellbook()->HasShield() ? 1 : 0,
 				Player->GetSpellbook()->IsBlockRaised() ? 1 : 0);
 		});
-		Add(31.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(31.3f + S, TEXT("ground spells: back to the past, staff in hand, learn both spells"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			// The rune must survive until the screenshot: nothing hostile may step on it, so clear the map first.
+			for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+			{
+				FGBDamageInfo Info;
+				Info.Amount = 10000000.f;
+				Info.Instigator = Player;
+				UGBCombatLibrary::DealDamage(*It, Info);
+			}
+			UGBEraSubsystem::Get(World)->RequestTravel(EGBEra::Past, Player);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			SetQTEEnabled(false);
+			if (!Player->GetSpellbook()->KnowsSpell(TEXT("LightningRune")))
+			{
+				Player->GetSpellbook()->LearnSpell(TEXT("LightningRune"));
+			}
+			if (!Player->GetSpellbook()->KnowsSpell(TEXT("IceFloor")))
+			{
+				Player->GetSpellbook()->LearnSpell(TEXT("IceFloor"));
+			}
+			Player->GetSpellbook()->EquipSpell(0, TEXT("LightningRune"));
+			Player->GetSpellbook()->EquipSpell(1, TEXT("IceFloor"));
+			UE_LOG(LogGB, Display, TEXT("SMOKE ground spells setup known=%d"), Player->GetSpellbook()->GetKnownSpells().Num());
+		});
+		Add(32.5f + S, TEXT("ground spells: look down and cast the lightning rune close by"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(-30.f, PC->GetControlRotation().Yaw, 0.f));
+			}
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(0);
+			int32 Runes = 0;
+			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)
+			{
+				++Runes;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE cast LightningRune ok=%d runes=%d"), bOk ? 1 : 0, Runes);
+			if (!bOk || Runes == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the lightning rune actor did not spawn (ok=%d runes=%d)"), bOk ? 1 : 0, Runes);
+			}
+		});
+		Add(33.7f + S, TEXT("ground spells: cast the ice floor farther out"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(-10.f, PC->GetControlRotation().Yaw, 0.f));
+			}
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(1);
+			int32 Floors = 0;
+			for (TActorIterator<AGBSpell_Zone> It(World); It; ++It)
+			{
+				++Floors;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE cast IceFloor ok=%d floors=%d"), bOk ? 1 : 0, Floors);
+			if (!bOk || Floors == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: the ice floor actor did not spawn (ok=%d floors=%d)"), bOk ? 1 : 0, Floors);
+			}
+		});
+		Add(36.2f + S, TEXT("screenshot: ground spells"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(-20.f, PC->GetControlRotation().Yaw, 0.f));
+			}
+			int32 Runes = 0;
+			for (TActorIterator<AGBSpell_Trap> It(World); It; ++It)
+			{
+				++Runes;
+			}
+			int32 Floors = 0;
+			for (TActorIterator<AGBSpell_Zone> It(World); It; ++It)
+			{
+				++Floors;
+			}
+			if (Runes == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: no lightning rune actor before the screenshot"));
+			}
+			if (Floors == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ground spells: no ice floor actor before the screenshot"));
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE ground spells runes=%d floors=%d"), Runes, Floors);
+			Shot(TEXT("10_ground_spells"));
+		});
+		Add(37.7f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

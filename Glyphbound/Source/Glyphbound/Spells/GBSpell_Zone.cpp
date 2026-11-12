@@ -1,27 +1,26 @@
 #include "Spells/GBSpell_Zone.h"
-#include "Components/BillboardComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "TimerManager.h"
 
 namespace
 {
-	// Visual only: thickness of the glowing disc and how far it floats above the ground (no z-fighting).
+	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
+	// disc thickness when the spell has no sprite.
+	constexpr float ZoneFigureLiftCm = 3.f;
 	constexpr float ZoneDiscThicknessCm = 4.f;
-	constexpr float ZoneDiscLiftCm = 2.f;
+	const FName FigureGlowParam(TEXT("FigureGlow"));
 }
 
 AGBSpell_Zone::AGBSpell_Zone()
 {
-	Disc = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Disc"));
-	Disc->SetupAttachment(Root);
-	Disc->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Disc->SetGenerateOverlapEvents(false);
-	Disc->SetCastShadow(false);
-
-	Sprite = CreateDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
-	Sprite->SetupAttachment(Root);
+	Figure = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Figure"));
+	Figure->SetupAttachment(Root);
+	Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Figure->SetGenerateOverlapEvents(false);
+	Figure->SetCastShadow(false);
 }
 
 void AGBSpell_Zone::StartSpell()
@@ -34,12 +33,21 @@ void AGBSpell_Zone::StartSpell()
 
 	SetActorLocationAndRotation(FindAimedGroundPoint(SpellCast.Get(GBStat::Range, 0.f)), FRotator(0.f, SpellCast.Direction.Rotation().Yaw, 0.f));
 
-	Disc->SetRelativeLocation(FVector(0.f, 0.f, ZoneDiscLiftCm + ZoneDiscThicknessCm * 0.5f));
-	GBPlaceholder::SetupShape(Disc, EGBShape::Cylinder, FVector(ZoneRadius * 2.f, ZoneRadius * 2.f, ZoneDiscThicknessCm), GetSpellColor(), true);
+	const FString ColorStr = SpellCast.GetString(GBString::Color);
+	const FLinearColor Tint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+	const float Glow = SpellCast.Get(FigureGlowParam, 1.f);
 
-	const float SpriteHeight = SpellCast.Get(GBSpellParam::SpriteSize, 60.f);
-	Sprite->SetRelativeLocation(FVector(0.f, 0.f, SpriteHeight * 0.5f));
-	SetupSpellSprite(Sprite, 60.f);
+	Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm));
+	const FName SpriteId = GetSpriteId();
+	if (SpriteId.IsNone())
+	{
+		Figure->SetRelativeLocation(FVector(0.f, 0.f, ZoneFigureLiftCm + ZoneDiscThicknessCm * 0.5f));
+		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(ZoneRadius * 2.f, ZoneRadius * 2.f, ZoneDiscThicknessCm), GetSpellColor(), true);
+	}
+	else
+	{
+		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, ZoneRadius * 2.f, Tint, Glow);
+	}
 
 	if (SpellCast.GetString(GBString::OnHitEffect).IsEmpty() && DamagePerTick <= 0.f)
 	{

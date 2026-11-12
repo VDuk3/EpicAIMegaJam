@@ -18,6 +18,7 @@ namespace GBPlaceholderPrivate
 	const FName TileSizeParam(TEXT("TileSize"));
 	const FName GlowParam(TEXT("Glow"));
 	const TCHAR* const PixelSurfacePath = TEXT("/Game/Glyphbound/Materials/M_PixelSurface.M_PixelSurface");
+	const TCHAR* const PixelDecalPath = TEXT("/Game/Glyphbound/Materials/M_PixelDecal.M_PixelDecal");
 
 	/** Smallest tile accepted from data, so a 0 in the JSON cannot divide by zero in the shader. */
 	constexpr float MinTileSizeCm = 1.f;
@@ -35,6 +36,24 @@ namespace GBPlaceholderPrivate
 				// Logged once: run Tools/Jam/Make-Materials.ps1 to create it.
 				bKnownMissing = true;
 				UE_LOG(LogGB, Warning, TEXT("Placeholder: material %s is missing (run Tools/Jam/Make-Materials.ps1); textured shapes use plain tinted shapes."), PixelSurfacePath);
+			}
+		}
+		return Cached.Get();
+	}
+
+	/** M_PixelDecal, or null when the asset was not generated (then the caller falls back to SetupShape). */
+	UMaterialInterface* GetPixelDecalMaterial()
+	{
+		static TWeakObjectPtr<UMaterialInterface> Cached;
+		static bool bKnownMissing = false;
+		if (!Cached.IsValid() && !bKnownMissing)
+		{
+			Cached = LoadObject<UMaterialInterface>(nullptr, PixelDecalPath, FStringView(), LOAD_NoWarn | LOAD_Quiet);
+			if (!Cached.IsValid())
+			{
+				// Logged once: run Tools/Jam/Make-Materials.ps1 to create it.
+				bKnownMissing = true;
+				UE_LOG(LogGB, Warning, TEXT("Placeholder: material %s is missing (run Tools/Jam/Make-Materials.ps1); ground spells use plain tinted shapes."), PixelDecalPath);
 			}
 		}
 		return Cached.Get();
@@ -156,6 +175,56 @@ void GBPlaceholder::SetShapeColor(UStaticMeshComponent* Component, const FLinear
 		// "Color" on SetupShape materials, "Tint" on SetupTexturedShape ones; the other name is ignored.
 		Material->SetVectorParameterValue(GBPlaceholderPrivate::ColorParam, Color);
 		Material->SetVectorParameterValue(GBPlaceholderPrivate::TintParam, Color);
+	}
+}
+
+UMaterialInstanceDynamic* GBPlaceholder::SetupFlatSprite(UStaticMeshComponent* Component, FName SpriteId, float SizeCm, const FLinearColor& Tint, float Glow)
+{
+	if (!Component)
+	{
+		return nullptr;
+	}
+
+	const float SafeSize = FMath::Max(1.f, SizeCm);
+	UMaterialInterface* BaseMaterial = GBPlaceholderPrivate::GetPixelDecalMaterial();
+	if (!BaseMaterial)
+	{
+		return SetupShape(Component, EGBShape::Plane, FVector(SafeSize, SafeSize, 100.f), Tint, true);
+	}
+
+	Component->SetStaticMesh(GetShapeMesh(EGBShape::Plane));
+	const float Scale = SafeSize / GBPlaceholderPrivate::ShapeSizeCm;
+	Component->SetRelativeScale3D(FVector(Scale, Scale, 1.f));
+
+	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(BaseMaterial, Component);
+	if (UGBPixelSpriteLibrary* Library = UGBPixelSpriteLibrary::Get(Component))
+	{
+		Material->SetTextureParameterValue(GBPlaceholderPrivate::TextureParam, Library->GetSprite(SpriteId));
+	}
+	else
+	{
+		// Not in a game world yet (the library lives on the game instance): the material's default texture shows.
+		UE_LOG(LogGB, Warning, TEXT("Placeholder: no pixel sprite library for '%s' on %s; using the default texture."),
+			*SpriteId.ToString(), *GetNameSafe(Component->GetOwner()));
+	}
+	Material->SetVectorParameterValue(GBPlaceholderPrivate::TintParam, Tint);
+	Material->SetScalarParameterValue(GBPlaceholderPrivate::GlowParam, Glow);
+	Component->SetMaterial(0, Material);
+	return Material;
+}
+
+void GBPlaceholder::SetFlatSpriteLook(UStaticMeshComponent* Component, const FLinearColor& Tint, float Glow)
+{
+	if (!Component)
+	{
+		return;
+	}
+	if (UMaterialInstanceDynamic* Material = Cast<UMaterialInstanceDynamic>(Component->GetMaterial(0)))
+	{
+		// "Tint"/"Glow" on decal materials; "Color" on the SetupShape fallback (the other names are ignored).
+		Material->SetVectorParameterValue(GBPlaceholderPrivate::TintParam, Tint);
+		Material->SetScalarParameterValue(GBPlaceholderPrivate::GlowParam, Glow);
+		Material->SetVectorParameterValue(GBPlaceholderPrivate::ColorParam, Tint);
 	}
 }
 

@@ -50,6 +50,20 @@ namespace GBPlaceholder
 	/** Changes the tint of a component set up with SetupShape. */
 	GLYPHBOUND_API void SetShapeColor(UStaticMeshComponent* Component, const FLinearColor& Color);
 
+	/**
+	 * How ground spells are drawn (GDD 3): one flat quad on the floor with the spell's sprite stretched
+	 * once over it, not tiled. Used by the ground spells (trap, zone) for their whole area.
+	 * Mesh = the engine plane (100 cm, XY facing +Z) scaled to SizeCm x SizeCm; texture = the clamped
+	 * sprite (UGBPixelSpriteLibrary::GetSprite); material = M_PixelDecal (Masked, mesh UVs).
+	 * Tint multiplies the sprite colors, Glow is the emissive amount (color * Glow).
+	 * If the decal material is missing it falls back to a flat tinted SetupShape plane so the area still shows.
+	 * Non-square sprite textures are stretched to the square anyway (ground spell sprites are drawn square).
+	 */
+	GLYPHBOUND_API UMaterialInstanceDynamic* SetupFlatSprite(UStaticMeshComponent* Component, FName SpriteId, float SizeCm, const FLinearColor& Tint = FLinearColor::White, float Glow = 0.f);
+
+	/** Changes the look of a component set up with SetupFlatSprite (on the fallback it sets the shape color). */
+	GLYPHBOUND_API void SetFlatSpriteLook(UStaticMeshComponent* Component, const FLinearColor& Tint, float Glow);
+
 	/** Display color of an element, for placeholders and HUD (fire = orange, lightning = yellow, ice = cyan...). */
 	GLYPHBOUND_API FLinearColor ElementColor(uint8 ElementAsByte);
 }

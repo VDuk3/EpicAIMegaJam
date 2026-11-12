@@ -10,9 +10,9 @@
 //   Falloff           optional; > 0.5 = blast damage fades from the center to the edge (default 0)
 //   Damage            blast damage
 //   Duration          seconds it waits before disappearing unused
+//   FigureGlow        optional; emissive amount of the ground figure (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
-//   SpriteSize        optional; height of the rune sprite (default 50)
-// Strings: Sprite, Color (trigger-area tint, default = element color), OnHitEffect (e.g. Shock).
+// Strings: Sprite, Color (figure tint, default = white, the sprite's own colors are the look), OnHitEffect (e.g. Shock).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,7 +20,6 @@
 #include "GBSpell_Trap.generated.h"
 
 class UStaticMeshComponent;
-class UBillboardComponent;
 
 namespace GBSpellParam
 {
@@ -28,6 +27,7 @@ namespace GBSpellParam
 	inline const FName TriggerRadius(TEXT("TriggerRadius"));
 	inline const FName BlastHeight(TEXT("BlastHeight"));
 	inline const FName Falloff(TEXT("Falloff"));
+	inline const FName FigureGlow(TEXT("FigureGlow"));
 }
 
 UCLASS()
@@ -46,11 +46,12 @@ protected:
 	void Arm();
 	void Trigger();
 
-	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Disc;
-	UPROPERTY(VisibleAnywhere) TObjectPtr<UBillboardComponent> Sprite;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Figure;
 
 	FTimerHandle ArmTimer;
 	bool bArmed = false;
 	float TriggerRadius = 0.f;
 	float TriggerHeight = 0.f;
+	FLinearColor FigureTint = FLinearColor::White;
+	float FigureGlowValue = 1.f;
 };

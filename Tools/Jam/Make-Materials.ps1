@@ -46,13 +46,15 @@ $ok = @($ours | Where-Object { $_ -match 'make_materials: OK' }).Count -gt 0
 
 $asset = Join-Path $projDir 'Content\Glyphbound\Materials\M_PixelSurface.uasset'
 $assetExists = Test-Path $asset
+$decal = Join-Path $projDir 'Content\Glyphbound\Materials\M_PixelDecal.uasset'
+$decalExists = Test-Path $decal
 
 $ours | ForEach-Object { ($_ -replace '^\[[^\]]*\]\[[^\]]*\]', '').Trim() }
 if ($errors.Count -gt 0) {
     Write-Host '---- errors ----'
     $errors | Select-Object -First 60 | ForEach-Object { ($_ -replace '^\[[^\]]*\]\[[^\]]*\]', '').Trim() }
 }
-Write-Host ("Materials: ok={0} asset={1} errors={2} exit={3} wall={4:N0} s  log: {5}" -f $ok, $assetExists, $errors.Count, $p.ExitCode, $sw.Elapsed.TotalSeconds, $log)
-if ($ok -and $assetExists -and $errors.Count -eq 0 -and -not $timedOut) { Write-Host 'OK'; exit 0 }
+Write-Host ("Materials: ok={0} asset={1} decal={2} errors={3} exit={4} wall={5:N0} s  log: {6}" -f $ok, $assetExists, $decalExists, $errors.Count, $p.ExitCode, $sw.Elapsed.TotalSeconds, $log)
+if ($ok -and $assetExists -and $decalExists -and $errors.Count -eq 0 -and -not $timedOut) { Write-Host 'OK'; exit 0 }
 Write-Host 'FAILED'
 exit 1

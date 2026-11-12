@@ -400,12 +400,6 @@
 					"Min": 0,
 					"Max": 0,
 					"ScaledBy": "None"
-				},
-				"SpriteSize": {
-					"Base": 50,
-					"Min": 50,
-					"Max": 50,
-					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
@@ -705,12 +699,6 @@
 					"Base": 0,
 					"Min": 0,
 					"Max": 0,
-					"ScaledBy": "None"
-				},
-				"SpriteSize": {
-					"Base": 60,
-					"Min": 60,
-					"Max": 60,
 					"ScaledBy": "None"
 				}
 			},

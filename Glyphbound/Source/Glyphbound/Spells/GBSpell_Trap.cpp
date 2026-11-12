@@ -1,16 +1,17 @@
 #include "Spells/GBSpell_Trap.h"
 #include "Combat/GBCombatLibrary.h"
-#include "Components/BillboardComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
 #include "TimerManager.h"
 
 namespace
 {
-	// Visual only.
+	// Visual only: how far the flat figure floats above the ground (no z-fighting), and the fallback
+	// disc thickness when the spell has no sprite.
+	constexpr float TrapFigureLiftCm = 3.f;
 	constexpr float TrapDiscThicknessCm = 3.f;
-	constexpr float TrapDiscLiftCm = 2.f;
 	/** Glow brightness of the trigger area while the rune is not armed yet. */
 	constexpr float TrapUnarmedBrightness = 0.3f;
 }
@@ -20,14 +21,11 @@ AGBSpell_Trap::AGBSpell_Trap()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-	Disc = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Disc"));
-	Disc->SetupAttachment(Root);
-	Disc->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Disc->SetGenerateOverlapEvents(false);
-	Disc->SetCastShadow(false);
-
-	Sprite = CreateDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
-	Sprite->SetupAttachment(Root);
+	Figure = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Figure"));
+	Figure->SetupAttachment(Root);
+	Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Figure->SetGenerateOverlapEvents(false);
+	Figure->SetCastShadow(false);
 }
 
 void AGBSpell_Trap::StartSpell()
@@ -39,13 +37,24 @@ void AGBSpell_Trap::StartSpell()
 
 	SetActorLocationAndRotation(FindAimedGroundPoint(ReadParam(GBStat::Range, 1500.f)), FRotator(0.f, SpellCast.Direction.Rotation().Yaw, 0.f));
 
-	Disc->SetRelativeLocation(FVector(0.f, 0.f, TrapDiscLiftCm + TrapDiscThicknessCm * 0.5f));
-	GBPlaceholder::SetupShape(Disc, EGBShape::Cylinder, FVector(TriggerRadius * 2.f, TriggerRadius * 2.f, TrapDiscThicknessCm),
-		GetSpellColor() * TrapUnarmedBrightness, true);
+	const FString ColorStr = SpellCast.GetString(GBString::Color);
+	FigureTint = ColorStr.IsEmpty() ? FLinearColor::White : UGBDataSubsystem::ParseColor(ColorStr, FLinearColor::White);
+	FigureGlowValue = SpellCast.Get(GBSpellParam::FigureGlow, 1.f);
 
-	const float SpriteHeight = SpellCast.Get(GBSpellParam::SpriteSize, 50.f);
-	Sprite->SetRelativeLocation(FVector(0.f, 0.f, SpriteHeight * 0.5f));
-	SetupSpellSprite(Sprite, 50.f);
+	Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm));
+	const FName SpriteId = GetSpriteId();
+	if (SpriteId.IsNone())
+	{
+		Figure->SetRelativeLocation(FVector(0.f, 0.f, TrapFigureLiftCm + TrapDiscThicknessCm * 0.5f));
+		GBPlaceholder::SetupShape(Figure, EGBShape::Cylinder, FVector(TriggerRadius * 2.f, TriggerRadius * 2.f, TrapDiscThicknessCm),
+			GetSpellColor() * TrapUnarmedBrightness, true);
+	}
+	else
+	{
+		FLinearColor Dimmed = FigureTint * TrapUnarmedBrightness;
+		Dimmed.A = 1.f;
+		GBPlaceholder::SetupFlatSprite(Figure, SpriteId, TriggerRadius * 2.f, Dimmed, FigureGlowValue * TrapUnarmedBrightness);
+	}
 
 	if (ArmTime > 0.f)
 	{
@@ -61,7 +70,14 @@ void AGBSpell_Trap::StartSpell()
 void AGBSpell_Trap::Arm()
 {
 	bArmed = true;
-	GBPlaceholder::SetShapeColor(Disc, GetSpellColor());
+	if (GetSpriteId().IsNone())
+	{
+		GBPlaceholder::SetShapeColor(Figure, GetSpellColor());
+	}
+	else
+	{
+		GBPlaceholder::SetFlatSpriteLook(Figure, FigureTint, FigureGlowValue);
+	}
 	SetActorTickEnabled(true);
 }
 

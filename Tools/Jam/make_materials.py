@@ -21,6 +21,7 @@ import unreal
 
 MATERIAL_DIR = "/Game/Glyphbound/Materials"
 PIXEL_SURFACE = "M_PixelSurface"
+PIXEL_DECAL = "M_PixelDecal"
 DEFAULT_TEXTURE = "/Engine/EngineMaterials/DefaultDiffuse.DefaultDiffuse"
 
 MEL = unreal.MaterialEditingLibrary
@@ -187,17 +188,20 @@ def build_pixel_surface():
     g.to_property(emissive, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     g.to_property(roughness, "", unreal.MaterialProperty.MP_ROUGHNESS)
 
+    check_and_save(material, PIXEL_SURFACE)
+
+def check_and_save(material, name):
     errors = MEL.recompile_material(material)
     if errors:
         for error in errors:
             unreal.log_error("make_materials: ERROR compile: %s" % error)
-        fail("%s has compile errors" % PIXEL_SURFACE)
+        fail("%s has compile errors" % name)
     bad_nodes = MEL.get_material_error_expressions(material)
     if bad_nodes:
         fail("%s: %d expressions report errors: %s" % (
-            PIXEL_SURFACE, len(bad_nodes), [n.get_class().get_name() for n in bad_nodes]))
+            name, len(bad_nodes), [n.get_class().get_name() for n in bad_nodes]))
 
-    path = MATERIAL_DIR + "/" + PIXEL_SURFACE
+    path = MATERIAL_DIR + "/" + name
     if not unreal.EditorAssetLibrary.save_asset(path, only_if_is_dirty=False):
         fail("could not save %s" % path)
     log("saved %s (params: %s %s %s)" % (
@@ -207,8 +211,65 @@ def build_pixel_surface():
         list(MEL.get_vector_parameter_names(material)) if hasattr(MEL, "get_vector_parameter_names") else ""))
 
 
+def build_pixel_decal():
+    # Ground spell figures (GDD 3 and 18): one flat quad on the floor with the spell's sprite stretched
+    # once over it. Masked (cutout) so transparent pixels show the floor; mesh UVs (TexCoord 0), not
+    # world position; the texture's own nearest sampler (same reason as M_PixelSurface: the shared
+    # world-group sampler would smooth the pixels).
+    material = get_or_create_material(MATERIAL_DIR, PIXEL_DECAL)
+    material.set_editor_property("blend_mode", unreal.BlendMode.BLEND_MASKED)
+    material.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
+    material.set_editor_property("two_sided", True)
+    material.set_editor_property("opacity_mask_clip_value", 0.5)
+
+    default_texture = unreal.load_asset(DEFAULT_TEXTURE)
+    if default_texture is None:
+        fail("cannot load the default texture %s" % DEFAULT_TEXTURE)
+
+    g = Graph(material)
+
+    # ---- Parameters (same names as M_PixelSurface where they mean the same) ----
+    texture = g.node(unreal.MaterialExpressionTextureObjectParameter, -1400, -500,
+                     parameter_name="Texture", texture=default_texture,
+                     sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+    tint = g.node(unreal.MaterialExpressionVectorParameter, -600, -250,
+                  parameter_name="Tint", default_value=unreal.LinearColor(1.0, 1.0, 1.0, 1.0))
+    glow = g.node(unreal.MaterialExpressionScalarParameter, -400, 150,
+                  parameter_name="Glow", default_value=0.0)
+
+    # ---- Mesh UVs: the whole texture stretched once over the quad ----
+    texcoord = g.node(unreal.MaterialExpressionTextureCoordinate, -1300, -100,
+                      coordinate_index=0)
+
+    # ---- Sample with the texture's own filter (nearest, no smoothing) ----
+    sample = g.node(unreal.MaterialExpressionTextureSample, -700, -300,
+                    sampler_source=unreal.SamplerSourceMode.SSM_FROM_TEXTURE_ASSET,
+                    sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+    g.connect(texture, "", sample, ["Tex", "TextureObject"])
+    g.connect(texcoord, "", sample, ["UVs", "Coordinates"])
+
+    tint_rgb = mask(g, tint, -450, -250, r=True, g=True, b=True)
+    color = g.node(unreal.MaterialExpressionMultiply, -300, -300)
+    g.connect(sample, "RGB", color, "A")
+    g.connect(tint_rgb, "", color, "B")
+
+    emissive = g.node(unreal.MaterialExpressionMultiply, -150, 0)
+    g.connect(color, "", emissive, "A")
+    g.connect(glow, "", emissive, "B")
+
+    roughness = g.node(unreal.MaterialExpressionConstant, -150, 150, r=0.9)
+
+    g.to_property(color, "", unreal.MaterialProperty.MP_BASE_COLOR)
+    g.to_property(emissive, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    g.to_property(roughness, "", unreal.MaterialProperty.MP_ROUGHNESS)
+    g.to_property(sample, "A", unreal.MaterialProperty.MP_OPACITY_MASK)
+
+    check_and_save(material, PIXEL_DECAL)
+
+
 def main():
     build_pixel_surface()
+    build_pixel_decal()
     log("OK")
 
 
