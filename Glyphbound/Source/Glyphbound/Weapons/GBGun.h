@@ -7,6 +7,7 @@
 #include "GBGun.generated.h"
 
 class UStaticMeshComponent;
+class UMaterialInstanceDynamic;
 
 /**
  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
@@ -46,6 +47,21 @@ public:
 	float GetCurrentSpread() const;
 	int32 GetMaxSpareMagazines() const;
 
+	/** True when the real pistol meshes were built (Definition.ViewModel == Pistol and all four loaded). */
+	bool HasPistolViewModel() const { return bPistolViewModel; }
+	/** Pistol parts with a loaded SM_Pistol_* mesh (must be 4). */
+	int32 GetPistolMeshCount() const;
+	/** Dynamic materials made for the pistol parts (must be more than 4: the body alone has many slots). */
+	int32 GetPistolMIDCount() const { return PistolMIDs.Num(); }
+	/** Distance in cm of the magazine from its rest location, in the body's frame. */
+	float GetPistolMagazineOffsetCm() const;
+	/** Element whose color is currently sent to the pistol materials (only meaningful when enchanted). */
+	EGBElement GetPistolGlowElement() const { return LastGlowElement; }
+	/** Whether the pistol glow currently comes from the weapon enchant. */
+	bool IsPistolGlowEnchanted() const { return bLastGlowEnchanted; }
+	/** Last ImbueRemaining value sent to the pistol materials. */
+	float GetPistolImbueSent() const { return LastImbueSent; }
+
 protected:
 	virtual bool AcceptsEnchant() const override { return true; }
 	virtual bool PerformAttack() override;
@@ -58,9 +74,32 @@ protected:
 	/** Moves the FOV towards the aim target; snaps back to the hip FOV when bInstant. */
 	void UpdateAimFOV(float DeltaSeconds, bool bInstant);
 	void BuildViewModel(const FGBWeaponDefinition& Definition);
+	void BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition);
 	UStaticMeshComponent* AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow);
 
+	/** Loads the four SM_Pistol_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
+	bool TryBuildPistolViewModel();
+	/** Trigger pull, magazine slide and glow color, only while the pistol viewmodel exists. */
+	void UpdatePistolViewModel(float DeltaSeconds);
+
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
+
+	/** Real pistol viewmodel (only when Definition.ViewModel == Pistol): body, trigger, magazine, energy bar. */
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolBody = nullptr;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolTrigger = nullptr;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolMagazine = nullptr;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolEnergyBar = nullptr;
+	/** One dynamic instance per material slot of the four pistol parts, so glow and imbue can be set cheaply. */
+	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> PistolMIDs;
+	bool bPistolViewModel = false;
+	/** Seconds since the last shot started the trigger pull. Negative = the trigger is at rest. */
+	float TriggerPullElapsed = -1.f;
+	/** Last values sent to the pistol materials (parameters are only set when they change). */
+	bool bHasLastGlow = false;
+	FLinearColor LastGlowColor = FLinearColor::Black;
+	float LastImbueSent = 0.f;
+	EGBElement LastGlowElement = EGBElement::Physical;
+	bool bLastGlowEnchanted = false;
 
 	FGBAmmoState Ammo;
 	bool bReloading = false;

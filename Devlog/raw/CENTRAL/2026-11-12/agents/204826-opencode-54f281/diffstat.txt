@@ -1,0 +1,18 @@
+ Devlog/raw/CENTRAL/2026-11-12/agents.jsonl         |   5 +
+ ...aude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl |  52 +++
+ .../5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl     | 400 +++++++++++++++++++++
+ Devlog/raw/_import.log                             |  45 +++
+ Glyphbound/Content/Data/Game.json                  |   6 +-
+ Glyphbound/Content/Data/Skills.json                |  68 +++-
+ Glyphbound/Content/Data/Weapons.json               |   3 +
+ .../Source/Glyphbound/Combat/GBCombatLibrary.cpp   |  14 +
+ .../Source/Glyphbound/Combat/GBCombatLibrary.h     |  13 +
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       | 195 +++++++++-
+ Glyphbound/Source/Glyphbound/Core/GBStatNames.h    |  11 +
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp |  52 +++
+ .../Source/Glyphbound/Player/GBPlayerCharacter.h   |   9 +
+ .../Source/Glyphbound/Tests/GBCombatTests.cpp      |  27 ++
+ Glyphbound/Source/Glyphbound/Weapons/GBGun.h       |   2 +-
+ .../Source/Glyphbound/Weapons/GBHeldItem.cpp       |   6 +
+ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h  |  10 +-
+ 17 files changed, 901 insertions(+), 17 deletions(-)

@@ -36,6 +36,7 @@
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "Weapons/GBEquipmentComponent.h"
+#include "Weapons/GBGun.h"
 #include "Weapons/GBHeldItem.h"
 #include "World/GBEraSubsystem.h"
 #include "World/GBProgressSubsystem.h"
@@ -1011,7 +1012,83 @@ namespace GBSmokeRun
 			}
 			Elemental->ClearAll();
 		});
-		Add(50.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(50.5f + S, TEXT("pistol: meshes and materials in hand, hip screenshot, spend rounds, reload"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol: no pistol in hand"));
+				return;
+			}
+			const int32 Meshes = Gun->GetPistolMeshCount();
+			const int32 Mids = Gun->GetPistolMIDCount();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol viewmodel meshes=%d mids=%d"), Meshes, Mids);
+			if (Meshes != 4 || Mids <= 4)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol viewmodel FAILED: meshes=%d (expected 4) mids=%d (expected more than 4)"), Meshes, Mids);
+			}
+			Shot(TEXT("13a_pistol_hip"));
+			FGBAmmoState Ammo = Gun->GetAmmo();
+			if (Ammo.SpareMagazines <= 0)
+			{
+				Gun->RefillAmmo();
+				Ammo = Gun->GetAmmo();
+			}
+			if (Ammo.InMagazine >= Gun->GetMagazineSize())
+			{
+				Ammo.InMagazine = Gun->GetMagazineSize() - 3;
+				Gun->SetAmmo(Ammo);
+			}
+			Gun->Reload();
+		});
+		Add(51.1f + S, TEXT("pistol reload: magazine out halfway, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			const float Progress = Gun->GetReloadProgress();
+			const float Offset = Gun->GetPistolMagazineOffsetCm();
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol magazine offset=%.1f"), Offset);
+			if (Progress < 0.3f || Progress > 0.7f || FMath::Abs(Offset - 27.f) > 1.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol magazine FAILED: offset=%.1f (expected about 27.0) progress=%.2f (expected about 0.5)"), Offset, Progress);
+			}
+			Shot(TEXT("13b_pistol_reload"));
+		});
+		Add(51.7f + S, TEXT("pistol enchant: cast the weapon enchant with the pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+			Player->GetAttributes()->RestoreAll();
+			SetQTEEnabled(false);
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol enchant ok=%d"), Player->GetSpellbook()->TryCastEnchant() ? 1 : 0);
+		});
+		Add(52.3f + S, TEXT("pistol enchanted: glow and bar, screenshot, staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol glow: no pistol in hand"));
+				return;
+			}
+			const float Imbue = Gun->GetPistolImbueSent();
+			const FString ElementName = StaticEnum<EGBElement>()->GetNameStringByValue(static_cast<int64>(Gun->GetPistolGlowElement()));
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol glow element=%s imbue=%.2f"), *ElementName, Imbue);
+			if (!Gun->IsPistolGlowEnchanted() || Imbue <= 0.f || Imbue > 1.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol glow FAILED: enchanted=%d element=%s imbue=%.2f (expected enchanted, imbue in (0, 1])"),
+					Gun->IsPistolGlowEnchanted() ? 1 : 0, *ElementName, Imbue);
+			}
+			Shot(TEXT("13c_pistol_enchanted"));
+		});
+		Add(52.9f + S, TEXT("pistol done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+		});
+		Add(53.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

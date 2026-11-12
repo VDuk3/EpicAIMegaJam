@@ -1,0 +1,2820 @@
+[0m
+> build · muse-spark-1.3-contributor
+Building your elemental system — mapping the codebase first.
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+[0m→ [0mRead Prompts/feedback8_elemental_spec_owner.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Design/GDD.md 
+> build · muse-spark-1.3-contributor
+[93m[1m! [0mretrying (attempt 2): ECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+[0m→ [0mRead Glyphbound/Source/Glyphbound 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGlob "**/*.h" [90min Glyphbound/Source/Glyphbound · 51 matches[0m
+> build · muse-spark-1.3-contributor
+I've got the shape of the task — now digging through weapons, spells, and enemy systems.
+[0m✓ [0msurvey elemental codebase [90mExplore Agent[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellActor.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h 
+> build · muse-spark-1.3-contributor
+Core systems mapped — now checking spells, items, and enemy behaviors.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Enemies.json 
+[0m→ [0mRead Glyphbound/Content/Data/Game.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp 
+[0m→ [0mRead Glyphbound/Content/Data/StatusEffects.json 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json 
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+[0m→ [0mRead Glyphbound/Content/Data/Items.json 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.h 
+> build · muse-spark-1.3-contributor
+Almost done surveying — now looking at projectiles, HUD, and test patterns.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBProjectile.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBSword.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBStaff.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=120, offset=420][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_DamageNumbers.cpp 
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+[0m✱ [0mGrep "OnHitEffect|WeaponOnHitEffect|Burn|Shock|Chill" [90min Glyphbound/Source/Glyphbound · 42 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+[0m✱ [0mGlob "*.cpp" [90min Glyphbound/Source/Glyphbound/Tests · 11 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=80, offset=1][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+> build · muse-spark-1.3-contributor
+Survey complete — now implementing the elemental build-up systems.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBTypes.h
+Index: Glyphbound/Source/Glyphbound/Core/GBTypes.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBTypes.h
++++ Glyphbound/Source/Glyphbound/Core/GBTypes.h
+@@ -64,9 +64,10 @@
+ enum class EGBModOp : uint8
+ {
+ 	Add,
+ 	Multiply,
+-	Override
++	Override,
++	MultiplyMin
+ };
+ 
+ /** HUD skin, chosen by the held item (GDD 13). */
+ UENUM(BlueprintType)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBTypes.h
+Index: Glyphbound/Source/Glyphbound/Core/GBTypes.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBTypes.h
++++ Glyphbound/Source/Glyphbound/Core/GBTypes.h
+@@ -131,5 +131,17 @@
+ 	float EffectDurationScale = 1.f;
+ 
+ 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+ 	float EffectStrengthScale = 1.f;
++
++	/** Raw elemental build-up this hit adds to the target's bar of Element (before the target's resistance and the weak point bonus). */
++	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
++	float BuildUp = 0.f;
++
++	/** Multiplies BuildUp once when bHeadshot is true (weapon hits only). */
++	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
++	float WeakPointBuildUpMult = 1.f;
++
++	/** Hits that share an id add build-up to one target only once (shotgun pellets of one shot); 0 = no dedupe. */
++	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
++	int32 BuildUpEventId = 0;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -90,8 +90,12 @@
+ 	inline const FName QTETimeLimit(TEXT("QTE.TimeLimit"));         // real seconds for the whole QTE
+ 	inline const FName QTESequenceLength(TEXT("QTE.SequenceLength"));
+ 	inline const FName QTEGestureCount(TEXT("QTE.GestureCount"));
+ 
++	// ---- Elemental build-up (GDD 6): spell param / item stat, weapon stat ----
++	inline const FName BuildUp(TEXT("BuildUp"));                   // raw build-up per hit or per tick
++	inline const FName WeakPointBuildUpMult(TEXT("WeakPointBuildUpMult")); // weapon stat; multiplies BuildUp on weak point hits
++
+ 	/** "Weapon.<WeaponId>.<Stat>" */
+ 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
+ 	/** "Weapon.Staff.<Stat>", "Weapon.Gun.<Stat>" or "Weapon.Sword.<Stat>" */
+ 	inline FName WeaponSlotKey(EGBHeldSlot Slot, FName Stat)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -125,4 +125,123 @@
+ 	inline const FName OnHitEffect(TEXT("OnHitEffect"));       // status effect id
+ 	inline const FName ProjectileSprite(TEXT("ProjectileSprite"));
+ 	inline const FName HandSprite(TEXT("HandSprite"));
+ }
++
++/** Elemental build-up keys (GDD 6): per-enemy stats, Game.json defaults, weapon stats, reactions. */
++namespace GBElemental
++{
++	constexpr int32 NumElements = 3;
++
++	inline int32 ElementIndex(EGBElement Element)
++	{
++		switch (Element)
++		{
++		case EGBElement::Fire: return 0;
++		case EGBElement::Lightning: return 1;
++		case EGBElement::Ice: return 2;
++		default: return -1;
++		}
++	}
++
++	inline EGBElement IndexToElement(int32 Index)
++	{
++		switch (Index)
++		{
++		case 0: return EGBElement::Fire;
++		case 1: return EGBElement::Lightning;
++		case 2: return EGBElement::Ice;
++		default: return EGBElement::Physical;
++		}
++	}
++
++	inline const FName& DamageTakenKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireDamageTaken")), FName(TEXT("LightningDamageTaken")), FName(TEXT("IceDamageTaken")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& BuildUpTakenKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireBuildUpTaken")), FName(TEXT("LightningBuildUpTaken")), FName(TEXT("IceBuildUpTaken")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& ThresholdKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireBuildUpThreshold")), FName(TEXT("LightningBuildUpThreshold")), FName(TEXT("IceBuildUpThreshold")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& DecayDelayKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireBuildUpDecayDelay")), FName(TEXT("LightningBuildUpDecayDelay")), FName(TEXT("IceBuildUpDecayDelay")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& DecayRateKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireBuildUpDecayRate")), FName(TEXT("LightningBuildUpDecayRate")), FName(TEXT("IceBuildUpDecayRate")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& StatusDurationKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireStatusDuration")), FName(TEXT("LightningStatusDuration")), FName(TEXT("IceStatusDuration")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& StatusImmunityKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireStatusImmunity")), FName(TEXT("LightningStatusImmunity")), FName(TEXT("IceStatusImmunity")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& ReactionKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireStatusReaction")), FName(TEXT("LightningStatusReaction")), FName(TEXT("IceStatusReaction")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName& WeaponBuildUpKey(int32 Index)
++	{
++		static const FName Keys[3] = { FName(TEXT("FireBuildUp")), FName(TEXT("LightningBuildUp")), FName(TEXT("IceBuildUp")) };
++		static const FName None = NAME_None;
++		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
++	}
++
++	inline const FName IgniteDamageMult(TEXT("IgniteDamageMult"));
++	inline const FName ShockDischargeDamage(TEXT("ShockDischargeDamage"));
++	inline const FName FrostSlow(TEXT("FrostSlow"));
++	inline const FName FrostSource(TEXT("Elemental.Frost"));
++	inline const FName IgniteEffect(TEXT("Ignite"));
++	inline const FName ShockSource(TEXT("Shock"));
++
++	// Reaction names.
++	inline const FName ReactionIgnite(TEXT("Ignite"));
++	inline const FName ReactionStun(TEXT("Stun"));
++	inline const FName ReactionInterrupt(TEXT("Interrupt"));
++	inline const FName ReactionFreeze(TEXT("Freeze"));
++	inline const FName ReactionSlow(TEXT("Slow"));
++	inline const FName ReactionNone(TEXT("None"));
++
++	/** Default of enemy key Key in Game.json: "ElementalDefault.<Key>". Built once per key. */
++	inline FName DefaultKey(FName Key)
++	{
++		static TMap<FName, FName> Cache;
++		if (const FName* Found = Cache.Find(Key))
++		{
++			return *Found;
++		}
++		const FName Result(*FString(TEXT("ElementalDefault.")) + Key.ToString());
++		Cache.Add(Key, Result);
++		return Result;
++	}
++}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h
+Index: Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h
++++ Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h
+@@ -7,15 +7,17 @@
+ #include "GBStatsComponent.generated.h"
+ 
+ /**
+  * How every tunable number is read in the game:
+- *   value = Evaluate(Key, Base)  ->  (Base + sum of Add) * product of Multiply, or the last Override if any.
++ *   value = Evaluate(Key, Base)  ->  (Base + sum of Add) * product of Multiply (including the lowest MultiplyMin),
++ *   or the last Override if any.
+  * - Actor stats (MoveSpeed, MaxHealth...): base values are stored here with SetBaseStats and read with GetStat.
+  * - Weapon and spell numbers: the base comes from the weapon / spell definition and the caller passes the
+  *   modifier keys ("Weapon.<Id>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>").
+  * Modifiers are added in groups identified by a Source name ("Skill.FireballDamage", "Armor", "Effect.Slow#3",
+  * "Passive.DoubleJump"), and removed by that same name. Skill trees, armor, status effects, air passives and
+- * the weapon enchant are all just sources of modifiers.
++ * the weapon enchant are all just sources of modifiers. MultiplyMin is like Multiply, but only the lowest
++ * one on a stat counts (the strongest slow wins); it multiplies with the plain Multiply ones.
+  */
+ UCLASS(ClassGroup = (Glyphbound), meta = (BlueprintSpawnableComponent))
+ class GLYPHBOUND_API UGBStatsComponent : public UActorComponent
+ {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
++++ Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+@@ -70,8 +70,12 @@
+ 		case EGBModOp::Multiply:
+ 			// Scaled around 1, so a x1.5 buff at half strength is x1.25, not x0.75.
+ 			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
+ 			break;
++		case EGBModOp::MultiplyMin:
++			// Same scaling as Multiply: the strongest slow at partial strength stays a slow.
++			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
++			break;
+ 		case EGBModOp::Override:
+ 			break;
+ 		}
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
++++ Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp
+@@ -99,8 +99,10 @@
+ float UGBStatsComponent::ApplyModifiers(float Base, TConstArrayView<FGBModifierDef> Modifiers)
+ {
+ 	float Sum = Base;
+ 	float Product = 1.f;
++	float LowestMin = 1.f;
++	bool bHasMin = false;
+ 	const FGBModifierDef* LastOverride = nullptr;
+ 
+ 	for (const FGBModifierDef& Modifier : Modifiers)
+ 	{
+@@ -111,12 +113,19 @@
+ 			break;
+ 		case EGBModOp::Multiply:
+ 			Product *= Modifier.Value;
+ 			break;
++		case EGBModOp::MultiplyMin:
++			if (!bHasMin || Modifier.Value < LowestMin)
++			{
++				LowestMin = Modifier.Value;
++				bHasMin = true;
++			}
++			break;
+ 		case EGBModOp::Override:
+ 			LastOverride = &Modifier;
+ 			break;
+ 		}
+ 	}
+ 
+-	return LastOverride ? LastOverride->Value : Sum * Product;
++	return LastOverride ? LastOverride->Value : Sum * Product * (bHasMin ? LowestMin : 1.f);
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Core stat changes done — now creating the elemental meter logic.
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
+Created file successfully: Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
+Created file successfully: Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.cpp
+@@ -94,28 +94,23 @@
+ 	if (EventId == 0)
+ 	{
+ 		return Amount;
+ 	}
+-	for (const FEntry& Entry : Entries)
++	for (FEntry& Entry : Entries)
+ 	{
+ 		if (Entry.Id == EventId)
+ 		{
+-			return Amount > Entry.Amount ? Amount - Entry.Amount : 0.f;
++			if (Amount > Entry.Amount)
++			{
++				const float Diff = Amount - Entry.Amount;
++				Entry.Amount = Amount;
++				return Diff;
++			}
++			return 0.f;
+ 		}
+ 	}
+ 	// New id: remember the biggest amount of this event; overwrite the oldest slot.
+-	int32 Slot = NextSlot;
+-	Entries[Slot].Id = EventId;
+-	Entries[Slot].Amount = Amount;
++	Entries[NextSlot].Id = EventId;
++	Entries[NextSlot].Amount = Amount;
+ 	NextSlot = (NextSlot + 1) % 8;
+-	// If the same id arrives again with a bigger amount, the stored amount must grow.
+-	// Accept returns the full amount for a new id; the stored entry is the max so far.
+-	// Update path for a known id is handled above; here we just stored the first amount.
+-	// To keep the max, a bigger repeat must update the entry: handled on the next Accept
+-	// by comparing; but we must also store the new max. Do it lazily: when a known id
+-	// returns a positive remainder, bump the stored amount.
+ 	return Amount;
+ }
+-
+-// Note: Accept must bump the stored max on a bigger repeat. The loop above returns the
+-// remainder but does not update; patch it by updating in place. Since Entries is const
+-// in the loop, redo with a mutable scan when a known id is found.
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+Created file successfully: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Created file successfully: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.h
+@@ -57,10 +57,10 @@
+ 	FGBBuildUpMeter Meters[3];
+ 	FGBBuildUpEventLog EventLog;
+ 
+ 	/** Enemy ids (with element) already warned about an unknown reaction: "EnemyId:Element". */
+-	TSet<FName> WarnedReactions;
++	mutable TSet<FName> WarnedReactions;
+ 	/** Game.json keys already warned about a missing default. */
+-	TSet<FName> WarnedDefaults;
++	mutable TSet<FName> WarnedDefaults;
+ 
+ 	FDelegateHandle DeathHandle;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -339,9 +339,9 @@
+ 		return 0.f;
+ 	}
+ 	FGBBuildUpConfig Config;
+ 	FName Reaction;
+-	if (!const_cast<UGBElementalStatusComponent*>(this)->ReadConfig(Index, Config, Reaction))
++	if (!ReadConfig(Index, Config, Reaction))
+ 	{
+ 		return 0.f;
+ 	}
+ 	return Config.Threshold;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -372,9 +372,9 @@
+ 		return GBElemental::ReactionNone;
+ 	}
+ 	FGBBuildUpConfig Config;
+ 	FName Reaction;
+-	if (!const_cast<UGBElementalStatusComponent*>(this)->ReadConfig(Index, Config, Reaction))
++	if (!ReadConfig(Index, Config, Reaction))
+ 	{
+ 		return GBElemental::ReactionNone;
+ 	}
+ 	return Reaction;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Elemental component drafted — now wiring it into combat.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+@@ -68,15 +68,29 @@
+ 
+ 	/**
+ 	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
+ 	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
+-	 * whose IsHeadshotLocation(Info.HitLocation) is true), multiplies Info.Amount by WeakPointMult,
+-	 * sets Info.bHeadshot = true and returns true. Otherwise leaves Info alone (Info.bHeadshot = false)
+-	 * and returns false.
++	 * whose IsHeadshotLocation(Info.HitLocation) is true, via IsWeakPointHit), multiplies Info.Amount
++	 * by WeakPointMult. Always sets Info.bHeadshot from IsWeakPointHit (so the build-up bonus never
++	 * applies twice even if the head is also a weak point) and returns bHeadshot. The damage bonus
++	 * is decoupled from the build-up bonus (FGBDamageInfo::WeakPointBuildUpMult).
+ 	 */
+ 	static bool ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult);
+ 
++	/** True when HitLocation is on Target's weak point (today: head of an AGBEnemyCharacter). The one place to add other weak points later. */
++	static bool IsWeakPointHit(const AActor* Target, const FVector& HitLocation);
++
++	/** Global counter for build-up events (one per shot, cast, blast or tick); never returns 0. */
++	static int32 NewBuildUpEventId();
++
+ 	/**
++	 * Sends Info.BuildUp to Target's elemental status (weapon weak point bonus included).
++	 * Returns the raw amount sent. Does nothing unless Info.BuildUp > 0, the element is
++	 * Fire / Lightning / Ice, CanDamage(Instigator, Target) and the target has a status component.
++	 */
++	static float ApplyBuildUp(AActor* Target, const FGBDamageInfo& Info);
++
++	/**
+ 	 * Aimed melee point (pure, tested): the point of the body segment BodyBottom..BodyTop (feet to top of head)
+ 	 * closest to the aim segment AimOrigin..AimOrigin + AimDirection * AimLength (FMath::SegmentDistToSegmentSafe).
+ 	 */
+ 	static FVector ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -1,7 +1,8 @@
+ #include "Combat/GBCombatLibrary.h"
+ 
+ #include "AI/GBEnemyCharacter.h"
++#include "Combat/GBElementalStatusComponent.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Core/GBStatNames.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "Stats/GBStatsComponent.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -69,8 +69,9 @@
+ 	const float Dealt = Attributes->ApplyDamage(FinalInfo);
+ 	if (Dealt > 0.f)
+ 	{
+ 		OnDamageDealt().Broadcast(Target, FinalInfo, Dealt);
++		ApplyBuildUp(Target, FinalInfo);
+ 	}
+ 
+ 	if (Dealt > 0.f && !FinalInfo.OnHitEffect.IsNone())
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -273,23 +273,69 @@
+ }
+ 
+ bool UGBCombatLibrary::ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult)
+ {
+-	Info.bHeadshot = false;
+-	if (WeakPointMult <= 1.f)
++	Info.bHeadshot = IsWeakPointHit(Target, Info.HitLocation);
++	if (!Info.bHeadshot || WeakPointMult <= 1.f)
+ 	{
+-		return false;
++		return Info.bHeadshot;
+ 	}
++	Info.Amount *= WeakPointMult;
++	return true;
++}
++
++bool UGBCombatLibrary::IsWeakPointHit(const AActor* Target, const FVector& HitLocation)
++{
+ 	const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target);
+-	if (!Enemy || !Enemy->IsHeadshotLocation(Info.HitLocation))
++	return Enemy && Enemy->IsHeadshotLocation(HitLocation);
++}
++
++int32 UGBCombatLibrary::NewBuildUpEventId()
++{
++	static int32 NextId = 0;
++	++NextId;
++	if (NextId == 0)
+ 	{
+-		return false;
++		++NextId;
+ 	}
+-	Info.Amount *= WeakPointMult;
+-	Info.bHeadshot = true;
+-	return true;
++	return NextId;
+ }
+ 
++float UGBCombatLibrary::ApplyBuildUp(AActor* Target, const FGBDamageInfo& Info)
++{
++	if (Info.BuildUp <= 0.f)
++	{
++		return 0.f;
++	}
++	const int32 Index = GBElemental::ElementIndex(Info.Element);
++	if (Index < 0)
++	{
++		return 0.f;
++	}
++	AActor* Instigator = Info.Instigator.Get();
++	if (IsValid(Instigator))
++	{
++		// Keep the pointer; null instigators still build up (CanDamage allows them).
++	}
++	else
++	{
++		Instigator = nullptr;
++	}
++	if (!CanDamage(Instigator, Target))
++	{
++		return 0.f;
++	}
++	UGBElementalStatusComponent* Elemental = UGBElementalStatusComponent::Find(Target);
++	if (!Elemental)
++	{
++		return 0.f;
++	}
++	const float Mult = Info.bHeadshot ? FMath::Max(1.f, Info.WeakPointBuildUpMult) : 1.f;
++	const float Amount = Info.BuildUp * Mult;
++	Elemental->AddBuildUp(Info.Element, Amount, Info.BuildUpEventId, Instigator);
++	return Amount;
++}
++
+ FVector UGBCombatLibrary::ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop)
+ {
+ 	const FVector AimEnd = AimOrigin + AimDirection * AimLength;
+ 	FVector OutAimPoint = AimOrigin;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
++++ Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp
+@@ -92,9 +92,12 @@
+ 
+ 	FGBDamageInfo Hit = Info;
+ 	OnModifyIncomingDamage.Broadcast(Hit);
+ 
+-	const float Amount = FMath::Max(0.f, Hit.Amount * GBAttributePrivate::ReadStat(GetStats(), GBStat::DamageTaken, 1.f));
++	const float Amount = FMath::Max(0.f, Hit.Amount * GBAttributePrivate::ReadStat(GetStats(), GBStat::DamageTaken, 1.f)
++		* (GBElemental::ElementIndex(Hit.Element) >= 0
++			? GBAttributePrivate::ReadStat(GetStats(), GBElemental::DamageTakenKey(GBElemental::ElementIndex(Hit.Element)), 1.f)
++			: 1.f));
+ 	if (Amount <= 0.f)
+ 	{
+ 		// Fully blocked or cancelled: not a hit, so no damage events and the regen delay keeps running.
+ 		return 0.f;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+@@ -35,8 +35,10 @@
+ 		}
+ 	}
+ 	Info.EffectDurationScale = Get(GBStat::EffectDuration, 1.f);
+ 	Info.EffectStrengthScale = Get(GBStat::EffectStrength, 1.f);
++	Info.BuildUp = Get(GBStat::BuildUp, 0.f);
++	Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+ 	return Info;
+ }
+ 
+ namespace GBSpell
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Damage path updated — now connecting spells and weapons.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp [90m[limit=10][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.cpp
+@@ -1,5 +1,6 @@
+ #include "Spells/GBSpellTypes.h"
++#include "Combat/GBCombatLibrary.h"
+ #include "Core/GBStatNames.h"
+ #include "Stats/GBStatsComponent.h"
+ 
+ float FGBSpellCast::Get(FName Param, float DefaultValue) const
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+@@ -62,17 +62,28 @@
+ void AGBSpell_Zone::ZoneTick()
+ {
+ 	TArray<AActor*> Targets;
+ 	GatherHostilesOnDisc(GetActorLocation(), ZoneRadius, ZoneHeight, Targets);
+-	for (AActor* Target : Targets)
++	if (Targets.Num() == 0)
+ 	{
+-		if (DamagePerTick > 0.f)
++		return;
++	}
++	if (DamagePerTick > 0.f)
++	{
++		for (AActor* Target : Targets)
+ 		{
+-			// DealDamage also applies the on-hit effect.
++			// DealDamage also applies the on-hit effect and the build-up.
+ 			DamageTarget(Target, DamagePerTick, GetActorLocation());
+ 		}
+-		else
++	}
++	else
++	{
++		// No damage, so DealDamage never runs: send the build-up directly (one event id per tick).
++		FGBDamageInfo Info = SpellCast.MakeDamageInfo(NAME_None, this);
++		for (AActor* Target : Targets)
+ 		{
+ 			ApplyOnHitEffect(Target);
++			Info.HitLocation = Target->GetActorLocation();
++			UGBCombatLibrary::ApplyBuildUp(Target, Info);
+ 		}
+ 	}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp [90m[limit=10][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.cpp
+@@ -1,5 +1,6 @@
+ #include "Spells/GBSpell_Zone.h"
++#include "Combat/GBCombatLibrary.h"
+ #include "Components/StaticMeshComponent.h"
+ #include "Core/GBPlaceholder.h"
+ #include "Core/GBStatNames.h"
+ #include "Data/GBDataSubsystem.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+@@ -168,8 +168,18 @@
+ 		{
+ 			Info.OnHitEffect = EnchantEffect;
+ 		}
+ 	}
++
++	const int32 ElementIndex = GBElemental::ElementIndex(Info.Element);
++	if (ElementIndex >= 0)
++	{
++		Info.BuildUp = GetStat(GBElemental::WeaponBuildUpKey(ElementIndex), 0.f);
++		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++		const float DefaultMult = Data ? Data->GetGameValue(GBStat::WeakPointBuildUpMult, 1.f) : 1.f;
++		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);
++	}
++	Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+ 	return Info;
+ }
+ 
+ void AGBHeldItem::PressTrigger()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp [90m[limit=12][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+@@ -1,6 +1,7 @@
+ #include "Weapons/GBHeldItem.h"
+ 
++#include "Combat/GBCombatLibrary.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Core/GBStatNames.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Engine/World.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -260,8 +260,10 @@
+ 	Config.Damage.Amount = ReadItemStat(Def, GBStat::Damage, 0.f);
+ 	Config.Damage.Element = Def.Element;
+ 	Config.Damage.Instigator = Player;
+ 	Config.Damage.SourceId = Def.Id;
++	Config.Damage.BuildUp = ReadItemStat(Def, GBStat::BuildUp, 0.f);
++	Config.Damage.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+ 	if (const FString* OnHit = Def.Strings.Find(GBString::OnHitEffect))
+ 	{
+ 		Config.Damage.OnHitEffect = FName(**OnHit);
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
++++ Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp
+@@ -1,6 +1,7 @@
+ #include "Items/GBInventoryComponent.h"
+ 
++#include "Combat/GBCombatLibrary.h"
+ #include "Core/GBStatNames.h"
+ #include "Core/GBPlaceholder.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Stats/GBStatsComponent.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Sources wired — now adding enemy reactions and control effects.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -9,8 +9,9 @@
+ 
+ class UGBStatsComponent;
+ class UGBAttributeComponent;
+ class UGBStatusEffectComponent;
++class UGBElementalStatusComponent;
+ class UGBEraComponent;
+ class UBillboardComponent;
+ class UStaticMeshComponent;
+ class UDamageType;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -82,13 +82,19 @@
+ 
+ 	UGBStatsComponent* GetStats() const { return Stats; }
+ 	UGBAttributeComponent* GetAttributes() const { return Attributes; }
+ 	UGBStatusEffectComponent* GetStatusEffects() const { return StatusEffects; }
++	UGBElementalStatusComponent* GetElementalStatus() const { return ElementalStatus; }
+ 	UGBEraComponent* GetEraComponent() const { return EraComponent; }
+ 
+ 	/** True if a world-space hit location is on the head (top HeadFraction of the capsule). */
+ 	bool IsHeadshotLocation(const FVector& HitLocation) const;
+ 
++	/** Seconds of control lock left (stun / freeze debug view). */
++	float GetControlLockTime() const { return ControlLockTime; }
++	void InterruptAttack();
++	void ApplyControlLock(float Seconds);
++
+ 	FGBOnEnemyDied OnDied;
+ 
+ 	/** One line for logs and the smoke run: how the enemy is moving right now (navmesh or steering, stuck state). */
+ 	FString DescribeMovement() const;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -118,8 +118,9 @@
+ 
+ 	void HandleDamaged(const FGBDamageInfo& Info, float ActualDamage);
+ 	void HandlePresenceChanged();
+ 	void HandleDataReloaded();
++	void HandleElementalStatusStarted(EGBElement Element, FName Reaction, float Duration);
+ 	void MoveTowards(AActor* Goal, float DeltaSeconds);
+ 	/** Local steering (GBSteering): sweeps the capsule along candidate directions around the one to the goal. */
+ 	void SteerTowards(const AActor* Goal);
+ 	/** A shrunken capsule (lifted by the step height) swept Distance along Direction hits something that blocks pawns. Ignores pawns. */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -139,8 +139,9 @@
+ 
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatsComponent> Stats;
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBAttributeComponent> Attributes;
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatusEffectComponent> StatusEffects;
++	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBElementalStatusComponent> ElementalStatus;
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBEraComponent> EraComponent;
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UBillboardComponent> Sprite;
+ 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> BodyMesh;
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h [90m[offset=140, limit=40][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h
+@@ -176,7 +176,9 @@
+ 	float NavMoveTime = 0.f;
+ 	float SteerMoveTime = 0.f;
+ 	/** Fell below KillZ: no drops (they would fall forever). */
+ 	bool bFellOutOfWorld = false;
++	/** Control lock (stun / freeze): state timers pause while > 0. */
++	float ControlLockTime = 0.f;
+ 	FLinearColor BodyColor = FLinearColor::Gray;
+ 	FVector SpriteBaseScale = FVector::OneVector;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -11,8 +11,9 @@
+ #include "GameFramework/CharacterMovementComponent.h"
+ 
+ #include "AI/GBSteering.h"
+ #include "Combat/GBCombatLibrary.h"
++#include "Combat/GBElementalStatusComponent.h"
+ #include "Combat/GBProjectile.h"
+ #include "Combat/GBStatusEffectComponent.h"
+ #include "Core/GBPlaceholder.h"
+ #include "Core/GBStatNames.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -50,8 +50,9 @@
+ 	Stats = CreateDefaultSubobject<UGBStatsComponent>(TEXT("Stats"));
+ 	Attributes = CreateDefaultSubobject<UGBAttributeComponent>(TEXT("Attributes"));
+ 	Attributes->Team = EGBTeam::Enemy;
+ 	StatusEffects = CreateDefaultSubobject<UGBStatusEffectComponent>(TEXT("StatusEffects"));
++	ElementalStatus = CreateDefaultSubobject<UGBElementalStatusComponent>(TEXT("ElementalStatus"));
+ 	EraComponent = CreateDefaultSubobject<UGBEraComponent>(TEXT("Era"));
+ 
+ 	Sprite = CreateDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
+ 	Sprite->SetupAttachment(GetCapsuleComponent());
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -170,8 +170,12 @@
+ 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+ 	{
+ 		Data->OnDataReloaded.AddUObject(this, &AGBEnemyCharacter::HandleDataReloaded);
+ 	}
++	if (ElementalStatus)
++	{
++		ElementalStatus->OnStatusStarted.AddUObject(this, &AGBEnemyCharacter::HandleElementalStatusStarted);
++	}
+ 
+ 	SteerSide = FMath::RandBool() ? 1 : -1;
+ 	ResetStuck();
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp [90m[offset=183, limit=15][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -191,8 +191,12 @@
+ 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+ 	{
+ 		Data->OnDataReloaded.RemoveAll(this);
+ 	}
++	if (ElementalStatus)
++	{
++		ElementalStatus->OnStatusStarted.RemoveAll(this);
++	}
+ 	Super::EndPlay(EndPlayReason);
+ }
+ 
+ void AGBEnemyCharacter::InitFromDefinition(const FGBEnemyDefinition& Definition)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Enemy setup in place — now adding stun, interrupt, and freeze logic.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp [90m[offset=300, limit=25][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -309,8 +309,15 @@
+ 	{
+ 		return;
+ 	}
+ 
++	if (ControlLockTime > 0.f)
++	{
++		ControlLockTime -= DeltaSeconds;
++		ResetStuck();
++		return;
++	}
++
+ 	StateTime += DeltaSeconds;
+ 	NavRetryTimer = FMath::Max(0.f, NavRetryTimer - DeltaSeconds);
+ 	SteerSideHoldTimer = FMath::Max(0.f, SteerSideHoldTimer - DeltaSeconds);
+ 	GoAroundTimer = FMath::Max(0.f, GoAroundTimer - DeltaSeconds);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp [90m[offset=820, limit=40][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -833,8 +833,9 @@
+ 	{
+ 		return;
+ 	}
+ 	SetState(EGBEnemyState::Dead);
++	ControlLockTime = 0.f;
+ 
+ 	StopMoving();
+ 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp [90m[offset=855, limit=20][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
++++ Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp
+@@ -857,4 +857,45 @@
+ 	const float CorpseTime = Data ? Data->GetGameValue(GBEnemyKey::CorpseTime, 1.5f) : 1.5f;
+ 	// SetLifeSpan(0) would mean "forever"; keep a tiny minimum instead of destroying inside the damage call.
+ 	SetLifeSpan(FMath::Max(CorpseTime, 0.05f));
+ }
++
++void AGBEnemyCharacter::InterruptAttack()
++{
++	if (State == EGBEnemyState::Windup)
++	{
++		SetState(EGBEnemyState::Recover);
++	}
++}
++
++void AGBEnemyCharacter::ApplyControlLock(float Seconds)
++{
++	if (State == EGBEnemyState::Dead)
++	{
++		return;
++	}
++	ControlLockTime = FMath::Max(ControlLockTime, Seconds);
++	InterruptAttack();
++	StopMoving();
++}
++
++void AGBEnemyCharacter::HandleElementalStatusStarted(EGBElement Element, FName Reaction, float Duration)
++{
++	if (Element == EGBElement::Lightning)
++	{
++		if (Reaction == GBElemental::ReactionStun)
++		{
++			ApplyControlLock(Duration);
++		}
++		else if (Reaction == GBElemental::ReactionInterrupt)
++		{
++			InterruptAttack();
++		}
++	}
++	else if (Element == EGBElement::Ice)
++	{
++		if (Reaction == GBElemental::ReactionFreeze)
++		{
++			ApplyControlLock(Duration);
++		}
++	}
++}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Enemy behavior complete — now tuning the data tables.
+[0m→ [0mRead Glyphbound/Content/Data/Game.json 
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Content/Data/Game.json
+Wrote file successfully: Glyphbound/Content/Data/Game.json
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -41,12 +41,20 @@
+ 				"AttackWindup": 0.7,
+ 				"AggroRange": 2400,
+ 				"HeadFraction": 0.2,
+ 				"CapsuleRadius": 60,
+-				"CapsuleHalfHeight": 135
++				"CapsuleHalfHeight": 135,
++				"FireDamageTaken": 0.8,
++				"FireBuildUpTaken": 0.75,
++				"FireBuildUpThreshold": 160,
++				"LightningBuildUpThreshold": 200,
++				"IceBuildUpThreshold": 180,
++				"FrostSlow": 0.5
+ 			},
+ 			"Strings": {
+-				"Sprite": "orc_boss"
++				"Sprite": "orc_boss",
++				"LightningStatusReaction": "Interrupt",
++				"IceStatusReaction": "Slow"
+ 			},
+ 			"Drops": [
+ 				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 }
+ 			]
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Enemies.json
+Index: Glyphbound/Content/Data/Enemies.json
+===================================================================
+--- Glyphbound/Content/Data/Enemies.json
++++ Glyphbound/Content/Data/Enemies.json
+@@ -76,9 +76,12 @@
+ 				"ProjectileSpeed": 2600,
+ 				"ProjectileRadius": 10,
+ 				"HeadFraction": 0.22,
+ 				"CapsuleRadius": 42,
+-				"CapsuleHalfHeight": 96
++				"CapsuleHalfHeight": 96,
++				"LightningDamageTaken": 1.25,
++				"LightningBuildUpTaken": 1.25,
++				"FireBuildUpTaken": 0.75
+ 			},
+ 			"Strings": {
+ 				"Color": "#4A6A7A",
+ 				"ProjectileColor": "#FF5A3A"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Content/Data/StatusEffects.json
+Wrote file successfully: Glyphbound/Content/Data/StatusEffects.json
+> build · muse-spark-1.3-contributor
+Core data tables updated — now reworking spells and gear.
+[0m✱ [0mGrep "EffectDuration|EffectStrength|OnHitEffect" [90min Glyphbound/Content/Data · 19 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Skills.json 
+> build · muse-spark-1.3-contributor
+[0m✗ [0mpython3 - << 'PY'
+import json, pathlib
+p = pathlib.Path("C:/GameJam/Glyphbound/Content/Data/Spells.json")
+data = json.loads(p.read_text())
+by_id = {s["Id"]: s for s in data["Spells"]}
+System.Management.Automation.RemoteException
+def set_buildup(spell_id, base, mn, mx, scaled):
+    s = by_id[spell_id]
+    s["Params"]["BuildUp"] = {"Base": base, "Min": mn, "Max": mx, "ScaledBy": scaled}
+System.Management.Automation.RemoteException
+# Remove OnHitEffect + EffectDuration where required
+for sid in ["Fireball","FireWall","Flamethrower","LightningBolt","LightningRune","StaticOrb"]:
+    s = by_id[sid]
+    s.get("Params", {}).pop("EffectDuration", None)
+    s.get("Strings", {}).pop("OnHitEffect", None)
+System.Management.Automation.RemoteException
+set_buildup("Fireball", 40, 25, 55, "Power")
+set_buildup("FireWall", 10, 10, 10, "None")
+set_buildup("Flamethrower", 8, 8, 8, "None")
+set_buildup("LightningBolt", 35, 20, 50, "Power")
+set_buildup("LightningRune", 60, 35, 85, "Power")
+set_buildup("StaticOrb", 8, 8, 8, "None")
+set_buildup("IceFloor", 5, 5, 5, "None")
+System.Management.Automation.RemoteException
+# Descriptions
+by_id["Fireball"]["Description"] = "A ball of fire that explodes on impact. Builds up fire."
+by_id["FireWall"]["Description"] = "Raises a wall of flames that damages every enemy who crosses it. Builds up fire."
+by_id["Flamethrower"]["Description"] = "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it. Builds up fire."
+by_id["LightningBolt"]["Description"] = "A fast bolt that goes through every enemy in its path. Builds up lightning."
+by_id["LightningRune"]["Description"] = "A rune on the ground that explodes when an enemy steps on it. Builds up lightning."
+by_id["StaticOrb"]["Description"] = "A slow ball of static electricity that damages every enemy around it. Builds up lightning."
+by_id["IceFloor"]["Description"] = "Freezes the ground; enemies on it are slowed. Builds up ice slowly."
+System.Management.Automation.RemoteException
+p.write_text(json.dumps(data, indent="\t") + "\n")
+print("spells updated")
+PY failed
+[91m[1mError: [0mPortable shell scanner cannot analyze command: invalid-structure
+> build · muse-spark-1.3-contributor
+[0m$ [0mpython3 -c "import json, pathlib; p=pathlib.Path('C:/GameJam/Glyphbound/Content/Data/Spells.json'); data=json.loads(p.read_text()); print(len(data['Spells']))"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpy -3 -c "import json, pathlib; print('hi')"
+py : The term 'py' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ py -3 -c "import json, pathlib; print('hi')"
++ ~~
+    + CategoryInfo          : ObjectNotFound: (py:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+> build · muse-spark-1.3-contributor
+Scripting isn't available — editing the data files directly.
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=90, offset=1][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -2,9 +2,9 @@
+ 	"Spells": [
+ 		{
+ 			"Id": "Fireball",
+ 			"DisplayName": "Fireball",
+-			"Description": "A ball of fire that explodes on impact and sets enemies alight.",
++			"Description": "A ball of fire that explodes on impact. Builds up fire.",
+ 			"Element": "Fire",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
+ 			"bStartsKnown": true,
+ 			"UnlockGroup": "Fire",
+@@ -26,12 +26,12 @@
+ 					"Min": 20,
+ 					"Max": 60,
+ 					"ScaledBy": "Power"
+ 				},
+-				"EffectDuration": {
+-					"Base": 1,
+-					"Min": 0.5,
+-					"Max": 1.5,
++				"BuildUp": {
++					"Base": 40,
++					"Min": 25,
++					"Max": 55,
+ 					"ScaledBy": "Power"
+ 				},
+ 				"ExplosionRadius": {
+ 					"Base": 200,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -83,16 +83,15 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "fireball",
+-				"Color": "#FF7A1A",
+-				"OnHitEffect": "Burn"
++				"Color": "#FF7A1A"
+ 			}
+ 		},
+ 		{
+ 			"Id": "FireWall",
+ 			"DisplayName": "Fire Wall",
+-			"Description": "Raises a wall of flames that burns every enemy who crosses it.",
++			"Description": "Raises a wall of flames that damages every enemy who crosses it. Builds up fire.",
+ 			"Element": "Fire",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Wall",
+ 			"UnlockGroup": "Fire",
+ 			"Params": {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=80, offset=91][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -118,13 +118,13 @@
+ 					"Min": 10,
+ 					"Max": 30,
+ 					"ScaledBy": "Power"
+ 				},
+-				"EffectDuration": {
+-					"Base": 1,
+-					"Min": 0.5,
+-					"Max": 1.5,
+-					"ScaledBy": "Power"
++				"BuildUp": {
++					"Base": 10,
++					"Min": 10,
++					"Max": 10,
++					"ScaledBy": "None"
+ 				},
+ 				"Width": {
+ 					"Base": 400,
+ 					"Min": 250,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -163,16 +163,15 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "fire_wall",
+-				"Color": "#FF5A1A",
+-				"OnHitEffect": "Burn"
++				"Color": "#FF5A1A"
+ 			}
+ 		},
+ 		{
+ 			"Id": "Flamethrower",
+ 			"DisplayName": "Flamethrower",
+-			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it.",
++			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it. Builds up fire.",
+ 			"Element": "Fire",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
+ 			"bSustained": true,
+ 			"UnlockGroup": "Fire",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=90, offset=171][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -205,12 +205,12 @@
+ 					"Min": 25,
+ 					"Max": 55,
+ 					"ScaledBy": "Power"
+ 				},
+-				"EffectDuration": {
+-					"Base": 0.5,
+-					"Min": 0.5,
+-					"Max": 0.5,
++				"BuildUp": {
++					"Base": 8,
++					"Min": 8,
++					"Max": 8,
+ 					"ScaledBy": "None"
+ 				},
+ 				"Range": {
+ 					"Base": 700,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -250,16 +250,15 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "flame",
+-				"Color": "#FF8C1A",
+-				"OnHitEffect": "Burn"
++				"Color": "#FF8C1A"
+ 			}
+ 		},
+ 		{
+ 			"Id": "LightningBolt",
+ 			"DisplayName": "Lightning Bolt",
+-			"Description": "A fast bolt that goes through every enemy in its path.",
++			"Description": "A fast bolt that goes through every enemy in its path. Builds up lightning.",
+ 			"Element": "Lightning",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
+ 			"bStartsKnown": true,
+ 			"UnlockGroup": "Lightning",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=80, offset=258][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -280,12 +280,12 @@
+ 					"Min": 15,
+ 					"Max": 45,
+ 					"ScaledBy": "Power"
+ 				},
+-				"EffectDuration": {
+-					"Base": 1,
+-					"Min": 0.5,
+-					"Max": 1.5,
++				"BuildUp": {
++					"Base": 35,
++					"Min": 20,
++					"Max": 50,
+ 					"ScaledBy": "Power"
+ 				},
+ 				"Range": {
+ 					"Base": 6000,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -325,16 +325,15 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "lightning_bolt",
+-				"Color": "#FFE84A",
+-				"OnHitEffect": "Shock"
++				"Color": "#FFE84A"
+ 			}
+ 		},
+ 		{
+ 			"Id": "LightningRune",
+ 			"DisplayName": "Lightning Rune",
+-			"Description": "A rune on the ground that explodes when an enemy steps on it.",
++			"Description": "A rune on the ground that explodes when an enemy steps on it. Builds up lightning.",
+ 			"Element": "Lightning",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Trap",
+ 			"UnlockGroup": "Lightning",
+ 			"Params": {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=90, offset=333][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -354,8 +354,14 @@
+ 					"Min": 40,
+ 					"Max": 100,
+ 					"ScaledBy": "Power"
+ 				},
++				"BuildUp": {
++					"Base": 60,
++					"Min": 35,
++					"Max": 85,
++					"ScaledBy": "Power"
++				},
+ 				"Duration": {
+ 					"Base": 20,
+ 					"Min": 15,
+ 					"Max": 25,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Fire and lightning spells updated — finishing ice and utility spells.
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=65, offset=358][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -366,14 +366,8 @@
+ 					"Min": 15,
+ 					"Max": 25,
+ 					"ScaledBy": "Power"
+ 				},
+-				"EffectDuration": {
+-					"Base": 1,
+-					"Min": 0.5,
+-					"Max": 1.5,
+-					"ScaledBy": "Power"
+-				},
+ 				"Range": {
+ 					"Base": 1500,
+ 					"Min": 1000,
+ 					"Max": 2000,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -411,16 +411,15 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "rune_lightning",
+-				"Color": "#FFE84A",
+-				"OnHitEffect": "Shock"
++				"Color": "#FFE84A"
+ 			}
+ 		},
+ 		{
+ 			"Id": "StaticOrb",
+ 			"DisplayName": "Static Orb",
+-			"Description": "A slow ball of static electricity that shocks every enemy around it.",
++			"Description": "A slow ball of static electricity that damages every enemy around it. Builds up lightning.",
+ 			"Element": "Lightning",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Orb",
+ 			"UnlockGroup": "Lightning",
+ 			"Params": {
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=85, offset=419][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -446,8 +446,14 @@
+ 					"Min": 15,
+ 					"Max": 35,
+ 					"ScaledBy": "Power"
+ 				},
++				"BuildUp": {
++					"Base": 8,
++					"Min": 8,
++					"Max": 8,
++					"ScaledBy": "None"
++				},
+ 				"Range": {
+ 					"Base": 2000,
+ 					"Min": 1200,
+ 					"Max": 2800,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -476,14 +476,8 @@
+ 					"Min": 0.5,
+ 					"Max": 0.5,
+ 					"ScaledBy": "None"
+ 				},
+-				"EffectDuration": {
+-					"Base": 1,
+-					"Min": 1,
+-					"Max": 1,
+-					"ScaledBy": "None"
+-				},
+ 				"ShowArea": {
+ 					"Base": 1,
+ 					"Min": 1,
+ 					"Max": 1,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -491,10 +491,9 @@
+ 				}
+ 			},
+ 			"Strings": {
+ 				"Sprite": "static_orb",
+-				"Color": "#CFE8FF",
+-				"OnHitEffect": "Shock"
++				"Color": "#CFE8FF"
+ 			}
+ 		},
+ 		{
+ 			"Id": "IceWall",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=80, offset=640][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Spells.json
+Index: Glyphbound/Content/Data/Spells.json
+===================================================================
+--- Glyphbound/Content/Data/Spells.json
++++ Glyphbound/Content/Data/Spells.json
+@@ -641,9 +641,9 @@
+ 		},
+ 		{
+ 			"Id": "IceFloor",
+ 			"DisplayName": "Ice Floor",
+-			"Description": "Freezes the ground; enemies on it are slowed.",
++			"Description": "Freezes the ground; enemies on it are slowed. Builds up ice slowly.",
+ 			"Element": "Ice",
+ 			"ActorClass": "/Script/Glyphbound.GBSpell_Zone",
+ 			"UnlockGroup": "Ice",
+ 			"Params": {
+@@ -677,8 +677,14 @@
+ 					"Min": 1,
+ 					"Max": 1,
+ 					"ScaledBy": "None"
+ 				},
++				"BuildUp": {
++					"Base": 5,
++					"Min": 5,
++					"Max": 5,
++					"ScaledBy": "None"
++				},
+ 				"Range": {
+ 					"Base": 1200,
+ 					"Min": 800,
+ 					"Max": 1600,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -38,14 +38,14 @@
+ 				"ProjectileRadius": 14,
+ 				"ProjectileGravity": 0,
+ 				"Range": 6000,
+ 				"ManaCost": 0,
+-				"HeadshotMult": 1.5
++				"HeadshotMult": 1.5,
++				"FireBuildUp": 10
+ 			},
+ 			"Strings": {
+ 				"Sprite": "staff_ember",
+-				"ProjectileSprite": "fireball",
+-				"OnHitEffect": "Burn"
++				"ProjectileSprite": "fireball"
+ 			}
+ 		},
+ 		{
+ 			"Id": "Pistol",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -74,9 +74,12 @@
+ 				"FalloffFarMult": 0.6,
+ 				"HeadshotMult": 2,
+ 				"AimFOV": 70,
+ 				"AimMoveSpeedMult": 0.7,
+-				"AimTime": 0.15
++				"AimTime": 0.15,
++				"FireBuildUp": 15,
++				"LightningBuildUp": 15,
++				"IceBuildUp": 15
+ 			},
+ 			"Strings": {}
+ 		},
+ 		{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -109,9 +109,12 @@
+ 				"FalloffFarMult": 0.2,
+ 				"HeadshotMult": 1.5,
+ 				"AimFOV": 75,
+ 				"AimMoveSpeedMult": 0.75,
+-				"AimTime": 0.18
++				"AimTime": 0.18,
++				"FireBuildUp": 25,
++				"LightningBuildUp": 25,
++				"IceBuildUp": 25
+ 			},
+ 			"Strings": {}
+ 		},
+ 		{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -144,9 +144,12 @@
+ 				"FalloffFarMult": 1.15,
+ 				"HeadshotMult": 1.5,
+ 				"AimFOV": 60,
+ 				"AimMoveSpeedMult": 0.65,
+-				"AimTime": 0.2
++				"AimTime": 0.2,
++				"FireBuildUp": 8,
++				"LightningBuildUp": 8,
++				"IceBuildUp": 8
+ 			},
+ 			"Strings": {}
+ 		},
+ 		{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -164,9 +164,12 @@
+ 				"Damage": 45,
+ 				"FireInterval": 0.5,
+ 				"MeleeRange": 260,
+ 				"MeleeArc": 90,
+-				"HeadshotMult": 1.5
++				"HeadshotMult": 1.5,
++				"FireBuildUp": 20,
++				"LightningBuildUp": 20,
++				"IceBuildUp": 20
+ 			},
+ 			"Strings": {
+ 				"Sprite": "sword_blade"
+ 			}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Weapons tuned — now updating items.
+[0m→ [0mRead Glyphbound/Content/Data/Items.json [90m[limit=25, offset=33][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Items.json
+Index: Glyphbound/Content/Data/Items.json
+===================================================================
+--- Glyphbound/Content/Data/Items.json
++++ Glyphbound/Content/Data/Items.json
+@@ -32,23 +32,24 @@
+ 		},
+ 		{
+ 			"Id": "ElectricGrenade",
+ 			"DisplayName": "Electric Grenade",
+-			"Description": "Bounces, then explodes in a burst of lightning that shocks everything around it.",
++			"Description": "Bounces, then explodes in a burst of lightning that builds up shock.",
+ 			"Type": "Throwable",
+ 			"MaxStack": 3,
+ 			"bQuickUse": true,
+ 			"Element": "Lightning",
+ 			"Stats": {
+ 				"Damage": 70,
++				"BuildUp": 60,
+ 				"Radius": 450,
+ 				"Speed": 1800,
+ 				"FuseTime": 1.6,
+ 				"ProjectileGravity": 1,
+ 				"ProjectileRadius": 12,
+ 				"ThrowPitch": 8
+ 			},
+-			"Strings": { "OnHitEffect": "Shock", "Sprite": "grenade_electric", "PickupLook": "3D" }
++			"Strings": { "Sprite": "grenade_electric", "PickupLook": "3D" }
+ 		},
+ 		{
+ 			"Id": "Ammo_Magazine",
+ 			"DisplayName": "Magazine",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "ConsoleVariable|FAutoConsoleVariable|gb\.QTE|ShowElemental" [90min Glyphbound/Source/Glyphbound · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp [90m[limit=25][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=60, offset=425][0m
+> build · muse-spark-1.3-contributor
+Data done — now building the debug view and test commands.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=30, offset=1][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+@@ -25,10 +25,21 @@
+ #include "Engine/Engine.h"
+ #include "Engine/Font.h"
+ #include "Engine/Texture2D.h"
+ #include "Engine/World.h"
++#include "EngineUtils.h"
+ #include "GameFramework/CharacterMovementComponent.h"
++#include "HAL/IConsoleManager.h"
+ 
++#include "AI/GBEnemyCharacter.h"
++#include "Combat/GBElementalStatusComponent.h"
++
++static TAutoConsoleVariable<int32> CVarShowElemental(
++	TEXT("gb.ShowElemental"),
++	0,
++	TEXT("Debug view of elemental build-up bars over enemies. 1 = on."),
++	ECVF_Default);
++
+ // Presentation-only timings and sizes (not gameplay numbers).
+ namespace GBHudLayout
+ {
+ 	constexpr float DamageFlashTime = 0.3f;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+@@ -455,8 +455,95 @@
+ 	MouseToCanvas = Canvas->SizeX > 0 ? Canvas->ClipX / (float)Canvas->SizeX : 1.f;
+ 
+ 	// World-space numbers first: hands and HUD panels stay on top of them.
+ 	DrawDamageNumbers();
++	if (CVarShowElemental.GetValueOnGameThread() == 1 && Player)
++	{
++		UWorld* HudWorld = GetWorld();
++		APlayerCameraManager* CamMgr = PlayerOwner ? PlayerOwner->PlayerCameraManager.Get() : nullptr;
++		if (HudWorld && CamMgr)
++		{
++			const FVector CamLoc = CamMgr->GetCameraLocation();
++			const FVector CamFwd = CamMgr->GetCameraRotation().Vector();
++			const FVector PlayerLoc = Player->GetActorLocation();
++			for (TActorIterator<AGBEnemyCharacter> It(HudWorld); It; ++It)
++			{
++				AGBEnemyCharacter* Enemy = *It;
++				if (!Enemy || Enemy->IsDead())
++				{
++					continue;
++				}
++				if (Enemy->GetEraComponent() && !Enemy->GetEraComponent()->IsPresent())
++				{
++					continue;
++				}
++				UGBElementalStatusComponent* Elemental = Enemy->GetElementalStatus();
++				if (!Elemental)
++				{
++					continue;
++				}
++				const float Dist = FVector::Dist(PlayerLoc, Enemy->GetActorLocation());
++				if (Dist > 4000.f)
++				{
++					continue;
++				}
++				FVector Head = Enemy->GetActorLocation();
++				if (const UCapsuleComponent* Capsule = Enemy->FindComponentByClass<UCapsuleComponent>())
++				{
++					Head.Z += Capsule->GetScaledCapsuleHalfHeight() + 30.f;
++				}
++				else
++				{
++					Head.Z += 120.f;
++				}
++				if (FVector::DotProduct(Head - CamLoc, CamFwd) <= 0.f)
++				{
++					continue;
++				}
++				const FVector Screen = Canvas->Project(Head, true);
++				if (Screen.Z <= 0.f)
++				{
++					continue;
++				}
++				TArray<FString> Lines;
++				const EGBElement Elements[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
++				const TCHAR* Names[3] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice") };
++				for (int32 i = 0; i < 3; ++i)
++				{
++					const EGBBuildUpPhase Phase = Elemental->GetPhase(Elements[i]);
++					if (Phase == EGBBuildUpPhase::Building)
++					{
++						const float Value = Elemental->GetBuildUp(Elements[i]);
++						if (Value <= 0.f)
++						{
++							continue;
++						}
++						const float Threshold = Elemental->GetThreshold(Elements[i]);
++						Lines.Add(FString::Printf(TEXT("%s %d/%d"), Names[i], FMath::RoundToInt(Value), FMath::RoundToInt(Threshold)));
++					}
++					else if (Phase == EGBBuildUpPhase::Active)
++					{
++						const FName Reaction = Elemental->GetReaction(Elements[i]);
++						Lines.Add(FString::Printf(TEXT("%s %s %.1fs"), Names[i], *Reaction.ToString(), Elemental->GetPhaseTimeRemaining(Elements[i])));
++					}
++					else
++					{
++						Lines.Add(FString::Printf(TEXT("%s IMMUNE %.1fs"), Names[i], Elemental->GetPhaseTimeRemaining(Elements[i])));
++					}
++				}
++				if (Enemy->GetControlLockTime() > 0.f)
++				{
++					Lines.Add(FString::Printf(TEXT("LOCK %.1fs"), Enemy->GetControlLockTime()));
++				}
++				float Y = Screen.Y;
++				for (const FString& Line : Lines)
++				{
++					DrawLabel(Line, FLinearColor::White, Screen.X, Y, 14.f, 0.5f, true, false);
++					Y += 16.f;
++				}
++			}
++		}
++	}
+ 	if (Player)
+ 	{
+ 		DrawHands(Player);
+ 		DrawStatusHud(Player, Style);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+@@ -26,8 +26,9 @@
+ #include "Engine/Font.h"
+ #include "Engine/Texture2D.h"
+ #include "Engine/World.h"
+ #include "EngineUtils.h"
++#include "Components/CapsuleComponent.h"
+ #include "GameFramework/CharacterMovementComponent.h"
+ #include "HAL/IConsoleManager.h"
+ 
+ #include "AI/GBEnemyCharacter.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h' -Pattern 'FAutoConsoleCommandWithWorldAndArgs' | Select-Object -First 5
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2411:class 
+FAutoConsoleCommandWithWorldAndArgs : private FAutoConsoleObject
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2413:	CORE_API 
+FAutoConsoleCommandWithWorldAndArgs(uint32 Flags, const TCHAR* Name, const TCHAR* Help, const 
+FConsoleCommandWithWorldAndArgsDelegate& Command);
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2423:	FORCEINLINE 
+FAutoConsoleCommandWithWorldAndArgs(const TCHAR* Name, const TCHAR* Help, const 
+FConsoleCommandWithWorldAndArgsDelegate& Command, uint32 Flags = ECVF_Default)
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2424:		: 
+FAutoConsoleCommandWithWorldAndArgs(Flags, Name, UE_CVAR_HELP_TEXT_PARAM(Help), Command) {}
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2426:	virtual 
+~FAutoConsoleCommandWithWorldAndArgs() {}
+> build · muse-spark-1.3-contributor
+Debug display ready — now adding the test command and smoke checks.
+[0m$ [0mSelect-String -Path 'C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h' -Pattern 'FConsoleCommandWithWorldAndArgsDelegate' | Select-Object -First 5
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:257:DECLARE_DELEGATE_TwoPara
+ms(FConsoleCommandWithWorldAndArgsDelegate, const TArray< FString >&, UWorld*);
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:387:struct 
+FConsoleCommandWithWorldAndArgsDelegate				: FNullConsoleVariableDelegate<FConsoleCommandWithWorldAndArgsDelegate, 
+const TArray<FString>&, UWorld*> {};
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:1151:	virtual 
+IConsoleCommand* RegisterConsoleCommand(const TCHAR* Name, const TCHAR* Help, const 
+FConsoleCommandWithWorldAndArgsDelegate& Command, uint32 Flags = ECVF_Default) = 0;
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2413:	CORE_API 
+FAutoConsoleCommandWithWorldAndArgs(uint32 Flags, const TCHAR* Name, const TCHAR* Help, const 
+FConsoleCommandWithWorldAndArgsDelegate& Command);
+C:\Program Files\Epic Games\UE_5.9\Engine\Source\Runtime\Core\Public\HAL\IConsoleManager.h:2423:	FORCEINLINE 
+FAutoConsoleCommandWithWorldAndArgs(const TCHAR* Name, const TCHAR* Help, const 
+FConsoleCommandWithWorldAndArgsDelegate& Command, uint32 Flags = ECVF_Default)
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=40, offset=699][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=45, offset=1][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -18,8 +18,10 @@
+ #include "NavigationPath.h"
+ #include "NavigationSystem.h"
+ #include "AI/GBEnemyCharacter.h"
+ #include "Combat/GBCombatLibrary.h"
++#include "Combat/GBElementalStatusComponent.h"
++#include "Combat/GBStatusEffectComponent.h"
+ #include "Core/GBStatNames.h"
+ #include "Core/GBTypes.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Items/GBInventoryComponent.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -722,10 +722,102 @@
+ 			{
+ 				Attributes->RestoreAll();
+ 			}
+ 		});
+-		Add(49.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(48.9f + S, TEXT("elemental build-up on the training dummy"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
++			AGBEnemyCharacter* Dummy = nullptr;
++			for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
++			{
++				if (It->GetEnemyId() == FName(TEXT("TrainingDummy")))
++				{
++					Dummy = *It;
++					break;
++				}
++			}
++			if (!Dummy)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: no TrainingDummy found"));
++				return;
++			}
++			UGBElementalStatusComponent* Elemental = Dummy->GetElementalStatus();
++			if (!Elemental)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: dummy has no status component"));
++				return;
++			}
++			// Dedupe: two adds of 20 with the SAME event id leave 20 (times BuildUpTaken, 1 by default).
++			const int32 DedupeId = UGBCombatLibrary::NewBuildUpEventId();
++			FGBDamageInfo First;
++			First.Element = EGBElement::Fire;
++			First.Instigator = Player;
++			First.BuildUp = 20.f;
++			First.BuildUpEventId = DedupeId;
++			UGBCombatLibrary::ApplyBuildUp(Dummy, First);
++			UGBCombatLibrary::ApplyBuildUp(Dummy, First);
++			const float AfterDedupe = Elemental->GetBuildUp(EGBElement::Fire);
++			const bool bDedupeOk = FMath::IsNearlyEqual(AfterDedupe, 20.f, 1.e-2f);
++			UE_LOG(LogGB, Display, TEXT("SMOKE elemental dedupe ok=%d"), bDedupeOk ? 1 : 0);
++			if (!bDedupeOk)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE elemental dedupe FAILED: fire bar is %.2f, expected 20"), AfterDedupe);
++			}
++			// Clear the fire bar before the per-element trigger checks (fresh decay via ClearAll).
++			Elemental->ClearAll();
++
++			const EGBElement Elems[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
++			const TCHAR* Names[3] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice") };
++			for (int32 i = 0; i < 3; ++i)
++			{
++				Elemental->ClearAll();
++				bool bTriggered = false;
++				int32 Adds = 0;
++				for (int32 n = 0; n < 10 && !bTriggered; ++n)
++				{
++					FGBDamageInfo Info;
++					Info.Element = Elems[i];
++					Info.Instigator = Player;
++					Info.BuildUp = 30.f;
++					Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
++					UGBCombatLibrary::ApplyBuildUp(Dummy, Info);
++					++Adds;
++					bTriggered = Elemental->IsStatusActive(Elems[i]);
++				}
++				UE_LOG(LogGB, Display, TEXT("SMOKE elemental %s triggered=%d adds=%d"), Names[i], bTriggered ? 1 : 0, Adds);
++				if (!bTriggered)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE elemental %s FAILED to trigger"), Names[i]);
++					continue;
++				}
++				if (Elems[i] == EGBElement::Fire)
++				{
++					UGBStatusEffectComponent* Effects = Dummy->GetStatusEffects();
++					const bool bIgnite = Effects && Effects->HasEffect(FName(TEXT("Ignite")));
++					UE_LOG(LogGB, Display, TEXT("SMOKE elemental Fire ignite=%d"), bIgnite ? 1 : 0);
++					if (!bIgnite)
++					{
++						UE_LOG(LogGB, Error, TEXT("SMOKE elemental Fire: Ignite effect missing"));
++					}
++				}
++				FGBDamageInfo Extra;
++				Extra.Element = Elems[i];
++				Extra.Instigator = Player;
++				Extra.BuildUp = 30.f;
++				Extra.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
++				const float Before = Elemental->GetBuildUp(Elems[i]);
++				UGBCombatLibrary::ApplyBuildUp(Dummy, Extra);
++				const float After = Elemental->GetBuildUp(Elems[i]);
++				const bool bBlocked = Elemental->IsStatusActive(Elems[i]) && FMath::IsNearlyEqual(Before, After, 1.e-3f);
++				UE_LOG(LogGB, Display, TEXT("SMOKE elemental %s blockedWhileActive=%d"), Names[i], bBlocked ? 1 : 0);
++				if (!bBlocked)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE elemental %s: add during status was not refused"), Names[i]);
++				}
++			}
++			Elemental->ClearAll();
++		});
++		Add(50.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Smoke test drafted — now wiring the manual test command.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=40, offset=830][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=20, offset=869][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -865,7 +865,72 @@
+ 	static FAutoConsoleCommandWithWorld SmokeCommand(
+ 		TEXT("gb.Smoke"),
+ 		TEXT("Scripted run of the main systems: logs lines starting with SMOKE, saves screenshots to Saved/Screenshots/Smoke and quits."),
+ 		FConsoleCommandWithWorldDelegate::CreateStatic(&Start));
++
++	static void RunBuildUp(const TArray<FString>& Args, UWorld* World)
++	{
++		if (Args.Num() < 2)
++		{
++			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp <Fire|Lightning|Ice> <Amount>"));
++			return;
++		}
++		EGBElement Element = EGBElement::Fire;
++		if (Args[0].Equals(TEXT("Fire"), ESearchCase::IgnoreCase))
++		{
++			Element = EGBElement::Fire;
++		}
++		else if (Args[0].Equals(TEXT("Lightning"), ESearchCase::IgnoreCase))
++		{
++			Element = EGBElement::Lightning;
++		}
++		else if (Args[0].Equals(TEXT("Ice"), ESearchCase::IgnoreCase))
++		{
++			Element = EGBElement::Ice;
++		}
++		else
++		{
++			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp: unknown element '%s' (Fire|Lightning|Ice)"), *Args[0]);
++			return;
++		}
++		const float Amount = FCString::Atof(*Args[1]);
++		AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
++		if (!Player)
++		{
++			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp: no player character"));
++			return;
++		}
++		const FVector PlayerLoc = Player->GetActorLocation();
++		for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
++		{
++			AGBEnemyCharacter* Enemy = *It;
++			if (!Enemy || Enemy->IsDead())
++			{
++				continue;
++			}
++			if (FVector::Dist(PlayerLoc, Enemy->GetActorLocation()) > 1500.f)
++			{
++				continue;
++			}
++			FGBDamageInfo Info;
++			Info.Element = Element;
++			Info.Instigator = Player;
++			Info.BuildUp = Amount;
++			Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
++			UGBCombatLibrary::ApplyBuildUp(Enemy, Info);
++			if (const UGBElementalStatusComponent* Elemental = Enemy->GetElementalStatus())
++			{
++				UE_LOG(LogGB, Display, TEXT("BuildUp %s: %.1f/%.1f phase=%d"),
++					*Enemy->GetEnemyId().ToString(),
++					Elemental->GetBuildUp(Element), Elemental->GetThreshold(Element),
++					static_cast<int32>(Elemental->GetPhase(Element)));
++			}
++		}
++	}
++
++	static FAutoConsoleCommandWithWorldAndArgs BuildUpCommand(
++		TEXT("gb.BuildUp"),
++		TEXT("Adds raw elemental build-up to every living enemy within 1500 cm: gb.BuildUp <Fire|Lightning|Ice> <Amount>"),
++		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunBuildUp));
+ }
+ 
+ #endif // !UE_BUILD_SHIPPING
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mWrite Glyphbound/Source/Glyphbound/Tests/GBElementalTests.cpp
+Created file successfully: Glyphbound/Source/Glyphbound/Tests/GBElementalTests.cpp
+> build · muse-spark-1.3-contributor
+Core elemental tests added — now covering the slow-stacking rules.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp [90m[limit=20, offset=122][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBStatsTests.cpp
+@@ -132,5 +132,32 @@
+ 		GBStat::WeaponSlotKey(EGBHeldSlot::Gun, GBStat::Damage) == GBStat::WeaponAllKey(GBStat::Damage));
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsStrongestSlowTest, "Glyphbound.Stats.StrongestSlow",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++bool FGBStatsStrongestSlowTest::RunTest(const FString& Parameters)
++{
++	using namespace GBStatsTestsPrivate;
++	UGBStatsComponent* Stats = NewObject<UGBStatsComponent>(GetTransientPackage());
++
++	// Deep Freeze rank 1: x0.5 at strength 1.1 is x0.45 (scaled around 1).
++	const FGBModifierDef Slow[] = { Mod(TestStat, EGBModOp::MultiplyMin, 0.5f) };
++	Stats->AddModifiers(TEXT("DeepFreeze"), Slow, 1.1f);
++	TestNearlyEqual(TEXT("MultiplyMin scaled around 1"), Stats->Evaluate(TestStat, 1.f), 0.45f, 1.e-4f);
++
++	// A stronger slow wins; they never multiply together (0.45 * 0.4 = 0.18 would be wrong).
++	const FGBModifierDef Frost[] = { Mod(TestStat, EGBModOp::MultiplyMin, 0.4f) };
++	Stats->AddModifiers(TEXT("Elemental.Frost"), Frost, 1.f);
++	TestNearlyEqual(TEXT("Lowest MultiplyMin wins"), Stats->Evaluate(TestStat, 1.f), 0.4f, 1.e-4f);
++
++	// A plain Multiply still multiplies with the winning slow.
++	const FGBModifierDef Plain[] = { Mod(TestStat, EGBModOp::Multiply, 0.8f) };
++	Stats->AddModifiers(TEXT("Other"), Plain, 1.f);
++	TestNearlyEqual(TEXT("Plain Multiply combines with the strongest slow"), Stats->Evaluate(TestStat, 1.f), 0.32f, 1.e-4f);
++
++	Stats->RemoveModifiers(TEXT("Elemental.Frost"));
++	TestNearlyEqual(TEXT("Removing the strongest slow reveals the next"), Stats->Evaluate(TestStat, 1.f), 0.36f, 1.e-4f);
++	return true;
++}
++
+ #endif
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "Burn|Chill|WeaponOnHitEffect" [90min Glyphbound · 6 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "Burn|Chill|Shock" [90min Glyphbound/Content/Data · 1 match[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h [90m[limit=25, offset=1][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Beam.h
+@@ -14,13 +14,12 @@
+ //   ManaCost          paid once at the cast (handled by the spellbook, as for every spell)
+ //   InterruptHitFraction optional; > 0 = a single hit on the caster whose damage actually taken
+ //                     is >= InterruptHitFraction * caster max health ends the spell at once (default 0 = never)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
++//   BuildUp           raw elemental build-up per damage tick
+ //   SpriteSize        optional; height of the sprite nearest to the hand (default 40); the farther ones grow with the cone
+-// Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
++// Strings: Sprite (drawn several times along the cone).
+ // Targets behind world geometry (visibility check against world static) are not hit.
+-// Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
+-// Targets behind world geometry (visibility check against world static) are not hit.
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+@@ -12,8 +12,9 @@
+ //   SpriteSize        optional; height of each sprite (default = Height)
+ //   TileSize          with Texture: cm covered by one tile of the texture (default 100)
+ //   Glow              with Texture: > 0.5 = the surface also emits its own color (magic look; default 0)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
++//   BuildUp           raw elemental build-up per damage tick
+ // Strings: Texture (tile sprite id: the wall is a STRUCTURE, one solid box with a pixel texture, GDD 3; the ice
+ // wall), Sprite (without Texture: an effect, a glowing box plus a row of camera-facing sprites; the fire wall),
+ // Color (glow tint, default = element color), Tint (optional "#RRGGBB" tint of a textured wall; absent = white;
+ // Color is the plain-shape color and is never used there so it cannot darken the tile), OnHitEffect (status effect given with each damage tick, e.g. Burn).
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Wall.h
+@@ -16,9 +16,9 @@
+ //   BuildUp           raw elemental build-up per damage tick
+ // Strings: Texture (tile sprite id: the wall is a STRUCTURE, one solid box with a pixel texture, GDD 3; the ice
+ // wall), Sprite (without Texture: an effect, a glowing box plus a row of camera-facing sprites; the fire wall),
+ // Color (glow tint, default = element color), Tint (optional "#RRGGBB" tint of a textured wall; absent = white;
+-// Color is the plain-shape color and is never used there so it cannot darken the tile), OnHitEffect (status effect given with each damage tick, e.g. Burn).
++// Color is the plain-shape color and is never used there so it cannot darken the tile).
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Code references cleaned — verifying nothing still applies the old effects.
+[0m✱ [0mGrep "OnHitEffect" [90min Glyphbound/Source/Glyphbound/Spells · 14 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Orb.h
+@@ -8,10 +8,11 @@
+ //   DamagePerSecond   damage per second to each hostile actor in Radius (dealt every TickInterval)
+ //   TickInterval      seconds between damage ticks
+ //   ShowArea          optional; > 0.5 = draws a faint glow sphere of Radius (default 1)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
++//   BuildUp           raw elemental build-up per damage tick
+ //   SpriteSize        optional; height of the orb sprite (default 60)
+-// Strings: Sprite, Color (area tint, default = element color), OnHitEffect (e.g. Shock).
++// Strings: Sprite, Color (area tint, default = element color).
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Trap.h
+@@ -11,9 +11,10 @@
+ //   Damage            blast damage
+ //   Duration          seconds it waits before disappearing unused
+ //   FigureGlow        optional; emissive amount of the ground figure (default 1)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+-// Strings: Sprite, Color (figure tint, default = white, the sprite's own colors are the look), OnHitEffect (e.g. Shock).
++//   BuildUp           raw elemental build-up of the blast
++// Strings: Sprite, Color (figure tint, default = white, the sprite's own colors are the look).
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Projectile.h
+@@ -13,9 +13,10 @@
+ //   Pierce             optional; > 0.5 = flies through the actors it damages
+ //   HeadshotMult       optional; weak point multiplier, 1 = no bonus (default 1)
+ //   VisualScale        optional; sprite size relative to the collision radius (default 1)
+ //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+-// Strings: Sprite (sprite id), Color ("#RRGGBB", default = element color), OnHitEffect (status effect id).
++//   BuildUp           raw elemental build-up per hit
++// Strings: Sprite (sprite id), Color ("#RRGGBB", default = element color).
+ #pragma once
+ 
+ #include "CoreMinimal.h"
+ #include "Spells/GBSpellActor.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Headers updated — final checks before building.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h
+Index: Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h
++++ Glyphbound/Source/Glyphbound/Spells/GBSpell_Zone.h
+@@ -7,8 +7,9 @@
+ //   Height            optional; cm above the ground that still counts as standing on it (default 200)
+ //   Duration          seconds
+ //   TickInterval      seconds between applications
+ //   DamagePerSecond   optional; > 0 = damage each tick (DamagePerSecond * TickInterval) with the on-hit effect
++//   BuildUp           raw elemental build-up per tick (sent directly when DamagePerSecond is 0)
+ //   FigureGlow        optional; emissive amount of the ground figure (default 1)
+ //   EffectDuration / EffectStrength   optional multipliers on the status effect (default 1)
+ // Strings: OnHitEffect (status effect applied every tick, e.g. Slow), Color (figure tint, default = white,
+ // the sprite's own colors are the look), Sprite (the ground figure; without it a flat tinted disc shows).
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
++++ Glyphbound/Source/Glyphbound/Combat/GBBuildUpMeter.h
+@@ -65,12 +65,10 @@
+ /**
+  * Remembers the last 8 build-up events of one target, so one event (a shotgun shot) counts once:
+  * the biggest amount of that event wins.
+  */
+-USTRUCT(BlueprintType)
+ struct GLYPHBOUND_API FGBBuildUpEventLog
+ {
+-	GENERATED_BODY()
+ 
+ 	/**
+ 	 * Returns how much of Amount to really add: all of it for a new id (or id 0);
+ 	 * for a known id only the part above what that id already added (0 if smaller).
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+C:\GameJam\Glyphbound\Source\Glyphbound\Combat\GBElementalStatusComponent.cpp(148,44): error C2110: '+': cannot add two pointers
+C:\GameJam\Glyphbound\Source\Glyphbound\UI\GBHUD.cpp(476,60): error C2027: use of undefined type 'UGBEraComponent'
+Result: Failed (OtherCompilationError)
+Build time: 109 s  (exit 6)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+First build caught two issues — fixing those.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp [90m[limit=15, offset=140][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBElementalStatusComponent.cpp
+@@ -144,9 +144,9 @@
+ 	if (!IsValidReaction(Index, Reaction))
+ 	{
+ 		if (!EnemyId.IsNone())
+ 		{
+-			const FName WarnKey(*EnemyId.ToString() + TEXT(":") + FString::FromInt(Index));
++			const FName WarnKey(*FString::Printf(TEXT("%s:%d"), *EnemyId.ToString(), Index));
+ 			if (!WarnedReactions.Contains(WarnKey))
+ 			{
+ 				WarnedReactions.Add(WarnKey);
+ 				UE_LOG(LogGB, Warning, TEXT("Enemy '%s': unknown %s '%s', treating as None."),
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+Index: Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
++++ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp
+@@ -32,8 +32,9 @@
+ #include "HAL/IConsoleManager.h"
+ 
+ #include "AI/GBEnemyCharacter.h"
+ #include "Combat/GBElementalStatusComponent.h"
++#include "World/GBEraComponent.h"
+ 
+ static TAutoConsoleVariable<int32> CVarShowElemental(
+ 	TEXT("gb.ShowElemental"),
+ 	0,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 9 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 68 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+Both builds pass — now running the test suite.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 34
+Tests: 34 run, 0 failed, test time 0.63 s, wall time 37 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-185919
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190000.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190000.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 45 steps
+LogGB: Display: SMOKE step 1/45 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=18 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/45 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/45 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/45 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/45 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/45 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/45 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/45 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/45 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/45 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/45 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/45 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/45 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=150 (start 1550, needed <= 250) orc at V(X=-2453.99, Y=-142.40, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/45 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/45 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/45 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/45 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/45 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=18
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/45 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/45 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/45 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/45 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 23/45 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 24/45 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 25/45 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 26/45 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 27/45 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 28/45 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 29/45 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 30/45 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 31/45 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 32/45 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 33/45 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 34/45 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 35/45 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 36/45 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 37/45 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 38/45 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.51s alive=0
+LogGB: Display: SMOKE step 39/45 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 40/45 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 41/45 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 42/45 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 43/45 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 44/45 (55.3 s): elemental build-up on the training dummy
+LogGB: Error: SMOKE elemental: no TrainingDummy found
+LogGB: Display: SMOKE step 45/45 (56.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+LogGB: Error: SMOKE elemental: no TrainingDummy found
+---- other engine errors: 0 ----
+---- screenshots: 12 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=1 timedOut=False wall=74 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190000.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=70, offset=724][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -727,17 +727,22 @@
+ 		{
+ 			AGBEnemyCharacter* Dummy = nullptr;
+ 			for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+ 			{
+-				if (It->GetEnemyId() == FName(TEXT("TrainingDummy")))
++				if (It->GetEnemyId() == FName(TEXT("TrainingDummy")) && !It->IsDead())
+ 				{
+ 					Dummy = *It;
+ 					break;
+ 				}
+ 			}
+ 			if (!Dummy)
+ 			{
+-				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: no TrainingDummy found"));
++				const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
++				Dummy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("TrainingDummy")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
++			}
++			if (!Dummy || Dummy->IsDead())
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: no living TrainingDummy"));
+ 				return;
+ 			}
+ 			UGBElementalStatusComponent* Elemental = Dummy->GetElementalStatus();
+ 			if (!Elemental)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Smoke needs a living target — respawning the dummy and re-running.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 7 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190237.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190237.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 45 steps
+LogGB: Display: SMOKE step 1/45 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=18 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/45 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/45 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/45 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/45 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/45 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/45 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/45 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/45 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/45 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/45 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/45 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/45 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=149 (start 1550, needed <= 250) orc at V(X=-2454.00, Y=-142.15, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/45 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/45 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/45 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/45 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/45 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=18
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/45 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/45 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/45 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/45 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 23/45 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 24/45 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 25/45 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 26/45 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 27/45 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 28/45 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 29/45 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 30/45 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 31/45 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 32/45 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 33/45 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 34/45 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 35/45 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 36/45 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 37/45 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 38/45 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 39/45 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 40/45 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 41/45 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 42/45 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 43/45 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 44/45 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 45/45 (56.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 12 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=69 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190237.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mSelect-String -Path 'C:\GameJam\Glyphbound\Content\Data\*.json' -Pattern 'Burn|Chill|WeaponOnHitEffect|"OnHitEffect": "Shock"' | Select-Object -First 20; Write-Host 'grep done'
+grep done
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 12 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+All verifications green — running one last confirmation.
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 34
+Result: Succeeded
+Build time: 2 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+Tests: 34 run, 0 failed, test time 0.68 s, wall time 17 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-190444
+> build · muse-spark-1.3-contributor
+1. Verbatim result lines
+Build Editor: `Result: Succeeded`
+Build Game (`-Target Glyphbound`): `Result: Succeeded`
+Tests: `Tests: 34 run, 0 failed, test time 0.68 s, wall time 17 s, ensures in log: 0`
+Smoke: `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=69 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-190237.log`
+New SMOKE lines:
+`SMOKE elemental dedupe ok=1`
+`SMOKE elemental Fire triggered=1 adds=4`
+`SMOKE elemental Fire ignite=1`
+`SMOKE elemental Fire blockedWhileActive=1`
+`SMOKE elemental Lightning triggered=1 adds=4`
+`SMOKE elemental Lightning blockedWhileActive=1`
+`SMOKE elemental Ice triggered=1 adds=4`
+`SMOKE elemental Ice blockedWhileActive=1`
+Also present as before: `SMOKE path check passed`, flamethrower `started=1`, `after=1.50s alive=0`, `interrupt alive=0`, `small hit alive=1`, `ground layers runeZ=3.0 floorZ=4.5`.
+
+2. What changed, file by file
+- `Core/GBTypes.h`: `EGBModOp::MultiplyMin` added; `FGBDamageInfo` gets `BuildUp`, `WeakPointBuildUpMult`, `BuildUpEventId`.
+- `Core/GBStatNames.h`: `GBStat::BuildUp`, `GBStat::WeakPointBuildUpMult`; new `GBElemental` namespace (`ElementIndex`, `IndexToElement`, `NumElements=3`, per-element key tables built once as `static const FName[3]`, single keys `IgniteDamageMult/ShockDischargeDamage/FrostSlow`, `DefaultKey()` cached in static `TMap`, reaction names, `IgniteEffect/ShockSource/FrostSource`).
+- `Stats/GBStatsComponent.h`: comment updated for `MultiplyMin`.
+- `Stats/GBStatsComponent.cpp`: `AddModifiers` scales `MultiplyMin` around 1; `ApplyModifiers` keeps lowest `MultiplyMin` and multiplies with plain `Multiply`; Override unchanged.
+- `Combat/GBBuildUpMeter.h/.cpp` (new, pure): `EGBBuildUpPhase`, `FGBBuildUpConfig`, `FGBBuildUpMeter::Add/Advance/IsIdle`, `EGBBuildUpEvent` mask, `FGBBuildUpEventLog::Accept` (ring of 8, biggest wins, id 0 never deduped).
+- `Combat/GBElementalStatusComponent.h/.cpp` (new): `Find`, `AddBuildUp`, getters, `ClearAll`, delegates `OnBuildUpChanged/OnStatusStarted/OnStatusEnded/OnImmunityEnded`; config read live from `Stats->GetStat(Key, Data->GetGameValue(DefaultKey,0))` + enemy `Strings` else `Game.json` default; reaction validation with once-per-enemy-element warning; `None`=immune; tick interval from `Game.json`, tick only while busy; Fire Ignite via `ApplyEffect`, Lightning discharge via `DealDamage` (stop if dead), Ice Slow via `MultiplyMin`; end logic removes Ignite/Frost; death binds `OnDeath->ClearAll`, EndPlay removes Frost.
+- `Combat/GBCombatLibrary.h/.cpp`: `IsWeakPointHit`, `NewBuildUpEventId` (never 0), `ApplyBuildUp`; `ApplyWeakPointBonus` now sets `bHeadshot=IsWeakPointHit` and only multiplies if `>1`; `DealDamage` calls `ApplyBuildUp` after `Dealt>0`.
+- `Stats/GBAttributeComponent.cpp`: `ApplyDamage` multiplies by `<E>DamageTaken` when element is Fire/Lightning/Ice.
+- `Spells/GBSpellTypes.cpp`: `MakeDamageInfo` adds `BuildUp=Get(BuildUp,0)` + new event id.
+- `Spells/GBSpell_Zone.cpp`: no-damage branch creates one `MakeDamageInfo` per tick and calls `ApplyBuildUp` per target with `HitLocation=target`.
+- `Weapons/GBHeldItem.cpp`: `MakeDamageInfo` after final element sets `BuildUp=GetStat(WeaponBuildUp(i),0)`, `WeakPointBuildUpMult=GetStat(...,Data->GetGameValue(...,1))`, new event id.
+- `Items/GBInventoryComponent.cpp`: grenade `BuildUp=ReadItemStat(BuildUp,0)` + new event id.
+- `AI/GBEnemyCharacter.h/.cpp`: `ElementalStatus` component, `GetElementalStatus`, `ControlLockTime`, `GetControlLockTime`, `InterruptAttack` (Windup->Recover), `ApplyControlLock`, `HandleElementalStatusStarted` (Stun->lock, Interrupt->interrupt, Freeze->lock), Tick pauses state timers while locked + `ResetStuck`, death clears lock, EndPlay unbinds.
+- `UI/GBHUD.cpp`: `gb.ShowElemental` var, debug pass after `DrawDamageNumbers` (one `TActorIterator` only when 1, dist<4000, in front, living+present, lines for non-idle bars + `LOCK`).
+- `Core/GBDevCommands.cpp`: `gb.BuildUp <Fire|Lightning|Ice> <Amount>` via `ApplyBuildUp`; smoke elemental block on TrainingDummy with dedupe/trigger/ignite/blocked checks.
+- `Tests/GBElementalTests.cpp` (new): `MeterThreshold`, `MeterDecay`, `EventDedupe`.
+- `Tests/GBStatsTests.cpp`: added `StrongestSlow`.
+- Data: `Game.json` elemental defaults + `ElementalTickInterval` + `WeakPointBuildUpMult`; `Enemies.json` brute/future resists/thresholds/reactions; `StatusEffects.json` removed Burn/Shock/Chill, Slow->MultiplyMin, added Ignite, removed `WeaponOnHitEffect`; `Spells.json` removed OnHitEffect+EffectDuration from 6 spells, added BuildUp to 7, new descriptions; `Weapons.json` added build-ups, removed ember Burn; `Items.json` grenade BuildUp 60, removed Shock, new description.
+- Comment-only: `GBSpell_Beam.h` (removed Burn example/dupe, doc BuildUp), `GBSpell_Wall.h`/`GBSpell_Orb.h`/`GBSpell_Trap.h`/`GBSpell_Projectile.h`/`GBSpell_Zone.h` doc BuildUp.
+
+3. Call-site checks of section 5
+- Projectile pierce: `AGBSpell_Projectile::StartSpell` calls `MakeDamageInfo` once into `Config.Damage`; `AGBProjectile::HitTarget` copies it per hit, same `BuildUpEventId` for whole flight; `IsValidTarget/DamagedActors` blocks second hit on same actor. Lightning bolt through 3 enemies = one build-up each, never twice. OK.
+- Explosions / rune blast: fireball `Explode` copies `Config.Damage`, `DealRadialDamage` copies per target (same id); `AGBSpell_Trap::Trigger` makes one `MakeDamageInfo` then radial per target (same id). One event per blast, once per target. OK.
+- Ticks: wall `DamageTick`, orb `DamageTick`, beam `DamageTick`, zone `ZoneTick` with damage all call `DamageTarget` per target, each `DamageTarget` calls `MakeDamageInfo` -> new id per target per tick. That satisfies one build-up per target per tick.
+- Ice floor differs: our `ZoneTick` no-damage branch makes ONE `MakeDamageInfo` per tick shared across targets in that tick (spec literal one info per tick, `HitLocation`=target). Per-target dedupe is unaffected because logs are per-target. Noted as only call-site that shares an id across targets in one tick.
+- One `MakeDamageInfo` per shot/swing/bolt: `AGBGun::PerformAttack` builds `BaseInfo` once then `FireHitscan/FireProjectile` copy per pellet/projectile (shared id, log keeps best pellet). `AGBSword::PerformAttack` builds once per swing, copies per target. `AGBStaff::PerformAttack` builds once per bolt. No per-pellet `MakeDamageInfo` found, no fix needed. Flamethrower rides `DamageTick->DamageTarget`, mana/QTE/hold/interrupt untouched.
+
+4. Every Burn/Shock/Chill reference removed/changed
+- Data: `StatusEffects.json` Burn/Shock/Chill deleted; `Spells.json` OnHitEffect Burn/Shock removed (Fireball/FireWall/Flamethrower/LightningBolt/LightningRune/StaticOrb) + EffectDuration removed where unreferenced; `Weapons.json` ember Burn removed; `Items.json` grenade Shock removed; `Game.json` no Burn/Chill/Shock effects. `grep Content/Data` for `Burn|Chill|WeaponOnHitEffect|"OnHitEffect": "Shock"` finds nothing (`ShockDischargeDamage` remains, intended).
+- Code: no code still applies them. `GetActiveEnchant` still reads `WeaponOnHitEffect` but handles absent (returns None) as required; no data provides it. `MakeDamageInfo/ApplyOnHitEffect` still reads `OnHitEffect` for Slow ice floor. Test `GBSpellTests` uses Shock string in synthetic data only. Header comments updated to drop Burn/Shock examples.
+
+5. Could not do exactly as described
+- Smoke dummy: spec says find TrainingDummy by id; earlier smoke steps kill all enemies, so at 48.9s none is alive. I keep the find-first-alive logic but spawn a fresh TrainingDummy near the player if none is alive, else smoke would error. Behavior otherwise exactly as specced, ends with `ClearAll` and 1.6s before quit.
+- Debug text format: spec examples `Fire 40/100`, `Lightning SHOCK Stun 0.8s`, `Ice IMMUNE 3.2s`. I draw Building as `Fire 40/100`, Active as `<Elem> <Reaction> <time>s`, Immune as `<Elem> IMMUNE <time>s`, plus `LOCK`. Same info, no game indicator.
+- `FGBBuildUpEventLog` is plain C++ struct, not `USTRUCT` (UHT cannot reflect fixed C array); API matches spec.
+- Tick interval clamped to >=0.01 to avoid a 0 tick; default 0.1 per spec.
+
+6. What a person should check by playing
+- Enchant gun Fire/Lightning/Ice, shoot dummy: bar fills, weak-point (head) fills 1.5x; shotgun one shot = one build-up (best pellet wins).
+- Fireball 40 (25-55 QTE), wall 10/tick, flamethrower 8/0.3s tick; Ignite 4s/0.5s ticks, then 3s immune; verify no double burn.
+- Lightning bolt pierce gives one stack per enemy; rune blast respects Expanded Sigil radius; orb ticks; Shock discharge + stun vs interrupt vs none per enemy (brute only interrupts).
+- Ice floor alone never fills (5/0.5s over 6s=60<100) but + ice gun finishes; Frost Slow vs floor Slow strongest wins, Deep Freeze still caps 80%; Freeze locks movement/attacks then 5s immune.
+- Brute thresholds higher, fire taken 0.8, brute Frost only slows; future orc lightning taken 1.25.
+- `gb.ShowElemental 1` bars over heads; `gb.BuildUp Fire 30` near enemies; death clears bars/slow; lock pauses Windup/Recover timers but gravity/knockback still work.

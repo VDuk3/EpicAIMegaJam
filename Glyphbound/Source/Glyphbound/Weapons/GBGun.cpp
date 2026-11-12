@@ -4,13 +4,44 @@
 #include "Camera/CameraComponent.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBProjectile.h"
+#include "Combat/GBStatusEffectComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBStatNames.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
+
+namespace
+{
+	// Art tuning from Glyphbound/SourceArt/Weapons/Pistol/Export/export_report.json, made by Tools/Blender/pistol_export_fbx.py.
+	// Viewmodel downscale of the real-size (~1 m) source model.
+	constexpr float PistolViewScale = 0.3f;
+	// Trigger hinge offset, in cm in the body's unscaled frame (the body's scale applies through attachment).
+	const FVector PistolTriggerOffset(28.84f, 0.f, 0.f);
+	// Magazine centre at rest, in cm in the body's unscaled frame.
+	const FVector PistolMagazineRest(0.f, 0.f, -29.31f);
+	// Magazine slide-out vector, in cm in the body's frame (back and down along the grip).
+	const FVector PistolMagazineOut(-12.15f, 0.f, -24.11f);
+	// Trigger pull animation total time in seconds (linear in, linear out).
+	constexpr float TriggerPullSeconds = 0.12f;
+	// Trigger pitch at full pull in degrees (the bottom of the trigger moves back towards the grip).
+	constexpr float TriggerPullPitch = -8.f;
+	// The model's original green glow, shown when no enchant is active.
+	const FLinearColor PistolIdleGlow(0.02f, 1.f, 0.07f);
+	// Material parameters set by the game on every pistol slot.
+	const FName ElementColorParam(TEXT("ElementColor"));
+	const FName ImbueRemainingParam(TEXT("ImbueRemaining"));
+
+	float Smoothstep01(float T)
+	{
+		T = FMath::Clamp(T, 0.f, 1.f);
+		return T * T * (3.f - 2.f * T);
+	}
+}
 
 void AGBGun::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayerCharacter* InOwner)
 {
@@ -45,6 +76,188 @@ UStaticMeshComponent* AGBGun::AddPart(FName Name, EGBShape Shape, const FVector&
 }
 
 void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
+{
+	if (Definition.ViewModel == TEXT("Pistol"))
+	{
+		if (TryBuildPistolViewModel())
+		{
+			return;
+		}
+		UE_LOG(LogGB, Warning, TEXT("Pistol viewmodel meshes are missing; using the placeholder shapes instead."));
+	}
+	BuildPlaceholderViewModel(Definition);
+}
+
+bool AGBGun::TryBuildPistolViewModel()
+{
+	auto LoadPistolMesh = [](const TCHAR* Path) -> UStaticMesh*
+	{
+		return LoadObject<UStaticMesh>(nullptr, Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	};
+	UStaticMesh* BodyMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Body.SM_Pistol_Body"));
+	UStaticMesh* TriggerMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Trigger.SM_Pistol_Trigger"));
+	UStaticMesh* MagazineMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Magazine.SM_Pistol_Magazine"));
+	UStaticMesh* EnergyBarMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_EnergyBar.SM_Pistol_EnergyBar"));
+	if (!BodyMesh || !TriggerMesh || !MagazineMesh || !EnergyBarMesh)
+	{
+		return false;
+	}
+
+	auto NewViewPart = [this](FName Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(this, Name);
+		Part->SetupAttachment(Parent);
+		Part->SetRelativeLocation(Location);
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetGenerateOverlapEvents(false);
+		Part->SetCastShadow(false);
+		Part->SetStaticMesh(Mesh);
+		Part->RegisterComponent();
+		return Part;
+	};
+	PistolBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
+	PistolBody->SetRelativeScale3D(FVector(PistolViewScale));
+	PistolEnergyBar = NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, PistolBody, FVector::ZeroVector);
+	PistolTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, PistolBody, PistolTriggerOffset);
+	PistolMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, PistolBody, PistolMagazineRest);
+	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
+	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
+
+	PistolMIDs.Reset();
+	UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
+	for (UStaticMeshComponent* Part : PistolParts)
+	{
+		for (int32 MaterialSlot = 0; MaterialSlot < Part->GetNumMaterials(); ++MaterialSlot)
+		{
+			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(MaterialSlot))
+			{
+				PistolMIDs.Add(MID);
+			}
+		}
+	}
+
+	bPistolViewModel = true;
+	TriggerPullElapsed = -1.f;
+	bHasLastGlow = false;
+	LastImbueSent = 0.f;
+	return true;
+}
+
+int32 AGBGun::GetPistolMeshCount() const
+{
+	const UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
+	int32 Count = 0;
+	for (const UStaticMeshComponent* Part : PistolParts)
+	{
+		const UStaticMesh* Mesh = Part ? Part->GetStaticMesh() : nullptr;
+		if (Mesh && Mesh->GetName().StartsWith(TEXT("SM_Pistol_")))
+		{
+			++Count;
+		}
+	}
+	return Count;
+}
+
+float AGBGun::GetPistolMagazineOffsetCm() const
+{
+	if (!PistolMagazine)
+	{
+		return 0.f;
+	}
+	return (PistolMagazine->GetRelativeLocation() - PistolMagazineRest).Size();
+}
+
+void AGBGun::UpdatePistolViewModel(float DeltaSeconds)
+{
+	// Trigger pull: 0 to full pitch and back over TriggerPullSeconds (linear in, linear out). A new shot restarts it.
+	if (PistolTrigger && TriggerPullElapsed >= 0.f)
+	{
+		TriggerPullElapsed += DeltaSeconds;
+		if (TriggerPullElapsed >= TriggerPullSeconds)
+		{
+			TriggerPullElapsed = -1.f;
+			PistolTrigger->SetRelativeRotation(FRotator::ZeroRotator);
+		}
+		else
+		{
+			const float Half = TriggerPullSeconds * 0.5f;
+			const float Frac = TriggerPullElapsed < Half
+				? TriggerPullElapsed / Half
+				: 1.f - (TriggerPullElapsed - Half) / Half;
+			PistolTrigger->SetRelativeRotation(FRotator(TriggerPullPitch * Frac, 0.f, 0.f));
+		}
+	}
+
+	// Magazine slide during reload, driven by GetReloadProgress: out (smoothstep), held, back in (smoothstep).
+	if (PistolMagazine)
+	{
+		FVector Offset = FVector::ZeroVector;
+		if (bReloading)
+		{
+			const float Progress = GetReloadProgress();
+			if (Progress < 1.f / 3.f)
+			{
+				Offset = PistolMagazineOut * Smoothstep01(Progress * 3.f);
+			}
+			else if (Progress < 2.f / 3.f)
+			{
+				Offset = PistolMagazineOut;
+			}
+			else
+			{
+				Offset = PistolMagazineOut * (1.f - Smoothstep01((Progress - 2.f / 3.f) * 3.f));
+			}
+		}
+		PistolMagazine->SetRelativeLocation(PistolMagazineRest + Offset);
+	}
+
+	// Glow color and energy bar (GDD 6, weapon enchant): enchanted = element color + imbue left, else idle green + dark bar.
+	EGBElement EnchantElement = EGBElement::Physical;
+	FName EnchantEffect = NAME_None;
+	FLinearColor GlowColor = PistolIdleGlow;
+	float Imbue = 0.f;
+	bool bEnchanted = false;
+	if (GetActiveEnchant(EnchantElement, EnchantEffect))
+	{
+		bEnchanted = true;
+		GlowColor = GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement));
+		Imbue = 1.f;
+		if (const AGBPlayerCharacter* Player = GetPlayerOwner())
+		{
+			if (const UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+				{
+					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+					{
+						Imbue = Active.TotalDuration > KINDA_SMALL_NUMBER
+							? FMath::Clamp(Active.TimeRemaining / Active.TotalDuration, 0.f, 1.f)
+							: 1.f;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (!bHasLastGlow || !LastGlowColor.Equals(GlowColor) || !FMath::IsNearlyEqual(LastImbueSent, Imbue))
+	{
+		for (UMaterialInstanceDynamic* MID : PistolMIDs)
+		{
+			if (MID)
+			{
+				MID->SetVectorParameterValue(ElementColorParam, GlowColor);
+				MID->SetScalarParameterValue(ImbueRemainingParam, Imbue);
+			}
+		}
+		LastGlowColor = GlowColor;
+		LastImbueSent = Imbue;
+		bHasLastGlow = true;
+	}
+	LastGlowElement = EnchantElement;
+	bLastGlowEnchanted = bEnchanted;
+}
+
+void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)
 {
 	// Placeholder viewmodel (art rule: guns are 3D). Sizes in cm are purely visual; X = forward, Z = up.
 	// The parts sit forward of the held-item anchor so the whole gun reads as one small pistol in the
@@ -253,6 +466,10 @@ void AGBGun::Tick(float DeltaSeconds)
 	{
 		UpdateAimFOV(DeltaSeconds, false);
 	}
+	if (bPistolViewModel)
+	{
+		UpdatePistolViewModel(DeltaSeconds);
+	}
 	Super::Tick(DeltaSeconds);
 }
 
@@ -289,6 +506,10 @@ bool AGBGun::PerformAttack()
 	const float RecoilYaw = GetStat(GBStat::RecoilYaw, 0.f);
 	Player->AddRecoil(GetStat(GBStat::RecoilPitch, 0.f), Random.FRandRange(-RecoilYaw, RecoilYaw), GetStat(GBStat::RecoilRecovery, 0.f));
 
+	if (bPistolViewModel)
+	{
+		TriggerPullElapsed = 0.f;
+	}
 	NotifyEquipmentChanged();
 
 	if (Ammo.InMagazine <= 0)

@@ -1,0 +1,1119 @@
+[0m
+> build · muse-spark-1.3-contributor
+Switching the viewmodel to the real pistol — first reading the project rules.
+[0m→ [0mRead . 
+[0m→ [0mRead Prompts/implementer_rules.md 
+[0m→ [0mRead Design/ARCHITECTURE.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Config/DefaultGame.ini 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.h 
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBPlaceholder.h 
+> build · muse-spark-1.3-contributor
+I've got the gun and data structures mapped — now digging into the enchant and reload wiring.
+[0m✱ [0mGrep "Enchant_" [90min Glyphbound/Source/Glyphbound/UI · 2 matches[0m
+[0m✱ [0mGlob "Tools/Jam/*.ps1" [90min . · 12 matches[0m
+[0m✱ [0mGlob "SourceArt/Weapons/Pistol/Export/export_report.json" [90min Glyphbound · 1 match[0m
+[0m✱ [0mGrep "GetActiveEnchant|GetReloadProgress|UpdateTrigger|LastAttackTime" [90min Glyphbound/Source/Glyphbound/Weapons · 14 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp 
+[0m→ [0mRead Glyphbound/SourceArt/Weapons/Pistol/Export/export_report.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.cpp [90m[limit=60, offset=1000][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBPlaceholder.cpp 
+[0m✱ [0mGrep "struct FGBActiveStatusEffect|TimeRemaining|TotalDuration|GetActiveEffects" [90min Glyphbound/Source/Glyphbound/Combat · 30 matches[0m
+[0m✱ [0mGrep "ViewModel|FindWeapon|LoadWeapons|Weapons\.json|ActorClass|FireMode" [90min Glyphbound/Source/Glyphbound/Data · 12 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBStatusEffectComponent.h 
+> build · muse-spark-1.3-contributor
+Core pieces are clear. Now checking the smoke harness, spellbook rules, and export data.
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+[0m✱ [0mGrep "Enchant|Flamethrower|MinDuration|Cooldown|Duration" [90min Glyphbound/Content/Data/Spells.json · 29 matches[0m
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=45, offset=165][0m
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=80, offset=815][0m
+[0m✱ [0mGrep "TryCastEnchant|IsBusy|CanCast|GetCooldownRemaining" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h · 6 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "bool UGBSpellbookComponent::(TryCastEnchant|IsBusy|CanCast)|IsSustainedActive|HasShield|StopSustained|EndSustained" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp · 3 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=110, offset=320][0m
+> build · muse-spark-1.3-contributor
+I have the full picture. Checking a few remaining APIs, then implementing.
+[0m✱ [0mGrep "SwitchTo|GetActiveItem|GetItemInSlot|GiveWeapon" [90min Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.h · 5 matches[0m
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+[0m✱ [0mGlob "Tools/Blender/pistol_export_fbx.py" [90min . · 1 match[0m
+> build · muse-spark-1.3-contributor
+All context gathered. Now implementing — starting with the data definition.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+Index: Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
++++ Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+@@ -129,8 +129,12 @@
+ 	/** Class path of the AGBHeldItem. Empty = default class for the slot (AGBStaff, AGBGun, AGBSword). */
+ 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+ 	FString ActorClass;
+ 
++	/** Viewmodel style. Empty = the placeholder shapes; "Pistol" = the real pistol meshes (Weapons/GBGun). */
++	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
++	FString ViewModel;
++
+ 	/** "Hitscan", "Projectile" or "Melee". */
+ 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+ 	FString FireMode = TEXT("Hitscan");
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -52,8 +52,9 @@
+ 			"DisplayName": "Pistol",
+ 			"Slot": "Gun",
+ 			"Element": "Physical",
+ 			"ActorClass": "",
++			"ViewModel": "Pistol",
+ 			"FireMode": "Hitscan",
+ 			"bAutomatic": false,
+ 			"Stats": {
+ 				"Damage": 18,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Config/DefaultGame.ini
+Index: Glyphbound/Config/DefaultGame.ini
+===================================================================
+--- Glyphbound/Config/DefaultGame.ini
++++ Glyphbound/Config/DefaultGame.ini
+@@ -12,5 +12,7 @@
+ +DirectoriesToAlwaysCook=(Path="/Engine/BasicShapes")
+ +DirectoriesToAlwaysCook=(Path="/Engine/EngineMaterials")
+ ; Our own materials are loaded by path from C++ (GBPlaceholder), so nothing references them for the cook.
+ +DirectoriesToAlwaysCook=(Path="/Game/Glyphbound/Materials")
++; The pistol viewmodel meshes are loaded by path from C++ (AGBGun), so nothing references them for the cook.
+++DirectoriesToAlwaysCook=(Path="/Game/Glyphbound/Weapons")
+ +MapsToCook=(FilePath="/Engine/Maps/Entry")
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the gun header — pistol component pointers, material cache, and smoke getters.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+@@ -6,8 +6,9 @@
+ #include "Weapons/GBHeldItem.h"
+ #include "GBGun.generated.h"
+ 
+ class UStaticMeshComponent;
++class UMaterialInstanceDynamic;
+ 
+ /**
+  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
+  * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+@@ -46,8 +46,23 @@
+ 	/** Spread half-angle in degrees right now: hip or aim, plus the moving bonus (GDD 4). Shots and crosshair use it. */
+ 	float GetCurrentSpread() const;
+ 	int32 GetMaxSpareMagazines() const;
+ 
++	/** True when the real pistol meshes were built (Definition.ViewModel == Pistol and all four loaded). */
++	bool HasPistolViewModel() const { return bPistolViewModel; }
++	/** Pistol parts with a loaded SM_Pistol_* mesh (must be 4). */
++	int32 GetPistolMeshCount() const;
++	/** Dynamic materials made for the pistol parts (must be more than 4: the body alone has many slots). */
++	int32 GetPistolMIDCount() const { return PistolMIDs.Num(); }
++	/** Distance in cm of the magazine from its rest location, in the body's frame. */
++	float GetPistolMagazineOffsetCm() const;
++	/** Element whose color is currently sent to the pistol materials (only meaningful when enchanted). */
++	EGBElement GetPistolGlowElement() const { return LastGlowElement; }
++	/** Whether the pistol glow currently comes from the weapon enchant. */
++	bool IsPistolGlowEnchanted() const { return bLastGlowEnchanted; }
++	/** Last ImbueRemaining value sent to the pistol materials. */
++	float GetPistolImbueSent() const { return LastImbueSent; }
++
+ protected:
+ 	virtual bool AcceptsEnchant() const override { return true; }
+ 	virtual bool PerformAttack() override;
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+@@ -75,10 +75,32 @@
+ 	void UpdateAimFOV(float DeltaSeconds, bool bInstant);
+ 	void BuildViewModel(const FGBWeaponDefinition& Definition);
+ 	UStaticMeshComponent* AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow);
+ 
++	/** Loads the four SM_Pistol_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
++	bool TryBuildPistolViewModel();
++	/** Trigger pull, magazine slide and glow color, only while the pistol viewmodel exists. */
++	void UpdatePistolViewModel(float DeltaSeconds);
++
+ 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
+ 
++	/** Real pistol viewmodel (only when Definition.ViewModel == Pistol): body, trigger, magazine, energy bar. */
++	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolBody = nullptr;
++	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolTrigger = nullptr;
++	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolMagazine = nullptr;
++	UPROPERTY() TObjectPtr<UStaticMeshComponent> PistolEnergyBar = nullptr;
++	/** One dynamic instance per material slot of the four pistol parts, so glow and imbue can be set cheaply. */
++	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> PistolMIDs;
++	bool bPistolViewModel = false;
++	/** Seconds since the last shot started the trigger pull. Negative = the trigger is at rest. */
++	float TriggerPullElapsed = -1.f;
++	/** Last values sent to the pistol materials (parameters are only set when they change). */
++	bool bHasLastGlow = false;
++	FLinearColor LastGlowColor = FLinearColor::Black;
++	float LastImbueSent = 0.f;
++	EGBElement LastGlowElement = EGBElement::Physical;
++	bool bLastGlowEnchanted = false;
++
+ 	FGBAmmoState Ammo;
+ 	bool bReloading = false;
+ 	float ReloadElapsed = 0.f;
+ 	float ReloadDuration = 0.f;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the main implementation in `GBGun.cpp`.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -3,16 +3,47 @@
+ #include "AI/GBEnemyCharacter.h"
+ #include "Camera/CameraComponent.h"
+ #include "Combat/GBCombatLibrary.h"
+ #include "Combat/GBProjectile.h"
++#include "Combat/GBStatusEffectComponent.h"
+ #include "Components/StaticMeshComponent.h"
+ #include "Core/GBStatNames.h"
+ #include "DrawDebugHelpers.h"
++#include "Engine/StaticMesh.h"
+ #include "Engine/World.h"
+ #include "GameFramework/CharacterMovementComponent.h"
++#include "Materials/MaterialInstanceDynamic.h"
+ #include "Player/GBPlayerCharacter.h"
+ #include "Stats/GBAttributeComponent.h"
+ 
++namespace
++{
++	// Art tuning from Glyphbound/SourceArt/Weapons/Pistol/Export/export_report.json, made by Tools/Blender/pistol_export_fbx.py.
++	// Viewmodel downscale of the real-size (~1 m) source model.
++	constexpr float PistolViewScale = 0.3f;
++	// Trigger hinge offset, in cm in the body's unscaled frame (the body's scale applies through attachment).
++	const FVector PistolTriggerOffset(28.84f, 0.f, 0.f);
++	// Magazine centre at rest, in cm in the body's unscaled frame.
++	const FVector PistolMagazineRest(0.f, 0.f, -29.31f);
++	// Magazine slide-out vector, in cm in the body's frame (back and down along the grip).
++	const FVector PistolMagazineOut(-12.15f, 0.f, -24.11f);
++	// Trigger pull animation total time in seconds (linear in, linear out).
++	constexpr float TriggerPullSeconds = 0.12f;
++	// Trigger pitch at full pull in degrees (the bottom of the trigger moves back towards the grip).
++	constexpr float TriggerPullPitch = -8.f;
++	// The model's original green glow, shown when no enchant is active.
++	const FLinearColor PistolIdleGlow(0.02f, 1.f, 0.07f);
++	// Material parameters set by the game on every pistol slot.
++	const FName ElementColorParam(TEXT("ElementColor"));
++	const FName ImbueRemainingParam(TEXT("ImbueRemaining"));
++
++	float Smoothstep01(float T)
++	{
++		T = FMath::Clamp(T, 0.f, 1.f);
++		return T * T * (3.f - 2.f * T);
++	}
++}
++
+ void AGBGun::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayerCharacter* InOwner)
+ {
+ 	Super::InitFromDefinition(Definition, InOwner);
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -76,8 +76,190 @@
+ }
+ 
+ void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
+ {
++	if (Definition.ViewModel == TEXT("Pistol"))
++	{
++		if (TryBuildPistolViewModel())
++		{
++			return;
++		}
++		UE_LOG(LogGB, Warning, TEXT("Pistol viewmodel meshes are missing; using the placeholder shapes instead."));
++	}
++	BuildPlaceholderViewModel(Definition);
++}
++
++bool AGBGun::TryBuildPistolViewModel()
++{
++	auto LoadPistolMesh = [](const TCHAR* Path) -> UStaticMesh*
++	{
++		return LoadObject<UStaticMesh>(nullptr, Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
++	};
++	UStaticMesh* BodyMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Body.SM_Pistol_Body"));
++	UStaticMesh* TriggerMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Trigger.SM_Pistol_Trigger"));
++	UStaticMesh* MagazineMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_Magazine.SM_Pistol_Magazine"));
++	UStaticMesh* EnergyBarMesh = LoadPistolMesh(TEXT("/Game/Glyphbound/Weapons/Pistol/SM_Pistol_EnergyBar.SM_Pistol_EnergyBar"));
++	if (!BodyMesh || !TriggerMesh || !MagazineMesh || !EnergyBarMesh)
++	{
++		return false;
++	}
++
++	auto NewViewPart = [this](FName Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location) -> UStaticMeshComponent*
++	{
++		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(this, Name);
++		Part->SetupAttachment(Parent);
++		Part->SetRelativeLocation(Location);
++		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
++		Part->SetGenerateOverlapEvents(false);
++		Part->SetCastShadow(false);
++		Part->SetStaticMesh(Mesh);
++		Part->RegisterComponent();
++		return Part;
++	};
++	PistolBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
++	PistolBody->SetRelativeScale3D(FVector(PistolViewScale));
++	PistolEnergyBar = NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, PistolBody, FVector::ZeroVector);
++	PistolTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, PistolBody, PistolTriggerOffset);
++	PistolMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, PistolBody, PistolMagazineRest);
++	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
++	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
++
++	PistolMIDs.Reset();
++	UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
++	for (UStaticMeshComponent* Part : PistolParts)
++	{
++		for (int32 Slot = 0; Slot < Part->GetNumMaterials(); ++Slot)
++		{
++			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(Slot))
++			{
++				PistolMIDs.Add(MID);
++			}
++		}
++	}
++
++	bPistolViewModel = true;
++	TriggerPullElapsed = -1.f;
++	bHasLastGlow = false;
++	LastImbueSent = 0.f;
++	return true;
++}
++
++int32 AGBGun::GetPistolMeshCount() const
++{
++	const UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
++	int32 Count = 0;
++	for (const UStaticMeshComponent* Part : PistolParts)
++	{
++		const UStaticMesh* Mesh = Part ? Part->GetStaticMesh() : nullptr;
++		if (Mesh && Mesh->GetName().StartsWith(TEXT("SM_Pistol_")))
++		{
++			++Count;
++		}
++	}
++	return Count;
++}
++
++float AGBGun::GetPistolMagazineOffsetCm() const
++{
++	if (!PistolMagazine)
++	{
++		return 0.f;
++	}
++	return (PistolMagazine->GetRelativeLocation() - PistolMagazineRest).Size();
++}
++
++void AGBGun::UpdatePistolViewModel(float DeltaSeconds)
++{
++	// Trigger pull: 0 to full pitch and back over TriggerPullSeconds (linear in, linear out). A new shot restarts it.
++	if (PistolTrigger && TriggerPullElapsed >= 0.f)
++	{
++		TriggerPullElapsed += DeltaSeconds;
++		if (TriggerPullElapsed >= TriggerPullSeconds)
++		{
++			TriggerPullElapsed = -1.f;
++			PistolTrigger->SetRelativeRotation(FRotator::ZeroRotator);
++		}
++		else
++		{
++			const float Half = TriggerPullSeconds * 0.5f;
++			const float Frac = TriggerPullElapsed < Half
++				? TriggerPullElapsed / Half
++				: 1.f - (TriggerPullElapsed - Half) / Half;
++			PistolTrigger->SetRelativeRotation(FRotator(TriggerPullPitch * Frac, 0.f, 0.f));
++		}
++	}
++
++	// Magazine slide during reload, driven by GetReloadProgress: out (smoothstep), held, back in (smoothstep).
++	if (PistolMagazine)
++	{
++		FVector Offset = FVector::ZeroVector;
++		if (bReloading)
++		{
++			const float Progress = GetReloadProgress();
++			if (Progress < 1.f / 3.f)
++			{
++				Offset = PistolMagazineOut * Smoothstep01(Progress * 3.f);
++			}
++			else if (Progress < 2.f / 3.f)
++			{
++				Offset = PistolMagazineOut;
++			}
++			else
++			{
++				Offset = PistolMagazineOut * (1.f - Smoothstep01((Progress - 2.f / 3.f) * 3.f));
++			}
++		}
++		PistolMagazine->SetRelativeLocation(PistolMagazineRest + Offset);
++	}
++
++	// Glow color and energy bar (GDD 6, weapon enchant): enchanted = element color + imbue left, else idle green + dark bar.
++	EGBElement EnchantElement = EGBElement::Physical;
++	FName EnchantEffect = NAME_None;
++	FLinearColor GlowColor = PistolIdleGlow;
++	float Imbue = 0.f;
++	bool bEnchanted = false;
++	if (GetActiveEnchant(EnchantElement, EnchantEffect))
++	{
++		bEnchanted = true;
++		GlowColor = GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement));
++		Imbue = 1.f;
++		if (const AGBPlayerCharacter* Player = GetPlayerOwner())
++		{
++			if (const UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
++			{
++				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
++				{
++					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
++					{
++						Imbue = Active.TotalDuration > KINDA_SMALL_NUMBER
++							? FMath::Clamp(Active.TimeRemaining / Active.TotalDuration, 0.f, 1.f)
++							: 1.f;
++						break;
++					}
++				}
++			}
++		}
++	}
++	if (!bHasLastGlow || !LastGlowColor.Equals(GlowColor) || !FMath::IsNearlyEqual(LastImbueSent, Imbue))
++	{
++		for (UMaterialInstanceDynamic* MID : PistolMIDs)
++		{
++			if (MID)
++			{
++				MID->SetVectorParameterValue(ElementColorParam, GlowColor);
++				MID->SetScalarParameterValue(ImbueRemainingParam, Imbue);
++			}
++		}
++		LastGlowColor = GlowColor;
++		LastImbueSent = Imbue;
++		bHasLastGlow = true;
++	}
++	LastGlowElement = EnchantElement;
++	bLastGlowEnchanted = bEnchanted;
++}
++
++void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)
++{
+ 	// Placeholder viewmodel (art rule: guns are 3D). Sizes in cm are purely visual; X = forward, Z = up.
+ 	// The parts sit forward of the held-item anchor so the whole gun reads as one small pistol in the
+ 	// lower right of the view, roughly 25-35 cm long, pointing forward.
+ 	const float* PelletStat = Definition.Stats.Find(GBStat::Pellets);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+@@ -73,8 +73,9 @@
+ 	void SetAiming(bool bInAiming);
+ 	/** Moves the FOV towards the aim target; snaps back to the hip FOV when bInstant. */
+ 	void UpdateAimFOV(float DeltaSeconds, bool bInstant);
+ 	void BuildViewModel(const FGBWeaponDefinition& Definition);
++	void BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition);
+ 	UStaticMeshComponent* AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow);
+ 
+ 	/** Loads the four SM_Pistol_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
+ 	bool TryBuildPistolViewModel();
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -465,8 +465,12 @@
+ 	if (bEquipped)
+ 	{
+ 		UpdateAimFOV(DeltaSeconds, false);
+ 	}
++	if (bPistolViewModel)
++	{
++		UpdatePistolViewModel(DeltaSeconds);
++	}
+ 	Super::Tick(DeltaSeconds);
+ }
+ 
+ // ---- Shooting ----
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -505,8 +505,12 @@
+ 
+ 	const float RecoilYaw = GetStat(GBStat::RecoilYaw, 0.f);
+ 	Player->AddRecoil(GetStat(GBStat::RecoilPitch, 0.f), Random.FRandRange(-RecoilYaw, RecoilYaw), GetStat(GBStat::RecoilRecovery, 0.f));
+ 
++	if (bPistolViewModel)
++	{
++		TriggerPullElapsed = 0.f;
++	}
+ 	NotifyEquipmentChanged();
+ 
+ 	if (Ammo.InMagazine <= 0)
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the smoke steps.
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -35,8 +35,9 @@
+ #include "Spells/GBSpellbookComponent.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "Stats/GBStatsComponent.h"
+ #include "Weapons/GBEquipmentComponent.h"
++#include "Weapons/GBGun.h"
+ #include "Weapons/GBHeldItem.h"
+ #include "World/GBEraSubsystem.h"
+ #include "World/GBProgressSubsystem.h"
+ #include "World/GBTestArena.h"
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -1011,10 +1011,84 @@
+ 				}
+ 			}
+ 			Elemental->ClearAll();
+ 		});
+-		Add(50.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(50.5f + S, TEXT("pistol: meshes and materials in hand, hip screenshot, spend rounds, reload"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
++			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
++			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
++			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol: no pistol in hand"));
++				return;
++			}
++			const int32 Meshes = Gun->GetPistolMeshCount();
++			const int32 Mids = Gun->GetPistolMIDCount();
++			UE_LOG(LogGB, Display, TEXT("SMOKE pistol viewmodel meshes=%d mids=%d"), Meshes, Mids);
++			if (Meshes != 4 || Mids <= 4)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol viewmodel FAILED: meshes=%d (expected 4) mids=%d (expected more than 4)"), Meshes, Mids);
++			}
++			Shot(TEXT("13a_pistol_hip"));
++			FGBAmmoState Ammo = Gun->GetAmmo();
++			if (Ammo.SpareMagazines <= 0)
++			{
++				Gun->RefillAmmo();
++				Ammo = Gun->GetAmmo();
++			}
++			if (Ammo.InMagazine >= Gun->GetMagazineSize())
++			{
++				Ammo.InMagazine = Gun->GetMagazineSize() - 3;
++				Gun->SetAmmo(Ammo);
++			}
++			Gun->Reload();
++		});
++		Add(51.1f + S, TEXT("pistol reload: magazine out halfway, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
++			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
++				return;
++			}
++			const float Progress = Gun->GetReloadProgress();
++			const float Offset = Gun->GetPistolMagazineOffsetCm();
++			UE_LOG(LogGB, Display, TEXT("SMOKE pistol magazine offset=%.1f"), Offset);
++			if (Progress < 0.3f || Progress > 0.7f || FMath::Abs(Offset - 27.f) > 1.f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol magazine FAILED: offset=%.1f (expected about 27.0) progress=%.2f (expected about 0.5)"), Offset, Progress);
++			}
++			Shot(TEXT("13b_pistol_reload"));
++		});
++		Add(51.7f + S, TEXT("pistol enchant: cast the weapon enchant with the pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
++			Player->GetAttributes()->RestoreAll();
++			SetQTEEnabled(false);
++			UE_LOG(LogGB, Display, TEXT("SMOKE pistol enchant ok=%d"), Player->GetSpellbook()->TryCastEnchant() ? 1 : 0);
++		});
++		Add(52.3f + S, TEXT("pistol enchanted: glow and bar, screenshot, staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
++			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol glow: no pistol in hand"));
++				return;
++			}
++			const float Imbue = Gun->GetPistolImbueSent();
++			const FString ElementName = StaticEnum<EGBElement>()->GetNameStringByValue(static_cast<int64>(Gun->GetPistolGlowElement()));
++			UE_LOG(LogGB, Display, TEXT("SMOKE pistol glow element=%s imbue=%.2f"), *ElementName, Imbue);
++			if (!Gun->IsPistolGlowEnchanted() || Imbue <= 0.f || Imbue > 1.f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE pistol glow FAILED: enchanted=%d element=%s imbue=%.2f (expected enchanted, imbue in (0, 1])"),
++					Gun->IsPistolGlowEnchanted() ? 1 : 0, *ElementName, Imbue);
++			}
++			Shot(TEXT("13c_pistol_enchanted"));
++			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
++			SetQTEEnabled(true);
++		});
++		Add(53.1f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+One correction — leave the QTE state as the original timeline had it (off) after the pistol block:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -1083,9 +1083,8 @@
+ 					Gun->IsPistolGlowEnchanted() ? 1 : 0, *ElementName, Imbue);
+ 			}
+ 			Shot(TEXT("13c_pistol_enchanted"));
+ 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+-			SetQTEEnabled(true);
+ 		});
+ 		Add(53.1f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Validating JSON and reviewing the gun file before building:
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp [90m[limit=230, offset=1][0m
+[0m$ [0mpython3 -c "import json; json.load(open('Glyphbound/Content/Data/Weapons.json')); print('Weapons.json valid')"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+`python3` isn't on PATH — I'll validate JSON via PowerShell instead. Starting the Editor-target build now:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Content Glyphbound/Content/Data/Weapons.json -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null; Write-Host 'Weapons.json valid'"
+Weapons.json valid
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBGun.cpp(130,14): error C4458: declaration of 'Slot' hides class member
+Result: Failed (OtherCompilationError)
+Build time: 42 s  (exit 6)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+One naming collision — renaming the loop variable:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -126,11 +126,11 @@
+ 	PistolMIDs.Reset();
+ 	UStaticMeshComponent* PistolParts[4] = { PistolBody, PistolTrigger, PistolMagazine, PistolEnergyBar };
+ 	for (UStaticMeshComponent* Part : PistolParts)
+ 	{
+-		for (int32 Slot = 0; Slot < Part->GetNumMaterials(); ++Slot)
++		for (int32 MaterialSlot = 0; MaterialSlot < Part->GetNumMaterials(); ++MaterialSlot)
+ 		{
+-			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(Slot))
++			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(MaterialSlot))
+ 			{
+ 				PistolMIDs.Add(MID);
+ 			}
+ 		}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 5 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+That was fast — verifying it actually rebuilt:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "Select-String -Path Glyphbound/Saved/Logs/build_last.log -Pattern 'GBGun|Result:|Warning' | Select-Object -First 20 | ForEach-Object { $_.Line.Trim() }"
+At line:1 char:147
++ ... |Warning' | Select-Object -First 20 | ForEach-Object { .Line.Trim() }
++                                                                       ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "Select-String -Path Glyphbound/Saved/Logs/build_last.log -Pattern 'GBGun|Result:' | Select-Object -First 20"
+Glyphbound\Saved\Logs\build_last.log:14:[Adaptive Build] Excluded from Glyphbound unity file: GBDevCommands.cpp, 
+GBDataTypes.cpp, GBGun.cpp
+Glyphbound\Saved\Logs\build_last.log:20:[1/4] Compile [x64] GBGun.cpp
+Glyphbound\Saved\Logs\build_last.log:28:Result: Succeeded
+> build · muse-spark-1.3-contributor
+Editor target succeeded. Now the game target:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 40 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 36
+Tests: 36 run, 0 failed, test time 0.73 s, wall time 24 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-215200
+> build · muse-spark-1.3-contributor
+Tests pass. Running the smoke script:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215232.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215232.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 55 steps
+LogGB: Display: SMOKE step 1/55 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=22 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/55 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/55 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/55 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/55 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/55 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/55 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/55 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/55 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/55 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/55 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/55 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/55 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=148 (start 1550, needed <= 250) orc at V(X=-2454.32, Y=-141.23, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/55 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/55 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/55 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/55 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/55 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=22
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/55 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/55 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/55 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/55 (22.0 s): weapon perks: unlock the new nodes
+LogGB: Display: SMOKE weapon perks reload=3 precision=1 conduit=0 deadeye=2 points=22
+LogGB: Display: SMOKE step 23/55 (22.2 s): precision recovery: weak point kill heals, second kill is on cooldown
+LogGB: Display: SMOKE precision recovery healed=3.0
+LogGB: Display: SMOKE precision recovery cooldown healed=0.0
+LogGB: Display: SMOKE step 24/55 (22.4 s): rapid reload: pistol reload time
+LogGB: Display: SMOKE rapid reload pistol=0.84
+LogGB: Display: SMOKE step 25/55 (22.8 s): screenshot: weapon tree with the new nodes
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png
+LogGB: Display: SMOKE step 26/55 (23.0 s): weapon perks: reset the skills
+LogGB: Display: SMOKE weapon perks reset refunded=10 points=2
+LogGB: Display: SMOKE step 27/55 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 28/55 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 29/55 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 30/55 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 31/55 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 32/55 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 33/55 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=31 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 34/55 (33.0 s): arcane conduit: enchanted build-up before and after
+LogGB: Display: SMOKE arcane conduit diag holdingGun=1 busy=0 cd=0.0 mana=100 knows=1 cost=20 cancast=0
+LogGB: Display: SMOKE arcane conduit buildup=19.50 base=15.00
+LogGB: Display: SMOKE step 35/55 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 36/55 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 37/55 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 38/55 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 39/55 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 40/55 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 41/55 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 42/55 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 43/55 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 44/55 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 45/55 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 46/55 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 47/55 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 48/55 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 49/55 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 50/55 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 51/55 (56.9 s): pistol: meshes and materials in hand, hip screenshot, spend rounds, reload
+LogGB: Display: SMOKE pistol viewmodel meshes=4 mids=18
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13a_pistol_hip.png
+LogGB: Display: SMOKE step 52/55 (57.5 s): pistol reload: magazine out halfway, screenshot
+LogGB: Display: SMOKE pistol magazine offset=27.0
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13b_pistol_reload.png
+LogGB: Display: SMOKE step 53/55 (58.1 s): pistol enchant: cast the weapon enchant with the pistol in hand
+LogGB: Display: SMOKE pistol enchant ok=1
+LogGB: Display: SMOKE step 54/55 (58.7 s): pistol enchanted: glow and bar, screenshot, staff back in hand
+LogGB: Display: SMOKE pistol glow element=Fire imbue=0.96
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13c_pistol_enchanted.png
+LogGB: Display: SMOKE step 55/55 (59.5 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 16 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+12_weapon_tree.png
+13a_pistol_hip.png
+13b_pistol_reload.png
+13c_pistol_enchanted.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=74 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215232.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/13a_pistol_hip.png 
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/13b_pistol_reload.png 
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/13c_pistol_enchanted.png 
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -1082,11 +1082,14 @@
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol glow FAILED: enchanted=%d element=%s imbue=%.2f (expected enchanted, imbue in (0, 1])"),
+ 					Gun->IsPistolGlowEnchanted() ? 1 : 0, *ElementName, Imbue);
+ 			}
+ 			Shot(TEXT("13c_pistol_enchanted"));
++		});
++		Add(52.9f + S, TEXT("pistol done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
+ 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+ 		});
+-		Add(53.1f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(53.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 7 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -Command "Select-String -Path Glyphbound/Saved/Logs/build_last.log -Pattern 'GBDevCommands|Result:' | Select-Object -First 10"
+Glyphbound\Saved\Logs\build_last.log:14:[Adaptive Build] Excluded from Glyphbound unity file: GBDevCommands.cpp, 
+GBDataTypes.cpp, GBGun.cpp
+Glyphbound\Saved\Logs\build_last.log:20:[1/4] Compile [x64] GBDevCommands.cpp
+Glyphbound\Saved\Logs\build_last.log:28:Result: Succeeded
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215452.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215452.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 56 steps
+LogGB: Display: SMOKE step 1/56 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=22 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/56 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/56 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/56 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/56 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/56 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/56 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/56 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/56 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/56 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/56 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/56 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/56 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=149 (start 1550, needed <= 250) orc at V(X=-2454.28, Y=-141.45, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/56 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/56 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/56 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/56 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/56 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=22
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/56 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/56 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/56 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/56 (22.0 s): weapon perks: unlock the new nodes
+LogGB: Display: SMOKE weapon perks reload=3 precision=1 conduit=0 deadeye=2 points=22
+LogGB: Display: SMOKE step 23/56 (22.2 s): precision recovery: weak point kill heals, second kill is on cooldown
+LogGB: Display: SMOKE precision recovery healed=3.0
+LogGB: Display: SMOKE precision recovery cooldown healed=0.0
+LogGB: Display: SMOKE step 24/56 (22.4 s): rapid reload: pistol reload time
+LogGB: Display: SMOKE rapid reload pistol=0.84
+LogGB: Display: SMOKE step 25/56 (22.8 s): screenshot: weapon tree with the new nodes
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png
+LogGB: Display: SMOKE step 26/56 (23.0 s): weapon perks: reset the skills
+LogGB: Display: SMOKE weapon perks reset refunded=10 points=2
+LogGB: Display: SMOKE step 27/56 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 28/56 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 29/56 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 30/56 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 31/56 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 32/56 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 33/56 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=31 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 34/56 (33.0 s): arcane conduit: enchanted build-up before and after
+LogGB: Display: SMOKE arcane conduit diag holdingGun=1 busy=0 cd=0.0 mana=100 knows=1 cost=20 cancast=0
+LogGB: Display: SMOKE arcane conduit buildup=19.50 base=15.00
+LogGB: Display: SMOKE step 35/56 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 36/56 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 37/56 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 38/56 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 39/56 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 40/56 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 41/56 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 42/56 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 43/56 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 44/56 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.51s alive=0
+LogGB: Display: SMOKE step 45/56 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 46/56 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 47/56 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 48/56 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 49/56 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 50/56 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 51/56 (56.9 s): pistol: meshes and materials in hand, hip screenshot, spend rounds, reload
+LogGB: Display: SMOKE pistol viewmodel meshes=4 mids=18
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13a_pistol_hip.png
+LogGB: Display: SMOKE step 52/56 (57.5 s): pistol reload: magazine out halfway, screenshot
+LogGB: Display: SMOKE pistol magazine offset=27.0
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13b_pistol_reload.png
+LogGB: Display: SMOKE step 53/56 (58.1 s): pistol enchant: cast the weapon enchant with the pistol in hand
+LogGB: Display: SMOKE pistol enchant ok=1
+LogGB: Display: SMOKE step 54/56 (58.7 s): pistol enchanted: glow and bar, screenshot, staff back in hand
+LogGB: Display: SMOKE pistol glow element=Fire imbue=0.96
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/13c_pistol_enchanted.png
+LogGB: Display: SMOKE step 55/56 (59.3 s): pistol done: staff back in hand
+LogGB: Display: SMOKE step 56/56 (59.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 16 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+12_weapon_tree.png
+13a_pistol_hip.png
+13b_pistol_reload.png
+13c_pistol_enchanted.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=72 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-215452.log
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/13c_pistol_enchanted.png 
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 12 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mgit status --porcelain -- Glyphbound/Source Glyphbound/Content/Data Glyphbound/Config Design Prompts Tools | head -30
+head : The term 'head' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:110
++ ... hbound/Content/Data Glyphbound/Config Design Prompts Tools | head -30
++                                                                  ~~~~
+    + CategoryInfo          : ObjectNotFound: (head:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 36
+Tests: 36 run, 0 failed, test time 0.80 s, wall time 17 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-215638
+> build · muse-spark-1.3-contributor
+[0m$ [0mgit status --porcelain -- Glyphbound/Source Glyphbound/Content/Data Glyphbound/Config
+M Glyphbound/Config/DefaultGame.ini
+ M Glyphbound/Content/Data/Weapons.json
+ M Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+ M Glyphbound/Source/Glyphbound/Data/GBDataTypes.h
+ M Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+ M Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+> build · muse-spark-1.3-contributor
+All checks pass. Final report:
+
+1. Verification results (verbatim)
+- `Result: Succeeded` (Build-Jam.ps1, Editor target)
+- `Result: Succeeded` (Build-Jam.ps1 -Target Glyphbound)
+- `Tests: 36 run, 0 failed, test time 0.80 s, wall time 17 s, ensures in log: 0`
+- `Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=72 s`
+- New SMOKE lines:
+  - `SMOKE pistol viewmodel meshes=4 mids=18`
+  - `SMOKE pistol magazine offset=27.0`
+  - `SMOKE pistol enchant ok=1`
+  - `SMOKE pistol glow element=Fire imbue=0.96`
+- Plus `SMOKE path check passed`, zero LogGB warnings/errors, all 16 screenshots saved (all pre-existing ones still present).
+
+2. What I changed (6 files, nothing else touched, nothing committed)
+- `Glyphbound/Source/Glyphbound/Data/GBDataTypes.h`: added `FString ViewModel` to `FGBWeaponDefinition`.
+- `Glyphbound/Content/Data/Weapons.json`: added `"ViewModel": "Pistol"` to the Pistol entry only.
+- `Glyphbound/Source/Glyphbound/Weapons/GBGun.h`: pistol component pointers (Body/Trigger/Magazine/EnergyBar), `PistolMIDs` array, state (trigger timer, last glow/imbue cache), public smoke getters, `TryBuildPistolViewModel` / `UpdatePistolViewModel` / `BuildPlaceholderViewModel` declarations.
+- `Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp`: anonymous-namespace art constants (scale 0.3, trigger offset (28.84,0,0), magazine rest (0,0,-29.31), out offset (-12.15,0,-24.11), pull 0.12 s / -8 deg, idle glow (0.02,1.0,0.07), `ElementColor`/`ImbueRemaining`), each commented as from `SourceArt/Weapons/Pistol/Export/export_report.json` via `Tools/Blender/pistol_export_fbx.py`. `BuildViewModel` builds 4 mesh parts by path when `ViewModel == Pistol`, else the unchanged placeholder path; single `LogGB Warning` + placeholder fallback if any mesh is missing. `PerformAttack` restarts the trigger pull on each fired shot. `Tick` drives trigger rotation, magazine slide (smoothstep out/hold/in from `GetReloadProgress()`), and enchant/idle glow + imbue with cached parameter sets.
+- `Glyphbound/Config/DefaultGame.ini`: added `+DirectoriesToAlwaysCook=(Path=/Game/Glyphbound/Weapons)`.
+- `Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp`: 5 new smoke steps (pistol hip check + `13a_pistol_hip`, reload-mid check + `13b_pistol_reload`, enchant cast, glow check + `13c_pistol_enchanted`, staff back in hand); quit moved from 50.5+S to 53.5+S. All existing steps untouched.
+
+3. What I saw in the three screenshots (no tuning change: `PistolViewScale` stays 0.3, body location stays (0,0,0))
+- 13a: pistol in lower right, pointing forward toward the crosshair, sensible size (matches the old placeholder framing); side display glows green (idle), HUD shows Pistol 9/12 RELOADING.
+- 13b: same framing mid-reload; numeric log confirms magazine offset 27.0 cm (full out position, hold phase).
+- 13c (retaken after a fix, see 4): pistol in hand, HUD `ENCHANTED 14.4s`, side glow strip and energy-bar cells now amber/orange (Fire) instead of green; "Fire Enchant 14.4s" status visible. Bar lit, not dark.
+
+4. Anything I could not do as described, and why
+- One deviation in method, not in outcome: for `13c`, requesting the screenshot and switching back to the staff in the same step captured the staff (screenshot requests are deferred a frame). Fixed by moving "staff back in hand" to its own step 0.6 s later — no spec value changed. Everything else is as specified, including spending rounds via `SetAmmo(-3)` instead of live fire when the magazine is full (deterministic; enables the reload the same way).
+
+5. What a person should check by playing
+- Hip-fire the pistol a few times: trigger should visibly flick back and return each shot.
+- Reload with the pistol out: magazine should drop down/back, hang, and slide back in over the reload.
+- Cast weapon enchant (Fire/Lightning/Ice): whole gun tint should switch to the element color and the side energy bar should light up from grip to muzzle, draining as the enchant runs out; when it expires the gun returns to green with a dark bar.
+- Shotgun and Rifle should look exactly as before (placeholder shapes), and the game should still run with placeholder shapes on a machine without `Content/` meshes (one warning path, unverified here since the assets exist on this machine).

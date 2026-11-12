@@ -53,6 +53,7 @@
 			"Slot": "Gun",
 			"Element": "Physical",
 			"ActorClass": "",
+			"ViewModel": "Pistol",
 			"FireMode": "Hitscan",
 			"bAutomatic": false,
 			"Stats": {

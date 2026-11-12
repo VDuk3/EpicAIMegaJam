@@ -1,0 +1,1789 @@
+[0m
+> build · muse-spark-1.3-contributor
+Fixing the weapon branch and adding the three perks — first mapping the project layout.
+[0m→ [0mRead . 
+[0m→ [0mRead Design/ARCHITECTURE.md 
+[0m→ [0mRead Prompts/implementer_rules.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Game.json 
+[0m→ [0mRead Glyphbound/Content/Data/Skills.json 
+[0m→ [0mRead Glyphbound/Content/Data/Weapons.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.h 
+> build · muse-spark-1.3-contributor
+I've got the current weapon layout and stat names — now digging into combat, UI, and smoke systems.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBTypes.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataTypes.h 
+[0m✱ [0mGlob "*.cpp" [90min Glyphbound/Source/Glyphbound/Tests · 12 matches[0m
+[0m✱ [0mGlob "*.h" [90min Glyphbound/Source/Glyphbound/UI · 3 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "GBHUD_Menus|SkillTrees|5_skills|Row.*Column|Weapon.*tree" [90min Glyphbound/Source/Glyphbound · 26 matches[0m
+[0m✱ [0mGlob "**/*Menu*" [90min Glyphbound/Source/Glyphbound · 1 match[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp 
+> build · muse-spark-1.3-contributor
+Confirmed the linear multiply stacking — now tracing the death hooks and heal feedback paths.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/AI/GBEnemyCharacter.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Stats/GBAttributeComponent.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/Player.json 
+[0m→ [0mRead Glyphbound/Content/Data/Enemies.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp 
+[0m✱ [0mGrep "Heal\(|ShowMessage|damage.?number|DamageNumber|OnDamageDealt" [90min Glyphbound/Source/Glyphbound · 74 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✗ [0mRead Glyphbound/Tools/Jam/Build-Jam.ps1 failed
+[91m[1mError: [0mFile not found: C:\GameJam\Glyphbound\Tools\Jam\Build-Jam.ps1
+System.Management.Automation.RemoteException
+The folder C:\GameJam\Glyphbound\Tools does not exist. The nearest folder that does is C:\GameJam\Glyphbound.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD_DamageNumbers.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBProgressionTests.cpp 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGlob "*.ps1" [90min Tools/Jam · 11 matches[0m
+[0m✱ [0mGrep "Precision Recovery|Deadeye|Rapid Reload|Arcane Conduit|Weapon tree" [90min Design · 3 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Design/GDD.md [90m[offset=100, pattern=section][0m
+[0m→ [0mRead Tools/Jam/Test-Jam.ps1 
+[0m→ [0mRead Tools/Jam/Smoke-Jam.ps1 
+> build · muse-spark-1.3-contributor
+I've got the mechanics sketched — now checking test coverage and data patterns before implementing.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Items/GBInventoryComponent.cpp 
+[0m✱ [0mGrep "MoveSpeed|MaxHealth|DamageDealt" [90min Glyphbound/Content/Data · 17 matches[0m
+[0m✱ [0mGrep "Glyphbound\.[A-Za-z0-9.]+" [90min Glyphbound/Source/Glyphbound/Tests · 35 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Content/Data/StatusEffects.json 
+[0m✱ [0mGrep "Enchant|Weapon\.Gun|MoveSpeed" [90min Glyphbound/Content/Data/StatusEffects.json · 10 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/UI/GBHUD.h 
+[0m✱ [0mGrep "static.*Get\(|ShowMessage|class AGBPlayerCharacter" [90min Glyphbound/Source/Glyphbound/UI/GBHUD.h · 3 matches[0m
+[0m✱ [0mGrep "Weapon_Recoil|Weapon_Headshot|Weapon_Damage|Weapon_FireRate|Weapon_Shotgun|Weapon_Rifle" [90min Glyphbound/Source/Glyphbound · 0 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=40, offset=795][0m
+[0m✱ [0mGrep "GiveWeapon|SwitchTo|GetItemInSlot|EquipOwned|GetActiveItem|OwnsWeapon|SetWeaponElement" [90min Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.h · 9 matches[0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "TryCastEnchant|GetEnchant|EquipSpell|KnowsSpell|LearnSpell" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h · 9 matches[0m
+[0m✱ [0mGrep "IsHoldingGun|IsHoldingStaff|RefillAllAmmo" [90min Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.h · 3 matches[0m
+> build · muse-spark-1.3-contributor
+I have the full picture. Implementing now — starting with the data files and stat names.
+[0m← [0mEdit Glyphbound/Content/Data/Game.json
+Index: Glyphbound/Content/Data/Game.json
+===================================================================
+--- Glyphbound/Content/Data/Game.json
++++ Glyphbound/Content/Data/Game.json
+@@ -57,9 +57,13 @@
+ 		"ElementalDefault.LightningStatusImmunity": 4,
+ 		"ElementalDefault.IceStatusImmunity": 5,
+ 		"ElementalDefault.IgniteDamageMult": 1,
+ 		"ElementalDefault.ShockDischargeDamage": 10,
+-		"ElementalDefault.FrostSlow": 0.6
++		"ElementalDefault.FrostSlow": 0.6,
++		"PrecisionRecoveryHealFraction": 0.03,
++		"PrecisionRecoveryCooldownBase": 7,
++		"PrecisionRecoveryCooldownPerRank": 1,
++		"PrecisionRecoveryCooldownMin": 1
+ 	},
+ 	"Strings": {
+ 		"ElementalDefault.FireStatusReaction": "Ignite",
+ 		"ElementalDefault.LightningStatusReaction": "Stun",
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Skills.json
+Index: Glyphbound/Content/Data/Skills.json
+===================================================================
+--- Glyphbound/Content/Data/Skills.json
++++ Glyphbound/Content/Data/Skills.json
+@@ -23,42 +23,90 @@
+ 			"Column": 0,
+ 			"Row": 1
+ 		},
+ 		{
++			"Id": "Weapon_ReloadSpeed",
++			"Tree": "Weapon",
++			"DisplayName": "Rapid Reload",
++			"Description": "10% faster reloads per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_FireRate" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.All.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
++			"Column": 0,
++			"Row": 2
++		},
++		{
+ 			"Id": "Weapon_Recoil",
+ 			"Tree": "Weapon",
+ 			"DisplayName": "Steady Grip",
+ 			"Description": "20% less recoil per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+-			"Requires": [ "Weapon_Damage" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 } ],
+-			"Column": 2,
+-			"Row": 1
++			"Requires": [ "Weapon_FireRate" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.All.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
++			"Column": 0,
++			"Row": 3
+ 		},
+ 		{
+ 			"Id": "Weapon_Headshot",
+ 			"Tree": "Weapon",
+ 			"DisplayName": "Marksman",
+ 			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
+ 			"Cost": 2,
+ 			"MaxRank": 3,
+-			"Requires": [ "Weapon_Recoil" ],
++			"Requires": [ "Weapon_Damage" ],
+ 			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+ 			"Column": 2,
++			"Row": 1
++		},
++		{
++			"Id": "Weapon_PrecisionRecovery",
++			"Tree": "Weapon",
++			"DisplayName": "Precision Recovery",
++			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_Headshot" ],
++			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
++			"Column": 2,
+ 			"Row": 2
+ 		},
+ 		{
++			"Id": "Weapon_EnchantBuildUp",
++			"Tree": "Weapon",
++			"DisplayName": "Arcane Conduit",
++			"Description": "+10% elemental build-up from enchanted weapons per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_Headshot" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
++			"Column": 2,
++			"Row": 3
++		},
++		{
++			"Id": "Weapon_PistolHeadshot",
++			"Tree": "Weapon",
++			"DisplayName": "Deadeye",
++			"Description": "Pistol: +0.25x head / weak point damage per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_Damage" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
++			"Column": 0,
++			"Row": 4
++		},
++		{
+ 			"Id": "Weapon_ShotgunClose",
+ 			"Tree": "Weapon",
+ 			"DisplayName": "Point Blank",
+ 			"Description": "Shotgun: +0.2x damage up close per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+-			"Requires": [ "Weapon_FireRate" ],
++			"Requires": [ "Weapon_Damage" ],
+ 			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
+-			"Column": 0,
+-			"Row": 2
++			"Column": 1,
++			"Row": 4
+ 		},
+ 		{
+ 			"Id": "Weapon_RifleFar",
+ 			"Tree": "Weapon",
+@@ -67,10 +115,10 @@
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"Requires": [ "Weapon_Damage" ],
+ 			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.15 } ],
+-			"Column": 1,
+-			"Row": 2
++			"Column": 2,
++			"Row": 4
+ 		},
+ 		{
+ 			"Id": "Spell_FireballDamage",
+ 			"Tree": "Spell",
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -77,8 +77,9 @@
+ 				"HeadshotMult": 2,
+ 				"AimFOV": 70,
+ 				"AimMoveSpeedMult": 0.7,
+ 				"AimTime": 0.15,
++				"EnchantBuildUpMult": 1,
+ 				"FireBuildUp": 15,
+ 				"LightningBuildUp": 15,
+ 				"IceBuildUp": 15
+ 			},
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -10,10 +10,9 @@
+ 
+ namespace GBStat
+ {
+ 	// ---- Actor stats (Player.json "Stats", Enemies.json "Stats") ----
+-	inline const FName MaxHealth(TEXT("MaxHealth"));
+-	inline const FName HealthRegen(TEXT("HealthRegen"));            // per second
++	inline const FName MaxHealth(TEXT("MaxHealth"));	inline const FName HealthRegen(TEXT("HealthRegen"));            // per second
+ 	inline const FName HealthRegenDelay(TEXT("HealthRegenDelay"));  // seconds after taking damage
+ 	inline const FName MaxMana(TEXT("MaxMana"));
+ 	inline const FName ManaRegen(TEXT("ManaRegen"));                // per second
+ 	inline const FName ManaRegenDelay(TEXT("ManaRegenDelay"));      // seconds after spending mana
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -115,8 +115,9 @@
+ 				"HeadshotMult": 1.5,
+ 				"AimFOV": 75,
+ 				"AimMoveSpeedMult": 0.75,
+ 				"AimTime": 0.18,
++				"EnchantBuildUpMult": 1,
+ 				"FireBuildUp": 25,
+ 				"LightningBuildUp": 25,
+ 				"IceBuildUp": 25
+ 			},
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Weapons.json
+Index: Glyphbound/Content/Data/Weapons.json
+===================================================================
+--- Glyphbound/Content/Data/Weapons.json
++++ Glyphbound/Content/Data/Weapons.json
+@@ -153,8 +153,9 @@
+ 				"HeadshotMult": 1.5,
+ 				"AimFOV": 60,
+ 				"AimMoveSpeedMult": 0.65,
+ 				"AimTime": 0.2,
++				"EnchantBuildUpMult": 1,
+ 				"FireBuildUp": 8,
+ 				"LightningBuildUp": 8,
+ 				"IceBuildUp": 8
+ 			},
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+That last edit was a misfire — let me check and fix it properly.
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h [90m[limit=30, offset=11][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -10,9 +10,10 @@
+ 
+ namespace GBStat
+ {
+ 	// ---- Actor stats (Player.json "Stats", Enemies.json "Stats") ----
+-	inline const FName MaxHealth(TEXT("MaxHealth"));	inline const FName HealthRegen(TEXT("HealthRegen"));            // per second
++	inline const FName MaxHealth(TEXT("MaxHealth"));
++	inline const FName HealthRegen(TEXT("HealthRegen"));            // per second
+ 	inline const FName HealthRegenDelay(TEXT("HealthRegenDelay"));  // seconds after taking damage
+ 	inline const FName MaxMana(TEXT("MaxMana"));
+ 	inline const FName ManaRegen(TEXT("ManaRegen"));                // per second
+ 	inline const FName ManaRegenDelay(TEXT("ManaRegenDelay"));      // seconds after spending mana
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -32,8 +32,9 @@
+ 	inline const FName DamageDealt(TEXT("DamageDealt"));            // multiplier, base 1
+ 	inline const FName CapsuleRadius(TEXT("CapsuleRadius"));
+ 	inline const FName CapsuleHalfHeight(TEXT("CapsuleHalfHeight"));
+ 	inline const FName EyeHeight(TEXT("EyeHeight"));
++	inline const FName PrecisionRecovery(TEXT("PrecisionRecovery")); // owned rank of the weapon perk (skill modifier only, base 0)
+ 
+ 	// ---- Enemy stats (Enemies.json "Stats") ----
+ 	inline const FName AttackDamage(TEXT("AttackDamage"));
+ 	inline const FName AttackRange(TEXT("AttackRange"));
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -96,8 +96,9 @@
+ 
+ 	// ---- Elemental build-up (GDD 6): spell param / item stat, weapon stat ----
+ 	inline const FName BuildUp(TEXT("BuildUp"));                   // raw build-up per hit or per tick
+ 	inline const FName WeakPointBuildUpMult(TEXT("WeakPointBuildUpMult")); // weapon stat; multiplies BuildUp on weak point hits
++	inline const FName EnchantBuildUpMult(TEXT("EnchantBuildUpMult"));     // weapon stat; multiplies BuildUp when the hit's element comes from the weapon enchant
+ 
+ 	/** "Weapon.<WeaponId>.<Stat>" */
+ 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
+ 	/** "Weapon.Staff.<Stat>", "Weapon.Gun.<Stat>" or "Weapon.Sword.<Stat>" */
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+@@ -73,10 +73,9 @@
+ 	 */
+ 	static float ComputeMovementSpread(float BaseSpread, float MoveSpread, float Speed, float FullSpeed);
+ 
+ 	/**
+-	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
+-	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
++	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
+ 	 * whose IsHeadshotLocation(Info.HitLocation) is true, via IsWeakPointHit), multiplies Info.Amount
+ 	 * by WeakPointMult. Always sets Info.bHeadshot from IsWeakPointHit (so the build-up bonus never
+ 	 * applies twice even if the head is also a weak point) and returns bHeadshot. The damage bonus
+ 	 * is decoupled from the build-up bonus (FGBDamageInfo::WeakPointBuildUpMult).
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -120,8 +120,17 @@
+ 	/** "Spell.All.<Param>" */
+ 	inline FName SpellAllKey(FName Param) { return FName(*FString::Printf(TEXT("Spell.All.%s"), *Param.ToString())); }
+ }
+ 
++/** Game.json "Values" keys of Precision Recovery (GDD 18). */
++namespace GBRecovery
++{
++	inline const FName HealFraction(TEXT("PrecisionRecoveryHealFraction"));     // of max health per killing weak point hit
++	inline const FName CooldownBase(TEXT("PrecisionRecoveryCooldownBase"));      // seconds at rank 0
++	inline const FName CooldownPerRank(TEXT("PrecisionRecoveryCooldownPerRank")); // seconds less per rank
++	inline const FName CooldownMin(TEXT("PrecisionRecoveryCooldownMin"));        // lowest possible cooldown
++}
++
+ /** Keys of the free-form "Strings" maps in the data files. */
+ namespace GBString
+ {
+ 	inline const FName Sprite(TEXT("Sprite"));                 // sprite id from Sprites.json
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h [90m[limit=14, offset=76][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+@@ -73,9 +73,10 @@
+ 	 */
+ 	static float ComputeMovementSpread(float BaseSpread, float MoveSpread, float Speed, float FullSpeed);
+ 
+ 	/**
+-	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
++	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
++	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
+ 	 * whose IsHeadshotLocation(Info.HitLocation) is true, via IsWeakPointHit), multiplies Info.Amount
+ 	 * by WeakPointMult. Always sets Info.bHeadshot from IsWeakPointHit (so the build-up bonus never
+ 	 * applies twice even if the head is also a weak point) and returns bHeadshot. The damage bonus
+ 	 * is decoupled from the build-up bonus (FGBDamageInfo::WeakPointBuildUpMult).
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the pure functions in the combat library header:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+@@ -100,5 +100,18 @@
+ 	 * Aimed melee point (pure, tested): the point of the body segment BodyBottom..BodyTop (feet to top of head)
+ 	 * closest to the aim segment AimOrigin..AimOrigin + AimDirection * AimLength (FMath::SegmentDistToSegmentSafe).
+ 	 */
+ 	static FVector ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop);
++
++	/**
++	 * Precision Recovery cooldown (GDD 18, pure, tested): Max(MinCooldown, Base - PerRank * Rank).
++	 * Rank <= 0 returns 0 (the perk is off; callers check the rank first).
++	 */
++	static float ComputePrecisionRecoveryCooldown(int32 Rank, float Base, float PerRank, float MinCooldown);
++
++	/**
++	 * Precision Recovery decision (GDD 18, pure, tested): true when the killing blow was a weak point hit
++	 * by the player, the perk is owned, and its internal cooldown is over (TimeSinceLastHeal >= Cooldown,
++	 * so healing exactly at the cooldown is allowed).
++	 */
++	static bool ShouldPrecisionRecover(bool bKillingBlowWeakPoint, bool bInstigatorIsPlayer, int32 Rank, float TimeSinceLastHeal, float Cooldown);
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+Index: Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
++++ Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+@@ -352,4 +352,18 @@
+ 	FVector OutBodyPoint = BodyBottom;
+ 	FMath::SegmentDistToSegmentSafe(AimOrigin, AimEnd, BodyBottom, BodyTop, OutAimPoint, OutBodyPoint);
+ 	return OutBodyPoint;
+ }
++
++float UGBCombatLibrary::ComputePrecisionRecoveryCooldown(int32 Rank, float Base, float PerRank, float MinCooldown)
++{
++	if (Rank <= 0)
++	{
++		return 0.f;
++	}
++	return FMath::Max(MinCooldown, Base - PerRank * static_cast<float>(Rank));
++}
++
++bool UGBCombatLibrary::ShouldPrecisionRecover(bool bKillingBlowWeakPoint, bool bInstigatorIsPlayer, int32 Rank, float TimeSinceLastHeal, float Cooldown)
++{
++	return bKillingBlowWeakPoint && bInstigatorIsPlayer && Rank > 0 && TimeSinceLastHeal >= Cooldown;
++}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the automation test:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+@@ -137,5 +137,32 @@
+ 
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatPrecisionRecoveryTest, "Glyphbound.Combat.PrecisionRecovery",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++
++bool FGBCombatPrecisionRecoveryTest::RunTest(const FString& Parameters)
++{
++	// Cooldown = max(1, 7 - 1 * rank): 6 / 5 / 4 for ranks 1 / 2 / 3.
++	TestEqual(TEXT("Rank 1 cooldown is 6 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(1, 7.f, 1.f, 1.f), 6.f, 1.e-4f);
++	TestEqual(TEXT("Rank 2 cooldown is 5 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(2, 7.f, 1.f, 1.f), 5.f, 1.e-4f);
++	TestEqual(TEXT("Rank 3 cooldown is 4 s"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(3, 7.f, 1.f, 1.f), 4.f, 1.e-4f);
++	TestEqual(TEXT("Rank 0 is off"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(0, 7.f, 1.f, 1.f), 0.f);
++	TestEqual(TEXT("Negative rank is off"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(-2, 7.f, 1.f, 1.f), 0.f);
++	TestEqual(TEXT("Cooldown never goes below the minimum"), UGBCombatLibrary::ComputePrecisionRecoveryCooldown(9, 7.f, 1.f, 1.f), 1.f);
++
++	// A weak point killing blow by the player with the perk and the cooldown over heals.
++	TestTrue(TEXT("Weak point kill by the player after the cooldown"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 1, 6.f, 6.f));
++	TestTrue(TEXT("Weak point kill by the player past the cooldown"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 2, 12.f, 5.f));
++
++	// Each wrong condition blocks it on its own.
++	TestFalse(TEXT("Rank 0 never heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 0, 1000.f, 0.f));
++	TestFalse(TEXT("Body-shot kill never heals"), UGBCombatLibrary::ShouldPrecisionRecover(false, true, 3, 1000.f, 4.f));
++	TestFalse(TEXT("Another instigator never heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, false, 3, 1000.f, 4.f));
++	TestFalse(TEXT("Inside the cooldown no heal"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 1, 5.99f, 6.f));
++	TestTrue(TEXT("Exactly at the cooldown heals"), UGBCombatLibrary::ShouldPrecisionRecover(true, true, 3, 4.f, 4.f));
++
++	return true;
++}
++
+ #endif // WITH_DEV_AUTOMATION_TESTS
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp [90m[offset=135][0m
+> build · muse-spark-1.3-contributor
+Test is in. Now the player-side hook — header first:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -144,8 +144,14 @@
+ 
+ 	/** Reads the movement stats into the character movement component. Bound to OnStatsChanged. */
+ 	void ApplyMovementStats();
+ 	void HandleDeath(const FGBDamageInfo& KillingBlow);
++	/**
++	 * Precision Recovery (GDD 18): bound to UGBCombatLibrary::OnDamageDealt. When anything dies from a
++	 * weak point killing blow by this player and the perk's cooldown is over, heals the perk's fraction
++	 * of max health. Once per death by construction: only a blow that really removed health fires the event.
++	 */
++	void HandlePrecisionRecovery(AActor* Target, const FGBDamageInfo& Info, float DamageDealt);
+ 	void UpdateFocusedInteractable();
+ 	void HandleDataReloaded();
+ 
+ 	/** Stat with modifiers; warns once if the base value is missing from Player.json. */
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -229,8 +229,11 @@
+ 	/** Frame of the last Move event outside the QTE; LastMoveInput is cleared when it gets stale. */
+ 	uint64 LastMoveInputFrame = 0;
+ 	/** Secondary (right click / L2) is held: on gamepad with the staff, L2 + face button casts slots 2-5. */
+ 	bool bSecondaryHeld = false;
++	/** World time of the last Precision Recovery heal (a stamp, not a timer: no reset on death). */
++	double LastPrecisionRecoveryTime = -1000000.0;
++	FDelegateHandle DamageDealtHandle;
+ 	FDelegateHandle DataReloadedHandle;
+ 	/** Recoil still to be recovered (degrees) and its recovery speed. */
+ 	FRotator PendingRecoil = FRotator::ZeroRotator;
+ 	float RecoilRecoverSpeed = 0.f;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the player cpp — includes, binding, handler:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -1,14 +1,16 @@
+ #include "Player/GBPlayerCharacter.h"
+ 
+ #include "Player/GBInputSet.h"
+ #include "Player/GBPlayerController.h"
++#include "Combat/GBCombatLibrary.h"
+ #include "Core/GBStatNames.h"
+ #include "Core/GBGameMode.h"
+ #include "Data/GBDataSubsystem.h"
+ #include "Stats/GBStatsComponent.h"
+ #include "Stats/GBAttributeComponent.h"
+ #include "Combat/GBStatusEffectComponent.h"
++#include "UI/GBHUD.h"
+ #include "Weapons/GBEquipmentComponent.h"
+ #include "Weapons/GBHeldItem.h"
+ #include "Spells/GBSpellbookComponent.h"
+ #include "QTE/GBQTEComponent.h"
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -146,8 +146,9 @@
+ 	SkillTree->InitializeFromData();
+ 
+ 	Stats->OnStatsChanged.AddUObject(this, &AGBPlayerCharacter::ApplyMovementStats);
+ 	Attributes->OnDeath.AddUObject(this, &AGBPlayerCharacter::HandleDeath);
++	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBPlayerCharacter::HandlePrecisionRecovery);
+ 	if (Data)
+ 	{
+ 		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &AGBPlayerCharacter::HandleDataReloaded);
+ 	}
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -166,8 +166,10 @@
+ }
+ 
+ void AGBPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+ {
++	UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
++	DamageDealtHandle.Reset();
+ 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+ 	{
+ 		Data->OnDataReloaded.Remove(DataReloadedHandle);
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -609,10 +609,9 @@
+ 	}
+ }
+ 
+ void AGBPlayerCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
+-{
+-	SetControlEnabled(false);
++{	SetControlEnabled(false);
+ 	Spellbook->CancelSustained();
+ 	QTE->CancelQTE();
+ 	if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=18, offset=607][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -609,9 +609,10 @@
+ 	}
+ }
+ 
+ void AGBPlayerCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
+-{	SetControlEnabled(false);
++{
++	SetControlEnabled(false);
+ 	Spellbook->CancelSustained();
+ 	QTE->CancelQTE();
+ 	if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+ 	{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now adding the handler implementation after `HandleDeath`:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -623,8 +623,55 @@
+ 		UE_LOG(LogGB, Warning, TEXT("GBPlayerCharacter: died without an AGBGameMode, nothing will respawn the player."));
+ 	}
+ }
+ 
++void AGBPlayerCharacter::HandlePrecisionRecovery(AActor* Target, const FGBDamageInfo& Info, float DamageDealt)
++{
++	(void)DamageDealt;
++	if (!IsValid(Target) || Target == this || !Info.bHeadshot || Info.Instigator.Get() != this)
++	{
++		return;
++	}
++	if (!Stats || !Attributes || IsDead())
++	{
++		return;
++	}
++	// Only a blow that killed counts: a head hit that does not kill never heals.
++	const UGBAttributeComponent* TargetAttributes = UGBAttributeComponent::Find(Target);
++	if (!TargetAttributes || !TargetAttributes->IsDead())
++	{
++		return;
++	}
++	const int32 Rank = FMath::Max(0, FMath::RoundToInt(Stats->GetStat(GBStat::PrecisionRecovery, 0.f)));
++	if (Rank <= 0)
++	{
++		return;
++	}
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const float HealFraction = Data ? Data->GetGameValue(GBRecovery::HealFraction, 0.03f) : 0.03f;
++	const float Cooldown = UGBCombatLibrary::ComputePrecisionRecoveryCooldown(Rank,
++		Data ? Data->GetGameValue(GBRecovery::CooldownBase, 7.f) : 7.f,
++		Data ? Data->GetGameValue(GBRecovery::CooldownPerRank, 1.f) : 1.f,
++		Data ? Data->GetGameValue(GBRecovery::CooldownMin, 1.f) : 1.f);
++	const UWorld* World = GetWorld();
++	const double Now = World ? World->GetTimeSeconds() : 0.0;
++	if (!UGBCombatLibrary::ShouldPrecisionRecover(true, true, Rank, static_cast<float>(Now - LastPrecisionRecoveryTime), Cooldown))
++	{
++		return;
++	}
++	LastPrecisionRecoveryTime = Now;
++	const float Before = Attributes->GetHealth();
++	Attributes->Heal(HealFraction * Attributes->GetMaxHealth());
++	const float Healed = Attributes->GetHealth() - Before;
++	if (Healed >= 0.5f)
++	{
++		if (AGBHUD* Hud = AGBHUD::Get(this))
++		{
++			Hud->ShowMessage(FString::Printf(TEXT("+%d health"), FMath::RoundToInt(Healed)));
++		}
++	}
++}
++
+ void AGBPlayerCharacter::FellOutOfWorld(const UDamageType& /*DmgType*/)
+ {
+ 	// Never Super: the engine would destroy the pawn. The checkpoint respawn brings the player back.
+ 	if (IsDead())
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the held item — expose `MakeDamageInfo` and apply the enchant build-up multiplier:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+@@ -70,8 +70,15 @@
+ 
+ 	/** Weapon stat with modifiers applied. */
+ 	float GetStat(FName Stat, float DefaultValue = 0.f) const;
+ 
++	/**
++	 * Builds the item's damage for one hit: Damage stat, element, instigator, SourceId = WeaponId,
++	 * OnHitEffect from Strings. When the hit's element comes from the weapon enchant, BuildUp is
++	 * multiplied by EnchantBuildUpMult (Arcane Conduit); the sword's own element is never an enchant.
++	 */
++	FGBDamageInfo MakeDamageInfo() const;
++
+ 	// ---- Input, routed by the player character ----
+ 	virtual void StartPrimary() {}
+ 	virtual void StopPrimary() {}
+ 	virtual void StartSecondary() {}
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+@@ -123,11 +123,8 @@
+ protected:
+ 	AGBPlayerCharacter* GetPlayerOwner() const { return PlayerOwner.Get(); }
+ 	UGBStatsComponent* GetOwnerStats() const;
+ 
+-	/** Builds the item's damage for one hit: Damage stat, element, instigator, SourceId = WeaponId, OnHitEffect from Strings. */
+-	FGBDamageInfo MakeDamageInfo() const;
+-
+ 	/** True only for items the weapon enchant applies to (guns; never the sword, GDD 6). */
+ 	virtual bool AcceptsEnchant() const { return false; }
+ 
+ 	// ---- Trigger handling shared by every item (FireInterval, bAutomatic, a pressed shot is buffered until ready) ----
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+Index: Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
++++ Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+@@ -159,8 +159,9 @@
+ 		}
+ 	}
+ 
+ 	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" modifier.
++	bool bElementFromEnchant = false;
+ 	EGBElement EnchantElement = EGBElement::Physical;
+ 	FName EnchantEffect = NAME_None;
+ 	if (AcceptsEnchant() && GetActiveEnchant(EnchantElement, EnchantEffect))
+ 	{
+@@ -168,14 +169,19 @@
+ 		if (!EnchantEffect.IsNone())
+ 		{
+ 			Info.OnHitEffect = EnchantEffect;
+ 		}
++		bElementFromEnchant = true;
+ 	}
+ 
+ 	const int32 ElementIndex = GBElemental::ElementIndex(Info.Element);
+ 	if (ElementIndex >= 0)
+ 	{
+ 		Info.BuildUp = GetStat(GBElemental::WeaponBuildUpKey(ElementIndex), 0.f);
++		if (bElementFromEnchant)
++		{
++			Info.BuildUp *= GetStat(GBStat::EnchantBuildUpMult, 1.f);
++		}
+ 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+ 		const float DefaultMult = Data ? Data->GetGameValue(GBStat::WeakPointBuildUpMult, 1.f) : 1.f;
+ 		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);
+ 	}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Weapons\GBGun.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+12:  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
+13:  * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
+14:  * AimTime, and ProjectileSpeed / ProjectileRadius / ProjectileGravity for FireMode "Projectile".
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+Index: Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Weapons/GBGun.h
++++ Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+@@ -10,9 +10,9 @@
+ 
+ /**
+  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
+  * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
+- * AimTime, and ProjectileSpeed / ProjectileRadius / ProjectileGravity for FireMode "Projectile".
++ * AimTime, EnchantBuildUpMult, and ProjectileSpeed / ProjectileRadius / ProjectileGravity for FireMode "Projectile".
+  * Reload: consumes one spare magazine, fills the magazine; the rounds left in the old one are lost
+  * (provisional, classic tactical style). Switching weapon cancels it.
+  */
+ UCLASS()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Headers and gameplay code are done. Now the smoke script — first the skill-count check, then the new steps:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -360,11 +360,11 @@
+ 			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
+ 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+ 			{
+ 				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
+-				if (Data->GetSkillNodes().Num() != 18)
++				if (Data->GetSkillNodes().Num() != 22)
+ 				{
+-					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 18 skill nodes, found %d"), Data->GetSkillNodes().Num());
++					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 22 skill nodes, found %d"), Data->GetSkillNodes().Num());
+ 				}
+ 				if (Data->GetSkillNodes().Num() > 0)
+ 				{
+ 					const FName Node = Data->GetSkillNodes()[0].Id;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -386,8 +386,164 @@
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE skill reset FAILED: points=%d (expected %d) rank=%d (expected 0)"), Points, SmokeSkillPointsBefore, Rank);
+ 			}
+ 		});
+ 		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
++		Add(15.6f + S, TEXT("weapon perks: unlock the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
++			Skills->AddPoints(30);
++			auto UnlockRanks = [Skills](FName Node, int32 Ranks)
++			{
++				for (int32 i = 0; i < Ranks; ++i)
++				{
++					if (Skills->Unlock(Node) != EGBSkillUnlockResult::Ok)
++					{
++						UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks: could not unlock '%s' (rank %d)"), *Node.ToString(), Skills->GetRank(Node) + 1);
++					}
++				}
++			};
++			UnlockRanks(FName(TEXT("Weapon_Damage")), 1);
++			UnlockRanks(FName(TEXT("Weapon_FireRate")), 1);
++			UnlockRanks(FName(TEXT("Weapon_ReloadSpeed")), 3);
++			UnlockRanks(FName(TEXT("Weapon_Headshot")), 1);
++			UnlockRanks(FName(TEXT("Weapon_PrecisionRecovery")), 1);
++			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2);
++			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reload=%d precision=%d conduit=%d deadeye=%d points=%d"),
++				Skills->GetRank(FName(TEXT("Weapon_ReloadSpeed"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
++				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
++		});
++		Add(15.8f + S, TEXT("precision recovery: weak point kill heals, second kill is on cooldown"), [](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			UGBAttributeComponent* Attributes = Player->GetAttributes();
++			const float MaxHealth = Attributes->GetMaxHealth();
++			Attributes->SetHealthAndMana(0.5f * MaxHealth, Attributes->GetMana());
++			auto KillWeakEnemy = [World, Player](bool bHeadshot) -> AGBEnemyCharacter*
++			{
++				const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
++				AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
++				if (!Enemy)
++				{
++					return nullptr;
++				}
++				FGBDamageInfo Info;
++				Info.Amount = 100000.f;
++				Info.Instigator = Player;
++				Info.bHeadshot = bHeadshot;
++				UGBCombatLibrary::DealDamage(Enemy, Info);
++				return Enemy;
++			};
++			const float Before = Attributes->GetHealth();
++			AGBEnemyCharacter* First = KillWeakEnemy(true);
++			const float Healed = Attributes->GetHealth() - Before;
++			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery healed=%.1f"), Healed);
++			if (!First || !First->IsDead())
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery: the test orc did not die"));
++			}
++			else if (FMath::Abs(Healed - 0.03f * MaxHealth) > 0.5f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery FAILED: healed %.1f, expected %.1f (3%% of max health)"), Healed, 0.03f * MaxHealth);
++			}
++			const float BeforeSecond = Attributes->GetHealth();
++			AGBEnemyCharacter* Second = KillWeakEnemy(true);
++			const float HealedSecond = Attributes->GetHealth() - BeforeSecond;
++			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery cooldown healed=%.1f"), HealedSecond);
++			if (!Second || !Second->IsDead())
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown: the second test orc did not die"));
++			}
++			else if (FMath::Abs(HealedSecond) > 0.001f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown FAILED: healed %.1f right after the first kill"), HealedSecond);
++			}
++		});
++		Add(16.0f + S, TEXT("rapid reload: pistol reload time"), [](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			AGBHeldItem* Pistol = Player->GetEquipment()->GetItemInSlot(EGBHeldSlot::Gun);
++			if (!Pistol || Pistol->GetWeaponId() != FName(TEXT("Pistol")))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload: the player has no pistol in the gun slot"));
++				return;
++			}
++			const float ReloadTime = Pistol->GetStat(GBStat::ReloadTime, 0.f);
++			UE_LOG(LogGB, Display, TEXT("SMOKE rapid reload pistol=%.2f"), ReloadTime);
++			float Base = 0.f;
++			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
++			{
++				if (const FGBWeaponDefinition* Def = Data->FindWeapon(Pistol->GetWeaponId()))
++				{
++					Base = Def->Stats.FindRef(GBStat::ReloadTime);
++				}
++			}
++			if (!FMath::IsNearlyEqual(ReloadTime, 0.7f * Base, 0.01f))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.7 x base (%.2f s)"), ReloadTime, 0.7f * Base);
++			}
++		});
++		Add(16.2f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			UGBEquipmentComponent* Equipment = Player->GetEquipment();
++			Equipment->SwitchTo(EGBHeldSlot::Gun);
++			if (!Player->GetSpellbook()->TryCastEnchant())
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
++				return;
++			}
++			AGBHeldItem* Gun = Equipment->GetActiveItem();
++			if (!Gun || Gun->GetSlot() != EGBHeldSlot::Gun)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: no gun in hand after SwitchTo"));
++				return;
++			}
++			const float Before = Gun->MakeDamageInfo().BuildUp;
++			for (int32 i = 0; i < 3; ++i)
++			{
++				if (Player->GetSkillTree()->Unlock(FName(TEXT("Weapon_EnchantBuildUp"))) != EGBSkillUnlockResult::Ok)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not unlock rank %d"), i + 1);
++					return;
++				}
++			}
++			const float After = Gun->MakeDamageInfo().BuildUp;
++			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit buildup=%.2f base=%.2f"), After, Before);
++			if (!FMath::IsNearlyEqual(After, 1.3f * Before, 0.01f))
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit FAILED: %.2f, expected 1.3 x base (%.2f)"), After, 1.3f * Before);
++			}
++		});
++		Add(16.4f + S, TEXT("screenshot: weapon tree with the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
++			{
++				PC->SetMenu(EGBMenu::SkillTrees);
++			}
++			Shot(TEXT("12_weapon_tree"));
++		});
++		Add(16.6f + S, TEXT("weapon perks: reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
++			{
++				PC->SetMenu(EGBMenu::None);
++			}
++			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
++			const int32 Refunded = Skills->ResetAll();
++			Skills->AddPoints(-30); // take back the test points added for this block
++			const int32 Points = Skills->GetPoints();
++			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reset refunded=%d points=%d"), Refunded, Points);
++			if (Points != SmokeSkillPointsBefore)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: points=%d (expected %d)"), Points, SmokeSkillPointsBefore);
++			}
++			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_FireRate")), FName(TEXT("Weapon_ReloadSpeed")),
++				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
++				FName(TEXT("Weapon_PistolHeadshot")) })
++			{
++				if (Skills->GetRank(Node) != 0)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: '%s' still at rank %d"), *Node.ToString(), Skills->GetRank(Node));
++				}
++			}
++		});
+ 		Add(17.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Two lambdas have unused named `World` params — making them anonymous to avoid warnings:
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Core\GBDevCommands.cpp. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+newString is already in the file, so this edit may already be applied.
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp failed
+[91m[1mError: [0mNo changes to apply: oldString and newString are identical.
+> build · muse-spark-1.3-contributor
+Both were already fine. Validating JSON, then building:
+[0m$ [0mpython -c "import json; [json.load(open(f'C:/GameJam/Glyphbound/Content/Data/'+n)) for n in ['Skills.json','Game.json','Weapons.json']]; print('JSON OK')"
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -Command "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Text.Json'); exit 0" 2>&1; Get-Command node -ErrorAction SilentlyContinue | Select-Object -First 1
+CommandType     Name                                               Version    Source                                   
+-----------     ----                                               -------    ------                                   
+Application     node.exe                                           26.13.1.0  C:\Program Files\nodejs\node.exe
+> build · muse-spark-1.3-contributor
+[0m$ [0mnode -e "const fs=require('fs'); for (const n of ['Skills.json','Game.json','Weapons.json']) { JSON.parse(fs.readFileSync('C:/GameJam/Glyphbound/Content/Data/'+n,'utf8')); } const s=JSON.parse(fs.readFileSync('C:/GameJam/Glyphbound/Content/Data/Skills.json','utf8')); console.log('JSON OK, skills='+s.Skills.length+', weapon='+s.Skills.filter(x=>x.Tree==='Weapon').length);"
+JSON OK, skills=22, weapon=10
+JSON valid — 22 nodes, 10 weapon. Building:
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 70 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 57 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 36
+Tests: 36 run, 0 failed, test time 0.66 s, wall time 39 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-205727
+> build · muse-spark-1.3-contributor
+36/36 pass. Running smoke:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-205810.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-205810.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 51 steps
+LogGB: Display: SMOKE step 1/51 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=22 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/51 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/51 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/51 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/51 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/51 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/51 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/51 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/51 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/51 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/51 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/51 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/51 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=150 (start 1550, needed <= 250) orc at V(X=-2454.02, Y=-142.38, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/51 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/51 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/51 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/51 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/51 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=22
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/51 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/51 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/51 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/51 (22.0 s): weapon perks: unlock the new nodes
+LogGB: Display: SMOKE weapon perks reload=3 precision=1 conduit=0 deadeye=2 points=22
+LogGB: Display: SMOKE step 23/51 (22.2 s): precision recovery: weak point kill heals, second kill is on cooldown
+LogGB: Display: SMOKE precision recovery healed=3.0
+LogGB: Display: SMOKE precision recovery cooldown healed=0.0
+LogGB: Display: SMOKE step 24/51 (22.4 s): rapid reload: pistol reload time
+LogGB: Display: SMOKE rapid reload pistol=0.84
+LogGB: Display: SMOKE step 25/51 (22.6 s): arcane conduit: enchanted build-up before and after
+LogGB: Error: SMOKE arcane conduit: could not cast the weapon enchant
+LogGB: Display: SMOKE step 26/51 (22.8 s): screenshot: weapon tree with the new nodes
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png
+LogGB: Display: SMOKE step 27/51 (23.0 s): weapon perks: reset the skills
+LogGB: Display: SMOKE weapon perks reset refunded=10 points=2
+LogGB: Display: SMOKE step 28/51 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 29/51 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 30/51 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 31/51 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 32/51 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 33/51 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 34/51 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=32 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 35/51 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 36/51 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 37/51 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 38/51 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 39/51 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 40/51 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 41/51 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 42/51 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 43/51 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 44/51 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 45/51 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 46/51 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 47/51 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 48/51 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 49/51 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 50/51 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 51/51 (56.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+LogGB: Error: SMOKE arcane conduit: could not cast the weapon enchant
+---- other engine errors: 0 ----
+---- screenshots: 13 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+12_weapon_tree.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=1 timedOut=False wall=72 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-205810.log
+> build · muse-spark-1.3-contributor
+One failure: the enchant cast. Checking `TryCastEnchant` and `SwitchTo` preconditions:
+[0m✱ [0mGrep "TryCastEnchant|IsHoldingGun|Cooldown|bRequiresGun|IsBusy|Mana" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp · 32 matches[0m
+[0m✱ [0mGrep "SwitchTo|bLocked|SetLocked|IsHoldingGun" [90min Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.cpp · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=65, offset=398][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Weapons/GBEquipmentComponent.cpp [90m[limit=55, offset=380][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=50, offset=348][0m
+[0m→ [0mRead Glyphbound/Content/Data/Spells.json [90m[limit=70, offset=820][0m
+> build · muse-spark-1.3-contributor
+Let me look at `IsBusy`/`GetNow` and the enchant finish path:
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=30, offset=325][0m
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp [90m[limit=60, offset=464][0m
+> build · muse-spark-1.3-contributor
+The cast path looks fine on paper — I need the actual failure reason. Checking what's public for diagnostics:
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.h 
+> build · muse-spark-1.3-contributor
+Let me check `StartQTE` (QTE-off path) and `GetNow`:
+[0m✱ [0mGrep "bool UGBQTEComponent::StartQTE|bEnabled|return false|return true" [90min Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp · 7 matches[0m
+[0m✱ [0mGrep "GetNow|TimeSeconds|RealTime" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellbookComponent.cpp · 4 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.cpp [90m[limit=45, offset=90][0m
+> build · muse-spark-1.3-contributor
+`CanCast` is public — I'll log the actual failure reason instead of guessing:
+[0m✱ [0mGrep "EGBCastFailReason|None|Busy|Cooldown|Mana|HeldItem|Known" [90min Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h · 8 matches[0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -482,9 +482,15 @@
+ 		Add(16.2f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+ 			Equipment->SwitchTo(EGBHeldSlot::Gun);
+-			if (!Player->GetSpellbook()->TryCastEnchant())
++			UGBSpellbookComponent* Book = Player->GetSpellbook();
++			const FName EnchantId = Book->GetEnchantSpell();
++			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit diag holdingGun=%d busy=%d cd=%.1f mana=%.0f knows=%d cost=%.0f cancast=%d"),
++				Equipment->IsHoldingGun() ? 1 : 0, Book->IsBusy() ? 1 : 0, Book->GetCooldownRemaining(EnchantId),
++				Player->GetAttributes()->GetMana(), Book->KnowsSpell(EnchantId) ? 1 : 0, Book->GetManaCost(EnchantId),
++				static_cast<int32>(Book->CanCast(EnchantId)));
++			if (!Book->TryCastEnchant())
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
+ 				return;
+ 			}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 && powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1 2>&1 | Select-String -Pattern 'arcane conduit|SMOKE weapon perks|precision recovery|rapid reload|weapon tree|problems|\(none\)|LogGB: (Error|Warning)|Smoke:|screenshots' | Select-Object -First 40
+At line:1 char:77
++ ... file -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 && powersh ...
++                                                                ~~
+The token '&&' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+Result: Succeeded
+Build time: 7 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210127.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210127.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 51 steps
+LogGB: Display: SMOKE step 1/51 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=22 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/51 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/51 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/51 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/51 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/51 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/51 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/51 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/51 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/51 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/51 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/51 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/51 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=148 (start 1550, needed <= 250) orc at V(X=-2454.33, Y=-141.18, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=-1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/51 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/51 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/51 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/51 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/51 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=22
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/51 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/51 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/51 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/51 (22.0 s): weapon perks: unlock the new nodes
+LogGB: Display: SMOKE weapon perks reload=3 precision=1 conduit=0 deadeye=2 points=22
+LogGB: Display: SMOKE step 23/51 (22.2 s): precision recovery: weak point kill heals, second kill is on cooldown
+LogGB: Display: SMOKE precision recovery healed=3.0
+LogGB: Display: SMOKE precision recovery cooldown healed=0.0
+LogGB: Display: SMOKE step 24/51 (22.4 s): rapid reload: pistol reload time
+LogGB: Display: SMOKE rapid reload pistol=0.84
+LogGB: Display: SMOKE step 25/51 (22.6 s): arcane conduit: enchanted build-up before and after
+LogGB: Display: SMOKE arcane conduit diag holdingGun=1 busy=0 cd=2.3 mana=100 knows=1 cost=20 cancast=5
+LogGB: Error: SMOKE arcane conduit: could not cast the weapon enchant
+LogGB: Display: SMOKE step 26/51 (22.8 s): screenshot: weapon tree with the new nodes
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png
+LogGB: Display: SMOKE step 27/51 (23.0 s): weapon perks: reset the skills
+LogGB: Display: SMOKE weapon perks reset refunded=10 points=2
+LogGB: Display: SMOKE step 28/51 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 29/51 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 30/51 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 31/51 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 32/51 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 33/51 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 34/51 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=30 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 35/51 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 36/51 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 37/51 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 38/51 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 39/51 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 40/51 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 41/51 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 42/51 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 43/51 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 44/51 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 45/51 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 46/51 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 47/51 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 48/51 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 49/51 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 50/51 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 51/51 (56.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+LogGB: Error: SMOKE arcane conduit: could not cast the weapon enchant
+---- other engine errors: 0 ----
+---- screenshots: 13 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+12_weapon_tree.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=1 timedOut=False wall=70 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210127.log
+> build · muse-spark-1.3-contributor
+`cd=2.3` — the enchant cooldown (world-time) hadn't expired yet at ticker-time 22.6s. Let me confirm the enum mapping:
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Spells/GBSpellTypes.h [90m[limit=20, offset=44][0m
+> build · muse-spark-1.3-contributor
+`cancast=5` = `OnCooldown` — confirmed. The fix: move the conduit check to after the respawn (cooldown long over), with QTE forced off/on around it:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -478,45 +478,8 @@
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.7 x base (%.2f s)"), ReloadTime, 0.7f * Base);
+ 			}
+ 		});
+-		Add(16.2f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
+-		{
+-			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+-			Equipment->SwitchTo(EGBHeldSlot::Gun);
+-			UGBSpellbookComponent* Book = Player->GetSpellbook();
+-			const FName EnchantId = Book->GetEnchantSpell();
+-			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit diag holdingGun=%d busy=%d cd=%.1f mana=%.0f knows=%d cost=%.0f cancast=%d"),
+-				Equipment->IsHoldingGun() ? 1 : 0, Book->IsBusy() ? 1 : 0, Book->GetCooldownRemaining(EnchantId),
+-				Player->GetAttributes()->GetMana(), Book->KnowsSpell(EnchantId) ? 1 : 0, Book->GetManaCost(EnchantId),
+-				static_cast<int32>(Book->CanCast(EnchantId)));
+-			if (!Book->TryCastEnchant())
+-			{
+-				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
+-				return;
+-			}
+-			AGBHeldItem* Gun = Equipment->GetActiveItem();
+-			if (!Gun || Gun->GetSlot() != EGBHeldSlot::Gun)
+-			{
+-				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: no gun in hand after SwitchTo"));
+-				return;
+-			}
+-			const float Before = Gun->MakeDamageInfo().BuildUp;
+-			for (int32 i = 0; i < 3; ++i)
+-			{
+-				if (Player->GetSkillTree()->Unlock(FName(TEXT("Weapon_EnchantBuildUp"))) != EGBSkillUnlockResult::Ok)
+-				{
+-					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not unlock rank %d"), i + 1);
+-					return;
+-				}
+-			}
+-			const float After = Gun->MakeDamageInfo().BuildUp;
+-			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit buildup=%.2f base=%.2f"), After, Before);
+-			if (!FMath::IsNearlyEqual(After, 1.3f * Before, 0.01f))
+-			{
+-				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit FAILED: %.2f, expected 1.3 x base (%.2f)"), After, 1.3f * Before);
+-			}
+-		});
+ 		Add(16.4f + S, TEXT("screenshot: weapon tree with the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+ 			{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -554,10 +554,9 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+ 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+ 			Shot(TEXT("8_respawn"));
+ 		});
+-		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+-		{
++		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)		{
+ 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+ 			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+ 			const AGBHeldItem* InSlot = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE staff in slot=%s emberOwned=%d returnedItem=%d"),
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=12, offset=495][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=30, offset=507][0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "second staff goes to the inventory" [90min Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp · 1 match[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=14, offset=556][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -554,9 +554,10 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+ 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+ 			Shot(TEXT("8_respawn"));
+ 		});
+-		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)		{
++		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
+ 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+ 			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+ 			const AGBHeldItem* InSlot = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE staff in slot=%s emberOwned=%d returnedItem=%d"),
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now inserting the relocated conduit step after the respawn:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -554,8 +554,74 @@
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+ 				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+ 			Shot(TEXT("8_respawn"));
+ 		});
++		Add(26.6f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
++			// The weapon enchant has a 15 s world-time cooldown and the smoke clock runs ahead of the
++			// world clock, so this runs after the respawn: the earlier cast is long over by now.
++			SetQTEEnabled(false);
++			UGBEquipmentComponent* Equipment = Player->GetEquipment();
++			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
++			const int32 PointsBefore = Skills->GetPoints();
++			Skills->AddPoints(8);
++			Equipment->SwitchTo(EGBHeldSlot::Gun);
++			UGBSpellbookComponent* Book = Player->GetSpellbook();
++			const FName EnchantId = Book->GetEnchantSpell();
++			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit diag holdingGun=%d busy=%d cd=%.1f mana=%.0f knows=%d cost=%.0f cancast=%d"),
++				Equipment->IsHoldingGun() ? 1 : 0, Book->IsBusy() ? 1 : 0, Book->GetCooldownRemaining(EnchantId),
++				Player->GetAttributes()->GetMana(), Book->KnowsSpell(EnchantId) ? 1 : 0, Book->GetManaCost(EnchantId),
++				static_cast<int32>(Book->CanCast(EnchantId)));
++			AGBHeldItem* Gun = nullptr;
++			float Before = 0.f;
++			if (!Book->TryCastEnchant())
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
++			}
++			else if ((Gun = Equipment->GetActiveItem()) == nullptr || Gun->GetSlot() != EGBHeldSlot::Gun)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: no gun in hand after SwitchTo"));
++				Gun = nullptr;
++			}
++			else
++			{
++				Before = Gun->MakeDamageInfo().BuildUp;
++			}
++			if (Gun && Before > 0.f)
++			{
++				Skills->Unlock(FName(TEXT("Weapon_Damage")));
++				Skills->Unlock(FName(TEXT("Weapon_Headshot")));
++				for (int32 i = 0; i < 3; ++i)
++				{
++					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
++				}
++				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
++				{
++					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
++				}
++				else
++				{
++					const float After = Gun->MakeDamageInfo().BuildUp;
++					UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit buildup=%.2f base=%.2f"), After, Before);
++					if (!FMath::IsNearlyEqual(After, 1.3f * Before, 0.01f))
++					{
++						UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit FAILED: %.2f, expected 1.3 x base (%.2f)"), After, 1.3f * Before);
++					}
++				}
++			}
++			else if (Gun)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: enchanted build-up is 0, the enchant is not active"));
++			}
++			Equipment->SwitchTo(EGBHeldSlot::Staff);
++			Skills->ResetAll();
++			Skills->AddPoints(-8); // take back the test points added for this step
++			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit reset FAILED: points=%d (expected %d)"), Skills->GetPoints(), PointsBefore);
++			}
++			SetQTEEnabled(true);
++		});
+ 		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+ 			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Rebuilding both targets and re-running smoke:
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1
+Result: Succeeded
+Build time: 8 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound
+Result: Succeeded
+Build time: 17 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210513.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210513.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds=gb.Smoke -game
+LogGB: Display: SMOKE started: 51 steps
+LogGB: Display: SMOKE step 1/51 (1.0 s): data and world summary
+LogGB: Display: SMOKE data spells=13 weapons=6 effects=8 items=12 recipes=4 enemies=4 encounters=2 skills=22 sprites=40 playerStats=22
+LogGB: Display: SMOKE state [start] player=1 dead=0 health=100/100 mana=100/100 era=Past held=Staff_Apprentice gbActors=29 enemies=2 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE loadout slot 0 = Fireball
+LogGB: Display: SMOKE loadout slot 1 = LightningBolt
+LogGB: Display: SMOKE loadout slot 2 = IceWall
+LogGB: Display: SMOKE loadout slot 3 = None
+LogGB: Display: SMOKE loadout slot 4 = None
+LogGB: Display: SMOKE step 2/51 (1.5 s): staff basic attack
+LogGB: Display: SMOKE step 3/51 (2.0 s): cast slot 0 with the QTE off
+LogGB: Display: SMOKE cast slot0 ok=1 mana=85
+LogGB: Display: SMOKE step 4/51 (2.6 s): cast slot 1
+LogGB: Display: SMOKE cast slot1 ok=1
+LogGB: Display: SMOKE step 5/51 (3.2 s): cast slot 2
+LogGB: Display: SMOKE cast slot2 ok=1
+LogGB: Display: SMOKE step 6/51 (3.8 s): screenshot: past, staff
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/1_past_staff.png
+LogGB: Display: SMOKE step 7/51 (4.8 s): learn every spell group, take the pistol, shoot, reload
+LogGB: Display: SMOKE learned=8 known=13 gun=1 holdingGun=1
+LogGB: Display: SMOKE gun ammo after one shot: 11 in magazine, 4 spare
+LogGB: Display: SMOKE step 8/51 (5.4 s): weapon enchant
+LogGB: Display: SMOKE enchant ok=1
+LogGB: Display: SMOKE step 9/51 (5.8 s): potion and grenade
+LogGB: Display: SMOKE potion=1 grenade=1 quick=HealthPotion
+LogGB: Display: SMOKE step 10/51 (6.2 s): kill one enemy
+LogGB: Display: SMOKE hit enemy TrainingDummy for 100000, dead=1
+LogGB: Display: SMOKE step 11/51 (6.6 s): screenshot: past, gun
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/2_past_gun.png
+LogGB: Display: SMOKE step 12/51 (7.8 s): pathing check: an orc behind a wall, the player invulnerable
+LogGB: Display: SMOKE navigation system=1 navData=1
+LogGB: Display: SMOKE path check start: orc at V(X=-2500.00, Y=-1550.00, Z=97.00), player at V(X=-2500.00, Z=92.15), distance=1550 straightLineBlocked=1 (by StaticMeshActor_87) navPath=1 partial=0 pathLength=1757
+LogGB: Display: SMOKE step 13/51 (13.8 s): pathing check: did the orc get around the wall
+LogGB: Display: SMOKE path check end: distance=149 (start 1550, needed <= 250) orc at V(X=-2454.26, Y=-141.56, Z=97.00), navTime=3.9 steerTime=0.0 stuckEvents=0 side=1 goAround=0.0 state=3
+LogGB: Display: SMOKE path check passed
+LogGB: Display: SMOKE step 14/51 (14.2 s): travel to the future
+LogGB: Display: SMOKE travel requested ok=1
+LogGB: Display: SMOKE step 15/51 (16.9 s): screenshot: future
+LogGB: Display: SMOKE state [after travel] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Pistol gbActors=29 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/3_future_gun.png
+LogGB: Display: SMOKE step 16/51 (18.1 s): open the inventory
+LogGB: Display: SMOKE step 17/51 (18.6 s): screenshot: inventory
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/4_inventory.png
+LogGB: Display: SMOKE step 18/51 (19.8 s): open the skill trees and unlock a node
+LogGB: Display: SMOKE skills loaded=22
+LogGB: Display: SMOKE unlock Weapon_Damage result=0 rank=1 points=1
+LogGB: Display: SMOKE step 19/51 (20.3 s): screenshot: skill trees
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5_skills.png
+LogGB: Display: SMOKE step 20/51 (21.3 s): reset the skills
+LogGB: Display: SMOKE skill reset refunded=1 points=2 rank=0
+LogGB: Display: SMOKE step 21/51 (21.8 s): screenshot: skills reset
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/5b_skills_reset.png
+LogGB: Display: SMOKE step 22/51 (22.0 s): weapon perks: unlock the new nodes
+LogGB: Display: SMOKE weapon perks reload=3 precision=1 conduit=0 deadeye=2 points=22
+LogGB: Display: SMOKE step 23/51 (22.2 s): precision recovery: weak point kill heals, second kill is on cooldown
+LogGB: Display: SMOKE precision recovery healed=3.0
+LogGB: Display: SMOKE precision recovery cooldown healed=0.0
+LogGB: Display: SMOKE step 24/51 (22.4 s): rapid reload: pistol reload time
+LogGB: Display: SMOKE rapid reload pistol=0.84
+LogGB: Display: SMOKE step 25/51 (22.8 s): screenshot: weapon tree with the new nodes
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png
+LogGB: Display: SMOKE step 26/51 (23.0 s): weapon perks: reset the skills
+LogGB: Display: SMOKE weapon perks reset refunded=10 points=2
+LogGB: Display: SMOKE step 27/51 (23.5 s): close the menu, staff in hand, cast with the QTE on
+LogGB: Display: SMOKE cast slot3 (FireWall) with QTE ok=1 qteActive=1
+LogGB: Display: SMOKE step 28/51 (23.9 s): QTE: press one key
+LogGB: Display: SMOKE step 29/51 (24.2 s): screenshot: QTE
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/6_qte.png
+LogGB: Display: SMOKE step 30/51 (28.3 s): after the QTE time limit
+LogGB: Display: SMOKE qte finished active=0 power=0.25 reach=0.00 success=1 timedOut=1 dilation=1.00
+LogGB: Display: SMOKE step 31/51 (28.7 s): kill the player
+LogGB: Display: SMOKE player dead=1
+LogGB: Display: SMOKE step 32/51 (29.4 s): screenshot: death
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/7_death.png
+LogGB: Display: SMOKE step 33/51 (32.4 s): after the respawn
+LogGB: Display: SMOKE state [after respawn] player=1 dead=0 health=100/100 mana=100/100 era=Future held=Staff_Apprentice gbActors=31 enemies=1 loc=V(X=-2500.00, Z=92.15)
+LogGB: Display: SMOKE owned weapons=2 known spells=13
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/8_respawn.png
+LogGB: Display: SMOKE step 34/51 (33.0 s): arcane conduit: enchanted build-up before and after
+LogGB: Display: SMOKE arcane conduit diag holdingGun=1 busy=0 cd=0.0 mana=100 knows=1 cost=20 cancast=0
+LogGB: Display: SMOKE arcane conduit buildup=19.50 base=15.00
+LogGB: Display: SMOKE step 35/51 (33.6 s): second staff goes to the inventory, equip by hand
+LogGB: Display: SMOKE staff in slot=Staff_Apprentice emberOwned=1 returnedItem=0
+LogGB: Display: SMOKE equip ember ok=1 staff in slot=Staff_Ember emberEquipped=1
+LogGB: Display: SMOKE step 36/51 (34.8 s): summon the ice shield and raise it
+LogGB: Display: SMOKE shield cast=1 hasShield=1 raised=1
+LogGB: Display: SMOKE step 37/51 (35.5 s): screenshot: shield
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/9_shield.png
+LogGB: Display: SMOKE step 38/51 (36.5 s): lower the shield
+LogGB: Display: SMOKE shield lowered hasShield=1 raised=0
+LogGB: Display: SMOKE step 39/51 (37.7 s): ground spells: back to the past, staff in hand, learn both spells
+LogGB: Display: SMOKE ground spells setup known=13
+LogGB: Display: SMOKE step 40/51 (38.9 s): ground spells: look down and cast the lightning rune close by
+LogGB: Display: SMOKE cast LightningRune ok=1 runes=1
+LogGB: Display: SMOKE step 41/51 (40.1 s): ground spells: cast the ice floor overlapping about half the rune
+LogGB: Display: SMOKE cast IceFloor ok=1 floors=1
+LogGB: Display: SMOKE ground layers runeZ=3.0 floorZ=4.5
+LogGB: Display: SMOKE step 42/51 (41.1 s): screenshot: ground spells
+LogGB: Display: SMOKE ground spells runes=1 floors=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/10_ground_spells.png
+LogGB: Display: SMOKE step 43/51 (41.8 s): flamethrower: cast with the QTE off and no key held
+LogGB: Display: SMOKE flamethrower started=1
+LogGB: Display: SMOKE step 44/51 (43.3 s): flamethrower: it must have stopped after MinDuration
+LogGB: Display: SMOKE flamethrower after=1.50s alive=0
+LogGB: Display: SMOKE step 45/51 (48.4 s): flamethrower interrupt: start a beam for the strong hit
+LogGB: Display: SMOKE flamethrower interrupt setup ok=1 beams=1
+LogGB: Display: SMOKE step 46/51 (48.6 s): flamethrower interrupt: a 35% hit must end the beam
+LogGB: Display: SMOKE flamethrower interrupt alive=0 health=65
+LogGB: Display: SMOKE step 47/51 (48.7 s): screenshot: interrupt shake
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/11_interrupt_shake.png
+LogGB: Display: SMOKE step 48/51 (54.9 s): flamethrower small hit: start a second beam
+LogGB: Display: SMOKE flamethrower small hit setup ok=1 beams=1
+LogGB: Display: SMOKE step 49/51 (55.1 s): flamethrower small hit: a 10% hit must not end the beam
+LogGB: Display: SMOKE flamethrower small hit alive=1
+LogGB: Display: SMOKE step 50/51 (55.3 s): elemental build-up on the training dummy
+LogGB: Display: SMOKE elemental dedupe ok=1
+LogGB: Display: SMOKE elemental Fire triggered=1 adds=4
+LogGB: Display: SMOKE elemental Fire ignite=1
+LogGB: Display: SMOKE elemental Fire blockedWhileActive=1
+LogGB: Display: SMOKE elemental Lightning triggered=1 adds=4
+LogGB: Display: SMOKE elemental Lightning blockedWhileActive=1
+LogGB: Display: SMOKE elemental Ice triggered=1 adds=4
+LogGB: Display: SMOKE elemental Ice blockedWhileActive=1
+LogGB: Display: SMOKE step 51/51 (56.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 13 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+10_ground_spells.png
+11_interrupt_shake.png
+12_weapon_tree.png
+1_past_staff.png
+2_past_gun.png
+3_future_gun.png
+4_inventory.png
+5b_skills_reset.png
+5_skills.png
+6_qte.png
+7_death.png
+8_respawn.png
+9_shield.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=70 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261112-210513.log
+> build · muse-spark-1.3-contributor
+All smoke lines pass with zero errors. Checking the weapon-tree screenshot for layout overlaps:
+[0m→ [0mRead Glyphbound/Saved/Screenshots/Smoke/12_weapon_tree.png 
+> build · muse-spark-1.3-contributor
+[0m$ [0mpowershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1 -MinTests 36
+Tests: 36 run, 0 failed, test time 0.66 s, wall time 19 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261112-210649
+> build · muse-spark-1.3-contributor
+All green. Final check of what changed:
+[0m$ [0mgit status --short -- Glyphbound | Select-Object -First 20
+M Glyphbound/Content/Data/Game.json
+ M Glyphbound/Content/Data/Skills.json
+ M Glyphbound/Content/Data/Weapons.json
+ M Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.cpp
+ M Glyphbound/Source/Glyphbound/Combat/GBCombatLibrary.h
+ M Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+ M Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+ M Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+ M Glyphbound/Source/Glyphbound/Tests/GBCombatTests.cpp
+ M Glyphbound/Source/Glyphbound/Weapons/GBGun.h
+ M Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp
+ M Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.h
+> build · muse-spark-1.3-contributor
+Verification (final code, in order run):
+1. `Build-Jam.ps1` -> `Result: Succeeded` (exit 0).
+2. `Build-Jam.ps1 -Target Glyphbound` -> `Result: Succeeded` (exit 0).
+3. `Test-Jam.ps1 -MinTests 36` -> `Tests: 36 run, 0 failed`, ensures 0 (exit 0).
+4. `Smoke-Jam.ps1` -> `Smoke: done=True crashed=False LogGB errors=0 timedOut=False`, `SMOKE path check passed`, no LogGB warnings. New lines: `SMOKE precision recovery healed=3.0`, `SMOKE precision recovery cooldown healed=0.0`, `SMOKE rapid reload pistol=0.84`, `SMOKE arcane conduit buildup=19.50 base=15.00`, screenshot `12_weapon_tree.png` (13 shots total).
+
+What changed (13 files, no commits):
+- `Content/Data/Skills.json`: weapon tree is now 3 columns x 5 rows, 10 nodes. Kept ids; per the table: `Weapon_ReloadSpeed` (0,2, req FireRate, ReloadTime x0.9), `Weapon_Recoil` (0,3, req FireRate, RecoilPitch AND RecoilYaw x0.8), `Weapon_PrecisionRecovery` (2,2, req Headshot, `PrecisionRecovery` Add 1), `Weapon_EnchantBuildUp` (2,3, req Headshot, `Weapon.All.EnchantBuildUpMult` x1.1), `Weapon_PistolHeadshot` (0,4, req Damage, `Weapon.Pistol.HeadshotMult` Add 0.25); bottom row all req only `Weapon_Damage`; Marksman now req `Weapon_Damage`; new descriptions as specified (Steady Grip text unchanged).
+- `Content/Data/Game.json`: `PrecisionRecoveryHealFraction` 0.03, `CooldownBase` 7, `CooldownPerRank` 1, `CooldownMin` 1.
+- `Content/Data/Weapons.json`: `EnchantBuildUpMult: 1` in Pistol/Shotgun/Rifle stats (keeps the modifier-key check silent).
+- `Core/GBStatNames.h`: `GBStat::EnchantBuildUpMult`, `GBStat::PrecisionRecovery` (player stat = perk rank, read like MoveSpeed: skill modifier on the player's stats, no base in Player.json), new `GBRecovery::` namespace for the four Game.json keys.
+- `Combat/GBCombatLibrary.h/.cpp`: pure `ComputePrecisionRecoveryCooldown` (rank<=0 -> 0, else max(Min, Base-PerRank*rank)) and `ShouldPrecisionRecover` (weak-point kill + player instigator + rank>0 + TimeSinceLastHeal >= Cooldown).
+- `Player/GBPlayerCharacter.h/.cpp`: subscribes to the global `UGBCombatLibrary::OnDamageDealt` (bind in BeginPlay, unbind in EndPlay). On each event it checks the target just died with a weak-point killing blow by the player, reads rank/cooldown numbers from data, heals fraction x max health, stamps world time, and shows the existing HUD toast `+N health`. Death hook used: OnDamageDealt, not enemy OnDied. Why: it carries the killing blow (bHeadshot + Instigator) AND the death state in one place, needs no per-enemy bindings, lives entirely on the player, and fires exactly once per killing blow (post-death hits deal 0, so shotgun pellets can never heal twice; non-killing head hits never fire with a dead target).
+- `Weapons/GBHeldItem.h/.cpp`: `MakeDamageInfo` moved to public (smoke needs it); when the hit's element comes from the enchant, `BuildUp *= GetStat(EnchantBuildUpMult, 1)`. Sword unaffected (AcceptsEnchant false).
+- `Weapons/GBGun.h`: stat-list comment now includes EnchantBuildUpMult.
+- `Tests/GBCombatTests.cpp`: `Glyphbound.Combat.PrecisionRecovery` (no prefix clash with existing names).
+- `Core/GBDevCommands.cpp`: skill count check 18 -> 22; new steps unlock/test/screenshot/reset as specified; precision uses spawned Orc_Past killed by `DealDamage` with `bHeadshot=true`, player instigator; conduit step runs after the respawn.
+
+Multiply scaling (confirmed in code): skill ranks apply via `AddModifiers(..., ValueScale=rank)`, which rewrites Multiply V to `1+(V-1)*rank` — linear, not compounding. So 0.9 @r3 = 0.7 (-30%), 1.1 @r3 = 1.3 (+30%), 0.8 @r3 = 0.4; smoke confirms 0.84 = 0.7x1.2 and 19.5 = 1.3x15.
+
+Not as described / deviations:
+- Conduit smoke check could not run at 22.6s: the enchant's 15s cooldown is world-time while the smoke ticker is real-time (world lags under load; 2.3s were left, `CanCast`=OnCooldown). Moved that one check to after the respawn (33.0s) with QTE forced off and back on; everything else stayed in the weapon block. No game code changed for this, only the script.
+- Heal feedback is the HUD toast (`+3 health`, visible in the 12_weapon_tree shot), not a damage number: damage numbers explicitly skip the player pawn, and per the task the existing HUD message is the fallback. No new UI.
+- HUD needed no code change: `DrawSkillTrees` already sizes rows from max Row and draws per-`Requires` links generically; the screenshot shows 5 rows, all boxes disjoint, links correct in both tree styles.
+
+Play-check for a person: unlock Rapid Reload 3 with pistol, reload should take ~0.84s with the bar following; unlock Precision Recovery, kill with a weak-point hit at half health (+3 toast, 6/5/4s cooldown by rank), then a body-shot kill and an immediate second weak-point kill must not heal; enchant a gun, Arcane Conduit 3 should visibly fill elemental bars ~30% faster; Deadeye raises pistol weak-point mult 2.0 -> 2.75; open K and confirm the weapon tree matches the screenshot.

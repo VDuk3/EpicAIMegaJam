@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.24, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.25, 2026-11-12** — owner's vision plus twelve rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.25 (2026-11-12): owner approved the first real gun model: the pistol replaces its placeholder (§8 "Guns"). Architect, provisional: its glow follows the enchant element and its energy bar shows the enchant time left.
 - v0.24 (2026-11-12): owner: the weapon tree is reorganized (Heavy Rounds on top; a handling branch and a precision branch; three weapon specializations on one row) and gets four new perks: Rapid Reload, Precision Recovery, Arcane Conduit, Deadeye. See §18 "Weapon tree".
 - v0.23 (2026-11-12): owner: guns are less accurate while the player moves than while standing still.
 - v0.22 (2026-11-12): owner's spec: **elemental build-up** (fire, lightning, ice) on every enemy, with three status effects (Ignite, Shock, Frost), per-enemy resistances and reactions, a weak-point bonus for weapon hits, and every number in data. Owner's answers: the old small effects on every hit (burn, the lightning slow, the enchant's chill) are **removed**; the status effect at the full bar is the only elemental effect (the ice floor keeps its zone slow). The elemental sword and the ember staff build up their element too. See §6 "Elemental build-up".
@@ -246,6 +247,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 - With a gun in hand: **primary fire = shoot**, **secondary = aim**.
 - **Moving costs accuracy (owner, 2026-11-12):** shots spread more while the player moves than while standing still; the crosshair opens to show it. See §18.
 - **Magazines and reload**, like any shooter.
+- **Gun models (v0.25):** the pistol is the first real 3D model (made with Tripo on ASSETS, finished in Blender on CENTRAL); the shotgun and rifle keep placeholder shapes until their models exist. The pistol's trigger moves on each shot and its magazine slides out and back in during the reload. **Glow (provisional, architect):** the gun's glowing parts show its own green when not enchanted; while the enchant runs they take the element's colour, and the energy bar on the side shows the enchant time left (full when cast, empty when it ends).
 - **Ammo works like classic tactical shooters:** each gun has a fixed number of spare magazines, and each magazine a fixed number of bullets.
 - **All ammo refills completely every time the player travels between eras.**
 - Between refills, ammo is **picked up from the floor** where enemies drop it.

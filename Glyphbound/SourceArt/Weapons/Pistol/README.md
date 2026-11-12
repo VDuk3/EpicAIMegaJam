@@ -16,5 +16,11 @@ ninth block). Older versions were deleted on CENTRAL; ASSETS keeps its own origi
   (linear). The purple .blend was the same file with the other value and was not kept.
 - `clean_log.txt` — the regions removed from the atlas and the donor offset of each.
 
-Still to do: FBX export and the UE 5.9 material; lens and reticle; check all 72 frames from the real game camera
-(the trigger's saw teeth are accepted only if the player cannot see them).
+- `Export/` — `pistol_export_fbx.py` writes `SM_Pistol_{Body,Trigger,Magazine,EnergyBar}.fbx` (rest pose, muzzle +X,
+  bar on -Y in Unreal, body origin at the hand point, trigger and magazine at their pivots) and `export_report.json`
+  (offsets and motion the game code uses). The old lens faces (`Optic_OriginalLens_Invisible`) are dropped.
+- Into Unreal: `Tools/Jam/Import-Pistol.ps1` (Editor closed) imports them to `/Game/Glyphbound/Weapons/Pistol` with
+  their textures and materials. Re-run it after any export.
+
+Still to do: lens and reticle rebuild; check the moving parts from the real game camera (the trigger's saw teeth are
+accepted only if the player cannot see them).
