@@ -111,11 +111,11 @@
 			"Id": "Weapon_RifleFar",
 			"Tree": "Weapon",
 			"DisplayName": "Long Shot",
-			"Description": "Rifle: +0.15x damage at long range per rank.",
+			"Description": "Rifle: +0.2x damage at long range per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
-			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.15 } ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.2 } ],
 			"Column": 2,
 			"Row": 4
 		},
