@@ -375,6 +375,8 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Reload:** the bullets left in the old magazine are lost (classic tactical style). A gun reloads by itself when its magazine runs dry. Ammo pickups give one spare magazine, up to the gun's maximum.
 - **Sustained spells (flamethrower, ice shield):** after the QTE they run for their Duration, or until the same spell key is pressed again, the weapon is switched, or the player dies. Mana is paid once, at the start.
 - **Ice shield QTE:** part 1 (power) scales its duration and health; part 2 (reach) scales how much frontal damage it blocks.
+- **Modifier keys by weapon type:** besides one weapon (`Weapon.Pistol.Damage`) and all weapons (`Weapon.All.Damage`), a modifier can target a slot: `Weapon.Gun.*`, `Weapon.Staff.*`, `Weapon.Sword.*`. The enchant uses `Weapon.Gun.Damage`, so it never buffs the staff or the sword.
+- **Explosions and enemy melee need a clear line** to their target: no damage through walls or through the ice wall.
 - **Weapon enchant QTE:** part 1 scales how long the buff lasts; part 2 scales how strong it is. Only one enchant at a time. The enchanted gun deals the element's damage type and applies its effect on hit (fire burns, lightning shocks, ice chills).
 - **Spell walls:** the fire wall does not block; it burns enemies that touch it. The ice wall blocks movement and shots and has health; anyone's shots can break it, the player's included. Enemies do not attack walls on purpose yet.
 - **QTE:** a wrong key consumes its step. A gesture is judged when the hand stops for a moment or the stroke is clearly complete. If both parts are fully missed the spell fizzles, and the mana is still spent and the cooldown still starts.
@@ -382,7 +384,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Elemental sword:** the hilt and the gems are not consumed when forging, so the player re-forges from the inventory to switch element.
 - **Enemies:** once hit, an enemy chases the player from any distance. Enemies of the other era are frozen and hidden, not simulated.
 - **Encounters:** if the player dies during one, its living enemies are removed and it starts again from wave 1 on return. Progress flags are never rolled back.
-- **Checkpoints:** saved at the start, on every era travel, on entering a checkpoint zone and when an encounter is cleared. Death brings back the player's state as it was at the checkpoint (health, mana, ammo, items, spells, skills).
+- **Checkpoints:** saved at the start, on every era travel, on entering a checkpoint zone and when an encounter is cleared. Death sends the player back to the checkpoint's place and era with full health, mana and ammo, and **keeps everything collected since** (items, weapons, spells, skill points): pickups and chests do not come back, so rolling the inventory back would lose rewards for good (found by the code review).
 - **Consumables** can be used at full health or mana (they are wasted).
 - **Art rule on pickups:** cyberpunk items (injection, grenade, magazine, sword hilt) lie on the floor as 3D shapes; medieval ones (potions, gems, books, staffs) as pixel-art sprites.
 
