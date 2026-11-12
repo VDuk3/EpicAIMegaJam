@@ -35,6 +35,7 @@ bool AGBStaff::PerformAttack()
 
 	FGBProjectileConfig Config;
 	Config.Damage = MakeDamageInfo();
+	Config.HeadshotMult = GetStat(GBStat::HeadshotMult, 1.f);
 	Config.Speed = GetStat(GBStat::ProjectileSpeed, 3000.f);
 	Config.Radius = GetStat(GBStat::ProjectileRadius, 10.f);
 	Config.GravityScale = GetStat(GBStat::ProjectileGravity, 0.f);

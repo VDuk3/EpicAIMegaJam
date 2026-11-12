@@ -39,7 +39,7 @@
 			"Id": "Weapon_Headshot",
 			"Tree": "Weapon",
 			"DisplayName": "Marksman",
-			"Description": "+0.25x headshot damage per rank.",
+			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
 			"Cost": 2,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Recoil" ],

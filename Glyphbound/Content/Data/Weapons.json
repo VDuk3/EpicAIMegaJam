@@ -15,7 +15,8 @@
 				"ProjectileRadius": 10,
 				"ProjectileGravity": 0,
 				"Range": 6000,
-				"ManaCost": 0
+				"ManaCost": 0,
+				"HeadshotMult": 1.5
 			},
 			"Strings": {
 				"Sprite": "staff_apprentice",
@@ -37,7 +38,8 @@
 				"ProjectileRadius": 14,
 				"ProjectileGravity": 0,
 				"Range": 6000,
-				"ManaCost": 0
+				"ManaCost": 0,
+				"HeadshotMult": 1.5
 			},
 			"Strings": {
 				"Sprite": "staff_ember",
@@ -134,7 +136,7 @@
 				"FalloffEnd": 4000,
 				"FalloffNearMult": 0.8,
 				"FalloffFarMult": 1.15,
-				"HeadshotMult": 2,
+				"HeadshotMult": 1.5,
 				"AimFOV": 60,
 				"AimMoveSpeedMult": 0.65,
 				"AimTime": 0.2
@@ -153,7 +155,8 @@
 				"Damage": 45,
 				"FireInterval": 0.5,
 				"MeleeRange": 260,
-				"MeleeArc": 90
+				"MeleeArc": 90,
+				"HeadshotMult": 1.5
 			},
 			"Strings": {
 				"Sprite": "sword_blade"

@@ -7,7 +7,8 @@
 
 /**
  * Primary = basic magic attack: an AGBProjectile from the muzzle towards the point the camera aims at.
- * Stats: Damage, FireInterval, ProjectileSpeed, ProjectileRadius, ProjectileGravity, Range, ManaCost (0 = free).
+ * Stats: Damage, FireInterval, ProjectileSpeed, ProjectileRadius, ProjectileGravity, Range, ManaCost (0 = free),
+ * HeadshotMult (weak point multiplier, 1 = no bonus).
  * Looks: pixel-art projectile, sprite from Strings["ProjectileSprite"]. Blocked while the spellbook is busy.
  */
 UCLASS()

@@ -223,10 +223,7 @@ void AGBProjectile::HitTarget(AActor* Other, const FVector& ImpactPoint)
 		Info.Causer = this;
 		Info.HitLocation = ImpactPoint;
 		Info.HitDirection = Movement->Velocity.GetSafeNormal();
-		if (const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Other))
-		{
-			Info.bHeadshot = Enemy->IsHeadshotLocation(ImpactPoint);
-		}
+		UGBCombatLibrary::ApplyWeakPointBonus(Other, Info, Config.HeadshotMult);
 		UGBCombatLibrary::DealDamage(Other, Info);
 	}
 

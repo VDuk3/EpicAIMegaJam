@@ -20,7 +20,9 @@ namespace GBStat
 	inline const FName MoveSpeed(TEXT("MoveSpeed"));                // cm/s
 	inline const FName JumpVelocity(TEXT("JumpVelocity"));          // cm/s
 	inline const FName MaxJumps(TEXT("MaxJumps"));                  // 1 = single jump, 2 = double jump
-	inline const FName AirControl(TEXT("AirControl"));
+	inline const FName AirControl(TEXT("AirControl"));              // 0 = jumps commit to their direction (GDD 18)
+	inline const FName JumpTakeoffMinSpeedMult(TEXT("JumpTakeoffMinSpeedMult")); // min takeoff speed as a fraction of MoveSpeed (ground jump)
+	inline const FName AirJumpMinSpeedMult(TEXT("AirJumpMinSpeedMult"));         // min takeoff speed as a fraction of MoveSpeed (air jump)
 	inline const FName GravityScale(TEXT("GravityScale"));
 	inline const FName DashDistance(TEXT("DashDistance"));          // cm
 	inline const FName DashDuration(TEXT("DashDuration"));          // seconds

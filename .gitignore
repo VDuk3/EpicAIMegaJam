@@ -34,3 +34,6 @@ _probe_notes/
 MCPProbe59/
 Devlog/prejam_evidencia/
 _backup_presync/
+
+# Unzipped copies of the packaged build (for play-testing)
+Glyphbound/TeamTBD_*/

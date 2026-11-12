@@ -72,4 +72,55 @@ bool FGBCombatTeamHostilityTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBCombatMeleeAimPointTest, "Glyphbound.Combat.MeleeAimPoint",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBCombatMeleeAimPointTest::RunTest(const FString& Parameters)
+{
+	const FVector BodyBottom(0.f, 0.f, 0.f);
+	const FVector BodyTop(0.f, 0.f, 180.f);
+
+	auto CheckNear = [&](const TCHAR* What, double Actual, double Expected, double Tolerance)
+	{
+		TestTrue(What, FMath::Abs(Actual - Expected) <= Tolerance);
+	};
+
+	// Aiming level at head height returns a point at head height.
+	{
+		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+			FVector(200.f, 0.f, 150.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+		CheckNear(TEXT("Level aim at the head: X on the body"), Result.X, 0.0, 1.e-2);
+		CheckNear(TEXT("Level aim at the head: Z at aim height"), Result.Z, 150.0, 1.e-2);
+	}
+
+	// Aiming down at the feet returns a point near the bottom.
+	{
+		const FVector AimOrigin(200.f, 0.f, 150.f);
+		const FVector AimDir = (FVector(0.f, 0.f, 0.f) - AimOrigin).GetSafeNormal();
+		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(AimOrigin, AimDir, 1000.f, BodyBottom, BodyTop);
+		TestTrue(TEXT("Downward aim reaches the feet"), Result.Z < 20.0);
+		CheckNear(TEXT("Downward aim stays on the body axis X"), Result.X, 0.0, 1.e-2);
+	}
+
+	// Aiming far above the head returns the top (clamped), not the aim height.
+	{
+		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+			FVector(200.f, 0.f, 400.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+		CheckNear(TEXT("High aim clamps to the top"), Result.Z, 180.0, 1.e-2);
+		// A wrong implementation returning the aim height (400) or the center (90) fails here.
+		TestTrue(TEXT("High aim is above the center"), Result.Z > 100.0);
+	}
+
+	// An aim that passes beside the body still returns the height where it passes closest.
+	{
+		const FVector Result = UGBCombatLibrary::ClosestBodyPointToAim(
+			FVector(200.f, 50.f, 100.f), FVector(-1.f, 0.f, 0.f), 1000.f, BodyBottom, BodyTop);
+		CheckNear(TEXT("Side pass keeps the pass height"), Result.Z, 100.0, 1.e-2);
+		CheckNear(TEXT("Side pass is on the body axis"), Result.X, 0.0, 1.e-2);
+		CheckNear(TEXT("Side pass is on the body axis Y"), Result.Y, 0.0, 1.e-2);
+	}
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

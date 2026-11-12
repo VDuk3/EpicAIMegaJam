@@ -242,8 +242,11 @@ void AGBPlayerCharacter::ApplyMovementStats()
 
 	UpdateWalkSpeed();
 	MoveComp->JumpZVelocity = FMath::Max(0.f, ReadStat(GBStat::JumpVelocity, 620.f));
-	MoveComp->AirControl = FMath::Max(0.f, ReadStat(GBStat::AirControl, 0.6f));
+	MoveComp->AirControl = FMath::Max(0.f, ReadStat(GBStat::AirControl, 0.f));
 	MoveComp->GravityScale = ReadStat(GBStat::GravityScale, 1.6f);
+	// Committed jumps (GDD 18): no air steering, no air braking or lateral friction, so the takeoff keeps its speed.
+	MoveComp->BrakingDecelerationFalling = 0.f;
+	MoveComp->FallingLateralFriction = 0.f;
 	JumpMaxCount = FMath::Max(1, FMath::RoundToInt(ReadStat(GBStat::MaxJumps, 1.f)));
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
@@ -291,6 +294,54 @@ void AGBPlayerCharacter::ApplyMoveInput(const FVector2D& Input)
 	const FRotationMatrix YawMatrix(YawRotation);
 	AddMovementInput(YawMatrix.GetUnitAxis(EAxis::X), Input.Y);
 	AddMovementInput(YawMatrix.GetUnitAxis(EAxis::Y), Input.X);
+}
+
+FVector AGBPlayerCharacter::GetMoveInputWorldDirection(const FVector2D& Input) const
+{
+	if (Input.IsNearlyZero())
+	{
+		return FVector::ZeroVector;
+	}
+	const FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
+	const FRotationMatrix YawMatrix(YawRotation);
+	FVector Direction = YawMatrix.GetUnitAxis(EAxis::X) * Input.Y + YawMatrix.GetUnitAxis(EAxis::Y) * Input.X;
+	Direction.Z = 0.f;
+	if (!Direction.Normalize())
+	{
+		return FVector::ZeroVector;
+	}
+	return Direction;
+}
+
+FVector2D AGBPlayerCharacter::ComputeJumpHorizontalVelocity(const FVector2D& CurrentVelocity, const FVector2D& InputDirection, float MaxWalkSpeed, float MinSpeedMult)
+{
+	if (InputDirection.IsNearlyZero())
+	{
+		return CurrentVelocity;
+	}
+	const FVector2D Direction = InputDirection.GetSafeNormal();
+	const float CurrentSpeed = CurrentVelocity.Size();
+	const float MinSpeed = FMath::Max(0.f, MaxWalkSpeed) * FMath::Max(0.f, MinSpeedMult);
+	return Direction * FMath::Max(CurrentSpeed, MinSpeed);
+}
+
+void AGBPlayerCharacter::OnJumped_Implementation()
+{
+	// JumpCurrentCount is 1 for a jump from the ground, 2+ for a jump that starts in the air
+	// (double jump, or the first jump after walking off a ledge: CheckJumpInput pre-increments while falling).
+	const bool bGroundJump = JumpCurrentCount <= 1;
+	const float MinSpeedMult = ReadStat(bGroundJump ? GBStat::JumpTakeoffMinSpeedMult : GBStat::AirJumpMinSpeedMult,
+		bGroundJump ? 0.6f : 1.0f);
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		const FVector2D CurrentVelocity(MoveComp->Velocity.X, MoveComp->Velocity.Y);
+		const FVector WorldDir = GetMoveInputWorldDirection(LastMoveInput);
+		const FVector2D NewHorizontal = ComputeJumpHorizontalVelocity(CurrentVelocity,
+			FVector2D(WorldDir.X, WorldDir.Y), MoveComp->MaxWalkSpeed, MinSpeedMult);
+		// The engine already set the vertical velocity; only the horizontal direction commits here.
+		MoveComp->Velocity.X = NewHorizontal.X;
+		MoveComp->Velocity.Y = NewHorizontal.Y;
+	}
 }
 
 void AGBPlayerCharacter::AddLookDelta(float YawDegrees, float PitchDegrees)
@@ -905,9 +956,8 @@ void AGBPlayerCharacter::InputDash()
 
 	const FRotationMatrix YawMatrix(FRotator(0.f, GetControlRotation().Yaw, 0.f));
 	const FVector Forward = YawMatrix.GetUnitAxis(EAxis::X);
-	FVector Direction = Forward * LastMoveInput.Y + YawMatrix.GetUnitAxis(EAxis::Y) * LastMoveInput.X;
-	Direction.Z = 0.f;
-	if (!Direction.Normalize())
+	FVector Direction = GetMoveInputWorldDirection(LastMoveInput);
+	if (Direction.IsNearlyZero())
 	{
 		Direction = Forward;
 	}

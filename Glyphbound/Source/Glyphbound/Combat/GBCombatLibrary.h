@@ -65,4 +65,19 @@ public:
 
 	/** A random direction inside a cone of SpreadDegrees (full angle = 2 * half-angle... SpreadDegrees is the half-angle). */
 	static FVector ApplySpread(const FVector& Direction, float SpreadHalfAngleDegrees, FRandomStream& Random);
+
+	/**
+	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
+	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
+	 * whose IsHeadshotLocation(Info.HitLocation) is true), multiplies Info.Amount by WeakPointMult,
+	 * sets Info.bHeadshot = true and returns true. Otherwise leaves Info alone (Info.bHeadshot = false)
+	 * and returns false.
+	 */
+	static bool ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult);
+
+	/**
+	 * Aimed melee point (pure, tested): the point of the body segment BodyBottom..BodyTop (feet to top of head)
+	 * closest to the aim segment AimOrigin..AimOrigin + AimDirection * AimLength (FMath::SegmentDistToSegmentSafe).
+	 */
+	static FVector ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop);
 };

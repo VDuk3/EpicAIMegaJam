@@ -32,6 +32,9 @@ struct FGBDamageInfo;
  * Movement (GDD 9): walk, jump, double jump (MaxJumps), dash (Ctrl / Circle) in the movement direction, no sprint.
  * During the spell QTE: the camera is locked, W/A/S/D and the mouse go to the QTE, and the player keeps moving
  * in the direction it was moving (the last movement input is held).
+ *
+ * Jumps commit to their direction (GDD 18): OnJumped sets the horizontal velocity from the movement input held
+ * at takeoff (AirControl stays 0, so the air applies no steering). The dash is the only steering in the air.
  */
 UCLASS()
 class GLYPHBOUND_API AGBPlayerCharacter : public ACharacter
@@ -107,6 +110,21 @@ public:
 	 */
 	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
 
+	/**
+	 * Committed jump takeoff (GDD 18): inside OnJumped, JumpCurrentCount is 1 for a jump from the ground and
+	 * 2+ for a jump that starts in the air (the double jump, or the first jump after walking off a ledge:
+	 * CheckJumpInput pre-increments the count to 1 while falling, then the successful jump increments it to 2).
+	 */
+	virtual void OnJumped_Implementation() override;
+
+	/**
+	 * Horizontal velocity a committed jump takes off with (pure, tested).
+	 * InputDirection is the world-space movement direction held at takeoff (zero when none).
+	 * No input: returns CurrentVelocity unchanged (the jump keeps its drift). With input: the input direction
+	 * at max(CurrentSpeed, MaxWalkSpeed * MinSpeedMult).
+	 */
+	static FVector2D ComputeJumpHorizontalVelocity(const FVector2D& CurrentVelocity, const FVector2D& InputDirection, float MaxWalkSpeed, float MinSpeedMult);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -121,6 +139,8 @@ protected:
 	float ReadStat(FName Stat, float DefaultValue) const;
 	bool CanUseGameplayInput() const;
 	bool IsQTEActive() const;
+	/** World-space horizontal direction of a 2D movement input (x = right, y = forward) relative to the view yaw. Zero when there is no input. */
+	FVector GetMoveInputWorldDirection(const FVector2D& Input) const;
 	/** Movement input (x = right, y = forward) relative to the view yaw. */
 	void ApplyMoveInput(const FVector2D& Input);
 	/** Turns the view (degrees). Positive pitch looks up. */

@@ -21,6 +21,9 @@ struct GLYPHBOUND_API FGBProjectileConfig
 	/** The hit dealt on impact (Amount, Element, Instigator, SourceId, OnHitEffect...). Causer is set to the projectile. */
 	UPROPERTY() FGBDamageInfo Damage;
 
+	/** Weak point multiplier (GDD 3): 1 = no bonus. Applied to direct hits via UGBCombatLibrary::ApplyWeakPointBonus. */
+	UPROPERTY() float HeadshotMult = 1.f;
+
 	UPROPERTY() float Speed = 3000.f;
 	/** Collision radius, cm. */
 	UPROPERTY() float Radius = 12.f;

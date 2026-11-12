@@ -11,6 +11,7 @@
 //   ExplosionEffectTime optional; seconds the shockwave is shown (default FGBProjectileConfig's, 0.35)
 //   ProjectileGravity  optional; 0 = straight line, 1 = normal gravity (default 0)
 //   Pierce             optional; > 0.5 = flies through the actors it damages
+//   HeadshotMult       optional; weak point multiplier, 1 = no bonus (default 1)
 //   VisualScale        optional; sprite size relative to the collision radius (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
 // Strings: Sprite (sprite id), Color ("#RRGGBB", default = element color), OnHitEffect (status effect id).

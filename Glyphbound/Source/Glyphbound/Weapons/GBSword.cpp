@@ -1,11 +1,13 @@
 #include "Weapons/GBSword.h"
 
 #include "Combat/GBCombatLibrary.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Stats/GBAttributeComponent.h"
 
@@ -58,6 +60,34 @@ void AGBSword::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
+void AGBSword::GetBodySegment(AActor* Target, FVector& OutBottom, FVector& OutTop)
+{
+	if (const ACharacter* Character = Cast<ACharacter>(Target))
+	{
+		if (const UCapsuleComponent* Capsule = Character->GetCapsuleComponent())
+		{
+			const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+			const FVector Center = Character->GetActorLocation();
+			OutBottom = FVector(Center.X, Center.Y, Center.Z - HalfHeight);
+			OutTop = FVector(Center.X, Center.Y, Center.Z + HalfHeight);
+			return;
+		}
+	}
+	if (const UCapsuleComponent* Capsule = Target ? Target->FindComponentByClass<UCapsuleComponent>() : nullptr)
+	{
+		const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+		const FVector Center = Capsule->GetComponentLocation();
+		OutBottom = FVector(Center.X, Center.Y, Center.Z - HalfHeight);
+		OutTop = FVector(Center.X, Center.Y, Center.Z + HalfHeight);
+		return;
+	}
+	FVector Origin;
+	FVector Extent;
+	Target->GetActorBounds(false, Origin, Extent, false);
+	OutBottom = FVector(Origin.X, Origin.Y, Origin.Z - Extent.Z);
+	OutTop = FVector(Origin.X, Origin.Y, Origin.Z + Extent.Z);
+}
+
 bool AGBSword::PerformAttack()
 {
 	AGBPlayerCharacter* Player = GetPlayerOwner();
@@ -86,6 +116,7 @@ bool AGBSword::PerformAttack()
 	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Range), OverlapParams);
 
 	const FGBDamageInfo BaseInfo = MakeDamageInfo();
+	const float HeadshotMult = GetStat(GBStat::HeadshotMult, 1.f);
 	TSet<AActor*> Done;
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
@@ -101,6 +132,7 @@ bool AGBSword::PerformAttack()
 			continue;
 		}
 
+		// Arc and range selection stays on the target's center, so nothing previously hit is missed.
 		const FVector TargetLocation = Target->GetActorLocation();
 		const FVector ToTarget = TargetLocation - Origin;
 		const FVector ToTargetDir = ToTarget.GetSafeNormal();
@@ -109,18 +141,24 @@ bool AGBSword::PerformAttack()
 			continue;
 		}
 
-		// Not through walls.
+		FVector BodyBottom;
+		FVector BodyTop;
+		GetBodySegment(Target, BodyBottom, BodyTop);
+		const FVector HitLocation = UGBCombatLibrary::ClosestBodyPointToAim(Origin, Forward, Range, BodyBottom, BodyTop);
+
+		// Not through walls: trace to the aimed hit location, not the target's center.
 		FCollisionQueryParams WallParams(SCENE_QUERY_STAT(GBSwordWall), false, Player);
 		WallParams.AddIgnoredActor(this);
 		WallParams.AddIgnoredActor(Target);
-		if (World->LineTraceTestByChannel(Origin, TargetLocation, ECC_Visibility, WallParams))
+		if (World->LineTraceTestByChannel(Origin, HitLocation, ECC_Visibility, WallParams))
 		{
 			continue;
 		}
 
 		FGBDamageInfo Info = BaseInfo;
-		Info.HitLocation = TargetLocation;
+		Info.HitLocation = HitLocation;
 		Info.HitDirection = ToTargetDir;
+		UGBCombatLibrary::ApplyWeakPointBonus(Target, Info, HeadshotMult);
 		UGBCombatLibrary::DealDamage(Target, Info);
 	}
 	return true;

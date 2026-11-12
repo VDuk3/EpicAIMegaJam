@@ -328,18 +328,10 @@ void AGBGun::FireHitscan(const FGBDamageInfo& BaseInfo, float SpreadDegrees)
 		if (Target && UGBAttributeComponent::Find(Target))
 		{
 			FGBDamageInfo Info = BaseInfo;
-			float Multiplier = UGBCombatLibrary::DistanceFalloffMultiplier(Hit.Distance, FalloffStart, FalloffEnd, NearMult, FarMult);
-			if (const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target))
-			{
-				if (Enemy->IsHeadshotLocation(Hit.ImpactPoint))
-				{
-					Multiplier *= HeadshotMult;
-					Info.bHeadshot = true;
-				}
-			}
-			Info.Amount *= Multiplier;
 			Info.HitLocation = Hit.ImpactPoint;
 			Info.HitDirection = Direction;
+			Info.Amount *= UGBCombatLibrary::DistanceFalloffMultiplier(Hit.Distance, FalloffStart, FalloffEnd, NearMult, FarMult);
+			UGBCombatLibrary::ApplyWeakPointBonus(Target, Info, HeadshotMult);
 			UGBCombatLibrary::DealDamage(Target, Info);
 		}
 

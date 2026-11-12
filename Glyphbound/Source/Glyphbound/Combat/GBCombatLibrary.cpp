@@ -1,5 +1,6 @@
 #include "Combat/GBCombatLibrary.h"
 
+#include "AI/GBEnemyCharacter.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBStatNames.h"
 #include "Stats/GBAttributeComponent.h"
@@ -267,4 +268,30 @@ FVector UGBCombatLibrary::ApplySpread(const FVector& Direction, float SpreadHalf
 		return Dir;
 	}
 	return Random.VRandCone(Dir, FMath::DegreesToRadians(SpreadHalfAngleDegrees));
+}
+
+bool UGBCombatLibrary::ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult)
+{
+	Info.bHeadshot = false;
+	if (WeakPointMult <= 1.f)
+	{
+		return false;
+	}
+	const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target);
+	if (!Enemy || !Enemy->IsHeadshotLocation(Info.HitLocation))
+	{
+		return false;
+	}
+	Info.Amount *= WeakPointMult;
+	Info.bHeadshot = true;
+	return true;
+}
+
+FVector UGBCombatLibrary::ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop)
+{
+	const FVector AimEnd = AimOrigin + AimDirection * AimLength;
+	FVector OutAimPoint = AimOrigin;
+	FVector OutBodyPoint = BodyBottom;
+	FMath::SegmentDistToSegmentSafe(AimOrigin, AimEnd, BodyBottom, BodyTop, OutAimPoint, OutBodyPoint);
+	return OutBodyPoint;
 }

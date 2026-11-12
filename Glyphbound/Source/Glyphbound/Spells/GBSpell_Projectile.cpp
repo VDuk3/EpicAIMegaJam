@@ -30,6 +30,7 @@ void AGBSpell_Projectile::StartSpell()
 	Config.ExplosionEffectTime = FMath::Max(0.f, SpellCast.Get(GBSpellParam::ExplosionEffectTime, Config.ExplosionEffectTime));
 	Config.GravityScale = SpellCast.Get(GBStat::ProjectileGravity, 0.f);
 	Config.bPierce = SpellCast.Get(GBSpellParam::Pierce, 0.f) > 0.5f;
+	Config.HeadshotMult = SpellCast.Get(GBStat::HeadshotMult, 1.f);
 	Config.bPixelArt = true;
 	Config.SpriteId = GetSpriteId();
 	Config.Color = GetSpellColor();

@@ -410,12 +410,12 @@ The owner asked the architect not to stop for missing design details. Everything
 
 ### Numbers (first pass, all in the JSON files)
 - **Jumps:** each jump rises about 2 m (was 1.2 m); the double jump adds a second one of the same height.
-- **Head bonus of the new weapons (provisional):** staffs x1.5, sword x1.5 (guns stay x2, shotgun x1.5). Spell projectiles get no head bonus unless a spell defines one.
+- **Head / weak point bonus per weapon** (owner, 2026-11-12): pistol x2; shotgun, rifle, staffs and sword x1.5. **Perks can raise it**: the weapon tree node "Marksman" adds +0.25 per rank (3 ranks) to every weapon, staff and sword included (provisional numbers). Spell projectiles get no head bonus unless a spell defines one.
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 2/s after 5 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s.
 - **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
 - **Staff:** Apprentice staff 12 damage every 0.35 s, no mana cost. Ember staff 22 fire damage every 0.6 s and burns.
-- **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots x2 (shotgun x1.5).
+- **Guns:** pistol 18 damage, 12 rounds, 4 spare magazines; shotgun 8 pellets of 10, 6 rounds, strong up close; rifle automatic, 14 damage, 30 rounds, stronger far away. Headshots: pistol x2, shotgun and rifle x1.5.
 - **Enemies:** past orc 60 health, melee 12; future orc 70 health, ranged 9; brute (sub-boss placeholder) 320 health, melee 28.
 - **Status effects:** burn 32 damage over 4 s; slow 50% for 4 s; chill 30% for 3 s; shock 40% for 1.5 s; health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s.
 - **Skill trees:** 6 nodes each, 1-2 points per rank, up to 3 ranks.
