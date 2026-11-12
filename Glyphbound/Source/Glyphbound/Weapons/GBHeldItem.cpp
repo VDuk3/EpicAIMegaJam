@@ -1,5 +1,6 @@
 #include "Weapons/GBHeldItem.h"
 
+#include "Combat/GBCombatLibrary.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBStatNames.h"
 #include "Data/GBDataSubsystem.h"
@@ -169,6 +170,16 @@ FGBDamageInfo AGBHeldItem::MakeDamageInfo() const
 			Info.OnHitEffect = EnchantEffect;
 		}
 	}
+
+	const int32 ElementIndex = GBElemental::ElementIndex(Info.Element);
+	if (ElementIndex >= 0)
+	{
+		Info.BuildUp = GetStat(GBElemental::WeaponBuildUpKey(ElementIndex), 0.f);
+		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+		const float DefaultMult = Data ? Data->GetGameValue(GBStat::WeakPointBuildUpMult, 1.f) : 1.f;
+		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);
+	}
+	Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
 	return Info;
 }
 

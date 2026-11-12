@@ -1,4 +1,5 @@
 #include "Spells/GBSpell_Zone.h"
+#include "Combat/GBCombatLibrary.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
@@ -63,16 +64,27 @@ void AGBSpell_Zone::ZoneTick()
 {
 	TArray<AActor*> Targets;
 	GatherHostilesOnDisc(GetActorLocation(), ZoneRadius, ZoneHeight, Targets);
-	for (AActor* Target : Targets)
+	if (Targets.Num() == 0)
 	{
-		if (DamagePerTick > 0.f)
+		return;
+	}
+	if (DamagePerTick > 0.f)
+	{
+		for (AActor* Target : Targets)
 		{
-			// DealDamage also applies the on-hit effect.
+			// DealDamage also applies the on-hit effect and the build-up.
 			DamageTarget(Target, DamagePerTick, GetActorLocation());
 		}
-		else
+	}
+	else
+	{
+		// No damage, so DealDamage never runs: send the build-up directly (one event id per tick).
+		FGBDamageInfo Info = SpellCast.MakeDamageInfo(NAME_None, this);
+		for (AActor* Target : Targets)
 		{
 			ApplyOnHitEffect(Target);
+			Info.HitLocation = Target->GetActorLocation();
+			UGBCombatLibrary::ApplyBuildUp(Target, Info);
 		}
 	}
 }

@@ -9,8 +9,9 @@
 //   TickInterval      seconds between damage ticks
 //   ShowArea          optional; > 0.5 = draws a faint glow sphere of Radius (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+//   BuildUp           raw elemental build-up per damage tick
 //   SpriteSize        optional; height of the orb sprite (default 60)
-// Strings: Sprite, Color (area tint, default = element color), OnHitEffect (e.g. Shock).
+// Strings: Sprite, Color (area tint, default = element color).
 #pragma once
 
 #include "CoreMinimal.h"

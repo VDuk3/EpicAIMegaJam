@@ -91,6 +91,10 @@ namespace GBStat
 	inline const FName QTESequenceLength(TEXT("QTE.SequenceLength"));
 	inline const FName QTEGestureCount(TEXT("QTE.GestureCount"));
 
+	// ---- Elemental build-up (GDD 6): spell param / item stat, weapon stat ----
+	inline const FName BuildUp(TEXT("BuildUp"));                   // raw build-up per hit or per tick
+	inline const FName WeakPointBuildUpMult(TEXT("WeakPointBuildUpMult")); // weapon stat; multiplies BuildUp on weak point hits
+
 	/** "Weapon.<WeaponId>.<Stat>" */
 	inline FName WeaponKey(FName WeaponId, FName Stat) { return FName(*FString::Printf(TEXT("Weapon.%s.%s"), *WeaponId.ToString(), *Stat.ToString())); }
 	/** "Weapon.Staff.<Stat>", "Weapon.Gun.<Stat>" or "Weapon.Sword.<Stat>" */
@@ -121,4 +125,123 @@ namespace GBString
 	inline const FName OnHitEffect(TEXT("OnHitEffect"));       // status effect id
 	inline const FName ProjectileSprite(TEXT("ProjectileSprite"));
 	inline const FName HandSprite(TEXT("HandSprite"));
+}
+
+/** Elemental build-up keys (GDD 6): per-enemy stats, Game.json defaults, weapon stats, reactions. */
+namespace GBElemental
+{
+	constexpr int32 NumElements = 3;
+
+	inline int32 ElementIndex(EGBElement Element)
+	{
+		switch (Element)
+		{
+		case EGBElement::Fire: return 0;
+		case EGBElement::Lightning: return 1;
+		case EGBElement::Ice: return 2;
+		default: return -1;
+		}
+	}
+
+	inline EGBElement IndexToElement(int32 Index)
+	{
+		switch (Index)
+		{
+		case 0: return EGBElement::Fire;
+		case 1: return EGBElement::Lightning;
+		case 2: return EGBElement::Ice;
+		default: return EGBElement::Physical;
+		}
+	}
+
+	inline const FName& DamageTakenKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireDamageTaken")), FName(TEXT("LightningDamageTaken")), FName(TEXT("IceDamageTaken")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& BuildUpTakenKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireBuildUpTaken")), FName(TEXT("LightningBuildUpTaken")), FName(TEXT("IceBuildUpTaken")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& ThresholdKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireBuildUpThreshold")), FName(TEXT("LightningBuildUpThreshold")), FName(TEXT("IceBuildUpThreshold")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& DecayDelayKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireBuildUpDecayDelay")), FName(TEXT("LightningBuildUpDecayDelay")), FName(TEXT("IceBuildUpDecayDelay")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& DecayRateKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireBuildUpDecayRate")), FName(TEXT("LightningBuildUpDecayRate")), FName(TEXT("IceBuildUpDecayRate")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& StatusDurationKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireStatusDuration")), FName(TEXT("LightningStatusDuration")), FName(TEXT("IceStatusDuration")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& StatusImmunityKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireStatusImmunity")), FName(TEXT("LightningStatusImmunity")), FName(TEXT("IceStatusImmunity")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& ReactionKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireStatusReaction")), FName(TEXT("LightningStatusReaction")), FName(TEXT("IceStatusReaction")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName& WeaponBuildUpKey(int32 Index)
+	{
+		static const FName Keys[3] = { FName(TEXT("FireBuildUp")), FName(TEXT("LightningBuildUp")), FName(TEXT("IceBuildUp")) };
+		static const FName None = NAME_None;
+		return (Index >= 0 && Index < 3) ? Keys[Index] : None;
+	}
+
+	inline const FName IgniteDamageMult(TEXT("IgniteDamageMult"));
+	inline const FName ShockDischargeDamage(TEXT("ShockDischargeDamage"));
+	inline const FName FrostSlow(TEXT("FrostSlow"));
+	inline const FName FrostSource(TEXT("Elemental.Frost"));
+	inline const FName IgniteEffect(TEXT("Ignite"));
+	inline const FName ShockSource(TEXT("Shock"));
+
+	// Reaction names.
+	inline const FName ReactionIgnite(TEXT("Ignite"));
+	inline const FName ReactionStun(TEXT("Stun"));
+	inline const FName ReactionInterrupt(TEXT("Interrupt"));
+	inline const FName ReactionFreeze(TEXT("Freeze"));
+	inline const FName ReactionSlow(TEXT("Slow"));
+	inline const FName ReactionNone(TEXT("None"));
+
+	/** Default of enemy key Key in Game.json: "ElementalDefault.<Key>". Built once per key. */
+	inline FName DefaultKey(FName Key)
+	{
+		static TMap<FName, FName> Cache;
+		if (const FName* Found = Cache.Find(Key))
+		{
+			return *Found;
+		}
+		const FName Result(*FString(TEXT("ElementalDefault.")) + Key.ToString());
+		Cache.Add(Key, Result);
+		return Result;
+	}
 }

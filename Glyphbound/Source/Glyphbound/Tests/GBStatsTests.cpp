@@ -133,4 +133,31 @@ bool FGBStatsWeaponSlotKeyTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBStatsStrongestSlowTest, "Glyphbound.Stats.StrongestSlow",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBStatsStrongestSlowTest::RunTest(const FString& Parameters)
+{
+	using namespace GBStatsTestsPrivate;
+	UGBStatsComponent* Stats = NewObject<UGBStatsComponent>(GetTransientPackage());
+
+	// Deep Freeze rank 1: x0.5 at strength 1.1 is x0.45 (scaled around 1).
+	const FGBModifierDef Slow[] = { Mod(TestStat, EGBModOp::MultiplyMin, 0.5f) };
+	Stats->AddModifiers(TEXT("DeepFreeze"), Slow, 1.1f);
+	TestNearlyEqual(TEXT("MultiplyMin scaled around 1"), Stats->Evaluate(TestStat, 1.f), 0.45f, 1.e-4f);
+
+	// A stronger slow wins; they never multiply together (0.45 * 0.4 = 0.18 would be wrong).
+	const FGBModifierDef Frost[] = { Mod(TestStat, EGBModOp::MultiplyMin, 0.4f) };
+	Stats->AddModifiers(TEXT("Elemental.Frost"), Frost, 1.f);
+	TestNearlyEqual(TEXT("Lowest MultiplyMin wins"), Stats->Evaluate(TestStat, 1.f), 0.4f, 1.e-4f);
+
+	// A plain Multiply still multiplies with the winning slow.
+	const FGBModifierDef Plain[] = { Mod(TestStat, EGBModOp::Multiply, 0.8f) };
+	Stats->AddModifiers(TEXT("Other"), Plain, 1.f);
+	TestNearlyEqual(TEXT("Plain Multiply combines with the strongest slow"), Stats->Evaluate(TestStat, 1.f), 0.32f, 1.e-4f);
+
+	Stats->RemoveModifiers(TEXT("Elemental.Frost"));
+	TestNearlyEqual(TEXT("Removing the strongest slow reveals the next"), Stats->Evaluate(TestStat, 1.f), 0.36f, 1.e-4f);
+	return true;
+}
+
 #endif

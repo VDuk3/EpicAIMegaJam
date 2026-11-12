@@ -223,7 +223,12 @@ void AGBProjectile::HitTarget(AActor* Other, const FVector& ImpactPoint)
 		Info.Causer = this;
 		Info.HitLocation = ImpactPoint;
 		Info.HitDirection = Movement->Velocity.GetSafeNormal();
-		UGBCombatLibrary::ApplyWeakPointBonus(Other, Info, Config.HeadshotMult);
+		// Only shots with a head bonus (damage or build-up) look for the weak point: a spell bolt on the
+		// head is a normal hit, so its damage number is not shown as a headshot.
+		if (Config.HeadshotMult > 1.f || Info.WeakPointBuildUpMult > 1.f)
+		{
+			UGBCombatLibrary::ApplyWeakPointBonus(Other, Info, Config.HeadshotMult);
+		}
 		UGBCombatLibrary::DealDamage(Other, Info);
 	}
 

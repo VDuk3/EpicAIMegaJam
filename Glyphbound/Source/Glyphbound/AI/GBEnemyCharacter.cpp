@@ -12,6 +12,7 @@
 
 #include "AI/GBSteering.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBElementalStatusComponent.h"
 #include "Combat/GBProjectile.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBPlaceholder.h"
@@ -50,6 +51,7 @@ AGBEnemyCharacter::AGBEnemyCharacter()
 	Attributes = CreateDefaultSubobject<UGBAttributeComponent>(TEXT("Attributes"));
 	Attributes->Team = EGBTeam::Enemy;
 	StatusEffects = CreateDefaultSubobject<UGBStatusEffectComponent>(TEXT("StatusEffects"));
+	ElementalStatus = CreateDefaultSubobject<UGBElementalStatusComponent>(TEXT("ElementalStatus"));
 	EraComponent = CreateDefaultSubobject<UGBEraComponent>(TEXT("Era"));
 
 	Sprite = CreateDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
@@ -169,6 +171,10 @@ void AGBEnemyCharacter::BeginPlay()
 	{
 		Data->OnDataReloaded.AddUObject(this, &AGBEnemyCharacter::HandleDataReloaded);
 	}
+	if (ElementalStatus)
+	{
+		ElementalStatus->OnStatusStarted.AddUObject(this, &AGBEnemyCharacter::HandleElementalStatusStarted);
+	}
 
 	SteerSide = FMath::RandBool() ? 1 : -1;
 	ResetStuck();
@@ -185,6 +191,10 @@ void AGBEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
 	{
 		Data->OnDataReloaded.RemoveAll(this);
+	}
+	if (ElementalStatus)
+	{
+		ElementalStatus->OnStatusStarted.RemoveAll(this);
 	}
 	Super::EndPlay(EndPlayReason);
 }
@@ -297,6 +307,13 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 
 	if (State == EGBEnemyState::Dead || !EraComponent->IsPresent())
 	{
+		return;
+	}
+
+	if (ControlLockTime > 0.f)
+	{
+		ControlLockTime -= DeltaSeconds;
+		ResetStuck();
 		return;
 	}
 
@@ -817,6 +834,7 @@ void AGBEnemyCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 		return;
 	}
 	SetState(EGBEnemyState::Dead);
+	ControlLockTime = 0.f;
 
 	StopMoving();
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
@@ -839,4 +857,45 @@ void AGBEnemyCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 	const float CorpseTime = Data ? Data->GetGameValue(GBEnemyKey::CorpseTime, 1.5f) : 1.5f;
 	// SetLifeSpan(0) would mean "forever"; keep a tiny minimum instead of destroying inside the damage call.
 	SetLifeSpan(FMath::Max(CorpseTime, 0.05f));
+}
+
+void AGBEnemyCharacter::InterruptAttack()
+{
+	if (State == EGBEnemyState::Windup)
+	{
+		SetState(EGBEnemyState::Recover);
+	}
+}
+
+void AGBEnemyCharacter::ApplyControlLock(float Seconds)
+{
+	if (State == EGBEnemyState::Dead)
+	{
+		return;
+	}
+	ControlLockTime = FMath::Max(ControlLockTime, Seconds);
+	InterruptAttack();
+	StopMoving();
+}
+
+void AGBEnemyCharacter::HandleElementalStatusStarted(EGBElement Element, FName Reaction, float Duration)
+{
+	if (Element == EGBElement::Lightning)
+	{
+		if (Reaction == GBElemental::ReactionStun)
+		{
+			ApplyControlLock(Duration);
+		}
+		else if (Reaction == GBElemental::ReactionInterrupt)
+		{
+			InterruptAttack();
+		}
+	}
+	else if (Element == EGBElement::Ice)
+	{
+		if (Reaction == GBElemental::ReactionFreeze)
+		{
+			ApplyControlLock(Duration);
+		}
+	}
 }

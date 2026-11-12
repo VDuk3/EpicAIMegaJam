@@ -93,7 +93,10 @@ float UGBAttributeComponent::ApplyDamage(const FGBDamageInfo& Info)
 	FGBDamageInfo Hit = Info;
 	OnModifyIncomingDamage.Broadcast(Hit);
 
-	const float Amount = FMath::Max(0.f, Hit.Amount * GBAttributePrivate::ReadStat(GetStats(), GBStat::DamageTaken, 1.f));
+	const float Amount = FMath::Max(0.f, Hit.Amount * GBAttributePrivate::ReadStat(GetStats(), GBStat::DamageTaken, 1.f)
+		* (GBElemental::ElementIndex(Hit.Element) >= 0
+			? GBAttributePrivate::ReadStat(GetStats(), GBElemental::DamageTakenKey(GBElemental::ElementIndex(Hit.Element)), 1.f)
+			: 1.f));
 	if (Amount <= 0.f)
 	{
 		// Fully blocked or cancelled: not a hit, so no damage events and the regen delay keeps running.

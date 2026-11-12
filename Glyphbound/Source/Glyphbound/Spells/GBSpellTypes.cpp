@@ -1,4 +1,5 @@
 #include "Spells/GBSpellTypes.h"
+#include "Combat/GBCombatLibrary.h"
 #include "Core/GBStatNames.h"
 #include "Stats/GBStatsComponent.h"
 
@@ -36,6 +37,8 @@ FGBDamageInfo FGBSpellCast::MakeDamageInfo(FName AmountParam, AActor* Causer) co
 	}
 	Info.EffectDurationScale = Get(GBStat::EffectDuration, 1.f);
 	Info.EffectStrengthScale = Get(GBStat::EffectStrength, 1.f);
+	Info.BuildUp = Get(GBStat::BuildUp, 0.f);
+	Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
 	return Info;
 }
 

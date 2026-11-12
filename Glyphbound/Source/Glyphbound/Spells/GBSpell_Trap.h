@@ -12,7 +12,8 @@
 //   Duration          seconds it waits before disappearing unused
 //   FigureGlow        optional; emissive amount of the ground figure (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
-// Strings: Sprite, Color (figure tint, default = white, the sprite's own colors are the look), OnHitEffect (e.g. Shock).
+//   BuildUp           raw elemental build-up of the blast
+// Strings: Sprite, Color (figure tint, default = white, the sprite's own colors are the look).
 #pragma once
 
 #include "CoreMinimal.h"

@@ -3,7 +3,7 @@
 		{
 			"Id": "Fireball",
 			"DisplayName": "Fireball",
-			"Description": "A ball of fire that explodes on impact and sets enemies alight.",
+			"Description": "A ball of fire that explodes on impact. Builds up fire.",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
 			"bStartsKnown": true,
@@ -27,10 +27,10 @@
 					"Max": 60,
 					"ScaledBy": "Power"
 				},
-				"EffectDuration": {
-					"Base": 1,
-					"Min": 0.5,
-					"Max": 1.5,
+				"BuildUp": {
+					"Base": 40,
+					"Min": 25,
+					"Max": 55,
 					"ScaledBy": "Power"
 				},
 				"ExplosionRadius": {
@@ -84,14 +84,13 @@
 			},
 			"Strings": {
 				"Sprite": "fireball",
-				"Color": "#FF7A1A",
-				"OnHitEffect": "Burn"
+				"Color": "#FF7A1A"
 			}
 		},
 		{
 			"Id": "FireWall",
 			"DisplayName": "Fire Wall",
-			"Description": "Raises a wall of flames that burns every enemy who crosses it.",
+			"Description": "Raises a wall of flames that damages every enemy who crosses it. Builds up fire.",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Wall",
 			"UnlockGroup": "Fire",
@@ -120,11 +119,11 @@
 					"Max": 30,
 					"ScaledBy": "Power"
 				},
-				"EffectDuration": {
-					"Base": 1,
-					"Min": 0.5,
-					"Max": 1.5,
-					"ScaledBy": "Power"
+				"BuildUp": {
+					"Base": 10,
+					"Min": 10,
+					"Max": 10,
+					"ScaledBy": "None"
 				},
 				"Width": {
 					"Base": 400,
@@ -165,14 +164,13 @@
 			},
 			"Strings": {
 				"Sprite": "fire_wall",
-				"Color": "#FF5A1A",
-				"OnHitEffect": "Burn"
+				"Color": "#FF5A1A"
 			}
 		},
 		{
 			"Id": "Flamethrower",
 			"DisplayName": "Flamethrower",
-			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it.",
+			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it. Builds up fire.",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
 			"bSustained": true,
@@ -208,10 +206,10 @@
 					"Max": 55,
 					"ScaledBy": "Power"
 				},
-				"EffectDuration": {
-					"Base": 0.5,
-					"Min": 0.5,
-					"Max": 0.5,
+				"BuildUp": {
+					"Base": 8,
+					"Min": 8,
+					"Max": 8,
 					"ScaledBy": "None"
 				},
 				"Range": {
@@ -253,14 +251,13 @@
 			},
 			"Strings": {
 				"Sprite": "flame",
-				"Color": "#FF8C1A",
-				"OnHitEffect": "Burn"
+				"Color": "#FF8C1A"
 			}
 		},
 		{
 			"Id": "LightningBolt",
 			"DisplayName": "Lightning Bolt",
-			"Description": "A fast bolt that goes through every enemy in its path.",
+			"Description": "A fast bolt that goes through every enemy in its path. Builds up lightning.",
 			"Element": "Lightning",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
 			"bStartsKnown": true,
@@ -284,10 +281,10 @@
 					"Max": 45,
 					"ScaledBy": "Power"
 				},
-				"EffectDuration": {
-					"Base": 1,
-					"Min": 0.5,
-					"Max": 1.5,
+				"BuildUp": {
+					"Base": 35,
+					"Min": 20,
+					"Max": 50,
 					"ScaledBy": "Power"
 				},
 				"Range": {
@@ -329,14 +326,13 @@
 			},
 			"Strings": {
 				"Sprite": "lightning_bolt",
-				"Color": "#FFE84A",
-				"OnHitEffect": "Shock"
+				"Color": "#FFE84A"
 			}
 		},
 		{
 			"Id": "LightningRune",
 			"DisplayName": "Lightning Rune",
-			"Description": "A rune on the ground that explodes when an enemy steps on it.",
+			"Description": "A rune on the ground that explodes when an enemy steps on it. Builds up lightning.",
 			"Element": "Lightning",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Trap",
 			"UnlockGroup": "Lightning",
@@ -359,16 +355,16 @@
 					"Max": 100,
 					"ScaledBy": "Power"
 				},
+				"BuildUp": {
+					"Base": 60,
+					"Min": 35,
+					"Max": 85,
+					"ScaledBy": "Power"
+				},
 				"Duration": {
 					"Base": 20,
 					"Min": 15,
 					"Max": 25,
-					"ScaledBy": "Power"
-				},
-				"EffectDuration": {
-					"Base": 1,
-					"Min": 0.5,
-					"Max": 1.5,
 					"ScaledBy": "Power"
 				},
 				"Range": {
@@ -416,14 +412,13 @@
 			},
 			"Strings": {
 				"Sprite": "rune_lightning",
-				"Color": "#FFE84A",
-				"OnHitEffect": "Shock"
+				"Color": "#FFE84A"
 			}
 		},
 		{
 			"Id": "StaticOrb",
 			"DisplayName": "Static Orb",
-			"Description": "A slow ball of static electricity that shocks every enemy around it.",
+			"Description": "A slow ball of static electricity that damages every enemy around it. Builds up lightning.",
 			"Element": "Lightning",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Orb",
 			"UnlockGroup": "Lightning",
@@ -452,6 +447,12 @@
 					"Max": 35,
 					"ScaledBy": "Power"
 				},
+				"BuildUp": {
+					"Base": 8,
+					"Min": 8,
+					"Max": 8,
+					"ScaledBy": "None"
+				},
 				"Range": {
 					"Base": 2000,
 					"Min": 1200,
@@ -476,12 +477,6 @@
 					"Max": 0.5,
 					"ScaledBy": "None"
 				},
-				"EffectDuration": {
-					"Base": 1,
-					"Min": 1,
-					"Max": 1,
-					"ScaledBy": "None"
-				},
 				"ShowArea": {
 					"Base": 1,
 					"Min": 1,
@@ -497,8 +492,7 @@
 			},
 			"Strings": {
 				"Sprite": "static_orb",
-				"Color": "#CFE8FF",
-				"OnHitEffect": "Shock"
+				"Color": "#CFE8FF"
 			}
 		},
 		{
@@ -648,7 +642,7 @@
 		{
 			"Id": "IceFloor",
 			"DisplayName": "Ice Floor",
-			"Description": "Freezes the ground; enemies on it are slowed.",
+			"Description": "Freezes the ground; enemies on it are slowed. Builds up ice slowly.",
 			"Element": "Ice",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Zone",
 			"UnlockGroup": "Ice",
@@ -682,6 +676,12 @@
 					"Base": 1,
 					"Min": 1,
 					"Max": 1,
+					"ScaledBy": "None"
+				},
+				"BuildUp": {
+					"Base": 5,
+					"Min": 5,
+					"Max": 5,
 					"ScaledBy": "None"
 				},
 				"Range": {

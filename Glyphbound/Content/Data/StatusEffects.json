@@ -1,51 +1,27 @@
 {
 	"StatusEffects": [
 		{
-			"Id": "Burn",
-			"DisplayName": "Burning",
-			"Duration": 4.0,
-			"TickInterval": 0.5,
-			"HealthPerTick": -4.0,
-			"Element": "Fire",
-			"bRefreshOnReapply": true,
-			"MaxStacks": 1,
-			"Strings": { "Color": "#FF6A10" }
-		},
-		{
-			"Id": "Shock",
-			"DisplayName": "Shocked",
-			"Duration": 1.5,
-			"Element": "Lightning",
-			"Modifiers": [
-				{ "Stat": "MoveSpeed", "Op": "Multiply", "Value": 0.6 }
-			],
-			"bRefreshOnReapply": true,
-			"MaxStacks": 1,
-			"Strings": { "Color": "#FFE626" }
-		},
-		{
 			"Id": "Slow",
 			"DisplayName": "Slowed",
 			"Duration": 4.0,
 			"Element": "Physical",
 			"Modifiers": [
-				{ "Stat": "MoveSpeed", "Op": "Multiply", "Value": 0.5 }
+				{ "Stat": "MoveSpeed", "Op": "MultiplyMin", "Value": 0.5 }
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
 			"Strings": { "Color": "#8C8C8C" }
 		},
 		{
-			"Id": "Chill",
-			"DisplayName": "Chilled",
-			"Duration": 3.0,
-			"Element": "Ice",
-			"Modifiers": [
-				{ "Stat": "MoveSpeed", "Op": "Multiply", "Value": 0.7 }
-			],
+			"Id": "Ignite",
+			"DisplayName": "Ignited",
+			"Duration": 4.0,
+			"TickInterval": 0.5,
+			"HealthPerTick": -6.0,
+			"Element": "Fire",
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
-			"Strings": { "Color": "#33E6FF" }
+			"Strings": { "Color": "#FF6A10" }
 		},
 		{
 			"Id": "HealthPotion",
@@ -84,7 +60,7 @@
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
-			"Strings": { "WeaponElement": "Fire", "WeaponOnHitEffect": "Burn", "Color": "#FF6A10" }
+			"Strings": { "WeaponElement": "Fire", "Color": "#FF6A10" }
 		},
 		{
 			"Id": "Enchant_Lightning",
@@ -96,7 +72,7 @@
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
-			"Strings": { "WeaponElement": "Lightning", "WeaponOnHitEffect": "Shock", "Color": "#FFE626" }
+			"Strings": { "WeaponElement": "Lightning", "Color": "#FFE626" }
 		},
 		{
 			"Id": "Enchant_Ice",
@@ -108,7 +84,7 @@
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
-			"Strings": { "WeaponElement": "Ice", "WeaponOnHitEffect": "Chill", "Color": "#33E6FF" }
+			"Strings": { "WeaponElement": "Ice", "Color": "#33E6FF" }
 		}
 	]
 }

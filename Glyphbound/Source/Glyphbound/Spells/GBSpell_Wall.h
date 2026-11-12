@@ -13,10 +13,11 @@
 //   TileSize          with Texture: cm covered by one tile of the texture (default 100)
 //   Glow              with Texture: > 0.5 = the surface also emits its own color (magic look; default 0)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+//   BuildUp           raw elemental build-up per damage tick
 // Strings: Texture (tile sprite id: the wall is a STRUCTURE, one solid box with a pixel texture, GDD 3; the ice
 // wall), Sprite (without Texture: an effect, a glowing box plus a row of camera-facing sprites; the fire wall),
 // Color (glow tint, default = element color), Tint (optional "#RRGGBB" tint of a textured wall; absent = white;
-// Color is the plain-shape color and is never used there so it cannot darken the tile), OnHitEffect (status effect given with each damage tick, e.g. Burn).
+// Color is the plain-shape color and is never used there so it cannot darken the tile).
 #pragma once
 
 #include "CoreMinimal.h"

@@ -10,6 +10,7 @@
 class UGBStatsComponent;
 class UGBAttributeComponent;
 class UGBStatusEffectComponent;
+class UGBElementalStatusComponent;
 class UGBEraComponent;
 class UBillboardComponent;
 class UStaticMeshComponent;
@@ -82,10 +83,16 @@ public:
 	UGBStatsComponent* GetStats() const { return Stats; }
 	UGBAttributeComponent* GetAttributes() const { return Attributes; }
 	UGBStatusEffectComponent* GetStatusEffects() const { return StatusEffects; }
+	UGBElementalStatusComponent* GetElementalStatus() const { return ElementalStatus; }
 	UGBEraComponent* GetEraComponent() const { return EraComponent; }
 
 	/** True if a world-space hit location is on the head (top HeadFraction of the capsule). */
 	bool IsHeadshotLocation(const FVector& HitLocation) const;
+
+	/** Seconds of control lock left (stun / freeze debug view). */
+	float GetControlLockTime() const { return ControlLockTime; }
+	void InterruptAttack();
+	void ApplyControlLock(float Seconds);
 
 	FGBOnEnemyDied OnDied;
 
@@ -112,6 +119,7 @@ protected:
 	void HandleDamaged(const FGBDamageInfo& Info, float ActualDamage);
 	void HandlePresenceChanged();
 	void HandleDataReloaded();
+	void HandleElementalStatusStarted(EGBElement Element, FName Reaction, float Duration);
 	void MoveTowards(AActor* Goal, float DeltaSeconds);
 	/** Local steering (GBSteering): sweeps the capsule along candidate directions around the one to the goal. */
 	void SteerTowards(const AActor* Goal);
@@ -132,6 +140,7 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatsComponent> Stats;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBAttributeComponent> Attributes;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatusEffectComponent> StatusEffects;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBElementalStatusComponent> ElementalStatus;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBEraComponent> EraComponent;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UBillboardComponent> Sprite;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> BodyMesh;
@@ -168,6 +177,8 @@ protected:
 	float SteerMoveTime = 0.f;
 	/** Fell below KillZ: no drops (they would fall forever). */
 	bool bFellOutOfWorld = false;
+	/** Control lock (stun / freeze): state timers pause while > 0. */
+	float ControlLockTime = 0.f;
 	FLinearColor BodyColor = FLinearColor::Gray;
 	FVector SpriteBaseScale = FVector::OneVector;
 };

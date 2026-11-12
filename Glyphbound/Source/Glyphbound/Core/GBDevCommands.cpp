@@ -19,6 +19,8 @@
 #include "NavigationSystem.h"
 #include "AI/GBEnemyCharacter.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBElementalStatusComponent.h"
+#include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBStatNames.h"
 #include "Core/GBTypes.h"
 #include "Data/GBDataSubsystem.h"
@@ -721,7 +723,104 @@ namespace GBSmokeRun
 				Attributes->RestoreAll();
 			}
 		});
-		Add(49.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(48.9f + S, TEXT("elemental build-up on the training dummy"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBEnemyCharacter* Dummy = nullptr;
+			for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+			{
+				if (It->GetEnemyId() == FName(TEXT("TrainingDummy")) && !It->IsDead())
+				{
+					Dummy = *It;
+					break;
+				}
+			}
+			if (!Dummy)
+			{
+				const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+				Dummy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("TrainingDummy")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+			}
+			if (!Dummy || Dummy->IsDead())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: no living TrainingDummy"));
+				return;
+			}
+			UGBElementalStatusComponent* Elemental = Dummy->GetElementalStatus();
+			if (!Elemental)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE elemental: dummy has no status component"));
+				return;
+			}
+			// Dedupe: two adds of 20 with the SAME event id leave 20 (times BuildUpTaken, 1 by default).
+			const int32 DedupeId = UGBCombatLibrary::NewBuildUpEventId();
+			FGBDamageInfo First;
+			First.Element = EGBElement::Fire;
+			First.Instigator = Player;
+			First.BuildUp = 20.f;
+			First.BuildUpEventId = DedupeId;
+			UGBCombatLibrary::ApplyBuildUp(Dummy, First);
+			UGBCombatLibrary::ApplyBuildUp(Dummy, First);
+			const float AfterDedupe = Elemental->GetBuildUp(EGBElement::Fire);
+			const bool bDedupeOk = FMath::IsNearlyEqual(AfterDedupe, 20.f, 1.e-2f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE elemental dedupe ok=%d"), bDedupeOk ? 1 : 0);
+			if (!bDedupeOk)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE elemental dedupe FAILED: fire bar is %.2f, expected 20"), AfterDedupe);
+			}
+			// Clear the fire bar before the per-element trigger checks (fresh decay via ClearAll).
+			Elemental->ClearAll();
+
+			const EGBElement Elems[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
+			const TCHAR* Names[3] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice") };
+			for (int32 i = 0; i < 3; ++i)
+			{
+				Elemental->ClearAll();
+				bool bTriggered = false;
+				int32 Adds = 0;
+				for (int32 n = 0; n < 10 && !bTriggered; ++n)
+				{
+					FGBDamageInfo Info;
+					Info.Element = Elems[i];
+					Info.Instigator = Player;
+					Info.BuildUp = 30.f;
+					Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+					UGBCombatLibrary::ApplyBuildUp(Dummy, Info);
+					++Adds;
+					bTriggered = Elemental->IsStatusActive(Elems[i]);
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE elemental %s triggered=%d adds=%d"), Names[i], bTriggered ? 1 : 0, Adds);
+				if (!bTriggered)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE elemental %s FAILED to trigger"), Names[i]);
+					continue;
+				}
+				if (Elems[i] == EGBElement::Fire)
+				{
+					UGBStatusEffectComponent* Effects = Dummy->GetStatusEffects();
+					const bool bIgnite = Effects && Effects->HasEffect(FName(TEXT("Ignite")));
+					UE_LOG(LogGB, Display, TEXT("SMOKE elemental Fire ignite=%d"), bIgnite ? 1 : 0);
+					if (!bIgnite)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE elemental Fire: Ignite effect missing"));
+					}
+				}
+				FGBDamageInfo Extra;
+				Extra.Element = Elems[i];
+				Extra.Instigator = Player;
+				Extra.BuildUp = 30.f;
+				Extra.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+				const float Before = Elemental->GetBuildUp(Elems[i]);
+				UGBCombatLibrary::ApplyBuildUp(Dummy, Extra);
+				const float After = Elemental->GetBuildUp(Elems[i]);
+				const bool bBlocked = Elemental->IsStatusActive(Elems[i]) && FMath::IsNearlyEqual(Before, After, 1.e-3f);
+				UE_LOG(LogGB, Display, TEXT("SMOKE elemental %s blockedWhileActive=%d"), Names[i], bBlocked ? 1 : 0);
+				if (!bBlocked)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE elemental %s: add during status was not refused"), Names[i]);
+				}
+			}
+			Elemental->ClearAll();
+		});
+		Add(50.5f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);
@@ -772,6 +871,71 @@ namespace GBSmokeRun
 		TEXT("gb.Smoke"),
 		TEXT("Scripted run of the main systems: logs lines starting with SMOKE, saves screenshots to Saved/Screenshots/Smoke and quits."),
 		FConsoleCommandWithWorldDelegate::CreateStatic(&Start));
+
+	static void RunBuildUp(const TArray<FString>& Args, UWorld* World)
+	{
+		if (Args.Num() < 2)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp <Fire|Lightning|Ice> <Amount>"));
+			return;
+		}
+		EGBElement Element = EGBElement::Fire;
+		if (Args[0].Equals(TEXT("Fire"), ESearchCase::IgnoreCase))
+		{
+			Element = EGBElement::Fire;
+		}
+		else if (Args[0].Equals(TEXT("Lightning"), ESearchCase::IgnoreCase))
+		{
+			Element = EGBElement::Lightning;
+		}
+		else if (Args[0].Equals(TEXT("Ice"), ESearchCase::IgnoreCase))
+		{
+			Element = EGBElement::Ice;
+		}
+		else
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp: unknown element '%s' (Fire|Lightning|Ice)"), *Args[0]);
+			return;
+		}
+		const float Amount = FCString::Atof(*Args[1]);
+		AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+		if (!Player)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.BuildUp: no player character"));
+			return;
+		}
+		const FVector PlayerLoc = Player->GetActorLocation();
+		for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+		{
+			AGBEnemyCharacter* Enemy = *It;
+			if (!Enemy || Enemy->IsDead())
+			{
+				continue;
+			}
+			if (FVector::Dist(PlayerLoc, Enemy->GetActorLocation()) > 1500.f)
+			{
+				continue;
+			}
+			FGBDamageInfo Info;
+			Info.Element = Element;
+			Info.Instigator = Player;
+			Info.BuildUp = Amount;
+			Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+			UGBCombatLibrary::ApplyBuildUp(Enemy, Info);
+			if (const UGBElementalStatusComponent* Elemental = Enemy->GetElementalStatus())
+			{
+				UE_LOG(LogGB, Display, TEXT("BuildUp %s: %.1f/%.1f phase=%d"),
+					*Enemy->GetEnemyId().ToString(),
+					Elemental->GetBuildUp(Element), Elemental->GetThreshold(Element),
+					static_cast<int32>(Elemental->GetPhase(Element)));
+			}
+		}
+	}
+
+	static FAutoConsoleCommandWithWorldAndArgs BuildUpCommand(
+		TEXT("gb.BuildUp"),
+		TEXT("Adds raw elemental build-up to every living enemy within 1500 cm: gb.BuildUp <Fire|Lightning|Ice> <Amount>"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunBuildUp));
 }
 
 #endif // !UE_BUILD_SHIPPING

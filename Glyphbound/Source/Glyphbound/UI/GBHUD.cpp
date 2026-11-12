@@ -26,7 +26,20 @@
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "HAL/IConsoleManager.h"
+
+#include "AI/GBEnemyCharacter.h"
+#include "Combat/GBElementalStatusComponent.h"
+#include "World/GBEraComponent.h"
+
+static TAutoConsoleVariable<int32> CVarShowElemental(
+	TEXT("gb.ShowElemental"),
+	0,
+	TEXT("Debug view of elemental build-up bars over enemies. 1 = on."),
+	ECVF_Default);
 
 // Presentation-only timings and sizes (not gameplay numbers).
 namespace GBHudLayout
@@ -445,6 +458,93 @@ void AGBHUD::DrawHUD()
 
 	// World-space numbers first: hands and HUD panels stay on top of them.
 	DrawDamageNumbers();
+	if (CVarShowElemental.GetValueOnGameThread() == 1 && Player)
+	{
+		UWorld* HudWorld = GetWorld();
+		APlayerCameraManager* CamMgr = PlayerOwner ? PlayerOwner->PlayerCameraManager.Get() : nullptr;
+		if (HudWorld && CamMgr)
+		{
+			const FVector CamLoc = CamMgr->GetCameraLocation();
+			const FVector CamFwd = CamMgr->GetCameraRotation().Vector();
+			const FVector PlayerLoc = Player->GetActorLocation();
+			for (TActorIterator<AGBEnemyCharacter> It(HudWorld); It; ++It)
+			{
+				AGBEnemyCharacter* Enemy = *It;
+				if (!Enemy || Enemy->IsDead())
+				{
+					continue;
+				}
+				if (Enemy->GetEraComponent() && !Enemy->GetEraComponent()->IsPresent())
+				{
+					continue;
+				}
+				UGBElementalStatusComponent* Elemental = Enemy->GetElementalStatus();
+				if (!Elemental)
+				{
+					continue;
+				}
+				const float Dist = FVector::Dist(PlayerLoc, Enemy->GetActorLocation());
+				if (Dist > 4000.f)
+				{
+					continue;
+				}
+				FVector Head = Enemy->GetActorLocation();
+				if (const UCapsuleComponent* Capsule = Enemy->FindComponentByClass<UCapsuleComponent>())
+				{
+					Head.Z += Capsule->GetScaledCapsuleHalfHeight() + 30.f;
+				}
+				else
+				{
+					Head.Z += 120.f;
+				}
+				if (FVector::DotProduct(Head - CamLoc, CamFwd) <= 0.f)
+				{
+					continue;
+				}
+				const FVector Screen = Canvas->Project(Head, true);
+				if (Screen.Z <= 0.f)
+				{
+					continue;
+				}
+				TArray<FString> Lines;
+				const EGBElement Elements[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
+				const TCHAR* Names[3] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice") };
+				for (int32 i = 0; i < 3; ++i)
+				{
+					const EGBBuildUpPhase Phase = Elemental->GetPhase(Elements[i]);
+					if (Phase == EGBBuildUpPhase::Building)
+					{
+						const float Value = Elemental->GetBuildUp(Elements[i]);
+						if (Value <= 0.f)
+						{
+							continue;
+						}
+						const float Threshold = Elemental->GetThreshold(Elements[i]);
+						Lines.Add(FString::Printf(TEXT("%s %d/%d"), Names[i], FMath::RoundToInt(Value), FMath::RoundToInt(Threshold)));
+					}
+					else if (Phase == EGBBuildUpPhase::Active)
+					{
+						const FName Reaction = Elemental->GetReaction(Elements[i]);
+						Lines.Add(FString::Printf(TEXT("%s %s %.1fs"), Names[i], *Reaction.ToString(), Elemental->GetPhaseTimeRemaining(Elements[i])));
+					}
+					else
+					{
+						Lines.Add(FString::Printf(TEXT("%s IMMUNE %.1fs"), Names[i], Elemental->GetPhaseTimeRemaining(Elements[i])));
+					}
+				}
+				if (Enemy->GetControlLockTime() > 0.f)
+				{
+					Lines.Add(FString::Printf(TEXT("LOCK %.1fs"), Enemy->GetControlLockTime()));
+				}
+				float Y = Screen.Y;
+				for (const FString& Line : Lines)
+				{
+					DrawLabel(Line, FLinearColor::White, Screen.X, Y, 14.f, 0.5f, true, false);
+					Y += 16.f;
+				}
+			}
+		}
+	}
 	if (Player)
 	{
 		DrawHands(Player);

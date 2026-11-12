@@ -33,13 +33,14 @@
 		{
 			"Id": "ElectricGrenade",
 			"DisplayName": "Electric Grenade",
-			"Description": "Bounces, then explodes in a burst of lightning that shocks everything around it.",
+			"Description": "Bounces, then explodes in a burst of lightning that builds up shock.",
 			"Type": "Throwable",
 			"MaxStack": 3,
 			"bQuickUse": true,
 			"Element": "Lightning",
 			"Stats": {
 				"Damage": 70,
+				"BuildUp": 60,
 				"Radius": 450,
 				"Speed": 1800,
 				"FuseTime": 1.6,
@@ -47,7 +48,7 @@
 				"ProjectileRadius": 12,
 				"ThrowPitch": 8
 			},
-			"Strings": { "OnHitEffect": "Shock", "Sprite": "grenade_electric", "PickupLook": "3D" }
+			"Strings": { "Sprite": "grenade_electric", "PickupLook": "3D" }
 		},
 		{
 			"Id": "Ammo_Magazine",

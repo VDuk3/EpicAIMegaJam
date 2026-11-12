@@ -69,11 +69,25 @@ public:
 	/**
 	 * Weak point / head bonus (GDD 3): the single place to extend when enemies get other weak points.
 	 * If WeakPointMult > 1 and Info.HitLocation is on the target's weak point (today: an AGBEnemyCharacter
-	 * whose IsHeadshotLocation(Info.HitLocation) is true), multiplies Info.Amount by WeakPointMult,
-	 * sets Info.bHeadshot = true and returns true. Otherwise leaves Info alone (Info.bHeadshot = false)
-	 * and returns false.
+	 * whose IsHeadshotLocation(Info.HitLocation) is true, via IsWeakPointHit), multiplies Info.Amount
+	 * by WeakPointMult. Always sets Info.bHeadshot from IsWeakPointHit (so the build-up bonus never
+	 * applies twice even if the head is also a weak point) and returns bHeadshot. The damage bonus
+	 * is decoupled from the build-up bonus (FGBDamageInfo::WeakPointBuildUpMult).
 	 */
 	static bool ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult);
+
+	/** True when HitLocation is on Target's weak point (today: head of an AGBEnemyCharacter). The one place to add other weak points later. */
+	static bool IsWeakPointHit(const AActor* Target, const FVector& HitLocation);
+
+	/** Global counter for build-up events (one per shot, cast, blast or tick); never returns 0. */
+	static int32 NewBuildUpEventId();
+
+	/**
+	 * Sends Info.BuildUp to Target's elemental status (weapon weak point bonus included).
+	 * Returns the raw amount sent. Does nothing unless Info.BuildUp > 0, the element is
+	 * Fire / Lightning / Ice, CanDamage(Instigator, Target) and the target has a status component.
+	 */
+	static float ApplyBuildUp(AActor* Target, const FGBDamageInfo& Info);
 
 	/**
 	 * Aimed melee point (pure, tested): the point of the body segment BodyBottom..BodyTop (feet to top of head)

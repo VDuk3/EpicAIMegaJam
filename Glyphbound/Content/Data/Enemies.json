@@ -42,10 +42,18 @@
 				"AggroRange": 2400,
 				"HeadFraction": 0.2,
 				"CapsuleRadius": 60,
-				"CapsuleHalfHeight": 135
+				"CapsuleHalfHeight": 135,
+				"FireDamageTaken": 0.8,
+				"FireBuildUpTaken": 0.75,
+				"FireBuildUpThreshold": 160,
+				"LightningBuildUpThreshold": 200,
+				"IceBuildUpThreshold": 180,
+				"FrostSlow": 0.5
 			},
 			"Strings": {
-				"Sprite": "orc_boss"
+				"Sprite": "orc_boss",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
 				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 }
@@ -69,7 +77,10 @@
 				"ProjectileRadius": 10,
 				"HeadFraction": 0.22,
 				"CapsuleRadius": 42,
-				"CapsuleHalfHeight": 96
+				"CapsuleHalfHeight": 96,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.25,
+				"FireBuildUpTaken": 0.75
 			},
 			"Strings": {
 				"Color": "#4A6A7A",

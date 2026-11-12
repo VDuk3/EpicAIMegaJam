@@ -15,10 +15,9 @@
 //   InterruptHitFraction optional; > 0 = a single hit on the caster whose damage actually taken
 //                     is >= InterruptHitFraction * caster max health ends the spell at once (default 0 = never)
 //   EffectDuration / EffectStrength   optional multipliers on the on-hit effect (default 1)
+//   BuildUp           raw elemental build-up per damage tick
 //   SpriteSize        optional; height of the sprite nearest to the hand (default 40); the farther ones grow with the cone
-// Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
-// Targets behind world geometry (visibility check against world static) are not hit.
-// Strings: Sprite (drawn several times along the cone), OnHitEffect (e.g. Burn).
+// Strings: Sprite (drawn several times along the cone).
 // Targets behind world geometry (visibility check against world static) are not hit.
 #pragma once
 

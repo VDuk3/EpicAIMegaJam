@@ -8,13 +8,15 @@
 
 /**
  * How every tunable number is read in the game:
- *   value = Evaluate(Key, Base)  ->  (Base + sum of Add) * product of Multiply, or the last Override if any.
+ *   value = Evaluate(Key, Base)  ->  (Base + sum of Add) * product of Multiply (including the lowest MultiplyMin),
+ *   or the last Override if any.
  * - Actor stats (MoveSpeed, MaxHealth...): base values are stored here with SetBaseStats and read with GetStat.
  * - Weapon and spell numbers: the base comes from the weapon / spell definition and the caller passes the
  *   modifier keys ("Weapon.<Id>.<Stat>", "Weapon.All.<Stat>", "Spell.<Id>.<Param>", "Spell.All.<Param>").
  * Modifiers are added in groups identified by a Source name ("Skill.FireballDamage", "Armor", "Effect.Slow#3",
  * "Passive.DoubleJump"), and removed by that same name. Skill trees, armor, status effects, air passives and
- * the weapon enchant are all just sources of modifiers.
+ * the weapon enchant are all just sources of modifiers. MultiplyMin is like Multiply, but only the lowest
+ * one on a stat counts (the strongest slow wins); it multiplies with the plain Multiply ones.
  */
 UCLASS(ClassGroup = (Glyphbound), meta = (BlueprintSpawnableComponent))
 class GLYPHBOUND_API UGBStatsComponent : public UActorComponent

@@ -71,6 +71,10 @@ void UGBStatsComponent::AddModifiers(FName Source, TConstArrayView<FGBModifierDe
 			// Scaled around 1, so a x1.5 buff at half strength is x1.25, not x0.75.
 			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
 			break;
+		case EGBModOp::MultiplyMin:
+			// Same scaling as Multiply: the strongest slow at partial strength stays a slow.
+			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
+			break;
 		case EGBModOp::Override:
 			break;
 		}
@@ -96,6 +100,8 @@ float UGBStatsComponent::ApplyModifiers(float Base, TConstArrayView<FGBModifierD
 {
 	float Sum = Base;
 	float Product = 1.f;
+	float LowestMin = 1.f;
+	bool bHasMin = false;
 	const FGBModifierDef* LastOverride = nullptr;
 
 	for (const FGBModifierDef& Modifier : Modifiers)
@@ -108,11 +114,18 @@ float UGBStatsComponent::ApplyModifiers(float Base, TConstArrayView<FGBModifierD
 		case EGBModOp::Multiply:
 			Product *= Modifier.Value;
 			break;
+		case EGBModOp::MultiplyMin:
+			if (!bHasMin || Modifier.Value < LowestMin)
+			{
+				LowestMin = Modifier.Value;
+				bHasMin = true;
+			}
+			break;
 		case EGBModOp::Override:
 			LastOverride = &Modifier;
 			break;
 		}
 	}
 
-	return LastOverride ? LastOverride->Value : Sum * Product;
+	return LastOverride ? LastOverride->Value : Sum * Product * (bHasMin ? LowestMin : 1.f);
 }

@@ -65,7 +65,8 @@ enum class EGBModOp : uint8
 {
 	Add,
 	Multiply,
-	Override
+	Override,
+	MultiplyMin
 };
 
 /** HUD skin, chosen by the held item (GDD 13). */
@@ -131,4 +132,16 @@ struct GLYPHBOUND_API FGBDamageInfo
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	float EffectStrengthScale = 1.f;
+
+	/** Raw elemental build-up this hit adds to the target's bar of Element (before the target's resistance and the weak point bonus). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	float BuildUp = 0.f;
+
+	/** Multiplies BuildUp once when bHeadshot is true (weapon hits only). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	float WeakPointBuildUpMult = 1.f;
+
+	/** Hits that share an id add build-up to one target only once (shotgun pellets of one shot); 0 = no dedupe. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	int32 BuildUpEventId = 0;
 };

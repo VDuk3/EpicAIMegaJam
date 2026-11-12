@@ -1,6 +1,7 @@
 #include "Combat/GBCombatLibrary.h"
 
 #include "AI/GBEnemyCharacter.h"
+#include "Combat/GBElementalStatusComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBStatNames.h"
 #include "Stats/GBAttributeComponent.h"
@@ -69,6 +70,7 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 	if (Dealt > 0.f)
 	{
 		OnDamageDealt().Broadcast(Target, FinalInfo, Dealt);
+		ApplyBuildUp(Target, FinalInfo);
 	}
 
 	if (Dealt > 0.f && !FinalInfo.OnHitEffect.IsNone())
@@ -272,19 +274,65 @@ FVector UGBCombatLibrary::ApplySpread(const FVector& Direction, float SpreadHalf
 
 bool UGBCombatLibrary::ApplyWeakPointBonus(const AActor* Target, FGBDamageInfo& Info, float WeakPointMult)
 {
-	Info.bHeadshot = false;
-	if (WeakPointMult <= 1.f)
+	Info.bHeadshot = IsWeakPointHit(Target, Info.HitLocation);
+	if (!Info.bHeadshot || WeakPointMult <= 1.f)
 	{
-		return false;
-	}
-	const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target);
-	if (!Enemy || !Enemy->IsHeadshotLocation(Info.HitLocation))
-	{
-		return false;
+		return Info.bHeadshot;
 	}
 	Info.Amount *= WeakPointMult;
-	Info.bHeadshot = true;
 	return true;
+}
+
+bool UGBCombatLibrary::IsWeakPointHit(const AActor* Target, const FVector& HitLocation)
+{
+	const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target);
+	return Enemy && Enemy->IsHeadshotLocation(HitLocation);
+}
+
+int32 UGBCombatLibrary::NewBuildUpEventId()
+{
+	static int32 NextId = 0;
+	++NextId;
+	if (NextId == 0)
+	{
+		++NextId;
+	}
+	return NextId;
+}
+
+float UGBCombatLibrary::ApplyBuildUp(AActor* Target, const FGBDamageInfo& Info)
+{
+	if (Info.BuildUp <= 0.f)
+	{
+		return 0.f;
+	}
+	const int32 Index = GBElemental::ElementIndex(Info.Element);
+	if (Index < 0)
+	{
+		return 0.f;
+	}
+	AActor* Instigator = Info.Instigator.Get();
+	if (IsValid(Instigator))
+	{
+		// Keep the pointer; null instigators still build up (CanDamage allows them).
+	}
+	else
+	{
+		Instigator = nullptr;
+	}
+	if (!CanDamage(Instigator, Target))
+	{
+		return 0.f;
+	}
+	UGBElementalStatusComponent* Elemental = UGBElementalStatusComponent::Find(Target);
+	if (!Elemental)
+	{
+		return 0.f;
+	}
+	const float Mult = Info.bHeadshot ? FMath::Max(1.f, Info.WeakPointBuildUpMult) : 1.f;
+	const float Amount = Info.BuildUp * Mult;
+	Elemental->AddBuildUp(Info.Element, Amount, Info.BuildUpEventId, Instigator);
+	return Amount;
 }
 
 FVector UGBCombatLibrary::ClosestBodyPointToAim(const FVector& AimOrigin, const FVector& AimDirection, float AimLength, const FVector& BodyBottom, const FVector& BodyTop)

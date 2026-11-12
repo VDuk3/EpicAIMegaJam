@@ -1,5 +1,6 @@
 #include "Items/GBInventoryComponent.h"
 
+#include "Combat/GBCombatLibrary.h"
 #include "Core/GBStatNames.h"
 #include "Core/GBPlaceholder.h"
 #include "Data/GBDataSubsystem.h"
@@ -261,6 +262,8 @@ bool UGBInventoryComponent::UseThrowable(const FGBItemDefinition& Def)
 	Config.Damage.Element = Def.Element;
 	Config.Damage.Instigator = Player;
 	Config.Damage.SourceId = Def.Id;
+	Config.Damage.BuildUp = ReadItemStat(Def, GBStat::BuildUp, 0.f);
+	Config.Damage.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
 	if (const FString* OnHit = Def.Strings.Find(GBString::OnHitEffect))
 	{
 		Config.Damage.OnHitEffect = FName(**OnHit);

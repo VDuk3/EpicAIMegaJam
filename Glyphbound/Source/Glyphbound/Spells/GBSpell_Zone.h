@@ -8,6 +8,7 @@
 //   Duration          seconds
 //   TickInterval      seconds between applications
 //   DamagePerSecond   optional; > 0 = damage each tick (DamagePerSecond * TickInterval) with the on-hit effect
+//   BuildUp           raw elemental build-up per tick (sent directly when DamagePerSecond is 0)
 //   FigureGlow        optional; emissive amount of the ground figure (default 1)
 //   EffectDuration / EffectStrength   optional multipliers on the status effect (default 1)
 // Strings: OnHitEffect (status effect applied every tick, e.g. Slow), Color (figure tint, default = white,

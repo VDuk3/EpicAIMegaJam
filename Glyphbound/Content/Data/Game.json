@@ -32,7 +32,37 @@
 		"InterruptShakeFrequency": 22,
 		"GroundFigureLift": 3,
 		"GroundFigureLayerStep": 1.5,
-		"GroundFigureLayerMaxRise": 60
+		"GroundFigureLayerMaxRise": 60,
+		"ElementalTickInterval": 0.1,
+		"WeakPointBuildUpMult": 1.5,
+		"ElementalDefault.FireDamageTaken": 1,
+		"ElementalDefault.FireBuildUpTaken": 1,
+		"ElementalDefault.FireBuildUpThreshold": 100,
+		"ElementalDefault.FireBuildUpDecayDelay": 2,
+		"ElementalDefault.FireBuildUpDecayRate": 20,
+		"ElementalDefault.LightningDamageTaken": 1,
+		"ElementalDefault.LightningBuildUpTaken": 1,
+		"ElementalDefault.LightningBuildUpThreshold": 100,
+		"ElementalDefault.LightningBuildUpDecayDelay": 2,
+		"ElementalDefault.LightningBuildUpDecayRate": 20,
+		"ElementalDefault.IceDamageTaken": 1,
+		"ElementalDefault.IceBuildUpTaken": 1,
+		"ElementalDefault.IceBuildUpThreshold": 100,
+		"ElementalDefault.IceBuildUpDecayDelay": 2,
+		"ElementalDefault.IceBuildUpDecayRate": 20,
+		"ElementalDefault.FireStatusDuration": 4,
+		"ElementalDefault.LightningStatusDuration": 1.2,
+		"ElementalDefault.IceStatusDuration": 2.5,
+		"ElementalDefault.FireStatusImmunity": 3,
+		"ElementalDefault.LightningStatusImmunity": 4,
+		"ElementalDefault.IceStatusImmunity": 5,
+		"ElementalDefault.IgniteDamageMult": 1,
+		"ElementalDefault.ShockDischargeDamage": 10,
+		"ElementalDefault.FrostSlow": 0.6
 	},
-	"Strings": {}
+	"Strings": {
+		"ElementalDefault.FireStatusReaction": "Ignite",
+		"ElementalDefault.LightningStatusReaction": "Stun",
+		"ElementalDefault.IceStatusReaction": "Freeze"
+	}
 }
