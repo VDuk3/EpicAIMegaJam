@@ -1,0 +1,76 @@
+{
+  "Id": "FluidExplosion",
+  "Comment": "Niagara Fluids 3D gas explosion (engine template). One shot from the first frame: fireball on the fire ramp that cools into dark smoke.",
+  "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_Explosion.Grid3D_Gas_Explosion",
+  "UserFloats": {},
+  "UserVectors": {},
+  "UserColors": {},
+  "Capture": {
+    "Resolution": 512,
+    "AutoFrame": true,
+    "AutoFramePadding": 0.06,
+    "WidthCm": 900,
+    "CenterCm": [
+      0,
+      0,
+      250
+    ],
+    "ViewYawDeg": 0,
+    "ViewPitchDeg": 0,
+    "Projection": "Perspective",
+    "FovDeg": 10,
+    "WarmupSeconds": 0,
+    "DurationSeconds": 2.5,
+    "SimFps": 60,
+    "Exposure": 1,
+    "KeyLight": true,
+    "KeyLightIntensity": 8
+  },
+  "Pixel": {
+    "FrameWidth": 64,
+    "FrameHeight": 64,
+    "Fps": 12,
+    "Loop": false,
+    "LoopBlendFrames": 0,
+    "AlphaMode": "Max",
+    "AlphaThreshold": 0.3,
+    "ColorMode": "Split",
+    "HotLuminance": 0.55,
+    "HotSaturation": 0.35,
+    "Ramps": [
+      [
+        "#4B0F0F",
+        "#BC2A12",
+        "#F03416",
+        "#F3610B",
+        "#E2DE9C",
+        "#F5F3CF"
+      ],
+      [
+        "#262827",
+        "#373837",
+        "#434848",
+        "#555957"
+      ]
+    ],
+    "LevelsPercentile": 0.99,
+    "Gamma": 1,
+    "Hysteresis": 0.03,
+    "MinIslandPixels": 2,
+    "FillHoles": false,
+    "Outline": "None"
+  },
+  "Light": {
+    "Enabled": true,
+    "Color": "#F3610B",
+    "Intensity": 30,
+    "RadiusCm": 1500,
+    "CastShadows": true,
+    "TrackMode": "Baked"
+  },
+  "World": {
+    "Facing": "Billboard",
+    "Glow": 2,
+    "Lit": false
+  }
+}

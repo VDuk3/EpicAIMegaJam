@@ -1,0 +1,76 @@
+{
+  "Id": "FluidFire",
+  "Comment": "Niagara Fluids 3D gas fire (engine template). Loop. Hot core on the fire ramp, the smoke above on dark iron.",
+  "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_Fire.Grid3D_Gas_Fire",
+  "UserFloats": {},
+  "UserVectors": {},
+  "UserColors": {},
+  "Capture": {
+    "Resolution": 512,
+    "AutoFrame": true,
+    "AutoFramePadding": 0.06,
+    "WidthCm": 600,
+    "CenterCm": [
+      0,
+      0,
+      250
+    ],
+    "ViewYawDeg": 0,
+    "ViewPitchDeg": 0,
+    "Projection": "Perspective",
+    "FovDeg": 10,
+    "WarmupSeconds": 4,
+    "DurationSeconds": 2,
+    "SimFps": 60,
+    "Exposure": 1,
+    "KeyLight": true,
+    "KeyLightIntensity": 8
+  },
+  "Pixel": {
+    "FrameWidth": 48,
+    "FrameHeight": 64,
+    "Fps": 12,
+    "Loop": true,
+    "LoopBlendFrames": 6,
+    "AlphaMode": "Max",
+    "AlphaThreshold": 0.3,
+    "ColorMode": "Split",
+    "HotLuminance": 0.55,
+    "HotSaturation": 0.35,
+    "Ramps": [
+      [
+        "#4B0F0F",
+        "#BC2A12",
+        "#F03416",
+        "#F3610B",
+        "#E2DE9C",
+        "#F5F3CF"
+      ],
+      [
+        "#262827",
+        "#373837",
+        "#434848",
+        "#555957"
+      ]
+    ],
+    "LevelsPercentile": 0.99,
+    "Gamma": 1,
+    "Hysteresis": 0.03,
+    "MinIslandPixels": 2,
+    "FillHoles": false,
+    "Outline": "None"
+  },
+  "Light": {
+    "Enabled": true,
+    "Color": "#F3610B",
+    "Intensity": 12,
+    "RadiusCm": 900,
+    "CastShadows": true,
+    "TrackMode": "Baked"
+  },
+  "World": {
+    "Facing": "Upright",
+    "Glow": 1.5,
+    "Lit": false
+  }
+}
