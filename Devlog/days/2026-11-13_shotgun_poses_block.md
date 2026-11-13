@@ -30,7 +30,9 @@ Prompt: `Prompts/shotgun_poses_review_sol.md`. **One real finding, fixed.** The 
 - Full smoke, once, at the end: `done=True crashed=False LogGB errors=0`, 58 screenshots, 142 s. Then, after Sol's fix, the shotgun's filtered smoke: pump 4.15 cm from rest at 0.37 s after the shot, everything back at rest after it, 0 errors.
 - Tests: 44 run, 0 failed (1.00 s of test time, 27 s of wall time).
 - Game target build: succeeded (41 s; 26 s again after the fix).
-- **Not packaged in this block.** Nobody has played it yet.
+- **Package** (owner: "Sí, empaqueta", "Yes, package it"), made from `b2c1966` with a clean tree while holding the machine lock: `TeamTBD_Glyphbound.zip`, **299.7 MB**, BuildCookRun 106 s.
+- **Full smoke on the packaged game** (not only the shotgun's filter, which was the lesson of the thirty-third block's package): 192 steps, `done=True crashed=False LogGB errors=0`, no LogGB warnings, 58 screenshots, 131 s. The shotgun has its 6 meshes, the pump is 4.18 cm back 0.37 s after the shot, and the reload pose turns the gun 130.5 degrees. The Entity loads its real art: body, eye and the skinned tentacles with 80 bones and 10 chains, so its folder is in the cook.
+- Nobody has played it yet.
 
 ## Implementer
 The architect made these edits directly, not Muse Spark. It was a handful of art constants and a two-field struct change, tuned by looking at screenshots one round at a time. Handing each round to an implementer would have cost more than the change itself.
