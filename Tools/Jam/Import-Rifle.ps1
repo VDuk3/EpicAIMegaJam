@@ -1,6 +1,6 @@
 <#
 Import-Rifle.ps1 - Builds the assault rifle in Unreal from its one source file,
-Glyphbound/SourceArt/Weapons/Rifle/Rifle.blend: Blender (headless) exports the FBX parts and the two textures to a
+Glyphbound/SourceArt/Weapons/Rifle/Rifle.blend: Blender (headless) exports the FBX parts and the four textures to a
 temporary folder (Tools/Blender/rifle_export_fbx.py), the Editor's Python commandlet (Tools/Jam/import_rifle.py) imports
 them into /Game/Glyphbound/Weapons/Rifle with their materials, and the temporary folder is deleted.
 Needs the pistol imported first: the rifle reuses its shared masters M_GunSolid and M_GunHolo.

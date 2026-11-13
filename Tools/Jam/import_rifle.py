@@ -4,7 +4,7 @@
 #
 # Inputs, in the temporary folder GB_RIFLE_STAGE (Tools/Blender/rifle_export_fbx.py):
 #   Export/SM_Rifle_{Body,Trigger,Magazine,WeakPointLight,AmmoDisplay}.fbx
-#   Textures/T_Rifle_{BaseColor,EmissiveMask}.png
+#   Textures/T_Rifle_{BaseColor,ORM,Normal,EmissiveMask}.png   (rebuilt by Tools/Blender/rifle_build_blend.py)
 # Output: /Game/Glyphbound/Weapons/Rifle/. Parameters the game sets (same names as the pistol, AGBGun):
 #   ElementColor   (vector) the glow colour (enchant element, or the rifle's own colour)
 #   ImbueRemaining (scalar) M_RifleAtlas: the side neon strip is split into 13 cells along the gun (UV 1 U = 0 at the
@@ -25,21 +25,24 @@ CELL_GAP = 0.12          # dark share at the start of each cell, so the strip re
 STRIP_GLOW = 4.0         # emission strength of the neon in the element colour
 INDICATOR_GLOW = 10.0
 TEXTURES = {
-    # name: (compression, sRGB)
-    "T_Rifle_BaseColor": (unreal.TextureCompressionSettings.TC_DEFAULT, True),
-    "T_Rifle_EmissiveMask": (unreal.TextureCompressionSettings.TC_MASKS, False),
+    # name: (compression, sRGB, flip green)
+    "T_Rifle_BaseColor": (unreal.TextureCompressionSettings.TC_DEFAULT, True, False),
+    # R = ambient occlusion, G = roughness, B = metallic
+    "T_Rifle_ORM": (unreal.TextureCompressionSettings.TC_MASKS, False, False),
+    # baked in Blender (OpenGL, +Y): Unreal wants -Y, so the green channel is flipped on import
+    "T_Rifle_Normal": (unreal.TextureCompressionSettings.TC_NORMALMAP, False, True),
+    "T_Rifle_EmissiveMask": (unreal.TextureCompressionSettings.TC_MASKS, False, False),
 }
-MAX_TEXTURE_SIZE = 4096   # the Tripo maps at full size: at 2048 the parts nearest the camera looked blurry and soft
+MAX_TEXTURE_SIZE = 4096   # full size: at 2048 the parts nearest the camera looked blurry and soft
 RIFLE_MINT = (0.05, 0.9, 0.6)
-ALBEDO_SCALE = 0.8
-ROUGH_POLYMER = 0.68
-ROUGH_METAL = 0.36
-METAL_DARK = 0.6
+AO_IN_ALBEDO = 0.6        # share of the baked AO multiplied into the albedo (the AO pin alone only dims sky light)
 
 SOLID = "M_GunSolid"
 SLOT_MATERIALS = {
     "carabina_roja": ("M_RifleAtlas", {}),
     "Rifle_WeakPoint": ("M_RifleIndicator", {}),
+    # the modelled top rail: flat dark metal, the tone of the atlas's dark parts
+    "Rifle_Rail": (SOLID, {"BaseColor": (0.032, 0.036, 0.041), "Metallic": 0.65, "Roughness": 0.40}),
     "Holo_AmmoDisplay": ("M_GunHolo", {}),
     "Rifle_Mag_Body": (SOLID, {"BaseColor": (0.035, 0.04, 0.045), "Metallic": 0.6, "Roughness": 0.35}),
     "Rifle_Mag_Plate": (SOLID, {"BaseColor": (0.72, 0.74, 0.77), "Metallic": 0.1, "Roughness": 0.45}),
@@ -81,7 +84,7 @@ def run_import(filename, options=None):
 
 def import_textures():
     textures = {}
-    for name, (compression, srgb) in TEXTURES.items():
+    for name, (compression, srgb, flip_green) in TEXTURES.items():
         source = os.path.join(SOURCE_DIR, "Textures", name + ".png")
         if not os.path.isfile(source):
             fail("missing %s" % source)
@@ -91,7 +94,9 @@ def import_textures():
             fail("%s did not import as a Texture2D" % name)
         texture.set_editor_property("compression_settings", compression)
         texture.set_editor_property("srgb", srgb)
-        texture.set_editor_property("lod_group", unreal.TextureGroup.TEXTUREGROUP_WEAPON)
+        texture.set_editor_property("flip_green_channel", flip_green)
+        texture.set_editor_property("lod_group", unreal.TextureGroup.TEXTUREGROUP_WEAPON_NORMAL_MAP if flip_green
+                                    else unreal.TextureGroup.TEXTUREGROUP_WEAPON)
         texture.set_editor_property("max_texture_size", MAX_TEXTURE_SIZE)
         # Always resident: streamed, the rifle showed its lowest mip (flat, blurry) for the first second after equip.
         texture.set_editor_property("never_stream", True)
@@ -223,36 +228,31 @@ def finish(material, name):
 
 
 def opaque(material):
-    # One-sided on purpose: the Tripo body has panels doubled back to back; two-sided, they z-fight and the whole
-    # rifle looks grainy (tried, seen in the smoke screenshot).
+    # One-sided on purpose: two-sided, the rifle looked grainy (tried, seen in the smoke screenshot).
     material.set_editor_property("blend_mode", unreal.BlendMode.BLEND_OPAQUE)
     material.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
     material.set_editor_property("two_sided", False)
 
 
 def surface(g, textures):
-    """Albedo from the Tripo map; roughness and metallic derived from its brightness (no ORM). Returns the mask."""
-    base = g.node(unreal.MaterialExpressionTextureSample, -1400, -600, texture=textures["T_Rifle_BaseColor"],
+    """Albedo, ORM and normal map as built by rifle_build_blend.py. Returns the neon mask sample."""
+    base = g.node(unreal.MaterialExpressionTextureSample, -1400, -700, texture=textures["T_Rifle_BaseColor"],
                   sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
-    # The white polymer read washed out next to the pistol in the arena light: albedo x ALBEDO_SCALE.
-    g.out(g.mul(base, g.const(ALBEDO_SCALE, -1200, -450), -900, -600, a_out="RGB"), "", unreal.MaterialProperty.MP_BASE_COLOR)
-    # No ORM in the source: the albedo's brightness tells polymer from metal. Light parts are matte white polymer
-    # (roughness ROUGH_POLYMER, not metallic); dark parts are satin metal (ROUGH_METAL, metallic METAL_DARK). One flat
-    # value for the whole gun made it read soft and glossy.
-    lum = g.node(unreal.MaterialExpressionDotProduct, -1100, -380)
-    g.connect(base, "RGB", lum, "A")
-    g.connect(g.node(unreal.MaterialExpressionConstant3Vector, -1300, -300, constant=unreal.LinearColor(0.3, 0.59, 0.11, 1.0)), "", lum, "B")
-    light = g.unary(unreal.MaterialExpressionSaturate,
-                    g.mul(g.binary(unreal.MaterialExpressionSubtract, lum, g.const(0.1, -1000, -260), -900, -380),
-                          g.const(1.0 / 0.3, -900, -260), -750, -380), -600, -380)
-    rough = g.node(unreal.MaterialExpressionLinearInterpolate, -400, -380)
-    g.connect(g.const(ROUGH_METAL, -550, -300), "", rough, "A")
-    g.connect(g.const(ROUGH_POLYMER, -550, -240), "", rough, "B")
-    g.connect(light, "", rough, "Alpha")
-    g.out(rough, "", unreal.MaterialProperty.MP_ROUGHNESS)
-    metal = g.mul(g.unary(unreal.MaterialExpressionOneMinus, light, -450, -460), g.const(METAL_DARK, -450, -520), -300, -480)
-    g.out(metal, "", unreal.MaterialProperty.MP_METALLIC)
-    return g.node(unreal.MaterialExpressionTextureSample, -1400, -300, texture=textures["T_Rifle_EmissiveMask"],
+    orm = g.node(unreal.MaterialExpressionTextureSample, -1400, -450, texture=textures["T_Rifle_ORM"],
+                 sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
+    normal = g.node(unreal.MaterialExpressionTextureSample, -1400, -200, texture=textures["T_Rifle_Normal"],
+                    sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+    # Part of the baked AO goes into the albedo, so crevices stay dark under direct light too.
+    shade = g.node(unreal.MaterialExpressionLinearInterpolate, -1000, -560)
+    g.connect(g.const(1.0, -1150, -600), "", shade, "A")
+    g.connect(orm, "R", shade, "B")
+    g.connect(g.const(AO_IN_ALBEDO, -1150, -520), "", shade, "Alpha")
+    g.out(g.mul(base, shade, -800, -700, a_out="RGB"), "", unreal.MaterialProperty.MP_BASE_COLOR)
+    g.out(orm, "R", unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)
+    g.out(orm, "G", unreal.MaterialProperty.MP_ROUGHNESS)
+    g.out(orm, "B", unreal.MaterialProperty.MP_METALLIC)
+    g.out(normal, "RGB", unreal.MaterialProperty.MP_NORMAL)
+    return g.node(unreal.MaterialExpressionTextureSample, -1400, 50, texture=textures["T_Rifle_EmissiveMask"],
                   sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
 
 
@@ -374,6 +374,9 @@ def assign(meshes, masters):
         log("mesh %s slots=%d tris=%d bounds min=(%.1f, %.1f, %.1f) max=(%.1f, %.1f, %.1f)" % (
             name, len(slots), mesh.get_num_triangles(0),
             box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z))
+    body_slots = len(meshes["SM_Rifle_Body"].get_editor_property("static_materials"))
+    if body_slots != 2:
+        fail("SM_Rifle_Body has %d material slots, expected 2 (atlas, rail)" % body_slots)
     mag_slots = len(meshes["SM_Rifle_Magazine"].get_editor_property("static_materials"))
     if mag_slots != 3:
         fail("SM_Rifle_Magazine has %d material slots, expected 3 (body, plate, glow)" % mag_slots)
