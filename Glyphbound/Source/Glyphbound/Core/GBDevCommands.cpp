@@ -1845,7 +1845,7 @@ namespace GBSmokeRun
 			CheckShotgunAtRest(TEXT("hip"), Gun);
 			Shot(TEXT("15a_shotgun_hip"));
 		});
-		Add(SG + 0.9f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(SG + 1.1f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBGun* Gun = ShotgunInHand(Player);
 			if (!Gun)
@@ -1864,7 +1864,7 @@ namespace GBSmokeRun
 					bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
 			}
 		});
-		Add(SG + 1.27f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(SG + 1.47f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBGun* Gun = ShotgunInHand(Player);
 			if (!Gun)
@@ -1884,7 +1884,7 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun display FAILED: '%s' after one shot (expected 5)"), *Text);
 			}
 		});
-		Add(SG + 1.85f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(SG + 1.8f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBGun* Gun = ShotgunInHand(Player);
 			if (!Gun)

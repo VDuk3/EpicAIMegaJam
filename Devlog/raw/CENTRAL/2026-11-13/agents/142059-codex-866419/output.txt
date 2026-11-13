@@ -1,0 +1,3812 @@
+OpenAI Codex v0.167.2
+--------
+workdir: C:\GameJam
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a1d548-7fd2-7f41-b7d0-e0c73c48b8e7
+--------
+user
+# Code review: shotgun pump rack and reload pose, Glyphbound (UE 5.9, C++)
+
+You are reviewing, read-only, a small change to the shotgun's first-person viewmodel. Run `git diff HEAD --
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp` and read the
+surrounding code in `GBGun.cpp` (struct `FGBGunModelArt`, `ApplyPump`, `ApplyViewModelPose`, `ApplyReloadMagazine`,
+the Tick part with the visual timers) and `UI/GBHUD.cpp` (the gun branch of the hands drawing, around
+`GetPumpHandShift`). Ignore other modified files (Devlog raw logs).
+
+What changed:
+1. The pump's "rack" motion of the whole gun was a dip (float cm) and a roll (float deg). It is now a full offset
+   (`FVector PumpRackOffset`, camera frame) and rotation (`FRotator PumpRackRot`) scaled by the pump amount, so the
+   gun can be pulled in, tip its muzzle up, turn and roll to show the forend. Only the shotgun sets them (the pistol
+   and rifle initializers stop before the pump fields and must stay at zero).
+2. New art values for the shotgun: rack offset/rotation, left-hand travel with the pump, reload pose offset and
+   rotation (roll 130 degrees so the loading port on the underside faces the camera), left-hand reach and right-hand
+   follow during the reload.
+3. The pump timer now advances by the clamped `EffectStep` (max 1/30 s per frame) instead of the raw `DeltaSeconds`,
+   like the kick and muzzle-flash timers, so a hitch right after a shot cannot skip the whole rack.
+4. Smoke script (`gb.Smoke`, shotgun block): the shot step moved from SG+0.9 to SG+1.1 s, the mid-pump check from
+   +1.27 to +1.47, the "home again" check from +1.85 to +1.8, so the shot no longer lands in the frame that pays for
+   the previous step's screenshot (a ~0.5 s hitch that skipped the pump in a filtered run).
+
+## What to look for (ranked)
+1. Real bugs: wrong composition of the rack with the kick and reload pose (`Root->SetRelativeLocation/Rotation`),
+   the rack or the reload pose not returning exactly to rest (the smoke checks the root is within 0.05 cm and 0.5 deg
+   of rest after the pump, after a reload and after a cancel), a pistol or rifle that now gets a non-zero rack, a
+   reload magazine drop direction that breaks with a 130 degree roll (`ApplyReloadMagazine` unrotates "camera down"
+   through the root rotation), FRotator scaling (`FRotator * float`) or wrap-around issues at large angles.
+2. Timing: with the clamped step, can the pump still be moving (or stuck back) when the next shot is allowed, or
+   when a reload begins, a weapon switch happens, or the game is paused? Is anything else reading `PumpElapsed` with
+   the assumption that it tracks real time?
+3. Smoke step timing: after the move, are the step comments and checks still true (the "home again before the next
+   shot is allowed" step at 0.7 s after the shot, with FireInterval 0.8 and the pump home at 0.72 of it), and does
+   anything later in the block depend on the shot's old time?
+
+Do not suggest style rewrites, renames or new features, and do not judge the art values themselves (they were
+tuned from screenshots). For each finding give: file:line, what goes wrong, a concrete scenario, and a fix. If you
+find nothing real, say so plainly.
+
+codex
+I’ll read the diff and the surrounding pose, timer, HUD, and smoke code, then report concrete bugs only.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'git diff HEAD -- Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp' in C:\GameJam
+ succeeded in 179ms:
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp', LF will be replaced by CRLF the next time Git touches it
+diff --git a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+index 7478af7..10109f9 100644
+--- a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -1845,7 +1845,7 @@ namespace GBSmokeRun
+ 			CheckShotgunAtRest(TEXT("hip"), Gun);
+ 			Shot(TEXT("15a_shotgun_hip"));
+ 		});
+-		Add(SG + 0.9f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(SG + 1.1f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			AGBGun* Gun = ShotgunInHand(Player);
+ 			if (!Gun)
+@@ -1864,7 +1864,7 @@ namespace GBSmokeRun
+ 					bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
+ 			}
+ 		});
+-		Add(SG + 1.27f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(SG + 1.47f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			AGBGun* Gun = ShotgunInHand(Player);
+ 			if (!Gun)
+@@ -1884,7 +1884,7 @@ namespace GBSmokeRun
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun display FAILED: '%s' after one shot (expected 5)"), *Text);
+ 			}
+ 		});
+-		Add(SG + 1.85f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(SG + 1.8f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			AGBGun* Gun = ShotgunInHand(Player);
+ 			if (!Gun)
+diff --git a/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp b/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+index 9c2cb17..aa052ee 100644
+--- a/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
++++ b/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp
+@@ -56,8 +56,8 @@ struct FGBGunModelArt
+ 	bool bPump;                   // the model has a SM_<Prefix>Pump part
+ 	FVector PumpRest;             // pump position at rest
+ 	FVector PumpSlide;            // vector the pump slides along to the back of its travel
+-	float PumpRackDipCm;          // the gun dips this much (cm, camera down) while the pump is back
+-	float PumpRackRollDeg;        // and rolls this much
++	FVector PumpRackOffset;       // the gun moves this much (cm, camera frame: x forward, y right, z up) while the pump is back
++	FRotator PumpRackRot;         // and turns this much: the muzzle tips up and a roll bares the forend to the camera
+ 	FVector2D PumpHandTravel;     // HUD: sprite pixels (x right, y down) the left hand rides with the pump at full travel
+ };
+ 
+@@ -103,8 +103,8 @@ namespace
+ 		FLinearColor(0.10f, 0.85f, 1.00f), FVector(65.48f, 0.f, -1.24f), 13.f,
+ 		0.42f, 0.6f, 0.39f,
+ 		2.2f, 2.5f, true,
+-		FVector(4.f, 1.7f, 8.f), FRotator(16.f, 0.f, 40.f), 32.f, 0.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f),
+-		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), 0.5f, 1.5f, FVector2D(-6.f, 1.f) };
++		FVector(8.f, 3.f, 5.f), FRotator(15.f, 0.f, 130.f), 32.f, 0.f, 0.5f, FVector2D(12.f, -24.f), FVector2D(10.f, -19.f),
++		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), FVector(-2.f, -1.5f, -1.f), FRotator(7.f, -10.f, 12.f), FVector2D(-4.f, 6.f) };
+ 
+ 	const FGBGunModelArt* FindModelArt(const FString& Name)
+ 	{
+@@ -842,9 +842,9 @@ void AGBGun::ApplyViewModelPose()
+ 		CurrentPoseAmount = 0.f;
+ 	}
+ 
+-	// The pump's rack: the gun dips and rolls a little while the pump is back. It adds to the shot kick.
+-	const FVector RackLoc(0.f, 0.f, -Art.PumpRackDipCm * CurrentPumpAmount);
+-	const FRotator RackRot(0.f, 0.f, Art.PumpRackRollDeg * CurrentPumpAmount);
++	// The pump's rack: the gun is pulled in, tips up and rolls while the pump is back. It adds to the shot kick.
++	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
++	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
+ 	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
+ 	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
+ }
+@@ -965,6 +965,7 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
+ 		}
+ 	}
+ 	// Pump timer: runs for PumpHomeShare of the fire interval, then the pump rests. No pump while a reload runs.
++	// It steps like the other visual timers, so a hitch right after the shot cannot skip the whole rack.
+ 	if (PumpElapsed >= 0.f)
+ 	{
+ 		if (bReloading)
+@@ -973,7 +974,7 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
+ 		}
+ 		else
+ 		{
+-			PumpElapsed += DeltaSeconds;
++			PumpElapsed += EffectStep;
+ 			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+ 			{
+ 				PumpElapsed = -1.f;
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'rg -n "FGBGunModelArt|ApplyPump|ApplyViewModelPose|ApplyReloadMagazine|PumpElapsed|EffectStep|GetPumpHandShift|PumpRack|ReloadPose" Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp Glyphbound/Source/Glyphbound/Weapons/GBGun.h Glyphbound/Source/Glyphbound/UI/GBHUD.cpp' in C:\GameJam
+ succeeded in 679ms:
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:569:		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:578:			const FVector2D PumpShift = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector) * P;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:14:struct FGBGunModelArt;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:145:	FVector2D GetPumpHandShift() const;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:161:	float GetReloadPoseAmount() const;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:189:	bool TryBuildViewModel(const FGBGunModelArt& Art);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:195:	void ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:197:	void ApplyReloadMagazine();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:207:	void ApplyPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:222:	const FGBGunModelArt* ModelArt = nullptr;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:258:	FVector ReloadPoseLoc = FVector::ZeroVector;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:259:	FRotator ReloadPoseRot = FRotator::ZeroRotator;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:269:	float PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:27:struct FGBGunModelArt
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:59:	FVector PumpRackOffset;       // the gun moves this much (cm, camera frame: x forward, y right, z up) while the pump is back
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:60:	FRotator PumpRackRot;         // and turns this much: the muzzle tips up and a roll bares the forend to the camera
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:73:	const FGBGunModelArt PistolArt = {
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:86:	const FGBGunModelArt RifleArt = {
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:99:	const FGBGunModelArt ShotgunArt = {
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:109:	const FGBGunModelArt* FindModelArt(const FString& Name)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:111:		for (const FGBGunModelArt* Art : { &PistolArt, &RifleArt, &ShotgunArt })
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:142:	// Frame drawn by the game on a plain display (FGBGunModelArt::bDrawDisplayFrame), as shares of the display from its
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:164:	constexpr float MaxEffectStep = 1.f / 30.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:354:		if (const FGBGunModelArt* Art = FindModelArt(Definition.ViewModel))
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:371:bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:414:	PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:421:	ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:590:FVector2D AGBGun::GetPumpHandShift() const
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:600:		ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:607:	PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:610:		ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:618:		PumpElapsed = 0.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:624:	PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:628:		ApplyPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:632:void AGBGun::ApplyPump()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:641:		else if (PumpElapsed >= 0.f)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:644:			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:736:float AGBGun::GetReloadPoseAmount() const
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:752:		ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:753:		ApplyReloadMagazine();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:770:		ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:771:		ApplyReloadMagazine();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:782:	ReloadBlendLoc = ReloadPoseLoc;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:784:	ReloadBlendRot = ReloadPoseRot;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:792:	ReloadPoseLoc = FVector::ZeroVector;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:793:	ReloadPoseRot = FRotator::ZeroRotator;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:798:		ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:799:		ApplyReloadMagazine();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:803:void AGBGun::ApplyViewModelPose()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:809:	const FGBGunModelArt& Art = *ModelArt;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:820:	ApplyPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:827:		ReloadPoseLoc = Art.ReloadOffset * Look.Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * Look.Bump - Art.ReloadDipCm * Look.Dip);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:828:		ReloadPoseRot = Art.ReloadRot * Look.Pose;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:834:		ReloadPoseLoc = ReloadBlendLoc * Left;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:835:		ReloadPoseRot = ReloadBlendRot * Left;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:840:		ReloadPoseLoc = FVector::ZeroVector;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:841:		ReloadPoseRot = FRotator::ZeroRotator;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:846:	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:847:	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:848:	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:849:	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:852:void AGBGun::ApplyReloadMagazine()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:858:	const FGBGunModelArt& Art = *ModelArt;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:900:	ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:928:	const FGBGunModelArt& Art = *ModelArt;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:950:	const float EffectStep = FMath::Min(DeltaSeconds, MaxEffectStep);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:953:		KickElapsed += EffectStep;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:969:	if (PumpElapsed >= 0.f)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:973:			PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:977:			PumpElapsed += EffectStep;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:978:			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:980:				PumpElapsed = -1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:985:	ApplyViewModelPose();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:986:	ApplyReloadMagazine();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:989:		MuzzleFlashElapsed += EffectStep;
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp' in C:\GameJam
+ succeeded in 776ms:
+#include "Weapons/GBGun.h"
+
+#include "AI/GBEnemyCharacter.h"
+#include "Camera/CameraComponent.h"
+#include "Combat/GBCombatLibrary.h"
+#include "CanvasItem.h"
+#include "Engine/Canvas.h"
+#include "Engine/CanvasRenderTarget2D.h"
+#include "Engine/Engine.h"
+#include "Engine/Font.h"
+#include "Misc/App.h"
+#include "Combat/GBProjectile.h"
+#include "Combat/GBStatusEffectComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Core/GBStatNames.h"
+#include "Data/GBDataSubsystem.h"
+#include "DrawDebugHelpers.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/World.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Player/GBPlayerCharacter.h"
+#include "Stats/GBAttributeComponent.h"
+
+// Art description of one real gun model (GDD 8). One constant per model; the code path is the same for all.
+// Every vector is in cm in the body's unscaled frame (source in metres, 1 unit = 1 cm); the view scale applies to the body.
+struct FGBGunModelArt
+{
+	const TCHAR* Name;            // Definition.ViewModel value
+	const TCHAR* Folder;          // asset folder, no trailing slash
+	const TCHAR* Prefix;          // mesh name prefix: <Prefix>Body, <Prefix>Trigger...
+	bool bEnergyBarMesh;          // the pistol has a separate energy bar mesh; the rifle's bar is inside the body material
+	float ViewScale;              // viewmodel downscale of the real-size source model
+	FVector RootOffset;           // cm, relative to the held-item anchor
+	float RootYaw;                // degrees: angles the whole gun towards the view centre so the barrel points near the crosshair
+	FVector TriggerOffset;        // trigger hinge
+	FVector MagazineRest;         // magazine position at rest
+	FVector MagazineOut;          // magazine slide-out vector on reload
+	FLinearColor IdleGlow;        // the model's own neon colour, shown when no enchant is active
+	FVector MuzzleTip;            // where the muzzle flash appears
+	float EnergyCells;            // cells of the energy bar (asset geometry)
+	float TextHeightShare;        // ammo display layout, shares of the display (0 = top)
+	float TextWidthShare;
+	float TextCenterY;
+	float KickBackCm;             // shot kick: how far back the viewmodel root moves
+	float KickPitchDeg;           // and how far it pitches up
+	bool bDrawDisplayFrame;       // the game draws the display's frame lines and round pips (the pistol's are in its model)
+	FVector ReloadOffset;         // reload pose: cm added to the root (camera frame: x forward, y right, z up) at full pose
+	FRotator ReloadRot;           // reload pose: degrees added to the root; roll cants the magazine well towards the camera
+	float ReloadFallCm;           // how far (cm, camera down) the old magazine falls before it is below the view; the new one rises from there
+	float ReloadDipCm;            // the gun dips this much as the magazine leaves
+	float ReloadBumpCm;           // the gun jumps up this much as the new magazine seats
+	FVector2D ReloadHandReach;    // HUD: sprite pixels (x right, y down) the left hand moves from its place to meet the magazine
+	FVector2D ReloadRightHandFollow; // HUD: sprite pixels the right hand moves at full pose, to stay on this gun's grip
+	// Optional pump (the shotgun's forend). A model without one leaves all of these at zero and behaves as before.
+	bool bPump;                   // the model has a SM_<Prefix>Pump part
+	FVector PumpRest;             // pump position at rest
+	FVector PumpSlide;            // vector the pump slides along to the back of its travel
+	FVector PumpRackOffset;       // the gun moves this much (cm, camera frame: x forward, y right, z up) while the pump is back
+	FRotator PumpRackRot;         // and turns this much: the muzzle tips up and a roll bares the forend to the camera
+	FVector2D PumpHandTravel;     // HUD: sprite pixels (x right, y down) the left hand rides with the pump at full travel
+};
+
+namespace
+{
+	// Pistol art tuning from Glyphbound/SourceArt/Weapons/Pistol/export_report.json, made by Tools/Blender/pistol_export_fbx.py.
+	// The digits sit in the free window of the rear screen, measured on the model (pistol_bar_layout.py), as shares
+	// of the display from its top: the top frame line ends at 0.155, the row of dots starts at 0.724, and the two
+	// side status bars leave 0.164 .. 0.836 across. Owner: smaller, and up, so the digits never touch the dots.
+	// The side bars span 0.259 .. 0.603; the font's line box carries descender space, so the box centre sits a bit
+	// above the bars' centre (0.43) for the digits to look centred between them.
+	// Muzzle tip measured in Blender; kick values provisional.
+	const FGBGunModelArt PistolArt = {
+		TEXT("Pistol"), TEXT("/Game/Glyphbound/Weapons/Pistol"), TEXT("SM_Pistol_"), true,
+		0.3f, FVector(0.f, 0.f, 0.f), -6.f,
+		FVector(28.84f, 0.f, 0.f), FVector(0.f, 0.f, -29.31f), FVector(-12.15f, 0.f, -24.11f),
+		FLinearColor(0.02f, 1.f, 0.07f), FVector(82.5f, 0.f, 20.2f), 13.f,
+		0.42f, 0.6f, 0.39f,
+		1.6f, 3.f, false,
+		FVector(0.f, 3.5f, 19.f), FRotator(15.f, 4.f, 50.f), 30.f, 1.2f, 0.6f, FVector2D(-9.f, -10.f), FVector2D(7.5f, -37.f) };
+
+	// Rifle art tuning from Glyphbound/SourceArt/Weapons/Rifle/export_report.json, made by Tools/Blender/rifle_export_fbx.py.
+	// All provisional. The rifle's pane is plain, so the game draws the pistol-style frame on it (owner: "like the
+	// pistol's: the count, and the row below shows the rounds left") and the digits use the pistol's layout. View scale
+	// and root offset were tuned from the smoke screenshots.
+	const FGBGunModelArt RifleArt = {
+		TEXT("Rifle"), TEXT("/Game/Glyphbound/Weapons/Rifle"), TEXT("SM_Rifle_"), false,
+		0.62f, FVector(-12.f, -6.f, 2.f), -0.4f,
+		FVector(6.5f, 0.f, 0.3f), FVector(15.8f, 0.f, -2.8f), FVector(2.f, 0.f, -17.f),
+		FLinearColor(0.05f, 0.9f, 0.6f), FVector(69.f, 0.f, 6.6f), 13.f,
+		0.42f, 0.6f, 0.39f,
+		1.2f, 1.5f, true,
+		FVector(4.f, 1.7f, 11.f), FRotator(16.f, 0.f, 40.f), 32.f, 1.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f) };
+
+	// Shotgun art tuning from Glyphbound/SourceArt/Weapons/Shotgun/export_report.json (offsets in cm in the body's frame).
+	// The shell is the "Magazine" part: at rest it sits inside the loading port on the underside, and the pump is a sleeve
+	// around the forend. The pane is plain (the game draws the frame and one pip per shell). Framing, kick and the reload
+	// pose are provisional, tuned from the smoke screenshots.
+	const FGBGunModelArt ShotgunArt = {
+		TEXT("Shotgun"), TEXT("/Game/Glyphbound/Weapons/Shotgun"), TEXT("SM_Shotgun_"), false,
+		0.55f, FVector(-6.f, -5.f, -1.5f), -0.4f,
+		FVector(5.8f, 0.f, 0.6f), FVector(18.47f, 0.f, -5.04f), FVector(-5.f, 0.f, -1.81f),
+		FLinearColor(0.10f, 0.85f, 1.00f), FVector(65.48f, 0.f, -1.24f), 13.f,
+		0.42f, 0.6f, 0.39f,
+		2.2f, 2.5f, true,
+		FVector(8.f, 3.f, 5.f), FRotator(15.f, 0.f, 130.f), 32.f, 0.f, 0.5f, FVector2D(12.f, -24.f), FVector2D(10.f, -19.f),
+		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), FVector(-2.f, -1.5f, -1.f), FRotator(7.f, -10.f, 12.f), FVector2D(-4.f, 6.f) };
+
+	const FGBGunModelArt* FindModelArt(const FString& Name)
+	{
+		for (const FGBGunModelArt* Art : { &PistolArt, &RifleArt, &ShotgunArt })
+		{
+			if (Name == Art->Name)
+			{
+				return Art;
+			}
+		}
+		return nullptr;
+	}
+
+	// Trigger pull animation total time in seconds (linear in, linear out).
+	constexpr float TriggerPullSeconds = 0.12f;
+	// Trigger pitch at full pull in degrees (the bottom of the trigger moves back towards the grip).
+	constexpr float TriggerPullPitch = -8.f;
+	// Material parameters set by the game on every model slot.
+	const FName ElementColorParam(TEXT("ElementColor"));
+	const FName ImbueRemainingParam(TEXT("ImbueRemaining"));
+	const FName FlashParam(TEXT("Flash"));
+	const FName DisplayTextureParam(TEXT("DisplayTexture"));
+	// Weak-point light: full glow for PistolWeakPointFlashHold seconds after a weak-point hit, then a linear fade over
+	// PistolWeakPointFlashFade seconds (Game.json; halved by the owner, GDD v0.30). The key names stay, both guns use them.
+	const FName WeakPointFlashHoldKey(TEXT("PistolWeakPointFlashHold"));
+	const FName WeakPointFlashFadeKey(TEXT("PistolWeakPointFlashFade"));
+	// Energy bar: it blinks while the enchant has GunEnchantBlinkSeconds or less left, GunEnchantBlinkHz times per
+	// second (Game.json; owner: "the light that shows the enchant's time starts to blink when 3 seconds are left").
+	const FName EnchantBlinkSecondsKey(TEXT("GunEnchantBlinkSeconds"));
+	const FName EnchantBlinkHzKey(TEXT("GunEnchantBlinkHz"));
+	// Holographic ammo display: render target size in pixels. Provisional, owner's note 1.
+	constexpr int32 AmmoDisplayWidth = 256;
+	constexpr int32 AmmoDisplayHeight = 128;
+	const TCHAR* const AmmoDisplayReloadText = TEXT("--");
+	// Frame drawn by the game on a plain display (FGBGunModelArt::bDrawDisplayFrame), as shares of the display from its
+	// top left. Copied from the look of the pistol's rear screen: a top and a bottom line, a status bar on each side,
+	// and a row of pips under the digits, one per round, lit while that round is in the magazine. Provisional.
+	constexpr int32 AmmoDisplayMaxPips = 30;        // larger magazines share pips (2 rounds per pip, 3...)
+	constexpr float AmmoDisplaySpentPip = 0.16f;    // brightness of a spent round's pip
+	constexpr float AmmoDisplayPipFill = 0.68f;     // lit share of each pip's slot; the rest is the gap
+	struct FGBDisplayBox { float X0, Y0, X1, Y1; };
+	const FGBDisplayBox AmmoDisplayFrame[] = {
+		{ 0.10f, 0.095f, 0.78f, 0.125f },   // top line
+		{ 0.08f, 0.885f, 0.60f, 0.915f },   // bottom line
+		{ 0.075f, 0.26f, 0.10f, 0.60f },    // left status bar
+		{ 0.90f, 0.26f, 0.925f, 0.60f } };  // right status bar
+	const FGBDisplayBox AmmoDisplayPipRow = { 0.075f, 0.70f, 0.925f, 0.80f };
+	// Shot kick: the root eases back to rest over this time (ease out). Provisional.
+	constexpr float KickSeconds = 0.09f;
+	// Muzzle flash: visible this long, two crossed thin slabs of this size (cm), a random roll and 85-120 % scale.
+	constexpr float MuzzleFlashSeconds = 0.05f;
+	constexpr float MuzzleFlashSizeCm = 7.f;
+	constexpr float MuzzleFlashThicknessCm = 0.3f;
+	// Brightness multiplier of the flash colour (the glow material is additive).
+	constexpr float MuzzleFlashBrightness = 2.f;
+	// Visual timers never advance by more than this per frame, so a hitch cannot skip a kick or a flash entirely.
+	constexpr float MaxEffectStep = 1.f / 30.f;
+
+	// Reload animation: shares of the reload (GetReloadAnimProgress, 0 to 1). Provisional art values.
+	constexpr float ReloadTiltEnd = 0.15f;       // the gun leaves rest for the reload pose
+	constexpr float ReloadDipEnd = 0.35f;        // the dip as the magazine leaves is over
+	constexpr float ReloadSlideOutEnd = 0.25f;   // the old magazine has slid out along MagazineOut, then it falls
+	constexpr float ReloadOutEnd = 0.40f;        // the old magazine is below the view and hidden
+	constexpr float ReloadEmptyEnd = 0.50f;      // empty well; a fresh magazine appears below the view
+	constexpr float ReloadRiseEnd = 0.62f;       // the fresh magazine has risen to the end of the slide path
+	constexpr float ReloadInEnd = 0.80f;         // the fresh magazine is seated
+	constexpr float ReloadSeatEnd = 0.86f;       // the seat bump is over; the gun eases back to rest
+	constexpr float ReloadSlideInEase = 1.6f;    // exponent of the slide-in (above 1: fastest at the end)
+	// A cancelled reload (or a released preview) blends the gun back to rest over this time.
+	constexpr float ReloadBlendSeconds = 0.12f;
+	// Round-by-round reload (look): the gun leaves rest during this share of the FIRST round's cycle, then holds the pose.
+	// Each round's cycle plays the magazine guns' "fresh magazine" beats (rise, slide in, seat bump) from ReloadEmptyEnd to ReloadSeatEnd.
+	constexpr float PerRoundPoseInShare = 0.35f;
+	// After the last round the gun eases back to rest over this time (it may run past the gameplay end of the reload).
+	constexpr float PerRoundExitSeconds = 0.22f;
+	// Pump: shares of the gun's FireInterval. Provisional.
+	constexpr float PumpStartShare = 0.22f;      // the pump starts to slide back
+	constexpr float PumpBackShare = 0.45f;       // fully back
+	constexpr float PumpHomeShare = 0.72f;       // home again, well before the next shot is allowed
+
+	float Smoothstep01(float T)
+	{
+		T = FMath::Clamp(T, 0.f, 1.f);
+		return T * T * (3.f - 2.f * T);
+	}
+
+	// Share of [From, To] that Progress has covered, clamped to 0..1.
+	float Share(float Progress, float From, float To)
+	{
+		return FMath::Clamp((Progress - From) / (To - From), 0.f, 1.f);
+	}
+
+	// 0..1: dip as the magazine leaves, and bump as the new one seats (half sine over their beats).
+	float ReloadDip(float Progress)
+	{
+		return (Progress > ReloadTiltEnd && Progress < ReloadDipEnd) ? FMath::Sin(PI * Share(Progress, ReloadTiltEnd, ReloadDipEnd)) : 0.f;
+	}
+	float ReloadBump(float Progress)
+	{
+		return (Progress > ReloadInEnd && Progress < ReloadSeatEnd) ? FMath::Sin(PI * Share(Progress, ReloadInEnd, ReloadSeatEnd)) : 0.f;
+	}
+	// 0..1 how far down the magazine (and the left hand) is: falls with t^2 after the slide, rises with (1-t)^2 after the empty beat.
+	float ReloadDrop(float Progress)
+	{
+		if (Progress < ReloadSlideOutEnd)
+		{
+			return 0.f;
+		}
+		if (Progress < ReloadOutEnd)
+		{
+			const float Fall = Share(Progress, ReloadSlideOutEnd, ReloadOutEnd);
+			return Fall * Fall;
+		}
+		if (Progress < ReloadEmptyEnd)
+		{
+			return 1.f;
+		}
+		const float Rise = 1.f - Share(Progress, ReloadEmptyEnd, ReloadRiseEnd);
+		return Rise * Rise;
+	}
+}
+
+namespace GBReloadAnim
+{
+	float PoseAmount(float Progress)
+	{
+		if (Progress < 0.f)
+		{
+			return 0.f;
+		}
+		if (Progress < ReloadSeatEnd)
+		{
+			return Smoothstep01(Progress / ReloadTiltEnd);
+		}
+		return 1.f - Smoothstep01(Share(Progress, ReloadSeatEnd, 1.f));
+	}
+
+	FHandBeat HandBeat(float Progress)
+	{
+		FHandBeat Beat;
+		if (Progress >= 0.f)
+		{
+			Beat.Reach = PoseAmount(Progress);
+			// The hand starts to fall only once the magazine has slid out, but it already reaches in during the tilt.
+			Beat.Drop = ReloadDrop(Progress);
+			Beat.Push = ReloadBump(Progress);
+		}
+		return Beat;
+	}
+}
+
+// ---- Round-by-round reload stepping (pure) ----
+
+void FGBPerRoundReload::Begin(int32 Rounds, int32 Reserve, int32 Capacity, float TotalSeconds)
+{
+	CycleSeconds = Capacity > 0 ? FMath::Max(0.f, TotalSeconds) / Capacity : 0.f;
+	CycleElapsed = 0.f;
+	Moved = 0;
+	Planned = FMath::Max(0, FMath::Min(Capacity - Rounds, Reserve));
+	bRunning = Planned > 0;
+}
+
+int32 FGBPerRoundReload::Advance(float DeltaSeconds, int32& Rounds, int32& Reserve, int32 Capacity, int32 MaxRounds)
+{
+	if (!bRunning)
+	{
+		return 0;
+	}
+	int32 MovedNow = 0;
+	CycleElapsed += FMath::Max(0.f, DeltaSeconds);
+	// The small tolerance keeps six cycles of 1/3 s from falling a float rounding error short of 2 s.
+	while (bRunning && MovedNow < MaxRounds && CycleElapsed + 0.0001f >= CycleSeconds)
+	{
+		CycleElapsed = FMath::Max(0.f, CycleElapsed - CycleSeconds);
+		if (Rounds < Capacity && Reserve > 0)
+		{
+			++Rounds;
+			--Reserve;
+			++Moved;
+			++MovedNow;
+		}
+		if (Rounds >= Capacity || Reserve <= 0)
+		{
+			bRunning = false;
+			CycleElapsed = 0.f;
+		}
+	}
+	return MovedNow;
+}
+
+void FGBPerRoundReload::Stop()
+{
+	bRunning = false;
+	CycleElapsed = 0.f;
+}
+
+float FGBPerRoundReload::Progress() const
+{
+	if (Planned <= 0)
+	{
+		return 1.f;
+	}
+	return FMath::Clamp((Moved + CycleProgress()) / Planned, 0.f, 1.f);
+}
+
+float FGBPerRoundReload::CycleProgress() const
+{
+	return (bRunning && CycleSeconds > KINDA_SMALL_NUMBER) ? FMath::Clamp(CycleElapsed / CycleSeconds, 0.f, 1.f) : 0.f;
+}
+
+void AGBGun::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayerCharacter* InOwner)
+{
+	Super::InitFromDefinition(Definition, InOwner);
+
+	const FName Required[] = { GBStat::Damage, GBStat::FireInterval, GBStat::MagazineSize, GBStat::SpareMagazines, GBStat::ReloadTime, GBStat::Range };
+	for (const FName& Stat : Required)
+	{
+		if (!Definition.Stats.Contains(Stat))
+		{
+			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': missing stat '%s', using a default"), *Definition.Id.ToString(), *Stat.ToString());
+		}
+	}
+
+	BuildViewModel(Definition);
+}
+
+// ---- Looks ----
+
+UStaticMeshComponent* AGBGun::AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow)
+{
+	UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(this, Name);
+	Part->SetupAttachment(Root);
+	Part->SetRelativeLocation(Location);
+	Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Part->SetGenerateOverlapEvents(false);
+	Part->SetCastShadow(false);
+	Part->RegisterComponent();
+	GBPlaceholder::SetupShape(Part, Shape, Size, Color, bGlow);
+	Parts.Add(Part);
+	return Part;
+}
+
+void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
+{
+	if (!Definition.ViewModel.IsEmpty())
+	{
+		if (const FGBGunModelArt* Art = FindModelArt(Definition.ViewModel))
+		{
+			if (TryBuildViewModel(*Art))
+			{
+				return;
+			}
+			UE_LOG(LogGB, Warning, TEXT("%s viewmodel meshes are missing; using the placeholder shapes instead."), *Definition.ViewModel);
+		}
+		else
+		{
+			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': unknown ViewModel '%s' (Pistol, Rifle or Shotgun); using the placeholder shapes instead."),
+				*Definition.Id.ToString(), *Definition.ViewModel);
+		}
+	}
+	BuildPlaceholderViewModel(Definition);
+}
+
+bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
+{
+	auto LoadModelMesh = [&Art](const TCHAR* Part) -> UStaticMesh*
+	{
+		const FString Path = FString::Printf(TEXT("%s/%s%s.%s%s"), Art.Folder, Art.Prefix, Part, Art.Prefix, Part);
+		return LoadObject<UStaticMesh>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	};
+	UStaticMesh* BodyMesh = LoadModelMesh(TEXT("Body"));
+	UStaticMesh* TriggerMesh = LoadModelMesh(TEXT("Trigger"));
+	UStaticMesh* MagazineMesh = LoadModelMesh(TEXT("Magazine"));
+	UStaticMesh* EnergyBarMesh = Art.bEnergyBarMesh ? LoadModelMesh(TEXT("EnergyBar")) : nullptr;
+	UStaticMesh* WeakPointLightMesh = LoadModelMesh(TEXT("WeakPointLight"));
+	UStaticMesh* AmmoDisplayMesh = LoadModelMesh(TEXT("AmmoDisplay"));
+	UStaticMesh* PumpMesh = Art.bPump ? LoadModelMesh(TEXT("Pump")) : nullptr;
+	if (!BodyMesh || !TriggerMesh || !MagazineMesh || (Art.bEnergyBarMesh && !EnergyBarMesh) || !WeakPointLightMesh || !AmmoDisplayMesh || (Art.bPump && !PumpMesh))
+	{
+		return false;
+	}
+
+	auto NewViewPart = [this](FName Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(this, Name);
+		Part->SetupAttachment(Parent);
+		Part->SetRelativeLocation(Location);
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetGenerateOverlapEvents(false);
+		// Self-shadow only: the gun shades itself (panels, sight, magazine well), which gives it volume; without it the
+		// rifle looked soft, "made of jelly" (owner). It casts no shadow on the world, where a floating gun would look wrong.
+		Part->SetCastShadow(true);
+		Part->bSelfShadowOnly = true;
+		Part->SetStaticMesh(Mesh);
+		Part->RegisterComponent();
+		return Part;
+	};
+	ModelArt = &Art;
+	VMBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
+	VMBody->SetRelativeScale3D(FVector(Art.ViewScale));
+	VMEnergyBar = Art.bEnergyBarMesh ? NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, VMBody, FVector::ZeroVector) : nullptr;
+	VMWeakPointLight = NewViewPart(TEXT("WeakPointLight"), WeakPointLightMesh, VMBody, FVector::ZeroVector);
+	VMAmmoDisplay = NewViewPart(TEXT("AmmoDisplay"), AmmoDisplayMesh, VMBody, FVector::ZeroVector);
+	VMTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, VMBody, Art.TriggerOffset);
+	VMMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, VMBody, Art.MagazineRest);
+	VMPump = Art.bPump ? NewViewPart(TEXT("Pump"), PumpMesh, VMBody, Art.PumpRest) : nullptr;
+	PumpElapsed = -1.f;
+	PumpPreview = -1.f;
+	CurrentPumpAmount = 0.f;
+	CurrentPoseAmount = 0.f;
+	// The base pose of the whole viewmodel (offset and yaw towards the view centre); the shot kick moves it from here.
+	CurrentKickBackCm = 0.f;
+	KickElapsed = -1.f;
+	ApplyViewModelPose();
+
+	ViewModelMIDs.Reset();
+	ViewModelIndicatorMID = nullptr;
+	ViewModelDisplayMID = nullptr;
+	UStaticMeshComponent* ModelParts[7] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay, VMPump };
+	for (UStaticMeshComponent* Part : ModelParts)
+	{
+		if (!Part)
+		{
+			continue;
+		}
+		for (int32 MaterialSlot = 0; MaterialSlot < Part->GetNumMaterials(); ++MaterialSlot)
+		{
+			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(MaterialSlot))
+			{
+				ViewModelMIDs.Add(MID);
+				if (Part == VMWeakPointLight && !ViewModelIndicatorMID)
+				{
+					ViewModelIndicatorMID = MID;
+				}
+				else if (Part == VMAmmoDisplay && !ViewModelDisplayMID)
+				{
+					ViewModelDisplayMID = MID;
+				}
+			}
+		}
+	}
+
+	// Holographic ammo display: the text is drawn into a small render target, only when it changes (UpdateViewModel).
+	ViewModelDisplayTarget = nullptr;
+	ShownDisplayText.Reset();
+	if (ViewModelDisplayMID && FApp::CanEverRender())
+	{
+		ViewModelDisplayTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), AmmoDisplayWidth, AmmoDisplayHeight);
+		if (ViewModelDisplayTarget)
+		{
+			ViewModelDisplayTarget->ClearColor = FLinearColor::Black;
+			ViewModelDisplayTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AGBGun::DrawViewModelDisplay);
+			ViewModelDisplayMID->SetTextureParameterValue(DisplayTextureParam, ViewModelDisplayTarget);
+		}
+	}
+
+	// Muzzle flash: two thin glowing slabs, crossed, at the muzzle tip (placeholder shapes, no assets). Hidden until a shot.
+	auto NewFlashSlab = [this, &Art](const TCHAR* Name, TObjectPtr<UMaterialInstanceDynamic>& OutMID) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Slab = NewObject<UStaticMeshComponent>(this, Name);
+		Slab->SetupAttachment(Root);
+		Slab->SetRelativeLocation(Art.MuzzleTip * Art.ViewScale);
+		Slab->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Slab->SetGenerateOverlapEvents(false);
+		Slab->SetCastShadow(false);
+		Slab->RegisterComponent();
+		OutMID = GBPlaceholder::SetupShape(Slab, EGBShape::Cube, FVector(MuzzleFlashThicknessCm, MuzzleFlashSizeCm, MuzzleFlashSizeCm), Art.IdleGlow, true);
+		Slab->SetVisibility(false);
+		return Slab;
+	};
+	MuzzleFlash = NewFlashSlab(TEXT("MuzzleFlash"), MuzzleFlashMID);
+	MuzzleFlashCross = NewFlashSlab(TEXT("MuzzleFlashCross"), MuzzleFlashCrossMID);
+	MuzzleFlashElapsed = -1.f;
+
+	// The weak-point light listens to the global damage event (hitscan and projectile shots alike).
+	WeakPointFlashElapsed = -1.f;
+	LastFlashSent = -1.f;
+	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBGun::HandleDamageDealt);
+
+	bViewModel = true;
+	TriggerPullElapsed = -1.f;
+	bHasLastGlow = false;
+	LastImbueSent = 0.f;
+	return true;
+}
+
+void AGBGun::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (DamageDealtHandle.IsValid())
+	{
+		UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
+		DamageDealtHandle.Reset();
+	}
+	if (ViewModelDisplayTarget)
+	{
+		ViewModelDisplayTarget->OnCanvasRenderTargetUpdate.RemoveAll(this);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
+int32 AGBGun::GetViewModelMeshCount() const
+{
+	if (!ModelArt)
+	{
+		return 0;
+	}
+	const UStaticMeshComponent* ModelParts[7] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay, VMPump };
+	int32 Count = 0;
+	for (const UStaticMeshComponent* Part : ModelParts)
+	{
+		const UStaticMesh* Mesh = Part ? Part->GetStaticMesh() : nullptr;
+		if (Mesh && Mesh->GetName().StartsWith(ModelArt->Prefix))
+		{
+			++Count;
+		}
+	}
+	return Count;
+}
+
+float AGBGun::GetViewModelMagazineOffsetCm() const
+{
+	if (!VMMagazine || !ModelArt)
+	{
+		return 0.f;
+	}
+	return (VMMagazine->GetRelativeLocation() - ModelArt->MagazineRest).Size();
+}
+
+bool AGBGun::IsMuzzleFlashVisible() const
+{
+	return MuzzleFlash && MuzzleFlash->IsVisible();
+}
+
+bool AGBGun::IsViewModelMagazineVisible() const
+{
+	return VMMagazine && VMMagazine->IsVisible();
+}
+
+float AGBGun::GetViewModelRootOffsetCm() const
+{
+	return ModelArt ? (Root->GetRelativeLocation() - ModelArt->RootOffset).Size() : 0.f;
+}
+
+float AGBGun::GetViewModelRootAngleDeg() const
+{
+	if (!ModelArt)
+	{
+		return 0.f;
+	}
+	const FQuat Rest = FRotator(0.f, ModelArt->RootYaw, 0.f).Quaternion();
+	return FMath::RadiansToDegrees(Root->GetRelativeRotation().Quaternion().AngularDistance(Rest));
+}
+
+FVector2D AGBGun::GetReloadRightHandFollow() const
+{
+	return ModelArt ? ModelArt->ReloadRightHandFollow : FVector2D::ZeroVector;
+}
+
+FVector2D AGBGun::GetReloadHandReach() const
+{
+	return ModelArt ? ModelArt->ReloadHandReach : FVector2D::ZeroVector;
+}
+
+bool AGBGun::ReloadsPerRound() const
+{
+	return GetStat(GBStat::ReloadPerRound, 0.f) > 0.5f;
+}
+
+bool AGBGun::HasPump() const
+{
+	return VMPump != nullptr;
+}
+
+float AGBGun::GetViewModelPumpOffsetCm() const
+{
+	if (!VMPump || !ModelArt)
+	{
+		return 0.f;
+	}
+	return (VMPump->GetRelativeLocation() - ModelArt->PumpRest).Size();
+}
+
+FVector2D AGBGun::GetPumpHandShift() const
+{
+	return ModelArt ? ModelArt->PumpHandTravel * CurrentPumpAmount : FVector2D::ZeroVector;
+}
+
+void AGBGun::SetPumpPreview(float Amount)
+{
+	PumpPreview = FMath::Clamp(Amount, 0.f, 1.f);
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+void AGBGun::ClearPumpPreview()
+{
+	PumpPreview = -1.f;
+	PumpElapsed = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+void AGBGun::StartPump()
+{
+	if (ModelArt && ModelArt->bPump && !bReloading)
+	{
+		PumpElapsed = 0.f;
+	}
+}
+
+void AGBGun::ResetPump()
+{
+	PumpElapsed = -1.f;
+	PumpPreview = -1.f;
+	if (bViewModel)
+	{
+		ApplyPump();
+	}
+}
+
+void AGBGun::ApplyPump()
+{
+	float Amount = 0.f;
+	if (ModelArt && ModelArt->bPump)
+	{
+		if (PumpPreview >= 0.f)
+		{
+			Amount = PumpPreview;
+		}
+		else if (PumpElapsed >= 0.f)
+		{
+			// Shares of the current FireInterval: still, back, fully back, home, still.
+			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+			if (T >= PumpStartShare && T < PumpBackShare)
+			{
+				Amount = Smoothstep01(Share(T, PumpStartShare, PumpBackShare));
+			}
+			else if (T >= PumpBackShare && T < PumpHomeShare)
+			{
+				Amount = 1.f - Smoothstep01(Share(T, PumpBackShare, PumpHomeShare));
+			}
+		}
+	}
+	CurrentPumpAmount = Amount;
+	if (VMPump && ModelArt)
+	{
+		VMPump->SetRelativeLocation(ModelArt->PumpRest + ModelArt->PumpSlide * Amount);
+	}
+}
+
+float AGBGun::GetReloadAnimProgress() const
+{
+	if (ReloadPreview >= 0.f)
+	{
+		return ReloadPreview;
+	}
+	if (!bReloading)
+	{
+		return -1.f;
+	}
+	return ReloadsPerRound() ? PerRound.CycleProgress() : GetReloadProgress();
+}
+
+FGBReloadLook AGBGun::ComputeReloadLook() const
+{
+	FGBReloadLook Look;
+	const float Progress = GetReloadAnimProgress();
+	if (Progress < 0.f)
+	{
+		return Look;
+	}
+	Look.bActive = true;
+	if (!ReloadsPerRound())
+	{
+		// Magazine reload: slide out along MagazineOut, (fall), (rise), slide in; the slide share is 1 while the magazine is away.
+		Look.Pose = GBReloadAnim::PoseAmount(Progress);
+		Look.Dip = ReloadDip(Progress);
+		Look.Bump = ReloadBump(Progress);
+		Look.Drop = ReloadDrop(Progress);
+		Look.Slide = 1.f;
+		if (Progress < ReloadSlideOutEnd)
+		{
+			Look.Slide = Smoothstep01(Share(Progress, ReloadTiltEnd, ReloadSlideOutEnd));
+		}
+		else if (Progress >= ReloadRiseEnd)
+		{
+			Look.Slide = 1.f - FMath::Pow(Share(Progress, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+		}
+		Look.bShowMag = Progress < ReloadOutEnd || Progress >= ReloadEmptyEnd;
+		return Look;
+	}
+	// One round of a round-by-round reload: the "fresh magazine" beats of the magazine guns, once per round.
+	// The pose eases in during the first round only (a pinned preview holds it fully); the last ease-out is the blend after the end.
+	const bool bFirstRound = ReloadPreview < 0.f && PerRound.Moved == 0;
+	Look.Pose = bFirstRound ? Smoothstep01(Progress / PerRoundPoseInShare) : 1.f;
+	const float Beat = FMath::Lerp(ReloadEmptyEnd, ReloadSeatEnd, Progress);
+	Look.Bump = ReloadBump(Beat);
+	Look.Drop = ReloadDrop(Beat);
+	Look.Slide = Beat < ReloadRiseEnd ? 1.f : 1.f - FMath::Pow(Share(Beat, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+	Look.bShowMag = Progress < 0.98f; // seated: inside the port, the next round starts below the view
+	return Look;
+}
+
+GBReloadAnim::FHandBeat AGBGun::GetReloadHandBeat() const
+{
+	GBReloadAnim::FHandBeat Beat;
+	if (!bViewModel)
+	{
+		return Beat;
+	}
+	const FGBReloadLook Look = ComputeReloadLook();
+	if (Look.bActive)
+	{
+		Beat.Reach = Look.Pose;
+		Beat.Drop = Look.Drop;
+		Beat.Push = Look.Bump;
+	}
+	else if (ReloadsPerRound())
+	{
+		Beat.Reach = CurrentPoseAmount;
+	}
+	return Beat;
+}
+
+float AGBGun::GetReloadPoseAmount() const
+{
+	if (!bViewModel)
+	{
+		return 0.f;
+	}
+	const FGBReloadLook Look = ComputeReloadLook();
+	return Look.bActive ? Look.Pose : (ReloadsPerRound() ? CurrentPoseAmount : 0.f);
+}
+
+void AGBGun::SetReloadPreview(float Progress)
+{
+	ReloadPreview = FMath::Clamp(Progress, 0.f, 1.f);
+	ReloadBlendElapsed = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::ClearReloadPreview()
+{
+	if (ReloadPreview < 0.f)
+	{
+		return;
+	}
+	if (bViewModel && !bReloading)
+	{
+		BeginReloadBlend(ReloadBlendSeconds);
+	}
+	ReloadPreview = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::BeginReloadBlend(float Seconds)
+{
+	if (!bViewModel)
+	{
+		return;
+	}
+	ReloadBlendLength = FMath::Max(0.01f, Seconds);
+	ReloadBlendLoc = ReloadPoseLoc;
+	ReloadBlendPoseAmount = CurrentPoseAmount;
+	ReloadBlendRot = ReloadPoseRot;
+	ReloadBlendElapsed = 0.f;
+}
+
+void AGBGun::ResetReloadVisuals()
+{
+	ReloadPreview = -1.f;
+	ReloadBlendElapsed = -1.f;
+	ReloadPoseLoc = FVector::ZeroVector;
+	ReloadPoseRot = FRotator::ZeroRotator;
+	CurrentPoseAmount = 0.f;
+	ResetPump();
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::ApplyViewModelPose()
+{
+	if (!ModelArt)
+	{
+		return;
+	}
+	const FGBGunModelArt& Art = *ModelArt;
+	// Shot kick, ease out: the push is full at the shot and shrinks as (1 - t)^2 over KickSeconds.
+	float Strength = 0.f;
+	if (KickElapsed >= 0.f)
+	{
+		const float Remaining = 1.f - FMath::Clamp(KickElapsed / KickSeconds, 0.f, 1.f);
+		Strength = Remaining * Remaining;
+	}
+	CurrentKickBackCm = Art.KickBackCm * Strength;
+
+	// Pump first: its amount drives the small rack motion of the root.
+	ApplyPump();
+
+	// Reload pose: rest -> reload pose -> rest, with a dip as the magazine leaves and a bump as the new one seats.
+	// After a cancel the pose it had blends to rest instead of snapping.
+	const FGBReloadLook Look = ComputeReloadLook();
+	if (Look.bActive)
+	{
+		ReloadPoseLoc = Art.ReloadOffset * Look.Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * Look.Bump - Art.ReloadDipCm * Look.Dip);
+		ReloadPoseRot = Art.ReloadRot * Look.Pose;
+		CurrentPoseAmount = Look.Pose;
+	}
+	else if (ReloadBlendElapsed >= 0.f)
+	{
+		const float Left = 1.f - Smoothstep01(ReloadBlendElapsed / ReloadBlendLength);
+		ReloadPoseLoc = ReloadBlendLoc * Left;
+		ReloadPoseRot = ReloadBlendRot * Left;
+		CurrentPoseAmount = ReloadBlendPoseAmount * Left;
+	}
+	else
+	{
+		ReloadPoseLoc = FVector::ZeroVector;
+		ReloadPoseRot = FRotator::ZeroRotator;
+		CurrentPoseAmount = 0.f;
+	}
+
+	// The pump's rack: the gun is pulled in, tips up and rolls while the pump is back. It adds to the shot kick.
+	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
+	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
+	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
+	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
+}
+
+void AGBGun::ApplyReloadMagazine()
+{
+	if (!VMMagazine || !ModelArt)
+	{
+		return;
+	}
+	const FGBGunModelArt& Art = *ModelArt;
+	FVector Offset = FVector::ZeroVector;
+	const FGBReloadLook Look = ComputeReloadLook();
+	// A round-by-round gun keeps its shell inside the port (hidden) outside a reload; a magazine gun shows its magazine.
+	bool bShow = Look.bActive ? Look.bShowMag : !ReloadsPerRound();
+	if (Look.bActive)
+	{
+		Offset = Art.MagazineOut * Look.Slide;
+		if (Look.Drop > 0.f)
+		{
+			// Straight down on screen whatever the gun's tilt: camera down, brought into the body's own (scaled) frame.
+			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Look.Drop);
+			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, Art.ViewScale);
+		}
+	}
+	VMMagazine->SetRelativeLocation(Art.MagazineRest + Offset);
+	if (VMMagazine->IsVisible() != bShow)
+	{
+		VMMagazine->SetVisibility(bShow);
+	}
+}
+
+void AGBGun::HideMuzzleFlash()
+{
+	MuzzleFlashElapsed = -1.f;
+	if (MuzzleFlash)
+	{
+		MuzzleFlash->SetVisibility(false);
+	}
+	if (MuzzleFlashCross)
+	{
+		MuzzleFlashCross->SetVisibility(false);
+	}
+}
+
+void AGBGun::StartShotEffects()
+{
+	if (!ModelArt)
+	{
+		return;
+	}
+	KickElapsed = 0.f;
+	ApplyViewModelPose();
+
+	// Visual randomness uses the global stream, never the gun's own, so the spread sequence is not disturbed.
+	const float Roll = FMath::FRandRange(0.f, 90.f);
+	const float Size = MuzzleFlashSizeCm * FMath::FRandRange(0.85f, 1.2f);
+	const FVector Scale(MuzzleFlashThicknessCm / 100.f, Size / 100.f, Size / 100.f);
+	const FLinearColor Color = (bHasLastGlow ? LastGlowColor : ModelArt->IdleGlow) * MuzzleFlashBrightness;
+	UStaticMeshComponent* Slabs[2] = { MuzzleFlash, MuzzleFlashCross };
+	UMaterialInstanceDynamic* SlabMIDs[2] = { MuzzleFlashMID, MuzzleFlashCrossMID };
+	for (int32 Index = 0; Index < 2; ++Index)
+	{
+		if (!Slabs[Index])
+		{
+			continue;
+		}
+		Slabs[Index]->SetRelativeRotation(FRotator(0.f, 0.f, Roll + 45.f * Index));
+		Slabs[Index]->SetRelativeScale3D(Scale);
+		if (SlabMIDs[Index])
+		{
+			SlabMIDs[Index]->SetVectorParameterValue(FName(TEXT("Color")), Color);
+		}
+		Slabs[Index]->SetVisibility(true);
+	}
+	MuzzleFlashElapsed = 0.f;
+}
+
+void AGBGun::UpdateViewModel(float DeltaSeconds)
+{
+	const FGBGunModelArt& Art = *ModelArt;
+
+	// Trigger pull: 0 to full pitch and back over TriggerPullSeconds (linear in, linear out). A new shot restarts it.
+	if (VMTrigger && TriggerPullElapsed >= 0.f)
+	{
+		TriggerPullElapsed += DeltaSeconds;
+		if (TriggerPullElapsed >= TriggerPullSeconds)
+		{
+			TriggerPullElapsed = -1.f;
+			VMTrigger->SetRelativeRotation(FRotator::ZeroRotator);
+		}
+		else
+		{
+			const float Half = TriggerPullSeconds * 0.5f;
+			const float Frac = TriggerPullElapsed < Half
+				? TriggerPullElapsed / Half
+				: 1.f - (TriggerPullElapsed - Half) / Half;
+			VMTrigger->SetRelativeRotation(FRotator(TriggerPullPitch * Frac, 0.f, 0.f));
+		}
+	}
+
+	// Shot kick and muzzle flash. The step is capped so a long frame still shows each one for at least one frame.
+	const float EffectStep = FMath::Min(DeltaSeconds, MaxEffectStep);
+	if (KickElapsed >= 0.f)
+	{
+		KickElapsed += EffectStep;
+		if (KickElapsed >= KickSeconds)
+		{
+			KickElapsed = -1.f;
+		}
+	}
+	if (ReloadBlendElapsed >= 0.f)
+	{
+		ReloadBlendElapsed += DeltaSeconds;
+		if (ReloadBlendElapsed >= ReloadBlendLength)
+		{
+			ReloadBlendElapsed = -1.f;
+		}
+	}
+	// Pump timer: runs for PumpHomeShare of the fire interval, then the pump rests. No pump while a reload runs.
+	// It steps like the other visual timers, so a hitch right after the shot cannot skip the whole rack.
+	if (PumpElapsed >= 0.f)
+	{
+		if (bReloading)
+		{
+			PumpElapsed = -1.f;
+		}
+		else
+		{
+			PumpElapsed += EffectStep;
+			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+			{
+				PumpElapsed = -1.f;
+			}
+		}
+	}
+	// The root pose (rest + reload + kick) and the magazine follow the reload progress every frame.
+	ApplyViewModelPose();
+	ApplyReloadMagazine();
+	if (MuzzleFlashElapsed >= 0.f)
+	{
+		MuzzleFlashElapsed += EffectStep;
+		if (MuzzleFlashElapsed >= MuzzleFlashSeconds)
+		{
+			HideMuzzleFlash();
+		}
+	}
+
+	// Glow color and energy bar (GDD 6, weapon enchant): enchanted = element color + imbue left, else idle glow + dark bar.
+	EGBElement EnchantElement = EGBElement::Physical;
+	FName EnchantEffect = NAME_None;
+	FLinearColor GlowColor = Art.IdleGlow;
+	float Imbue = 0.f;
+	bool bEnchanted = false;
+	bool bBarBlinking = false;
+	if (GetActiveEnchant(EnchantElement, EnchantEffect))
+	{
+		bEnchanted = true;
+		GlowColor = GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement));
+		Imbue = 1.f;
+		if (const AGBPlayerCharacter* Player = GetPlayerOwner())
+		{
+			if (const UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+				{
+					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+					{
+						const float Left = Active.TotalDuration > KINDA_SMALL_NUMBER
+							? FMath::Clamp(Active.TimeRemaining / Active.TotalDuration, 0.f, 1.f)
+							: 1.f;
+						// The material lights a cell while 1 - ImbueU < ImbueRemaining, with ImbueU at the cell
+						// centres ((i + 0.5) / cells). Adding half a cell lights ceil(Left x cells) cells, so the
+						// last cell goes dark exactly when the enchant ends (owner, GDD v0.30), not half a cell early.
+						Imbue = Left > 0.f ? FMath::Min(1.f, Left + 0.5f / Art.EnergyCells) : 0.f;
+						// Last seconds: the lit cells blink. The phase comes from the time left, so the bar is lit
+						// as the blinking starts, each blink is half lit and half dark, and it ends dark.
+						const UGBDataSubsystem* BlinkData = UGBDataSubsystem::Get(this);
+						const float BlinkSeconds = BlinkData ? BlinkData->GetGameValue(EnchantBlinkSecondsKey, 3.f) : 3.f;
+						const float BlinkHz = FMath::Max(0.1f, BlinkData ? BlinkData->GetGameValue(EnchantBlinkHzKey, 4.f) : 4.f);
+						if (Active.TimeRemaining > 0.f && Active.TimeRemaining <= BlinkSeconds)
+						{
+							bBarBlinking = true;
+							if (FMath::Frac(Active.TimeRemaining * BlinkHz) < 0.5f)
+							{
+								Imbue = 0.f;
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (!bHasLastGlow || !LastGlowColor.Equals(GlowColor) || !FMath::IsNearlyEqual(LastImbueSent, Imbue))
+	{
+		for (UMaterialInstanceDynamic* MID : ViewModelMIDs)
+		{
+			if (MID)
+			{
+				MID->SetVectorParameterValue(ElementColorParam, GlowColor);
+				MID->SetScalarParameterValue(ImbueRemainingParam, Imbue);
+			}
+		}
+		LastGlowColor = GlowColor;
+		LastImbueSent = Imbue;
+		bHasLastGlow = true;
+	}
+	LastGlowElement = EnchantElement;
+	bLastGlowEnchanted = bEnchanted;
+	bEnergyBarBlinking = bBarBlinking;
+
+	// Weak-point light: full for WeakPointFlashHold, then a linear fade over WeakPointFlashFade; off while not equipped.
+	float Flash = 0.f;
+	if (WeakPointFlashElapsed >= 0.f)
+	{
+		const UGBDataSubsystem* FlashData = UGBDataSubsystem::Get(this);
+		const float WeakPointFlashHold = FMath::Max(0.f, FlashData ? FlashData->GetGameValue(WeakPointFlashHoldKey, 0.06f) : 0.06f);
+		const float WeakPointFlashFade = FMath::Max(0.01f, FlashData ? FlashData->GetGameValue(WeakPointFlashFadeKey, 0.15f) : 0.15f);
+		WeakPointFlashElapsed += DeltaSeconds;
+		if (!bEquipped || WeakPointFlashElapsed >= WeakPointFlashHold + WeakPointFlashFade)
+		{
+			WeakPointFlashElapsed = -1.f;
+		}
+		else if (WeakPointFlashElapsed < WeakPointFlashHold)
+		{
+			Flash = 1.f;
+		}
+		else
+		{
+			Flash = 1.f - (WeakPointFlashElapsed - WeakPointFlashHold) / WeakPointFlashFade;
+		}
+	}
+	SetWeakPointFlash(Flash);
+
+	// Holographic ammo count: redraw only when the wanted text differs from the one on the render target.
+	if (ViewModelDisplayTarget)
+	{
+		// A round-by-round gun shows the live count while it loads; a magazine gun shows -- until the new magazine is in.
+		const FString Wanted = (bReloading && !ReloadsPerRound()) ? FString(AmmoDisplayReloadText) : FString::FromInt(Ammo.InMagazine);
+		if (Wanted != ShownDisplayText)
+		{
+			ShownDisplayText = Wanted;
+			ViewModelDisplayTarget->UpdateResource();
+		}
+	}
+}
+
+void AGBGun::SetWeakPointFlash(float Value)
+{
+	if (!ViewModelIndicatorMID || FMath::IsNearlyEqual(Value, LastFlashSent, 0.001f))
+	{
+		return;
+	}
+	ViewModelIndicatorMID->SetScalarParameterValue(FlashParam, Value);
+	LastFlashSent = Value;
+}
+
+void AGBGun::HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float DamageDealt)
+{
+	(void)Target;
+	(void)DamageDealt;
+	if (!Info.bHeadshot || !bEquipped || !bViewModel)
+	{
+		return;
+	}
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	if (!Player || Info.Instigator.Get() != Player)
+	{
+		return;
+	}
+	// A new weak-point hit restarts the flash; show it right away, not on the next tick.
+	WeakPointFlashElapsed = 0.f;
+	SetWeakPointFlash(1.f);
+}
+
+void AGBGun::DrawViewModelDisplay(UCanvas* Canvas, int32 Width, int32 Height)
+{
+	UFont* Font = GEngine ? GEngine->GetLargeFont() : nullptr;
+	if (!Canvas || !Font || ShownDisplayText.IsEmpty() || !ModelArt)
+	{
+		return;
+	}
+	// TextHeightShare of the height, narrowed if wider than TextWidthShare of the width, centred on TextCenterY so the
+	// digits stay clear of the frame line and the dots: the pistol's are in its model, the rifle's are drawn below.
+	float Scale = ModelArt->TextHeightShare * Height / FMath::Max(1.f, Font->GetMaxCharHeight());
+	const FVector2D Size = Canvas->K2_TextSize(Font, ShownDisplayText, FVector2D(Scale, Scale));
+	if (Size.X > ModelArt->TextWidthShare * Width && Size.X > KINDA_SMALL_NUMBER)
+	{
+		Scale *= ModelArt->TextWidthShare * Width / Size.X;
+	}
+	Canvas->K2_DrawText(Font, ShownDisplayText, FVector2D(Width * 0.5f, Height * ModelArt->TextCenterY), FVector2D(Scale, Scale), FLinearColor::White,
+		0.f, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2D::ZeroVector, true, true, false, FLinearColor::Black);
+	if (!ModelArt->bDrawDisplayFrame)
+	{
+		return;
+	}
+	auto DrawBox = [Canvas, Width, Height](float X0, float Y0, float X1, float Y1, float Brightness)
+	{
+		FCanvasTileItem Tile(FVector2D(X0 * Width, Y0 * Height), FVector2D((X1 - X0) * Width, (Y1 - Y0) * Height),
+			FLinearColor(Brightness, Brightness, Brightness, 1.f));
+		Tile.BlendMode = SE_BLEND_Opaque;
+		Canvas->DrawItem(Tile);
+	};
+	for (const FGBDisplayBox& Box : AmmoDisplayFrame)
+	{
+		DrawBox(Box.X0, Box.Y0, Box.X1, Box.Y1, 1.f);
+	}
+	// One pip per round (several rounds per pip above AmmoDisplayMaxPips); none lit while reloading.
+	const int32 Capacity = GetMagazineSize();
+	if (Capacity <= 0)
+	{
+		return;
+	}
+	const int32 RoundsPerPip = FMath::DivideAndRoundUp(Capacity, AmmoDisplayMaxPips);
+	const int32 Pips = FMath::DivideAndRoundUp(Capacity, RoundsPerPip);
+	const int32 Lit = (bReloading && !ReloadsPerRound()) ? 0 : FMath::DivideAndRoundUp(Ammo.InMagazine, RoundsPerPip);
+	const float PipSlot = (AmmoDisplayPipRow.X1 - AmmoDisplayPipRow.X0) / Pips;
+	for (int32 Index = 0; Index < Pips; ++Index)
+	{
+		const float X0 = AmmoDisplayPipRow.X0 + Index * PipSlot;
+		DrawBox(X0, AmmoDisplayPipRow.Y0, X0 + PipSlot * AmmoDisplayPipFill, AmmoDisplayPipRow.Y1, Index < Lit ? 1.f : AmmoDisplaySpentPip);
+	}
+}
+
+void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)
+{
+	// Placeholder viewmodel (art rule: guns are 3D). Sizes in cm are purely visual; X = forward, Z = up.
+	// The parts sit forward of the held-item anchor so the whole gun reads as one small pistol in the
+	// lower right of the view, roughly 25-35 cm long, pointing forward.
+	const float* PelletStat = Definition.Stats.Find(GBStat::Pellets);
+	const bool bShotgun = PelletStat && *PelletStat > 1.f;
+	const bool bAutomaticLook = Definition.bAutomatic;
+
+	const float BodyLength = bShotgun ? 24.f : (bAutomaticLook ? 26.f : 20.f);
+	const float BarrelLength = bShotgun ? 16.f : (bAutomaticLook ? 14.f : 9.f);
+	const float BarrelThickness = bShotgun ? 4.f : 3.f;
+	constexpr float BodyForward = 8.f;
+
+	const FLinearColor BodyColor(0.08f, 0.08f, 0.10f);
+	const FLinearColor BarrelColor(0.03f, 0.03f, 0.035f);
+	const FLinearColor GripColor(0.12f, 0.10f, 0.10f);
+	const FLinearColor NeonColor(0.0f, 0.9f, 1.0f);
+
+	AddPart(TEXT("Body"), EGBShape::Cube, FVector(BodyForward, 0.f, 0.f), FVector(BodyLength, 5.f, 7.5f), BodyColor, false);
+	AddPart(TEXT("Barrel"), EGBShape::Cube, FVector(BodyForward + BodyLength * 0.5f + BarrelLength * 0.5f, 0.f, 1.5f),
+		FVector(BarrelLength, BarrelThickness, BarrelThickness), BarrelColor, false);
+	AddPart(TEXT("Grip"), EGBShape::Cube, FVector(BodyForward - BodyLength * 0.5f + 2.5f, 0.f, -7.f), FVector(4.f, 4.f, 9.f), GripColor, false);
+	if (bAutomaticLook)
+	{
+		AddPart(TEXT("Magazine"), EGBShape::Cube, FVector(BodyForward + 2.f, 0.f, -7.f), FVector(3.f, 2.5f, 8.f), BodyColor, false);
+	}
+	// Neon on the camera-facing side (the anchor sits right of the view, so +Y faces away).
+	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, -2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
+	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
+	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
+}
+
+// ---- Ammo ----
+
+int32 AGBGun::GetMagazineSize() const
+{
+	return FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::MagazineSize, 1.f)));
+}
+
+int32 AGBGun::GetMaxSpareMagazines() const
+{
+	const int32 Magazines = FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::SpareMagazines, 0.f)));
+	// A round-by-round gun keeps its reserve in rounds: the same total the magazines would have held.
+	return ReloadsPerRound() ? Magazines * GetMagazineSize() : Magazines;
+}
+
+void AGBGun::SetAmmo(const FGBAmmoState& InAmmo)
+{
+	CancelReload();
+	bFireWhenLoaded = false;
+	Ammo.InMagazine = FMath::Clamp(InAmmo.InMagazine, 0, GetMagazineSize());
+	Ammo.SpareMagazines = FMath::Clamp(InAmmo.SpareMagazines, 0, GetMaxSpareMagazines());
+	NotifyEquipmentChanged();
+}
+
+void AGBGun::RefillAmmo()
+{
+	CancelReload();
+	bFireWhenLoaded = false;
+	Ammo.InMagazine = GetMagazineSize();
+	Ammo.SpareMagazines = GetMaxSpareMagazines();
+	NotifyEquipmentChanged();
+}
+
+int32 AGBGun::AddSpareMagazines(int32 Count)
+{
+	if (Count <= 0)
+	{
+		return 0;
+	}
+	if (ReloadsPerRound())
+	{
+		// Count magazines' worth of rounds; the result is how many magazines' worth went in, rounded up.
+		const int32 PerMagazine = FMath::Max(1, GetMagazineSize());
+		const int32 AddedRounds = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count * PerMagazine);
+		if (AddedRounds > 0)
+		{
+			Ammo.SpareMagazines += AddedRounds;
+			NotifyEquipmentChanged();
+		}
+		return FMath::DivideAndRoundUp(AddedRounds, PerMagazine);
+	}
+	const int32 Added = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count);
+	if (Added > 0)
+	{
+		Ammo.SpareMagazines += Added;
+		NotifyEquipmentChanged();
+	}
+	return Added;
+}
+
+// ---- Reload ----
+
+void AGBGun::Reload()
+{
+	if (bReloading || !bEquipped)
+	{
+		return;
+	}
+	if (Ammo.InMagazine >= GetMagazineSize() || Ammo.SpareMagazines <= 0)
+	{
+		return;
+	}
+	bReloading = true;
+	ReloadElapsed = 0.f;
+	ReloadDuration = FMath::Max(0.f, GetStat(GBStat::ReloadTime, 1.f));
+	ResetPump();
+	if (ReloadsPerRound())
+	{
+		PerRound.Begin(Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), ReloadDuration);
+	}
+	NotifyEquipmentChanged();
+}
+
+void AGBGun::CancelReload()
+{
+	if (!bReloading)
+	{
+		return;
+	}
+	// Blend from the pose the gun is in now (the pinned preview, if any, keeps owning the pose until it is released).
+	if (ReloadPreview < 0.f)
+	{
+		BeginReloadBlend(ReloadBlendSeconds);
+	}
+	bReloading = false;
+	ReloadElapsed = 0.f;
+	PerRound.Stop(); // rounds already loaded stay loaded; the round in flight was never taken from the reserve
+	bFireWhenLoaded = false;
+	NotifyEquipmentChanged();
+}
+
+void AGBGun::FinishPerRoundReload()
+{
+	bReloading = false;
+	ReloadElapsed = 0.f;
+	// The gun eases back to rest a little slower than a cancel and may still be moving when it is allowed to fire.
+	if (ReloadPreview < 0.f)
+	{
+		BeginReloadBlend(PerRoundExitSeconds);
+	}
+	NotifyEquipmentChanged();
+}
+
+void AGBGun::FinishReload()
+{
+	bReloading = false;
+	ReloadElapsed = 0.f;
+	if (Ammo.SpareMagazines > 0)
+	{
+		// The rounds left in the old magazine are lost (provisional, classic tactical style).
+		--Ammo.SpareMagazines;
+		Ammo.InMagazine = GetMagazineSize();
+	}
+	NotifyEquipmentChanged();
+}
+
+float AGBGun::GetReloadProgress() const
+{
+	if (!bReloading)
+	{
+		return 0.f;
+	}
+	if (ReloadsPerRound())
+	{
+		return PerRound.Progress();
+	}
+	return ReloadDuration > KINDA_SMALL_NUMBER ? FMath::Clamp(ReloadElapsed / ReloadDuration, 0.f, 1.f) : 1.f;
+}
+
+// ---- Aim ----
+
+void AGBGun::StartSecondary()
+{
+	if (bEquipped)
+	{
+		SetAiming(true);
+	}
+}
+
+void AGBGun::StopSecondary()
+{
+	SetAiming(false);
+}
+
+void AGBGun::SetAiming(bool bInAiming)
+{
+	if (bAiming == bInAiming)
+	{
+		return;
+	}
+	bAiming = bInAiming;
+	if (AGBPlayerCharacter* Player = GetPlayerOwner())
+	{
+		Player->SetMoveSpeedScale(bAiming ? GetStat(GBStat::AimMoveSpeedMult, 1.f) : 1.f);
+	}
+}
+
+void AGBGun::UpdateAimFOV(float DeltaSeconds, bool bInstant)
+{
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	UCameraComponent* Camera = Player ? Player->GetCamera() : nullptr;
+	if (!Camera)
+	{
+		return;
+	}
+
+	const float Target = bAiming ? 1.f : 0.f;
+	if (AimAlpha == Target)
+	{
+		return;
+	}
+	if (AimAlpha <= 0.f)
+	{
+		HipFOV = Camera->FieldOfView;
+	}
+
+	if (bInstant)
+	{
+		AimAlpha = Target;
+	}
+	else
+	{
+		const float AimTime = GetStat(GBWeaponStat::AimTime, 0.15f);
+		const float Step = AimTime > KINDA_SMALL_NUMBER ? DeltaSeconds / AimTime : 1.f;
+		AimAlpha = FMath::Clamp(Target > AimAlpha ? AimAlpha + Step : AimAlpha - Step, 0.f, 1.f);
+	}
+	Camera->SetFieldOfView(FMath::Lerp(HipFOV, GetStat(GBStat::AimFOV, HipFOV), AimAlpha));
+}
+
+void AGBGun::OnUnequipped()
+{
+	CancelReload();
+	bFireWhenLoaded = false;
+	SetAiming(false);
+	UpdateAimFOV(0.f, true);
+	if (bViewModel)
+	{
+		KickElapsed = -1.f;
+		ResetReloadVisuals();
+		HideMuzzleFlash();
+	}
+	Super::OnUnequipped();
+}
+
+void AGBGun::StartPrimary()
+{
+	// Round-by-round gun mid-reload: the press itself interrupts, whatever the fire cooldown says.
+	if (bEquipped && bReloading && ReloadsPerRound())
+	{
+		if (Ammo.InMagazine > 0)
+		{
+			CancelReload(); // the shot then follows through PressTrigger as soon as the fire rules allow
+		}
+		else
+		{
+			bFireWhenLoaded = true; // empty: wait for the first shell
+		}
+	}
+	PressTrigger();
+}
+
+void AGBGun::Tick(float DeltaSeconds)
+{
+	if (bReloading && ReloadsPerRound())
+	{
+		ReloadElapsed += DeltaSeconds;
+		const AGBPlayerCharacter* PlayerRef = GetPlayerOwner();
+		if (bFireWhenLoaded && (!PlayerRef || PlayerRef->IsDead()))
+		{
+			bFireWhenLoaded = false; // a pending shot does not survive death
+		}
+		// With a shot pending the stepping yields after the first round, so a long frame cannot load more shells first.
+		const int32 MaxRounds = bFireWhenLoaded ? 1 : MAX_int32;
+		const int32 Moved = PerRound.Advance(DeltaSeconds, Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), MaxRounds);
+		if (Moved > 0)
+		{
+			NotifyEquipmentChanged();
+		}
+		if (Moved > 0 && bFireWhenLoaded && Ammo.InMagazine > 0)
+		{
+			// Fire was pressed on an empty gun: the first shell is in, so the reload stops now and the queued shot follows
+			// through the normal trigger path as soon as the fire rules allow.
+			CancelReload();
+			bAttackQueued = true;
+		}
+		else if (!PerRound.bRunning)
+		{
+			FinishPerRoundReload();
+		}
+	}
+	else if (bReloading)
+	{
+		ReloadElapsed += DeltaSeconds;
+		if (ReloadElapsed >= ReloadDuration)
+		{
+			FinishReload();
+		}
+	}
+	if (bEquipped)
+	{
+		UpdateAimFOV(DeltaSeconds, false);
+	}
+	if (bViewModel)
+	{
+		UpdateViewModel(DeltaSeconds);
+	}
+	Super::Tick(DeltaSeconds);
+}
+
+// ---- Shooting ----
+
+bool AGBGun::PerformAttack()
+{
+	AGBPlayerCharacter* Player = GetPlayerOwner();
+	if (!Player || !GetWorld())
+	{
+		return false;
+	}
+	if (bReloading)
+	{
+		if (!ReloadsPerRound())
+		{
+			return false;
+		}
+		if (Ammo.InMagazine <= 0)
+		{
+			// Empty gun: the shot waits for the first shell to land (Tick), then the reload stops and the gun shoots.
+			bFireWhenLoaded = true;
+			return false;
+		}
+		CancelReload(); // fire stops a round-by-round reload; the shells already in stay in
+	}
+	if (Ammo.InMagazine <= 0)
+	{
+		Reload();
+		return false;
+	}
+
+	const FGBDamageInfo BaseInfo = MakeDamageInfo();
+	const float SpreadDegrees = GetCurrentSpread();
+
+	--Ammo.InMagazine;
+
+	const FGBWeaponDefinition* Def = GetDefinition();
+	if (Def && Def->FireMode.Equals(TEXT("Projectile"), ESearchCase::IgnoreCase))
+	{
+		FireProjectile(BaseInfo, SpreadDegrees);
+	}
+	else
+	{
+		FireHitscan(BaseInfo, SpreadDegrees);
+	}
+
+	const float RecoilYaw = GetStat(GBStat::RecoilYaw, 0.f);
+	Player->AddRecoil(GetStat(GBStat::RecoilPitch, 0.f), Random.FRandRange(-RecoilYaw, RecoilYaw), GetStat(GBStat::RecoilRecovery, 0.f));
+
+	if (bViewModel)
+	{
+		TriggerPullElapsed = 0.f;
+		StartShotEffects();
+		StartPump();
+	}
+	NotifyEquipmentChanged();
+
+	if (Ammo.InMagazine <= 0)
+	{
+		Reload();
+	}
+	return true;
+}
+
+float AGBGun::GetCurrentSpread() const
+{
+	const float Base = bAiming ? GetStat(GBStat::AimSpread, 0.f) : GetStat(GBStat::Spread, 0.f);
+	const float Move = bAiming ? GetStat(GBStat::AimMoveSpread, 0.f) : GetStat(GBStat::MoveSpread, 0.f);
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	const UCharacterMovementComponent* MoveComp = Player ? Player->GetCharacterMovement() : nullptr;
+	if (!MoveComp)
+	{
+		return FMath::Max(0.f, Base);
+	}
+	// Full bonus at the current max walk speed (already lowered while aiming), so slow aimed steps still count.
+	return UGBCombatLibrary::ComputeMovementSpread(Base, Move, MoveComp->Velocity.Size2D(), MoveComp->MaxWalkSpeed);
+}
+
+void AGBGun::FireHitscan(const FGBDamageInfo& BaseInfo, float SpreadDegrees)
+{
+	AGBPlayerCharacter* Player = GetPlayerOwner();
+	UWorld* World = GetWorld();
+
+	const FVector Origin = Player->GetAimOrigin();
+	const FVector AimDirection = Player->GetAimDirection();
+	const FVector Muzzle = Player->GetMuzzleLocation();
+	const float Range = GetStat(GBStat::Range, 5000.f);
+	const int32 Pellets = FMath::Max(1, FMath::RoundToInt(GetStat(GBStat::Pellets, 1.f)));
+	const float FalloffStart = GetStat(GBStat::FalloffStart, 0.f);
+	const float FalloffEnd = GetStat(GBStat::FalloffEnd, 0.f);
+	const float NearMult = GetStat(GBStat::FalloffNearMult, 1.f);
+	const float FarMult = GetStat(GBStat::FalloffFarMult, 1.f);
+	const float HeadshotMult = GetStat(GBStat::HeadshotMult, 1.f);
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBGunTrace), false, Player);
+	Params.AddIgnoredActor(this);
+
+	for (int32 Index = 0; Index < Pellets; ++Index)
+	{
+		const FVector Direction = UGBCombatLibrary::ApplySpread(AimDirection, SpreadDegrees, Random);
+		const FVector End = Origin + Direction * Range;
+
+		FHitResult Hit;
+		const bool bHit = World->LineTraceSingleByChannel(Hit, Origin, End, GBWeapon::AimTraceChannel, Params);
+		AActor* Target = bHit ? Hit.GetActor() : nullptr;
+
+		if (Target && UGBAttributeComponent::Find(Target))
+		{
+			FGBDamageInfo Info = BaseInfo;
+			Info.HitLocation = Hit.ImpactPoint;
+			Info.HitDirection = Direction;
+			Info.Amount *= UGBCombatLibrary::DistanceFalloffMultiplier(Hit.Distance, FalloffStart, FalloffEnd, NearMult, FarMult);
+			UGBCombatLibrary::ApplyWeakPointBonus(Target, Info, HeadshotMult);
+			UGBCombatLibrary::DealDamage(Target, Info);
+		}
+
+#if !UE_BUILD_SHIPPING
+		// Placeholder tracer.
+		DrawDebugLine(World, Muzzle, bHit ? Hit.ImpactPoint : End, FColor(255, 220, 120), false, 0.05f, 0, 0.6f);
+#endif
+	}
+}
+
+void AGBGun::FireProjectile(const FGBDamageInfo& BaseInfo, float SpreadDegrees)
+{
+	AGBPlayerCharacter* Player = GetPlayerOwner();
+	UWorld* World = GetWorld();
+
+	const float Range = GetStat(GBStat::Range, 5000.f);
+	const FVector Muzzle = Player->GetMuzzleLocation();
+	FVector AimDirection = (FindAimPoint(Range) - Muzzle).GetSafeNormal();
+	if (AimDirection.IsNearlyZero())
+	{
+		AimDirection = Player->GetAimDirection();
+	}
+
+	FGBProjectileConfig Config;
+	Config.Damage = BaseInfo;
+	Config.Speed = GetStat(GBStat::ProjectileSpeed, 3000.f);
+	Config.Radius = GetStat(GBStat::ProjectileRadius, 5.f);
+	Config.GravityScale = GetStat(GBStat::ProjectileGravity, 0.f);
+	Config.MaxRange = Range;
+	Config.bPixelArt = false; // art rule: gun shots are 3D
+	Config.Color = GBPlaceholder::ElementColor(static_cast<uint8>(BaseInfo.Element));
+
+	const int32 Pellets = FMath::Max(1, FMath::RoundToInt(GetStat(GBStat::Pellets, 1.f)));
+	for (int32 Index = 0; Index < Pellets; ++Index)
+	{
+		const FVector Direction = UGBCombatLibrary::ApplySpread(AimDirection, SpreadDegrees, Random);
+		AGBProjectile::SpawnProjectile(World, Config, Muzzle, Direction, Player);
+	}
+}
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/UI/GBHUD.cpp'; "'$s=Get-Content $p; for($i=500;$i -lt 640;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }; $p='"'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp'; "'$s=Get-Content $p; for($i=1700;$i -lt 2110;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }' in C:\GameJam
+ succeeded in 473ms:
+501: 	// Walk bob from the horizontal speed (world time, so it slows down with the QTE).
+502: 	const UWorld* World = GetWorld();
+503: 	const float Time = World ? (float)World->GetTimeSeconds() : 0.f;
+504: 	float Speed01 = 0.f;
+505: 	if (const UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+506: 	{
+507: 		if (Move->IsMovingOnGround())
+508: 		{
+509: 			Speed01 = FMath::Clamp(Player->GetVelocity().Size2D() / FMath::Max(1.f, Move->GetMaxSpeed()), 0.f, 1.f);
+510: 		}
+511: 	}
+512: 	const float Phase = Time * 9.f;
+513: 	const FVector2D Bob(FMath::Cos(Phase) * 3.f * P * Speed01, FMath::Abs(FMath::Sin(Phase)) * 2.f * P * Speed01);
+514: 
+515: 	UGBEquipmentComponent* Equipment = Player->GetEquipment();
+516: 	AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
+517: 	const FGBWeaponDefinition* WeaponDef = Item ? Item->GetDefinition() : nullptr;
+518: 
+519: 	const float SinceAttack = Item ? Item->GetTimeSinceLastAttack() : 1000.f;
+520: 	const float Kick01 = (SinceAttack >= 0.f && SinceAttack < GBHudLayout::AttackKickTime) ? 1.f - SinceAttack / GBHudLayout::AttackKickTime : 0.f;
+521: 
+522: 	const UGBQTEComponent* QTE = Player->GetQTE();
+523: 	const bool bCastPose = (QTE && QTE->IsActive()) || (GetRealTime() - LastCastTime) < GBHudLayout::CastHandTime;
+524: 
+525: 	FName RightHandId(TEXT("hand_right"));
+526: 	if (WeaponDef)
+527: 	{
+528: 		if (const FString* HandSprite = WeaponDef->Strings.Find(GBString::HandSprite))
+529: 		{
+530: 			RightHandId = FName(**HandSprite);
+531: 		}
+532: 	}
+533: 	UTexture2D* HandRight = Sprites->GetSprite(RightHandId);
+534: 	UTexture2D* HandLeft = Sprites->GetSprite(TEXT("hand_left"));
+535: 	UTexture2D* HandCast = Sprites->GetSprite(TEXT("hand_cast"));
+536: 	auto SizeOf = [P](UTexture2D* Texture) { return Texture ? FVector2D(Texture->GetSizeX() * P, Texture->GetSizeY() * P) : FVector2D::ZeroVector; };
+537: 	const FVector2D RightSize = SizeOf(HandRight);
+538: 	const FVector2D LeftSize = SizeOf(HandLeft);
+539: 	const FVector2D CastSize = SizeOf(HandCast);
+540: 
+541: 	const EGBHeldSlot Slot = Item ? Item->GetSlot() : EGBHeldSlot::Staff;
+542: 	if (Item && Slot == EGBHeldSlot::Staff)
+543: 	{
+544: 		FName StaffId(TEXT("staff_apprentice"));
+545: 		if (WeaponDef)
+546: 		{
+547: 			if (const FString* SpriteId = WeaponDef->Strings.Find(GBString::Sprite))
+548: 			{
+549: 				StaffId = FName(**SpriteId);
+550: 			}
+551: 		}
+552: 		UTexture2D* Staff = Sprites->GetSprite(StaffId);
+553: 		const FVector2D StaffSize = SizeOf(Staff);
+554: 		// The basic attack thrusts the staff up a little.
+555: 		const float CenterX = W * 0.72f + Bob.X;
+556: 		const float StaffY = H - StaffSize.Y * 0.8f + Bob.Y - Kick01 * 5.f * P;
+557: 		DrawSprite(Staff, CenterX - StaffSize.X * 0.5f, StaffY, P);
+558: 		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, StaffY + StaffSize.Y * 0.45f, P);
+559: 	}
+560: 	else if (Item && Slot == EGBHeldSlot::Gun)
+561: 	{
+562: 		// The gun is a 3D model drawn by the world; only the hands are drawn here. Recoil pushes them down.
+563: 		const float KickY = Kick01 * 3.f * P;
+564: 		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
+565: 		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
+566: 		const AGBGun* GunItem = Cast<AGBGun>(Item);
+567: 		const bool bModelGun = GunItem && GunItem->HasViewModel();
+568: 		const GBReloadAnim::FHandBeat Beat = bModelGun ? GunItem->GetReloadHandBeat() : GBReloadAnim::FHandBeat();
+569: 		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
+570: 		const float PushY = -Beat.Push * GBHudLayout::ReloadSeatPush * P;
+571: 		const FVector2D RightShift = (GunItem ? GunItem->GetReloadRightHandFollow() : FVector2D::ZeroVector) * (RightFollow * P);
+572: 		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X + RightShift.X, H - RightSize.Y * 0.7f + Bob.Y + KickY + RightShift.Y + PushY, P);
+573: 		if (!bCastPose)
+574: 		{
+575: 			const FVector2D Reach = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * (Beat.Reach * P);
+576: 			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(Reach.Y));
+577: 			// A gun with a pump: the left hand rides the forend back and forward with it.
+578: 			const FVector2D PumpShift = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector) * P;
+579: 			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X + PumpShift.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY + PumpShift.Y, P);
+580: 		}
+581: 	}
+582: 	else if (Item && Slot == EGBHeldSlot::Sword)
+583: 	{
+584: 		FName BladeId(TEXT("sword_blade"));
+585: 		if (WeaponDef)
+586: 		{
+587: 			if (const FString* SpriteId = WeaponDef->Strings.Find(GBString::Sprite))
+588: 			{
+589: 				BladeId = FName(**SpriteId);
+590: 			}
+591: 		}
+592: 		UTexture2D* Blade = Sprites->GetSprite(BladeId);
+593: 		const FVector2D BladeSize = SizeOf(Blade);
+594: 		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(Item->GetElement()), 0.5f);
+595: 		// The swing moves the sword to the left.
+596: 		const float CenterX = W * 0.70f + Bob.X - Kick01 * 12.f * P;
+597: 		const float HandY = H - RightSize.Y * 0.75f + Bob.Y;
+598: 		DrawSprite(Blade, CenterX - BladeSize.X * 0.5f, HandY - BladeSize.Y + 4.f * P, P, Tint);
+599: 		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, HandY, P);
+600: 	}
+601: 	else
+602: 	{
+603: 		DrawSprite(HandRight, W * 0.72f - RightSize.X * 0.5f + Bob.X, H - RightSize.Y * 0.45f + Bob.Y, P);
+604: 	}
+605: 
+606: 	// The summoned shield is held by the left hand: while it is up (or sliding) the left hand is hidden.
+607: 	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
+608: 	const bool bBlockRaised = Spellbook && Spellbook->HasShield() && Spellbook->IsBlockRaised();
+609: 	const double Now = GetRealTime();
+610: 	const float Dt = LastShieldUpdateTime < 0.0 ? 0.f : FMath::Clamp((float)(Now - LastShieldUpdateTime), 0.f, 0.1f);
+611: 	LastShieldUpdateTime = Now;
+612: 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
+613: 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
+614: 
+615: 	if (bCastPose && ShieldRaise01 < 0.5f)
+616: 	{
+617: 		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
+618: 		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
+619: 		DrawSprite(HandCast, CastX - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
+620: 	}
+621: 	else if (!bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
+622: 	{
+623: 		DrawSprite(HandLeft, W * 0.22f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.45f + Bob.Y, P);
+624: 	}
+625: 	DrawRaisedShield(Player, P, Bob);
+626: }
+627: 
+628: float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, const FVector2D& Bob)
+629: {
+630: 	if (ShieldRaise01 <= 0.f)
+631: 	{
+632: 		return 0.f;
+633: 	}
+634: 	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
+635: 	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+636: 	const AGBSpellActor* ShieldActor = Spellbook ? Spellbook->GetShieldActor() : nullptr;
+637: 	FString SpriteId = ShieldActor ? ShieldActor->GetSpellCast().GetString(GBString::Sprite, TEXT("ice_shield")) : FString(TEXT("ice_shield"));
+638: 	if (SpriteId.IsEmpty())
+639: 	{
+640: 		SpriteId = TEXT("ice_shield");
+1701: 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle weakpoint flash=%.2f"), Flash);
+1702: 			if (Flash <= 0.5f)
+1703: 			{
+1704: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle weakpoint FAILED: flash=%.2f right after a weak-point hit (expected more than 0.5)"), Flash);
+1705: 			}
+1706: 			Shot(TEXT("14c_rifle_weakpoint"));
+1707: 		});
+1708: 		Add(60.05f + S, TEXT("rifle weak point: flash is off again, then a body hit"), [](UWorld*, AGBPlayerCharacter* Player)
+1709: 		{
+1710: 			AGBGun* Gun = RifleInHand(Player);
+1711: 			AGBEnemyCharacter* Enemy = RifleFlashTarget.Get();
+1712: 			if (!Gun || !Enemy)
+1713: 			{
+1714: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle weakpoint: no rifle in hand or no test orc"));
+1715: 				return;
+1716: 			}
+1717: 			const float After = Gun->GetViewModelWeakPointFlash();
+1718: 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle weakpoint flash after=%.2f"), After);
+1719: 			if (After > 0.001f)
+1720: 			{
+1721: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle weakpoint FAILED: flash=%.2f one second later (expected 0)"), After);
+1722: 			}
+1723: 			FGBDamageInfo Info;
+1724: 			Info.Amount = 1.f;
+1725: 			Info.Instigator = Player;
+1726: 			Info.bHeadshot = false;
+1727: 			UGBCombatLibrary::DealDamage(Enemy, Info);
+1728: 		});
+1729: 		Add(60.15f + S, TEXT("rifle body shot: the lenses stay dark; half the enchant left"), [](UWorld*, AGBPlayerCharacter* Player)
+1730: 		{
+1731: 			AGBGun* Gun = RifleInHand(Player);
+1732: 			if (!Gun)
+1733: 			{
+1734: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle bodyshot: no rifle in hand"));
+1735: 				return;
+1736: 			}
+1737: 			const float Flash = Gun->GetViewModelWeakPointFlash();
+1738: 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle bodyshot flash=%.2f"), Flash);
+1739: 			if (Flash > 0.001f)
+1740: 			{
+1741: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle bodyshot FAILED: flash=%.2f after a body hit (expected 0)"), Flash);
+1742: 			}
+1743: 			if (AGBEnemyCharacter* Enemy = RifleFlashTarget.Get())
+1744: 			{
+1745: 				Enemy->Destroy();
+1746: 			}
+1747: 			RifleFlashTarget.Reset();
+1748: 			// Half the enchant left, to look at the bar draining from the muzzle end.
+1749: 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+1750: 			{
+1751: 				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+1752: 				{
+1753: 					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+1754: 					{
+1755: 						const FName EnchantId = Active.EffectId;
+1756: 						Effects->SetTimeRemaining(EnchantId, 0.5f * Active.TotalDuration);
+1757: 						break;
+1758: 					}
+1759: 				}
+1760: 			}
+1761: 		});
+1762: 		Add(60.45f + S, TEXT("rifle half bar: imbue about half, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+1763: 		{
+1764: 			AGBGun* Gun = RifleInHand(Player);
+1765: 			if (!Gun)
+1766: 			{
+1767: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle half bar: no rifle in hand"));
+1768: 				return;
+1769: 			}
+1770: 			const float Imbue = Gun->GetViewModelImbueSent();
+1771: 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle half bar imbue=%.2f"), Imbue);
+1772: 			CheckEnchantBlink(TEXT("rifle"), Gun, false, TEXT("at half the enchant"));
+1773: 			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
+1774: 			{
+1775: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
+1776: 			}
+1777: 			Shot(TEXT("14d_rifle_half_bar"));
+1778: 		});
+1779: 		Add(61.0f + S, TEXT("rifle shot kick and muzzle flash, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+1780: 		{
+1781: 			AGBGun* Gun = RifleInHand(Player);
+1782: 			if (!Gun)
+1783: 			{
+1784: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle muzzle flash: no rifle in hand"));
+1785: 				return;
+1786: 			}
+1787: 			Gun->StartPrimary();
+1788: 			Gun->StopPrimary();
+1789: 			const bool bVisible = Gun->IsMuzzleFlashVisible();
+1790: 			const float Kick = Gun->GetViewModelKickBackCm();
+1791: 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle muzzle flash visible=%d kick=%.2f"), bVisible ? 1 : 0, Kick);
+1792: 			if (!bVisible || Kick <= 0.1f)
+1793: 			{
+1794: 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle muzzle flash FAILED: visible=%d kick=%.2f right after a shot (expected visible and a kick)"), bVisible ? 1 : 0, Kick);
+1795: 			}
+1796: 			SetEnchantTimeLeft(Player, 2.5f);
+1797: 			Shot(TEXT("14e_rifle_fire"));
+1798: 		});
+1799: 		Add(61.6f + S, TEXT("rifle done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+1800: 		{
+1801: 			if (const AGBGun* BlinkGun = RifleInHand(Player))
+1802: 			{
+1803: 				CheckEnchantBlink(TEXT("rifle"), BlinkGun, true, TEXT("with 2 seconds left"));
+1804: 			}
+1805: 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+1806: 		});
+1807: 		// ---- Shotgun: model, pump, shell-by-shell reload (feedback15). Its clock runs on from the rifle block and is wound back at the end. ----
+1808: 		const float SG = 61.7f + S;
+1809: 		Add(SG, TEXT("shotgun: own it, equip it in the gun slot, full ammo, no enchant"), [](UWorld*, AGBPlayerCharacter* Player)
+1810: 		{
+1811: 			Player->GetEquipment()->GiveWeapon(TEXT("Shotgun"), false, false);
+1812: 			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Shotgun"));
+1813: 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+1814: 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+1815: 			{
+1816: 				Effects->RemoveAllEffects();
+1817: 			}
+1818: 			if (AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
+1819: 			{
+1820: 				Gun->RefillAmmo();
+1821: 			}
+1822: 		});
+1823: 		Add(SG + 0.4f, TEXT("shotgun: meshes and materials in hand, display 6, hip screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+1824: 		{
+1825: 			AGBGun* Gun = ShotgunInHand(Player);
+1826: 			if (!Gun)
+1827: 			{
+1828: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun: no shotgun in hand"));
+1829: 				return;
+1830: 			}
+1831: 			const int32 Meshes = Gun->GetViewModelMeshCount();
+1832: 			const int32 Mids = Gun->GetViewModelMIDCount();
+1833: 			const FGBAmmoState Ammo = Gun->GetAmmo();
+1834: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun viewmodel meshes=%d mids=%d pump=%d display=%s ammo %d / spare rounds %d"), Meshes, Mids,
+1835: 				Gun->HasPump() ? 1 : 0, *Gun->GetViewModelDisplayText(), Ammo.InMagazine, Ammo.SpareMagazines);
+1836: 			if (Meshes != 6 || Mids <= 6 || !Gun->HasPump())
+1837: 			{
+1838: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun viewmodel FAILED: meshes=%d (expected 6) mids=%d (expected more than 6) pump=%d"), Meshes, Mids, Gun->HasPump() ? 1 : 0);
+1839: 			}
+1840: 			if (Gun->GetViewModelDisplayText() != TEXT("6") || Ammo.InMagazine != 6 || Ammo.SpareMagazines != 24 || !Gun->ReloadsPerRound())
+1841: 			{
+1842: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun ammo FAILED: display '%s', %d in the gun, %d spare (expected 6, 6, 24 rounds) perRound=%d"),
+1843: 					*Gun->GetViewModelDisplayText(), Ammo.InMagazine, Ammo.SpareMagazines, Gun->ReloadsPerRound() ? 1 : 0);
+1844: 			}
+1845: 			CheckShotgunAtRest(TEXT("hip"), Gun);
+1846: 			Shot(TEXT("15a_shotgun_hip"));
+1847: 		});
+1848: 		Add(SG + 1.1f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
+1849: 		{
+1850: 			AGBGun* Gun = ShotgunInHand(Player);
+1851: 			if (!Gun)
+1852: 			{
+1853: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun shot: no shotgun in hand"));
+1854: 				return;
+1855: 			}
+1856: 			Gun->StartPrimary();
+1857: 			Gun->StopPrimary();
+1858: 			const bool bVisible = Gun->IsMuzzleFlashVisible();
+1859: 			const float Kick = Gun->GetViewModelKickBackCm();
+1860: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun shot: muzzle flash visible=%d kick=%.2f ammo=%d"), bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
+1861: 			if (!bVisible || Kick <= 0.1f || Gun->GetAmmo().InMagazine != 5)
+1862: 			{
+1863: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun shot FAILED: visible=%d kick=%.2f ammo=%d right after a shot (expected a flash, a kick and 5 rounds)"),
+1864: 					bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
+1865: 			}
+1866: 		});
+1867: 		Add(SG + 1.47f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
+1868: 		{
+1869: 			AGBGun* Gun = ShotgunInHand(Player);
+1870: 			if (!Gun)
+1871: 			{
+1872: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+1873: 				return;
+1874: 			}
+1875: 			const float Pump = Gun->GetViewModelPumpOffsetCm();
+1876: 			const FString Text = Gun->GetViewModelDisplayText();
+1877: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun pump 0.37 s after the shot: %.2f cm from rest, display=%s"), Pump, *Text);
+1878: 			if (Pump < 1.2f)
+1879: 			{
+1880: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump FAILED: only %.2f cm from rest in the middle of the interval (expected it back, about 4 cm)"), Pump);
+1881: 			}
+1882: 			if (Text != TEXT("5"))
+1883: 			{
+1884: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun display FAILED: '%s' after one shot (expected 5)"), *Text);
+1885: 			}
+1886: 		});
+1887: 		Add(SG + 1.8f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
+1888: 		{
+1889: 			AGBGun* Gun = ShotgunInHand(Player);
+1890: 			if (!Gun)
+1891: 			{
+1892: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+1893: 				return;
+1894: 			}
+1895: 			CheckShotgunAtRest(TEXT("after the pump"), Gun);
+1896: 		});
+1897: 		Add(SG + 2.0f, TEXT("shotgun pump: pinned at the back of its travel, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+1898: 		{
+1899: 			AGBGun* Gun = ShotgunInHand(Player);
+1900: 			if (!Gun)
+1901: 			{
+1902: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+1903: 				return;
+1904: 			}
+1905: 			Gun->SetPumpPreview(1.f);
+1906: 			const float Pump = Gun->GetViewModelPumpOffsetCm();
+1907: 			const float RootCm = Gun->GetViewModelRootOffsetCm();
+1908: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun pump pinned: %.2f cm from rest, root %.2f cm %.2f deg, hand shift %s"), Pump, RootCm,
+1909: 				Gun->GetViewModelRootAngleDeg(), *Gun->GetPumpHandShift().ToString());
+1910: 			if (Pump < 3.5f || RootCm < 0.1f)
+1911: 			{
+1912: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump FAILED: pinned back but the pump is %.2f cm from rest and the root %.2f cm (expected about 4 and a little rack)"), Pump, RootCm);
+1913: 			}
+1914: 			Shot(TEXT("15b_shotgun_pump"));
+1915: 		});
+1916: 		Add(SG + 2.5f, TEXT("shotgun pump: pin released, pump home"), [](UWorld*, AGBPlayerCharacter* Player)
+1917: 		{
+1918: 			AGBGun* Gun = ShotgunInHand(Player);
+1919: 			if (!Gun)
+1920: 			{
+1921: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+1922: 				return;
+1923: 			}
+1924: 			Gun->ClearPumpPreview();
+1925: 			CheckShotgunAtRest(TEXT("pin released"), Gun);
+1926: 		});
+1927: 		Add(SG + 2.6f, TEXT("shotgun enchant: ice enchant on"), [](UWorld*, AGBPlayerCharacter* Player)
+1928: 		{
+1929: 			UGBStatusEffectComponent* Effects = Player->GetStatusEffects();
+1930: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun enchant ok=%d"), (Effects && Effects->ApplyEffect(FName(TEXT("Enchant_Ice")), Player)) ? 1 : 0);
+1931: 		});
+1932: 		Add(SG + 3.2f, TEXT("shotgun weak point: a head hit by the player lights the lens"), [](UWorld* World, AGBPlayerCharacter* Player)
+1933: 		{
+1934: 			const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+1935: 			AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+1936: 			ShotgunFlashTarget = Enemy;
+1937: 			if (!Enemy)
+1938: 			{
+1939: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: could not spawn the test orc"));
+1940: 				return;
+1941: 			}
+1942: 			FGBDamageInfo Info;
+1943: 			Info.Amount = 1.f;
+1944: 			Info.Instigator = Player;
+1945: 			Info.bHeadshot = true;
+1946: 			UGBCombatLibrary::DealDamage(Enemy, Info);
+1947: 		});
+1948: 		Add(SG + 3.25f, TEXT("shotgun weak point: flash is on"), [](UWorld*, AGBPlayerCharacter* Player)
+1949: 		{
+1950: 			AGBGun* Gun = ShotgunInHand(Player);
+1951: 			if (!Gun)
+1952: 			{
+1953: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: no shotgun in hand"));
+1954: 				return;
+1955: 			}
+1956: 			const float Flash = Gun->GetViewModelWeakPointFlash();
+1957: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun weakpoint flash=%.2f"), Flash);
+1958: 			if (Flash <= 0.5f)
+1959: 			{
+1960: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint FAILED: flash=%.2f right after a weak-point hit (expected more than 0.5)"), Flash);
+1961: 			}
+1962: 		});
+1963: 		Add(SG + 4.3f, TEXT("shotgun weak point: flash is off again, then a body hit"), [](UWorld*, AGBPlayerCharacter* Player)
+1964: 		{
+1965: 			AGBGun* Gun = ShotgunInHand(Player);
+1966: 			AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get();
+1967: 			if (!Gun || !Enemy)
+1968: 			{
+1969: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: no shotgun in hand or no test orc"));
+1970: 				return;
+1971: 			}
+1972: 			const float After = Gun->GetViewModelWeakPointFlash();
+1973: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun weakpoint flash after=%.2f"), After);
+1974: 			if (After > 0.001f)
+1975: 			{
+1976: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint FAILED: flash=%.2f one second later (expected 0)"), After);
+1977: 			}
+1978: 			FGBDamageInfo Info;
+1979: 			Info.Amount = 1.f;
+1980: 			Info.Instigator = Player;
+1981: 			Info.bHeadshot = false;
+1982: 			UGBCombatLibrary::DealDamage(Enemy, Info);
+1983: 		});
+1984: 		Add(SG + 4.4f, TEXT("shotgun body shot: the lens stays dark; half the enchant left"), [](UWorld*, AGBPlayerCharacter* Player)
+1985: 		{
+1986: 			AGBGun* Gun = ShotgunInHand(Player);
+1987: 			if (!Gun)
+1988: 			{
+1989: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun bodyshot: no shotgun in hand"));
+1990: 				return;
+1991: 			}
+1992: 			const float Flash = Gun->GetViewModelWeakPointFlash();
+1993: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun bodyshot flash=%.2f"), Flash);
+1994: 			if (Flash > 0.001f)
+1995: 			{
+1996: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun bodyshot FAILED: flash=%.2f after a body hit (expected 0)"), Flash);
+1997: 			}
+1998: 			if (AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get())
+1999: 			{
+2000: 				Enemy->Destroy();
+2001: 			}
+2002: 			ShotgunFlashTarget.Reset();
+2003: 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+2004: 			{
+2005: 				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+2006: 				{
+2007: 					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+2008: 					{
+2009: 						const FName EnchantId = Active.EffectId;
+2010: 						Effects->SetTimeRemaining(EnchantId, 0.5f * Active.TotalDuration);
+2011: 						break;
+2012: 					}
+2013: 				}
+2014: 			}
+2015: 		});
+2016: 		Add(SG + 4.7f, TEXT("shotgun half bar: imbue about half, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+2017: 		{
+2018: 			AGBGun* Gun = ShotgunInHand(Player);
+2019: 			if (!Gun)
+2020: 			{
+2021: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun half bar: no shotgun in hand"));
+2022: 				return;
+2023: 			}
+2024: 			const float Imbue = Gun->GetViewModelImbueSent();
+2025: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun half bar imbue=%.2f ammo=%d"), Imbue, Gun->GetAmmo().InMagazine);
+2026: 			CheckEnchantBlink(TEXT("shotgun"), Gun, false, TEXT("at half the enchant"));
+2027: 			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
+2028: 			{
+2029: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
+2030: 			}
+2031: 			Shot(TEXT("15c_shotgun_enchanted"));
+2032: 		});
+2033: 		// Reload from 3 shells with 24 in reserve: one shell per third of a second.
+2034: 		const float SR = SG + 4.9f;
+2035: 		Add(SR, TEXT("shotgun reload: from 3 shells with 24 in reserve"), [](UWorld* World, AGBPlayerCharacter* Player)
+2036: 		{
+2037: 			AGBGun* Gun = ShotgunInHand(Player);
+2038: 			if (!Gun)
+2039: 			{
+2040: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+2041: 				return;
+2042: 			}
+2043: 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+2044: 			{
+2045: 				Effects->RemoveAllEffects();
+2046: 			}
+2047: 			FGBAmmoState Ammo;
+2048: 			Ammo.InMagazine = 3;
+2049: 			Ammo.SpareMagazines = 24;
+2050: 			Gun->SetAmmo(Ammo);
+2051: 			ShotgunAmmoBefore = Gun->GetAmmo();
+2052: 			Gun->Reload();
+2053: 			ShotgunReloadStartSim = World->GetTimeSeconds();
+2054: 			ShotgunCycleSeconds = Gun->GetStat(GBStat::ReloadTime, 2.f) / FMath::Max(1, Gun->GetMagazineSize());
+2055: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload started: one shell takes %.3f s;"), ShotgunCycleSeconds);
+2056: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload started: reloading=%d ammo %d / %d"), Gun->IsReloading() ? 1 : 0, Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines);
+2057: 			if (!Gun->IsReloading() || ShotgunAmmoBefore.InMagazine != 3 || ShotgunAmmoBefore.SpareMagazines != 24)
+2058: 			{
+2059: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: reloading=%d, ammo %d / %d (expected a reload from 3 with 24 in reserve)"),
+2060: 					Gun->IsReloading() ? 1 : 0, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+2061: 			}
+2062: 		});
+2063: 		Add(SR + 0.4f, TEXT("shotgun reload: one shell in (4 and 23), display follows; a shell's cycle pinned mid-way, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+2064: 		{
+2065: 			AGBGun* Gun = ShotgunInHand(Player);
+2066: 			if (!Gun)
+2067: 			{
+2068: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+2069: 				return;
+2070: 			}
+2071: 			const FGBAmmoState Ammo = Gun->GetAmmo();
+2072: 			const FString Text = Gun->GetViewModelDisplayText();
+2073: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload after one cycle: ammo %d / %d, display=%s, reloading=%d"), Ammo.InMagazine, Ammo.SpareMagazines, *Text, Gun->IsReloading() ? 1 : 0);
+2074: 			if (!Gun->IsReloading() || Ammo.InMagazine != 4 || Ammo.SpareMagazines != 23 || Text != FString::FromInt(Ammo.InMagazine))
+2075: 			{
+2076: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: %d in the gun and %d in reserve, display '%s' after one shell (expected 4, 23 and the live count)"),
+2077: 					Ammo.InMagazine, Ammo.SpareMagazines, *Text);
+2078: 			}
+2079: 			Gun->SetReloadPreview(0.55f);
+2080: 			CheckReloadBeat(TEXT("shotgun"), Gun, 0.55f, true);
+2081: 			Shot(TEXT("15d_shotgun_reload_shell"));
+2082: 		});
+2083: 		Add(SR + 0.8f, TEXT("shotgun reload: pin released, the real reload goes on"), [](UWorld*, AGBPlayerCharacter* Player)
+2084: 		{
+2085: 			if (AGBGun* Gun = ShotgunInHand(Player))
+2086: 			{
+2087: 				Gun->ClearReloadPreview();
+2088: 			}
+2089: 		});
+2090: 		Add(SR + 0.85f, TEXT("shotgun reload: the shells follow the clock, one per cycle"), [](UWorld* World, AGBPlayerCharacter* Player)
+2091: 		{
+2092: 			AGBGun* Gun = ShotgunInHand(Player);
+2093: 			if (!Gun)
+2094: 			{
+2095: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+2096: 				return;
+2097: 			}
+2098: 			const FGBAmmoState Ammo = Gun->GetAmmo();
+2099: 			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload at 0.85 s: ammo %d / %d reloading=%d progress=%.2f"), Ammo.InMagazine, Ammo.SpareMagazines, Gun->IsReloading() ? 1 : 0, Gun->GetReloadProgress());
+2100: 			// Shells landed by a game time T: one per cycle from 3, up to 6. The state is that of the last frame, so allow 60 ms of lag.
+2101: 			const double Elapsed = World->GetTimeSeconds() - ShotgunReloadStartSim;
+2102: 			auto ShellsAt = [](double T) { return FMath::Clamp(3 + FMath::FloorToInt(static_cast<float>(FMath::Max(0.0, T)) / ShotgunCycleSeconds), 3, 6); };
+2103: 			const int32 Low = ShellsAt(Elapsed - 0.06);
+2104: 			const int32 High = ShellsAt(Elapsed);
+2105: 			if (Ammo.InMagazine < Low || Ammo.InMagazine > High || Ammo.InMagazine + Ammo.SpareMagazines != 27 || (High < 6 && !Gun->IsReloading()))
+2106: 			{
+2107: 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: %d in the gun and %d in reserve after %.2f s (expected %d to %d shells, 27 rounds in all, reloading until 6)"),
+2108: 					Ammo.InMagazine, Ammo.SpareMagazines, Elapsed, Low, High);
+2109: 			}
+2110: 		});
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$s=Get-Content Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp; for($i=560;$i -lt 1010;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }' in C:\GameJam
+ succeeded in 393ms:
+561: FVector2D AGBGun::GetReloadRightHandFollow() const
+562: {
+563: 	return ModelArt ? ModelArt->ReloadRightHandFollow : FVector2D::ZeroVector;
+564: }
+565: 
+566: FVector2D AGBGun::GetReloadHandReach() const
+567: {
+568: 	return ModelArt ? ModelArt->ReloadHandReach : FVector2D::ZeroVector;
+569: }
+570: 
+571: bool AGBGun::ReloadsPerRound() const
+572: {
+573: 	return GetStat(GBStat::ReloadPerRound, 0.f) > 0.5f;
+574: }
+575: 
+576: bool AGBGun::HasPump() const
+577: {
+578: 	return VMPump != nullptr;
+579: }
+580: 
+581: float AGBGun::GetViewModelPumpOffsetCm() const
+582: {
+583: 	if (!VMPump || !ModelArt)
+584: 	{
+585: 		return 0.f;
+586: 	}
+587: 	return (VMPump->GetRelativeLocation() - ModelArt->PumpRest).Size();
+588: }
+589: 
+590: FVector2D AGBGun::GetPumpHandShift() const
+591: {
+592: 	return ModelArt ? ModelArt->PumpHandTravel * CurrentPumpAmount : FVector2D::ZeroVector;
+593: }
+594: 
+595: void AGBGun::SetPumpPreview(float Amount)
+596: {
+597: 	PumpPreview = FMath::Clamp(Amount, 0.f, 1.f);
+598: 	if (bViewModel)
+599: 	{
+600: 		ApplyViewModelPose();
+601: 	}
+602: }
+603: 
+604: void AGBGun::ClearPumpPreview()
+605: {
+606: 	PumpPreview = -1.f;
+607: 	PumpElapsed = -1.f;
+608: 	if (bViewModel)
+609: 	{
+610: 		ApplyViewModelPose();
+611: 	}
+612: }
+613: 
+614: void AGBGun::StartPump()
+615: {
+616: 	if (ModelArt && ModelArt->bPump && !bReloading)
+617: 	{
+618: 		PumpElapsed = 0.f;
+619: 	}
+620: }
+621: 
+622: void AGBGun::ResetPump()
+623: {
+624: 	PumpElapsed = -1.f;
+625: 	PumpPreview = -1.f;
+626: 	if (bViewModel)
+627: 	{
+628: 		ApplyPump();
+629: 	}
+630: }
+631: 
+632: void AGBGun::ApplyPump()
+633: {
+634: 	float Amount = 0.f;
+635: 	if (ModelArt && ModelArt->bPump)
+636: 	{
+637: 		if (PumpPreview >= 0.f)
+638: 		{
+639: 			Amount = PumpPreview;
+640: 		}
+641: 		else if (PumpElapsed >= 0.f)
+642: 		{
+643: 			// Shares of the current FireInterval: still, back, fully back, home, still.
+644: 			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+645: 			if (T >= PumpStartShare && T < PumpBackShare)
+646: 			{
+647: 				Amount = Smoothstep01(Share(T, PumpStartShare, PumpBackShare));
+648: 			}
+649: 			else if (T >= PumpBackShare && T < PumpHomeShare)
+650: 			{
+651: 				Amount = 1.f - Smoothstep01(Share(T, PumpBackShare, PumpHomeShare));
+652: 			}
+653: 		}
+654: 	}
+655: 	CurrentPumpAmount = Amount;
+656: 	if (VMPump && ModelArt)
+657: 	{
+658: 		VMPump->SetRelativeLocation(ModelArt->PumpRest + ModelArt->PumpSlide * Amount);
+659: 	}
+660: }
+661: 
+662: float AGBGun::GetReloadAnimProgress() const
+663: {
+664: 	if (ReloadPreview >= 0.f)
+665: 	{
+666: 		return ReloadPreview;
+667: 	}
+668: 	if (!bReloading)
+669: 	{
+670: 		return -1.f;
+671: 	}
+672: 	return ReloadsPerRound() ? PerRound.CycleProgress() : GetReloadProgress();
+673: }
+674: 
+675: FGBReloadLook AGBGun::ComputeReloadLook() const
+676: {
+677: 	FGBReloadLook Look;
+678: 	const float Progress = GetReloadAnimProgress();
+679: 	if (Progress < 0.f)
+680: 	{
+681: 		return Look;
+682: 	}
+683: 	Look.bActive = true;
+684: 	if (!ReloadsPerRound())
+685: 	{
+686: 		// Magazine reload: slide out along MagazineOut, (fall), (rise), slide in; the slide share is 1 while the magazine is away.
+687: 		Look.Pose = GBReloadAnim::PoseAmount(Progress);
+688: 		Look.Dip = ReloadDip(Progress);
+689: 		Look.Bump = ReloadBump(Progress);
+690: 		Look.Drop = ReloadDrop(Progress);
+691: 		Look.Slide = 1.f;
+692: 		if (Progress < ReloadSlideOutEnd)
+693: 		{
+694: 			Look.Slide = Smoothstep01(Share(Progress, ReloadTiltEnd, ReloadSlideOutEnd));
+695: 		}
+696: 		else if (Progress >= ReloadRiseEnd)
+697: 		{
+698: 			Look.Slide = 1.f - FMath::Pow(Share(Progress, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+699: 		}
+700: 		Look.bShowMag = Progress < ReloadOutEnd || Progress >= ReloadEmptyEnd;
+701: 		return Look;
+702: 	}
+703: 	// One round of a round-by-round reload: the "fresh magazine" beats of the magazine guns, once per round.
+704: 	// The pose eases in during the first round only (a pinned preview holds it fully); the last ease-out is the blend after the end.
+705: 	const bool bFirstRound = ReloadPreview < 0.f && PerRound.Moved == 0;
+706: 	Look.Pose = bFirstRound ? Smoothstep01(Progress / PerRoundPoseInShare) : 1.f;
+707: 	const float Beat = FMath::Lerp(ReloadEmptyEnd, ReloadSeatEnd, Progress);
+708: 	Look.Bump = ReloadBump(Beat);
+709: 	Look.Drop = ReloadDrop(Beat);
+710: 	Look.Slide = Beat < ReloadRiseEnd ? 1.f : 1.f - FMath::Pow(Share(Beat, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+711: 	Look.bShowMag = Progress < 0.98f; // seated: inside the port, the next round starts below the view
+712: 	return Look;
+713: }
+714: 
+715: GBReloadAnim::FHandBeat AGBGun::GetReloadHandBeat() const
+716: {
+717: 	GBReloadAnim::FHandBeat Beat;
+718: 	if (!bViewModel)
+719: 	{
+720: 		return Beat;
+721: 	}
+722: 	const FGBReloadLook Look = ComputeReloadLook();
+723: 	if (Look.bActive)
+724: 	{
+725: 		Beat.Reach = Look.Pose;
+726: 		Beat.Drop = Look.Drop;
+727: 		Beat.Push = Look.Bump;
+728: 	}
+729: 	else if (ReloadsPerRound())
+730: 	{
+731: 		Beat.Reach = CurrentPoseAmount;
+732: 	}
+733: 	return Beat;
+734: }
+735: 
+736: float AGBGun::GetReloadPoseAmount() const
+737: {
+738: 	if (!bViewModel)
+739: 	{
+740: 		return 0.f;
+741: 	}
+742: 	const FGBReloadLook Look = ComputeReloadLook();
+743: 	return Look.bActive ? Look.Pose : (ReloadsPerRound() ? CurrentPoseAmount : 0.f);
+744: }
+745: 
+746: void AGBGun::SetReloadPreview(float Progress)
+747: {
+748: 	ReloadPreview = FMath::Clamp(Progress, 0.f, 1.f);
+749: 	ReloadBlendElapsed = -1.f;
+750: 	if (bViewModel)
+751: 	{
+752: 		ApplyViewModelPose();
+753: 		ApplyReloadMagazine();
+754: 	}
+755: }
+756: 
+757: void AGBGun::ClearReloadPreview()
+758: {
+759: 	if (ReloadPreview < 0.f)
+760: 	{
+761: 		return;
+762: 	}
+763: 	if (bViewModel && !bReloading)
+764: 	{
+765: 		BeginReloadBlend(ReloadBlendSeconds);
+766: 	}
+767: 	ReloadPreview = -1.f;
+768: 	if (bViewModel)
+769: 	{
+770: 		ApplyViewModelPose();
+771: 		ApplyReloadMagazine();
+772: 	}
+773: }
+774: 
+775: void AGBGun::BeginReloadBlend(float Seconds)
+776: {
+777: 	if (!bViewModel)
+778: 	{
+779: 		return;
+780: 	}
+781: 	ReloadBlendLength = FMath::Max(0.01f, Seconds);
+782: 	ReloadBlendLoc = ReloadPoseLoc;
+783: 	ReloadBlendPoseAmount = CurrentPoseAmount;
+784: 	ReloadBlendRot = ReloadPoseRot;
+785: 	ReloadBlendElapsed = 0.f;
+786: }
+787: 
+788: void AGBGun::ResetReloadVisuals()
+789: {
+790: 	ReloadPreview = -1.f;
+791: 	ReloadBlendElapsed = -1.f;
+792: 	ReloadPoseLoc = FVector::ZeroVector;
+793: 	ReloadPoseRot = FRotator::ZeroRotator;
+794: 	CurrentPoseAmount = 0.f;
+795: 	ResetPump();
+796: 	if (bViewModel)
+797: 	{
+798: 		ApplyViewModelPose();
+799: 		ApplyReloadMagazine();
+800: 	}
+801: }
+802: 
+803: void AGBGun::ApplyViewModelPose()
+804: {
+805: 	if (!ModelArt)
+806: 	{
+807: 		return;
+808: 	}
+809: 	const FGBGunModelArt& Art = *ModelArt;
+810: 	// Shot kick, ease out: the push is full at the shot and shrinks as (1 - t)^2 over KickSeconds.
+811: 	float Strength = 0.f;
+812: 	if (KickElapsed >= 0.f)
+813: 	{
+814: 		const float Remaining = 1.f - FMath::Clamp(KickElapsed / KickSeconds, 0.f, 1.f);
+815: 		Strength = Remaining * Remaining;
+816: 	}
+817: 	CurrentKickBackCm = Art.KickBackCm * Strength;
+818: 
+819: 	// Pump first: its amount drives the small rack motion of the root.
+820: 	ApplyPump();
+821: 
+822: 	// Reload pose: rest -> reload pose -> rest, with a dip as the magazine leaves and a bump as the new one seats.
+823: 	// After a cancel the pose it had blends to rest instead of snapping.
+824: 	const FGBReloadLook Look = ComputeReloadLook();
+825: 	if (Look.bActive)
+826: 	{
+827: 		ReloadPoseLoc = Art.ReloadOffset * Look.Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * Look.Bump - Art.ReloadDipCm * Look.Dip);
+828: 		ReloadPoseRot = Art.ReloadRot * Look.Pose;
+829: 		CurrentPoseAmount = Look.Pose;
+830: 	}
+831: 	else if (ReloadBlendElapsed >= 0.f)
+832: 	{
+833: 		const float Left = 1.f - Smoothstep01(ReloadBlendElapsed / ReloadBlendLength);
+834: 		ReloadPoseLoc = ReloadBlendLoc * Left;
+835: 		ReloadPoseRot = ReloadBlendRot * Left;
+836: 		CurrentPoseAmount = ReloadBlendPoseAmount * Left;
+837: 	}
+838: 	else
+839: 	{
+840: 		ReloadPoseLoc = FVector::ZeroVector;
+841: 		ReloadPoseRot = FRotator::ZeroRotator;
+842: 		CurrentPoseAmount = 0.f;
+843: 	}
+844: 
+845: 	// The pump's rack: the gun is pulled in, tips up and rolls while the pump is back. It adds to the shot kick.
+846: 	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
+847: 	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
+848: 	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
+849: 	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
+850: }
+851: 
+852: void AGBGun::ApplyReloadMagazine()
+853: {
+854: 	if (!VMMagazine || !ModelArt)
+855: 	{
+856: 		return;
+857: 	}
+858: 	const FGBGunModelArt& Art = *ModelArt;
+859: 	FVector Offset = FVector::ZeroVector;
+860: 	const FGBReloadLook Look = ComputeReloadLook();
+861: 	// A round-by-round gun keeps its shell inside the port (hidden) outside a reload; a magazine gun shows its magazine.
+862: 	bool bShow = Look.bActive ? Look.bShowMag : !ReloadsPerRound();
+863: 	if (Look.bActive)
+864: 	{
+865: 		Offset = Art.MagazineOut * Look.Slide;
+866: 		if (Look.Drop > 0.f)
+867: 		{
+868: 			// Straight down on screen whatever the gun's tilt: camera down, brought into the body's own (scaled) frame.
+869: 			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Look.Drop);
+870: 			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, Art.ViewScale);
+871: 		}
+872: 	}
+873: 	VMMagazine->SetRelativeLocation(Art.MagazineRest + Offset);
+874: 	if (VMMagazine->IsVisible() != bShow)
+875: 	{
+876: 		VMMagazine->SetVisibility(bShow);
+877: 	}
+878: }
+879: 
+880: void AGBGun::HideMuzzleFlash()
+881: {
+882: 	MuzzleFlashElapsed = -1.f;
+883: 	if (MuzzleFlash)
+884: 	{
+885: 		MuzzleFlash->SetVisibility(false);
+886: 	}
+887: 	if (MuzzleFlashCross)
+888: 	{
+889: 		MuzzleFlashCross->SetVisibility(false);
+890: 	}
+891: }
+892: 
+893: void AGBGun::StartShotEffects()
+894: {
+895: 	if (!ModelArt)
+896: 	{
+897: 		return;
+898: 	}
+899: 	KickElapsed = 0.f;
+900: 	ApplyViewModelPose();
+901: 
+902: 	// Visual randomness uses the global stream, never the gun's own, so the spread sequence is not disturbed.
+903: 	const float Roll = FMath::FRandRange(0.f, 90.f);
+904: 	const float Size = MuzzleFlashSizeCm * FMath::FRandRange(0.85f, 1.2f);
+905: 	const FVector Scale(MuzzleFlashThicknessCm / 100.f, Size / 100.f, Size / 100.f);
+906: 	const FLinearColor Color = (bHasLastGlow ? LastGlowColor : ModelArt->IdleGlow) * MuzzleFlashBrightness;
+907: 	UStaticMeshComponent* Slabs[2] = { MuzzleFlash, MuzzleFlashCross };
+908: 	UMaterialInstanceDynamic* SlabMIDs[2] = { MuzzleFlashMID, MuzzleFlashCrossMID };
+909: 	for (int32 Index = 0; Index < 2; ++Index)
+910: 	{
+911: 		if (!Slabs[Index])
+912: 		{
+913: 			continue;
+914: 		}
+915: 		Slabs[Index]->SetRelativeRotation(FRotator(0.f, 0.f, Roll + 45.f * Index));
+916: 		Slabs[Index]->SetRelativeScale3D(Scale);
+917: 		if (SlabMIDs[Index])
+918: 		{
+919: 			SlabMIDs[Index]->SetVectorParameterValue(FName(TEXT("Color")), Color);
+920: 		}
+921: 		Slabs[Index]->SetVisibility(true);
+922: 	}
+923: 	MuzzleFlashElapsed = 0.f;
+924: }
+925: 
+926: void AGBGun::UpdateViewModel(float DeltaSeconds)
+927: {
+928: 	const FGBGunModelArt& Art = *ModelArt;
+929: 
+930: 	// Trigger pull: 0 to full pitch and back over TriggerPullSeconds (linear in, linear out). A new shot restarts it.
+931: 	if (VMTrigger && TriggerPullElapsed >= 0.f)
+932: 	{
+933: 		TriggerPullElapsed += DeltaSeconds;
+934: 		if (TriggerPullElapsed >= TriggerPullSeconds)
+935: 		{
+936: 			TriggerPullElapsed = -1.f;
+937: 			VMTrigger->SetRelativeRotation(FRotator::ZeroRotator);
+938: 		}
+939: 		else
+940: 		{
+941: 			const float Half = TriggerPullSeconds * 0.5f;
+942: 			const float Frac = TriggerPullElapsed < Half
+943: 				? TriggerPullElapsed / Half
+944: 				: 1.f - (TriggerPullElapsed - Half) / Half;
+945: 			VMTrigger->SetRelativeRotation(FRotator(TriggerPullPitch * Frac, 0.f, 0.f));
+946: 		}
+947: 	}
+948: 
+949: 	// Shot kick and muzzle flash. The step is capped so a long frame still shows each one for at least one frame.
+950: 	const float EffectStep = FMath::Min(DeltaSeconds, MaxEffectStep);
+951: 	if (KickElapsed >= 0.f)
+952: 	{
+953: 		KickElapsed += EffectStep;
+954: 		if (KickElapsed >= KickSeconds)
+955: 		{
+956: 			KickElapsed = -1.f;
+957: 		}
+958: 	}
+959: 	if (ReloadBlendElapsed >= 0.f)
+960: 	{
+961: 		ReloadBlendElapsed += DeltaSeconds;
+962: 		if (ReloadBlendElapsed >= ReloadBlendLength)
+963: 		{
+964: 			ReloadBlendElapsed = -1.f;
+965: 		}
+966: 	}
+967: 	// Pump timer: runs for PumpHomeShare of the fire interval, then the pump rests. No pump while a reload runs.
+968: 	// It steps like the other visual timers, so a hitch right after the shot cannot skip the whole rack.
+969: 	if (PumpElapsed >= 0.f)
+970: 	{
+971: 		if (bReloading)
+972: 		{
+973: 			PumpElapsed = -1.f;
+974: 		}
+975: 		else
+976: 		{
+977: 			PumpElapsed += EffectStep;
+978: 			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+979: 			{
+980: 				PumpElapsed = -1.f;
+981: 			}
+982: 		}
+983: 	}
+984: 	// The root pose (rest + reload + kick) and the magazine follow the reload progress every frame.
+985: 	ApplyViewModelPose();
+986: 	ApplyReloadMagazine();
+987: 	if (MuzzleFlashElapsed >= 0.f)
+988: 	{
+989: 		MuzzleFlashElapsed += EffectStep;
+990: 		if (MuzzleFlashElapsed >= MuzzleFlashSeconds)
+991: 		{
+992: 			HideMuzzleFlash();
+993: 		}
+994: 	}
+995: 
+996: 	// Glow color and energy bar (GDD 6, weapon enchant): enchanted = element color + imbue left, else idle glow + dark bar.
+997: 	EGBElement EnchantElement = EGBElement::Physical;
+998: 	FName EnchantEffect = NAME_None;
+999: 	FLinearColor GlowColor = Art.IdleGlow;
+1000: 	float Imbue = 0.f;
+1001: 	bool bEnchanted = false;
+1002: 	bool bBarBlinking = false;
+1003: 	if (GetActiveEnchant(EnchantElement, EnchantEffect))
+1004: 	{
+1005: 		bEnchanted = true;
+1006: 		GlowColor = GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement));
+1007: 		Imbue = 1.f;
+1008: 		if (const AGBPlayerCharacter* Player = GetPlayerOwner())
+1009: 		{
+1010: 			if (const UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n \"Tick\\(|Cooldown|FireInterval|StartPrimary|Fire\\(|Reload\\(|CancelReload|OnEquipped|OnUnequipped|ResetPump|StartPump|UpdateViewModel|bTickEvenWhenPaused\" Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp Glyphbound/Source/Glyphbound/Weapons/GBWeaponBase.cpp Glyphbound/Source/Glyphbound/Weapons/GBGun.h; "'$s=Get-Content Glyphbound/Source/Glyphbound/UI/GBHUD.cpp; for($i=545;$i -lt 620;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }' in C:\GameJam
+ succeeded in 372ms:
+rg: Glyphbound/Source/Glyphbound/Weapons/GBWeaponBase.cpp: El sistema no puede encontrar el archivo especificado. (os error 2)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:74: * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:87:	virtual void Tick(float DeltaSeconds) override;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:90:	virtual void StartPrimary() override;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:94:	virtual void Reload() override;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:96:	virtual void OnUnequipped() override;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:177:	void CancelReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:178:	void FinishReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:180:	void FinishPerRoundReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:191:	void UpdateViewModel(float DeltaSeconds);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:203:	void StartPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.h:205:	void ResetPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:183:	// Pump: shares of the gun's FireInterval. Provisional.
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:322:	const FName Required[] = { GBStat::Damage, GBStat::FireInterval, GBStat::MagazineSize, GBStat::SpareMagazines, GBStat::ReloadTime, GBStat::Range };
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:450:	// Holographic ammo display: the text is drawn into a small render target, only when it changes (UpdateViewModel).
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:614:void AGBGun::StartPump()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:622:void AGBGun::ResetPump()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:643:			// Shares of the current FireInterval: still, back, fully back, home, still.
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:644:			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:795:	ResetPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:926:void AGBGun::UpdateViewModel(float DeltaSeconds)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:978:			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1222:	CancelReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1231:	CancelReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1267:void AGBGun::Reload()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1280:	ResetPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1288:void AGBGun::CancelReload()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1306:void AGBGun::FinishPerRoundReload()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1318:void AGBGun::FinishReload()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1404:void AGBGun::OnUnequipped()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1406:	CancelReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1416:	Super::OnUnequipped();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1419:void AGBGun::StartPrimary()
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1426:			CancelReload(); // the shot then follows through PressTrigger as soon as the fire rules allow
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1436:void AGBGun::Tick(float DeltaSeconds)
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1457:			CancelReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1462:			FinishPerRoundReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1470:			FinishReload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1479:		UpdateViewModel(DeltaSeconds);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1481:	Super::Tick(DeltaSeconds);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1505:		CancelReload(); // fire stops a round-by-round reload; the shells already in stay in
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1509:		Reload();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1535:		StartPump();
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1541:		Reload();
+546: 		{
+547: 			if (const FString* SpriteId = WeaponDef->Strings.Find(GBString::Sprite))
+548: 			{
+549: 				StaffId = FName(**SpriteId);
+550: 			}
+551: 		}
+552: 		UTexture2D* Staff = Sprites->GetSprite(StaffId);
+553: 		const FVector2D StaffSize = SizeOf(Staff);
+554: 		// The basic attack thrusts the staff up a little.
+555: 		const float CenterX = W * 0.72f + Bob.X;
+556: 		const float StaffY = H - StaffSize.Y * 0.8f + Bob.Y - Kick01 * 5.f * P;
+557: 		DrawSprite(Staff, CenterX - StaffSize.X * 0.5f, StaffY, P);
+558: 		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, StaffY + StaffSize.Y * 0.45f, P);
+559: 	}
+560: 	else if (Item && Slot == EGBHeldSlot::Gun)
+561: 	{
+562: 		// The gun is a 3D model drawn by the world; only the hands are drawn here. Recoil pushes them down.
+563: 		const float KickY = Kick01 * 3.f * P;
+564: 		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
+565: 		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
+566: 		const AGBGun* GunItem = Cast<AGBGun>(Item);
+567: 		const bool bModelGun = GunItem && GunItem->HasViewModel();
+568: 		const GBReloadAnim::FHandBeat Beat = bModelGun ? GunItem->GetReloadHandBeat() : GBReloadAnim::FHandBeat();
+569: 		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
+570: 		const float PushY = -Beat.Push * GBHudLayout::ReloadSeatPush * P;
+571: 		const FVector2D RightShift = (GunItem ? GunItem->GetReloadRightHandFollow() : FVector2D::ZeroVector) * (RightFollow * P);
+572: 		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X + RightShift.X, H - RightSize.Y * 0.7f + Bob.Y + KickY + RightShift.Y + PushY, P);
+573: 		if (!bCastPose)
+574: 		{
+575: 			const FVector2D Reach = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * (Beat.Reach * P);
+576: 			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(Reach.Y));
+577: 			// A gun with a pump: the left hand rides the forend back and forward with it.
+578: 			const FVector2D PumpShift = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector) * P;
+579: 			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X + PumpShift.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY + PumpShift.Y, P);
+580: 		}
+581: 	}
+582: 	else if (Item && Slot == EGBHeldSlot::Sword)
+583: 	{
+584: 		FName BladeId(TEXT("sword_blade"));
+585: 		if (WeaponDef)
+586: 		{
+587: 			if (const FString* SpriteId = WeaponDef->Strings.Find(GBString::Sprite))
+588: 			{
+589: 				BladeId = FName(**SpriteId);
+590: 			}
+591: 		}
+592: 		UTexture2D* Blade = Sprites->GetSprite(BladeId);
+593: 		const FVector2D BladeSize = SizeOf(Blade);
+594: 		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(Item->GetElement()), 0.5f);
+595: 		// The swing moves the sword to the left.
+596: 		const float CenterX = W * 0.70f + Bob.X - Kick01 * 12.f * P;
+597: 		const float HandY = H - RightSize.Y * 0.75f + Bob.Y;
+598: 		DrawSprite(Blade, CenterX - BladeSize.X * 0.5f, HandY - BladeSize.Y + 4.f * P, P, Tint);
+599: 		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, HandY, P);
+600: 	}
+601: 	else
+602: 	{
+603: 		DrawSprite(HandRight, W * 0.72f - RightSize.X * 0.5f + Bob.X, H - RightSize.Y * 0.45f + Bob.Y, P);
+604: 	}
+605: 
+606: 	// The summoned shield is held by the left hand: while it is up (or sliding) the left hand is hidden.
+607: 	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
+608: 	const bool bBlockRaised = Spellbook && Spellbook->HasShield() && Spellbook->IsBlockRaised();
+609: 	const double Now = GetRealTime();
+610: 	const float Dt = LastShieldUpdateTime < 0.0 ? 0.f : FMath::Clamp((float)(Now - LastShieldUpdateTime), 0.f, 0.1f);
+611: 	LastShieldUpdateTime = Now;
+612: 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
+613: 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
+614: 
+615: 	if (bCastPose && ShieldRaise01 < 0.5f)
+616: 	{
+617: 		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
+618: 		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
+619: 		DrawSprite(HandCast, CastX - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
+620: 	}
+
+codex
+The pose math appears to return cleanly to rest, and the magazine drop compensates for the full root rotation. I’m checking the pump against the firing cooldown: clamping every frame may let the next shot become available before the pump gets home at low frame rates.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$s=Get-Content Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp; for($i=1200;$i -lt 1555;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }; rg -n "PressTrigger|TimeUntil|Cooldown|FireInterval|Tick'"\\(|PrimaryActorTick|OnUnequipped\" Glyphbound/Source/Glyphbound/Weapons/GBWeapon.cpp Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp; rg -n \"PumpElapsed\" Glyphbound/Source; rg -n \"Elapsed|GetTimeSeconds|RealTime|NextStep|Steps\\[|Shot\\(\" Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp" in C:\GameJam
+ succeeded in 496ms:
+1201: 	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, -2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
+1202: 	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
+1203: 	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
+1204: }
+1205: 
+1206: // ---- Ammo ----
+1207: 
+1208: int32 AGBGun::GetMagazineSize() const
+1209: {
+1210: 	return FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::MagazineSize, 1.f)));
+1211: }
+1212: 
+1213: int32 AGBGun::GetMaxSpareMagazines() const
+1214: {
+1215: 	const int32 Magazines = FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::SpareMagazines, 0.f)));
+1216: 	// A round-by-round gun keeps its reserve in rounds: the same total the magazines would have held.
+1217: 	return ReloadsPerRound() ? Magazines * GetMagazineSize() : Magazines;
+1218: }
+1219: 
+1220: void AGBGun::SetAmmo(const FGBAmmoState& InAmmo)
+1221: {
+1222: 	CancelReload();
+1223: 	bFireWhenLoaded = false;
+1224: 	Ammo.InMagazine = FMath::Clamp(InAmmo.InMagazine, 0, GetMagazineSize());
+1225: 	Ammo.SpareMagazines = FMath::Clamp(InAmmo.SpareMagazines, 0, GetMaxSpareMagazines());
+1226: 	NotifyEquipmentChanged();
+1227: }
+1228: 
+1229: void AGBGun::RefillAmmo()
+1230: {
+1231: 	CancelReload();
+1232: 	bFireWhenLoaded = false;
+1233: 	Ammo.InMagazine = GetMagazineSize();
+1234: 	Ammo.SpareMagazines = GetMaxSpareMagazines();
+1235: 	NotifyEquipmentChanged();
+1236: }
+1237: 
+1238: int32 AGBGun::AddSpareMagazines(int32 Count)
+1239: {
+1240: 	if (Count <= 0)
+1241: 	{
+1242: 		return 0;
+1243: 	}
+1244: 	if (ReloadsPerRound())
+1245: 	{
+1246: 		// Count magazines' worth of rounds; the result is how many magazines' worth went in, rounded up.
+1247: 		const int32 PerMagazine = FMath::Max(1, GetMagazineSize());
+1248: 		const int32 AddedRounds = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count * PerMagazine);
+1249: 		if (AddedRounds > 0)
+1250: 		{
+1251: 			Ammo.SpareMagazines += AddedRounds;
+1252: 			NotifyEquipmentChanged();
+1253: 		}
+1254: 		return FMath::DivideAndRoundUp(AddedRounds, PerMagazine);
+1255: 	}
+1256: 	const int32 Added = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count);
+1257: 	if (Added > 0)
+1258: 	{
+1259: 		Ammo.SpareMagazines += Added;
+1260: 		NotifyEquipmentChanged();
+1261: 	}
+1262: 	return Added;
+1263: }
+1264: 
+1265: // ---- Reload ----
+1266: 
+1267: void AGBGun::Reload()
+1268: {
+1269: 	if (bReloading || !bEquipped)
+1270: 	{
+1271: 		return;
+1272: 	}
+1273: 	if (Ammo.InMagazine >= GetMagazineSize() || Ammo.SpareMagazines <= 0)
+1274: 	{
+1275: 		return;
+1276: 	}
+1277: 	bReloading = true;
+1278: 	ReloadElapsed = 0.f;
+1279: 	ReloadDuration = FMath::Max(0.f, GetStat(GBStat::ReloadTime, 1.f));
+1280: 	ResetPump();
+1281: 	if (ReloadsPerRound())
+1282: 	{
+1283: 		PerRound.Begin(Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), ReloadDuration);
+1284: 	}
+1285: 	NotifyEquipmentChanged();
+1286: }
+1287: 
+1288: void AGBGun::CancelReload()
+1289: {
+1290: 	if (!bReloading)
+1291: 	{
+1292: 		return;
+1293: 	}
+1294: 	// Blend from the pose the gun is in now (the pinned preview, if any, keeps owning the pose until it is released).
+1295: 	if (ReloadPreview < 0.f)
+1296: 	{
+1297: 		BeginReloadBlend(ReloadBlendSeconds);
+1298: 	}
+1299: 	bReloading = false;
+1300: 	ReloadElapsed = 0.f;
+1301: 	PerRound.Stop(); // rounds already loaded stay loaded; the round in flight was never taken from the reserve
+1302: 	bFireWhenLoaded = false;
+1303: 	NotifyEquipmentChanged();
+1304: }
+1305: 
+1306: void AGBGun::FinishPerRoundReload()
+1307: {
+1308: 	bReloading = false;
+1309: 	ReloadElapsed = 0.f;
+1310: 	// The gun eases back to rest a little slower than a cancel and may still be moving when it is allowed to fire.
+1311: 	if (ReloadPreview < 0.f)
+1312: 	{
+1313: 		BeginReloadBlend(PerRoundExitSeconds);
+1314: 	}
+1315: 	NotifyEquipmentChanged();
+1316: }
+1317: 
+1318: void AGBGun::FinishReload()
+1319: {
+1320: 	bReloading = false;
+1321: 	ReloadElapsed = 0.f;
+1322: 	if (Ammo.SpareMagazines > 0)
+1323: 	{
+1324: 		// The rounds left in the old magazine are lost (provisional, classic tactical style).
+1325: 		--Ammo.SpareMagazines;
+1326: 		Ammo.InMagazine = GetMagazineSize();
+1327: 	}
+1328: 	NotifyEquipmentChanged();
+1329: }
+1330: 
+1331: float AGBGun::GetReloadProgress() const
+1332: {
+1333: 	if (!bReloading)
+1334: 	{
+1335: 		return 0.f;
+1336: 	}
+1337: 	if (ReloadsPerRound())
+1338: 	{
+1339: 		return PerRound.Progress();
+1340: 	}
+1341: 	return ReloadDuration > KINDA_SMALL_NUMBER ? FMath::Clamp(ReloadElapsed / ReloadDuration, 0.f, 1.f) : 1.f;
+1342: }
+1343: 
+1344: // ---- Aim ----
+1345: 
+1346: void AGBGun::StartSecondary()
+1347: {
+1348: 	if (bEquipped)
+1349: 	{
+1350: 		SetAiming(true);
+1351: 	}
+1352: }
+1353: 
+1354: void AGBGun::StopSecondary()
+1355: {
+1356: 	SetAiming(false);
+1357: }
+1358: 
+1359: void AGBGun::SetAiming(bool bInAiming)
+1360: {
+1361: 	if (bAiming == bInAiming)
+1362: 	{
+1363: 		return;
+1364: 	}
+1365: 	bAiming = bInAiming;
+1366: 	if (AGBPlayerCharacter* Player = GetPlayerOwner())
+1367: 	{
+1368: 		Player->SetMoveSpeedScale(bAiming ? GetStat(GBStat::AimMoveSpeedMult, 1.f) : 1.f);
+1369: 	}
+1370: }
+1371: 
+1372: void AGBGun::UpdateAimFOV(float DeltaSeconds, bool bInstant)
+1373: {
+1374: 	const AGBPlayerCharacter* Player = GetPlayerOwner();
+1375: 	UCameraComponent* Camera = Player ? Player->GetCamera() : nullptr;
+1376: 	if (!Camera)
+1377: 	{
+1378: 		return;
+1379: 	}
+1380: 
+1381: 	const float Target = bAiming ? 1.f : 0.f;
+1382: 	if (AimAlpha == Target)
+1383: 	{
+1384: 		return;
+1385: 	}
+1386: 	if (AimAlpha <= 0.f)
+1387: 	{
+1388: 		HipFOV = Camera->FieldOfView;
+1389: 	}
+1390: 
+1391: 	if (bInstant)
+1392: 	{
+1393: 		AimAlpha = Target;
+1394: 	}
+1395: 	else
+1396: 	{
+1397: 		const float AimTime = GetStat(GBWeaponStat::AimTime, 0.15f);
+1398: 		const float Step = AimTime > KINDA_SMALL_NUMBER ? DeltaSeconds / AimTime : 1.f;
+1399: 		AimAlpha = FMath::Clamp(Target > AimAlpha ? AimAlpha + Step : AimAlpha - Step, 0.f, 1.f);
+1400: 	}
+1401: 	Camera->SetFieldOfView(FMath::Lerp(HipFOV, GetStat(GBStat::AimFOV, HipFOV), AimAlpha));
+1402: }
+1403: 
+1404: void AGBGun::OnUnequipped()
+1405: {
+1406: 	CancelReload();
+1407: 	bFireWhenLoaded = false;
+1408: 	SetAiming(false);
+1409: 	UpdateAimFOV(0.f, true);
+1410: 	if (bViewModel)
+1411: 	{
+1412: 		KickElapsed = -1.f;
+1413: 		ResetReloadVisuals();
+1414: 		HideMuzzleFlash();
+1415: 	}
+1416: 	Super::OnUnequipped();
+1417: }
+1418: 
+1419: void AGBGun::StartPrimary()
+1420: {
+1421: 	// Round-by-round gun mid-reload: the press itself interrupts, whatever the fire cooldown says.
+1422: 	if (bEquipped && bReloading && ReloadsPerRound())
+1423: 	{
+1424: 		if (Ammo.InMagazine > 0)
+1425: 		{
+1426: 			CancelReload(); // the shot then follows through PressTrigger as soon as the fire rules allow
+1427: 		}
+1428: 		else
+1429: 		{
+1430: 			bFireWhenLoaded = true; // empty: wait for the first shell
+1431: 		}
+1432: 	}
+1433: 	PressTrigger();
+1434: }
+1435: 
+1436: void AGBGun::Tick(float DeltaSeconds)
+1437: {
+1438: 	if (bReloading && ReloadsPerRound())
+1439: 	{
+1440: 		ReloadElapsed += DeltaSeconds;
+1441: 		const AGBPlayerCharacter* PlayerRef = GetPlayerOwner();
+1442: 		if (bFireWhenLoaded && (!PlayerRef || PlayerRef->IsDead()))
+1443: 		{
+1444: 			bFireWhenLoaded = false; // a pending shot does not survive death
+1445: 		}
+1446: 		// With a shot pending the stepping yields after the first round, so a long frame cannot load more shells first.
+1447: 		const int32 MaxRounds = bFireWhenLoaded ? 1 : MAX_int32;
+1448: 		const int32 Moved = PerRound.Advance(DeltaSeconds, Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), MaxRounds);
+1449: 		if (Moved > 0)
+1450: 		{
+1451: 			NotifyEquipmentChanged();
+1452: 		}
+1453: 		if (Moved > 0 && bFireWhenLoaded && Ammo.InMagazine > 0)
+1454: 		{
+1455: 			// Fire was pressed on an empty gun: the first shell is in, so the reload stops now and the queued shot follows
+1456: 			// through the normal trigger path as soon as the fire rules allow.
+1457: 			CancelReload();
+1458: 			bAttackQueued = true;
+1459: 		}
+1460: 		else if (!PerRound.bRunning)
+1461: 		{
+1462: 			FinishPerRoundReload();
+1463: 		}
+1464: 	}
+1465: 	else if (bReloading)
+1466: 	{
+1467: 		ReloadElapsed += DeltaSeconds;
+1468: 		if (ReloadElapsed >= ReloadDuration)
+1469: 		{
+1470: 			FinishReload();
+1471: 		}
+1472: 	}
+1473: 	if (bEquipped)
+1474: 	{
+1475: 		UpdateAimFOV(DeltaSeconds, false);
+1476: 	}
+1477: 	if (bViewModel)
+1478: 	{
+1479: 		UpdateViewModel(DeltaSeconds);
+1480: 	}
+1481: 	Super::Tick(DeltaSeconds);
+1482: }
+1483: 
+1484: // ---- Shooting ----
+1485: 
+1486: bool AGBGun::PerformAttack()
+1487: {
+1488: 	AGBPlayerCharacter* Player = GetPlayerOwner();
+1489: 	if (!Player || !GetWorld())
+1490: 	{
+1491: 		return false;
+1492: 	}
+1493: 	if (bReloading)
+1494: 	{
+1495: 		if (!ReloadsPerRound())
+1496: 		{
+1497: 			return false;
+1498: 		}
+1499: 		if (Ammo.InMagazine <= 0)
+1500: 		{
+1501: 			// Empty gun: the shot waits for the first shell to land (Tick), then the reload stops and the gun shoots.
+1502: 			bFireWhenLoaded = true;
+1503: 			return false;
+1504: 		}
+1505: 		CancelReload(); // fire stops a round-by-round reload; the shells already in stay in
+1506: 	}
+1507: 	if (Ammo.InMagazine <= 0)
+1508: 	{
+1509: 		Reload();
+1510: 		return false;
+1511: 	}
+1512: 
+1513: 	const FGBDamageInfo BaseInfo = MakeDamageInfo();
+1514: 	const float SpreadDegrees = GetCurrentSpread();
+1515: 
+1516: 	--Ammo.InMagazine;
+1517: 
+1518: 	const FGBWeaponDefinition* Def = GetDefinition();
+1519: 	if (Def && Def->FireMode.Equals(TEXT("Projectile"), ESearchCase::IgnoreCase))
+1520: 	{
+1521: 		FireProjectile(BaseInfo, SpreadDegrees);
+1522: 	}
+1523: 	else
+1524: 	{
+1525: 		FireHitscan(BaseInfo, SpreadDegrees);
+1526: 	}
+1527: 
+1528: 	const float RecoilYaw = GetStat(GBStat::RecoilYaw, 0.f);
+1529: 	Player->AddRecoil(GetStat(GBStat::RecoilPitch, 0.f), Random.FRandRange(-RecoilYaw, RecoilYaw), GetStat(GBStat::RecoilRecovery, 0.f));
+1530: 
+1531: 	if (bViewModel)
+1532: 	{
+1533: 		TriggerPullElapsed = 0.f;
+1534: 		StartShotEffects();
+1535: 		StartPump();
+1536: 	}
+1537: 	NotifyEquipmentChanged();
+1538: 
+1539: 	if (Ammo.InMagazine <= 0)
+1540: 	{
+1541: 		Reload();
+1542: 	}
+1543: 	return true;
+1544: }
+1545: 
+1546: float AGBGun::GetCurrentSpread() const
+1547: {
+1548: 	const float Base = bAiming ? GetStat(GBStat::AimSpread, 0.f) : GetStat(GBStat::Spread, 0.f);
+1549: 	const float Move = bAiming ? GetStat(GBStat::AimMoveSpread, 0.f) : GetStat(GBStat::MoveSpread, 0.f);
+1550: 	const AGBPlayerCharacter* Player = GetPlayerOwner();
+1551: 	const UCharacterMovementComponent* MoveComp = Player ? Player->GetCharacterMovement() : nullptr;
+1552: 	if (!MoveComp)
+1553: 	{
+1554: 		return FMath::Max(0.f, Base);
+1555: 	}
+rg: Glyphbound/Source/Glyphbound/Weapons/GBWeapon.cpp: El sistema no puede encontrar el archivo especificado. (os error 2)
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:15:	PrimaryActorTick.bCanEverTick = true;
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:16:	PrimaryActorTick.bStartWithTickEnabled = true;
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:75:void AGBHeldItem::OnUnequipped()
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:192:void AGBHeldItem::PressTrigger()
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:207:	return GetTimeSinceLastAttack() >= GetStat(GBStat::FireInterval, 0.f);
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:239:void AGBHeldItem::Tick(float DeltaSeconds)
+Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp:241:	Super::Tick(DeltaSeconds);
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:414:	PumpElapsed = -1.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:607:	PumpElapsed = -1.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:618:		PumpElapsed = 0.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:624:	PumpElapsed = -1.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:641:		else if (PumpElapsed >= 0.f)
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:644:			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:969:	if (PumpElapsed >= 0.f)
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:973:			PumpElapsed = -1.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:977:			PumpElapsed += EffectStep;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:978:			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+Glyphbound/Source\Glyphbound\Weapons\GBGun.cpp:980:				PumpElapsed = -1.f;
+Glyphbound/Source\Glyphbound\Weapons\GBGun.h:269:	float PumpElapsed = -1.f;
+62:	static int32 NextStep = 0;
+70:		SimMark = World ? World->GetTimeSeconds() : 0.0;
+137:	static void Shot(const TCHAR* Name)
+451:		Add(3.8f, TEXT("screenshot: past, staff"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("1_past_staff")); });
+494:		Add(6.6f, TEXT("screenshot: past, gun"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("2_past_gun")); });
+514:			Shot(TEXT("3_future_gun"));
+523:		Add(12.2f + S, TEXT("screenshot: inventory"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("4_inventory")); });
+548:		Add(13.9f + S, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
+560:		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+659:			Shot(TEXT("12_weapon_tree"));
+705:		Add(17.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
+721:		Add(23.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+727:			Shot(TEXT("8_respawn"));
+826:		Add(29.1f + S, TEXT("screenshot: shield"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("9_shield")); });
+955:			Shot(TEXT("10_ground_spells"));
+987:			const double Elapsed = FPlatformTime::Seconds() - StartSeconds;
+988:			UE_LOG(LogGB, Display, TEXT("SMOKE flamethrower after=%.2fs alive=%d"), Elapsed - (35.4 + PathCheckShift), Beams);
+1043:		Add(42.3f + S, TEXT("screenshot: interrupt shake"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("11_interrupt_shake")); });
+1237:			Shot(TEXT("13a_pistol_hip"));
+1265:			Shot(TEXT("13b_pistol_reload_out"));
+1277:			Shot(TEXT("13f_pistol_reload_empty"));
+1289:			Shot(TEXT("13g_pistol_reload_in"));
+1375:			Shot(TEXT("13c_pistol_enchanted"));
+1407:			Shot(TEXT("13d_pistol_weakpoint"));
+1478:			Shot(TEXT("13e_pistol_half_bar"));
+1540:			Shot(TEXT("14a_rifle_hip"));
+1583:			Shot(TEXT("14b_rifle_reload_out"));
+1595:			Shot(TEXT("14h_rifle_reload_empty"));
+1607:			Shot(TEXT("14i_rifle_reload_in"));
+1706:			Shot(TEXT("14c_rifle_weakpoint"));
+1777:			Shot(TEXT("14d_rifle_half_bar"));
+1797:			Shot(TEXT("14e_rifle_fire"));
+1846:			Shot(TEXT("15a_shotgun_hip"));
+1914:			Shot(TEXT("15b_shotgun_pump"));
+2031:			Shot(TEXT("15c_shotgun_enchanted"));
+2053:			ShotgunReloadStartSim = World->GetTimeSeconds();
+2081:			Shot(TEXT("15d_shotgun_reload_shell"));
+2101:			const double Elapsed = World->GetTimeSeconds() - ShotgunReloadStartSim;
+2103:			const int32 Low = ShellsAt(Elapsed - 0.06);
+2104:			const int32 High = ShellsAt(Elapsed);
+2108:					Ammo.InMagazine, Ammo.SpareMagazines, Elapsed, Low, High);
+2651:			Shot(TEXT("15a_entity"));
+2677:			Shot(TEXT("15b_entity_side"));
+2737:			Shot(TEXT("16_pixelvfx_fire"));
+2784:					Shot(TEXT("18_pixelvfx_fireball_impact"));
+2792:			Shot(TEXT("17_pixelvfx_fireball_flight"));
+2891:		Add(U + 0.7f, TEXT("ui: screenshot rpg hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_01_rpg_hud")); });
+2902:		Add(U + 1.5f, TEXT("ui: screenshot rpg low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_02_rpg_low")); });
+2904:		Add(U + 2.1f, TEXT("ui: screenshot rpg pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_03_rpg_pause")); });
+2906:		Add(U + 2.7f, TEXT("ui: screenshot rpg items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_04_rpg_items")); });
+2908:		Add(U + 3.3f, TEXT("ui: screenshot rpg weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_05_rpg_weapons")); });
+2910:		Add(U + 3.9f, TEXT("ui: screenshot rpg spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_06_rpg_spells")); });
+2912:		Add(U + 4.5f, TEXT("ui: screenshot rpg spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_07_rpg_spell_choose")); });
+2914:		Add(U + 5.1f, TEXT("ui: screenshot rpg skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_08_rpg_skills_page")); });
+2920:		Add(U + 5.7f, TEXT("ui: screenshot rpg skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09_rpg_skilltrees")); });
+2935:		Add(U + 6.5f, TEXT("ui: screenshot rpg QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_10_rpg_qte")); });
+2943:		Add(U + 11.6f, TEXT("ui: screenshot rpg death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_11_rpg_death")); });
+2963:		Add(U + 18.4f, TEXT("ui: screenshot cyber QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_12_cyber_qte")); });
+2980:		Add(U + 23.5f, TEXT("ui: screenshot cyber hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_13_cyber_hud")); });
+2990:		Add(U + 24.2f, TEXT("ui: screenshot cyber low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_14_cyber_low")); });
+2992:		Add(U + 24.8f, TEXT("ui: screenshot cyber pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_15_cyber_pause")); });
+2994:		Add(U + 25.4f, TEXT("ui: screenshot cyber items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_16_cyber_items")); });
+2996:		Add(U + 26.0f, TEXT("ui: screenshot cyber weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_17_cyber_weapons")); });
+2998:		Add(U + 26.6f, TEXT("ui: screenshot cyber spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_18_cyber_spells")); });
+3000:		Add(U + 27.2f, TEXT("ui: screenshot cyber spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_19_cyber_spell_choose")); });
+3002:		Add(U + 27.8f, TEXT("ui: screenshot cyber skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_20_cyber_skills_page")); });
+3004:		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
+3012:		Add(U + 29.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
+3029:		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
+3031:			const FStep& Gate = Steps[NextStep];
+3032:			if (Gate.MinSimSinceMark > 0.f && World->GetTimeSeconds() - SimMark < Gate.MinSimSinceMark
+3037:			const FStep& Step = Steps[NextStep++];
+3039:			UE_LOG(LogGB, Display, TEXT("SMOKE step %d/%d (%.1f s): %s"), NextStep, Steps.Num(), Step.Time, Step.Name);
+3047:		return NextStep < Steps.Num();
+3067:			float FirstTime = Steps.Num() > 0 ? Steps[0].Time : 0.f;
+3077:		NextStep = 0;
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g AGENTS.md -g '*Weapon*.cpp' -g '*HeldItem*.cpp'; "'$s=Get-Content Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp; for($i=392;$i -lt 455;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }; $s=Get-Content Glyphbound/Source/Glyphbound/Weapons/GBGun.h; for($i=235;$i -lt 277;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }' in C:\GameJam
+ succeeded in 408ms:
+Glyphbound\Source\Glyphbound\Weapons\GBHeldItem.cpp
+Glyphbound\Source\Glyphbound\Tests\GBWeaponsTests.cpp
+393: 		Part->SetupAttachment(Parent);
+394: 		Part->SetRelativeLocation(Location);
+395: 		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+396: 		Part->SetGenerateOverlapEvents(false);
+397: 		// Self-shadow only: the gun shades itself (panels, sight, magazine well), which gives it volume; without it the
+398: 		// rifle looked soft, "made of jelly" (owner). It casts no shadow on the world, where a floating gun would look wrong.
+399: 		Part->SetCastShadow(true);
+400: 		Part->bSelfShadowOnly = true;
+401: 		Part->SetStaticMesh(Mesh);
+402: 		Part->RegisterComponent();
+403: 		return Part;
+404: 	};
+405: 	ModelArt = &Art;
+406: 	VMBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
+407: 	VMBody->SetRelativeScale3D(FVector(Art.ViewScale));
+408: 	VMEnergyBar = Art.bEnergyBarMesh ? NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, VMBody, FVector::ZeroVector) : nullptr;
+409: 	VMWeakPointLight = NewViewPart(TEXT("WeakPointLight"), WeakPointLightMesh, VMBody, FVector::ZeroVector);
+410: 	VMAmmoDisplay = NewViewPart(TEXT("AmmoDisplay"), AmmoDisplayMesh, VMBody, FVector::ZeroVector);
+411: 	VMTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, VMBody, Art.TriggerOffset);
+412: 	VMMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, VMBody, Art.MagazineRest);
+413: 	VMPump = Art.bPump ? NewViewPart(TEXT("Pump"), PumpMesh, VMBody, Art.PumpRest) : nullptr;
+414: 	PumpElapsed = -1.f;
+415: 	PumpPreview = -1.f;
+416: 	CurrentPumpAmount = 0.f;
+417: 	CurrentPoseAmount = 0.f;
+418: 	// The base pose of the whole viewmodel (offset and yaw towards the view centre); the shot kick moves it from here.
+419: 	CurrentKickBackCm = 0.f;
+420: 	KickElapsed = -1.f;
+421: 	ApplyViewModelPose();
+422: 
+423: 	ViewModelMIDs.Reset();
+424: 	ViewModelIndicatorMID = nullptr;
+425: 	ViewModelDisplayMID = nullptr;
+426: 	UStaticMeshComponent* ModelParts[7] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay, VMPump };
+427: 	for (UStaticMeshComponent* Part : ModelParts)
+428: 	{
+429: 		if (!Part)
+430: 		{
+431: 			continue;
+432: 		}
+433: 		for (int32 MaterialSlot = 0; MaterialSlot < Part->GetNumMaterials(); ++MaterialSlot)
+434: 		{
+435: 			if (UMaterialInstanceDynamic* MID = Part->CreateDynamicMaterialInstance(MaterialSlot))
+436: 			{
+437: 				ViewModelMIDs.Add(MID);
+438: 				if (Part == VMWeakPointLight && !ViewModelIndicatorMID)
+439: 				{
+440: 					ViewModelIndicatorMID = MID;
+441: 				}
+442: 				else if (Part == VMAmmoDisplay && !ViewModelDisplayMID)
+443: 				{
+444: 					ViewModelDisplayMID = MID;
+445: 				}
+446: 			}
+447: 		}
+448: 	}
+449: 
+450: 	// Holographic ammo display: the text is drawn into a small render target, only when it changes (UpdateViewModel).
+451: 	ViewModelDisplayTarget = nullptr;
+452: 	ShownDisplayText.Reset();
+453: 	if (ViewModelDisplayMID && FApp::CanEverRender())
+454: 	{
+455: 		ViewModelDisplayTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), AmmoDisplayWidth, AmmoDisplayHeight);
+236: 	/** One dynamic instance per material slot of the model parts, so glow and imbue can be set cheaply. */
+237: 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ViewModelMIDs;
+238: 	/** Instance of the weak-point light's material (parameter Flash); also in ViewModelMIDs. */
+239: 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> ViewModelIndicatorMID = nullptr;
+240: 	/** Instance of the ammo display's material (parameter DisplayTexture); also in ViewModelMIDs. */
+241: 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> ViewModelDisplayMID = nullptr;
+242: 	/** Runtime render target the ammo text is drawn into (redrawn only when the text changes). */
+243: 	UPROPERTY() TObjectPtr<UCanvasRenderTarget2D> ViewModelDisplayTarget = nullptr;
+244: 	/** Text last drawn into the render target (the cache that decides whether a redraw is needed). */
+245: 	FString ShownDisplayText;
+246: 	/** Seconds since the last weak-point hit. Negative = the light is off. */
+247: 	float WeakPointFlashElapsed = -1.f;
+248: 	float LastFlashSent = -1.f;
+249: 	FDelegateHandle DamageDealtHandle;
+250: 	bool bViewModel = false;
+251: 	/** Seconds since the last shot started the kick / the muzzle flash. Negative = at rest / hidden. */
+252: 	float KickElapsed = -1.f;
+253: 	float MuzzleFlashElapsed = -1.f;
+254: 	float CurrentKickBackCm = 0.f;
+255: 	/** Pinned reload progress for the smoke run; negative = not pinned. */
+256: 	float ReloadPreview = -1.f;
+257: 	/** The reload pose's contribution to the root right now (location cm, rotation degrees); a cancel blends it to zero. */
+258: 	FVector ReloadPoseLoc = FVector::ZeroVector;
+259: 	FRotator ReloadPoseRot = FRotator::ZeroRotator;
+260: 	FVector ReloadBlendLoc = FVector::ZeroVector;
+261: 	float ReloadBlendPoseAmount = 0.f;
+262: 	FRotator ReloadBlendRot = FRotator::ZeroRotator;
+263: 	/** Seconds since a cancelled reload started blending to rest. Negative = no blend. */
+264: 	float ReloadBlendElapsed = -1.f;
+265: 	float ReloadBlendLength = 0.12f;
+266: 	/** Reload pose amount (0..1) the hands follow; a round-by-round gun keeps easing it out through the blend. */
+267: 	float CurrentPoseAmount = 0.f;
+268: 	/** Seconds since the last shot (pump timer); negative = the pump is at rest. */
+269: 	float PumpElapsed = -1.f;
+270: 	/** Pinned pump amount for the smoke run; negative = not pinned. */
+271: 	float PumpPreview = -1.f;
+272: 	float CurrentPumpAmount = 0.f;
+273: 	/** Seconds since the last shot started the trigger pull. Negative = the trigger is at rest. */
+274: 	float TriggerPullElapsed = -1.f;
+275: 	/** Last values sent to the model materials (parameters are only set when they change). */
+276: 	bool bHasLastGlow = false;
+277: 	FLinearColor LastGlowColor = FLinearColor::Black;
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$s=Get-Content Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp; for($i=180;$i -lt 280;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }; $s=Get-Content Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp; for($i=3015;$i -lt 3050;$i++){ '"'{0}: {1}' -f ("'$i+1),$s[$i] }; rg -n '"'CheckShotgunAtRest|GetViewModelRootAngleDeg|GetViewModelRootOffsetCm|Shotgun|FireInterval' Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp Glyphbound/Content/Data/Weapons.json" in C:\GameJam
+ succeeded in 433ms:
+181: 		{
+182: 			Info.BuildUp *= GetStat(GBStat::EnchantBuildUpMult, 1.f);
+183: 		}
+184: 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+185: 		const float DefaultMult = Data ? Data->GetGameValue(GBStat::WeakPointBuildUpMult, 1.f) : 1.f;
+186: 		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);
+187: 	}
+188: 	Info.BuildUpEventId = UGBCombatLibrary::NewBuildUpEventId();
+189: 	return Info;
+190: }
+191: 
+192: void AGBHeldItem::PressTrigger()
+193: {
+194: 	bTriggerHeld = true;
+195: 	bAttackQueued = true;
+196: 	UpdateTrigger();
+197: }
+198: 
+199: void AGBHeldItem::ReleaseTrigger()
+200: {
+201: 	bTriggerHeld = false;
+202: 	bAttackQueued = false;
+203: }
+204: 
+205: bool AGBHeldItem::IsAttackReady() const
+206: {
+207: 	return GetTimeSinceLastAttack() >= GetStat(GBStat::FireInterval, 0.f);
+208: }
+209: 
+210: void AGBHeldItem::UpdateTrigger()
+211: {
+212: 	if (!bEquipped || !(bAttackQueued || (bTriggerHeld && IsAutomatic())))
+213: 	{
+214: 		return;
+215: 	}
+216: 	if (!IsAttackReady())
+217: 	{
+218: 		return; // a pressed shot stays queued until the fire interval has passed
+219: 	}
+220: 
+221: 	const AGBPlayerCharacter* Player = GetPlayerOwner();
+222: 	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+223: 	if (!Player || Player->IsDead() || (Spellbook && Spellbook->IsBusy()))
+224: 	{
+225: 		bAttackQueued = false;
+226: 		return;
+227: 	}
+228: 
+229: 	if (PerformAttack())
+230: 	{
+231: 		if (const UWorld* World = GetWorld())
+232: 		{
+233: 			LastAttackTime = World->GetTimeSeconds();
+234: 		}
+235: 	}
+236: 	bAttackQueued = false;
+237: }
+238: 
+239: void AGBHeldItem::Tick(float DeltaSeconds)
+240: {
+241: 	Super::Tick(DeltaSeconds);
+242: 	UpdateTrigger();
+243: }
+244: 
+245: FVector AGBHeldItem::FindAimPoint(float Range) const
+246: {
+247: 	const AGBPlayerCharacter* Player = GetPlayerOwner();
+248: 	if (!Player)
+249: 	{
+250: 		return GetActorLocation();
+251: 	}
+252: 	const FVector Start = Player->GetAimOrigin();
+253: 	const FVector End = Start + Player->GetAimDirection() * Range;
+254: 
+255: 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBAimPoint), false, Player);
+256: 	Params.AddIgnoredActor(this);
+257: 	FHitResult Hit;
+258: 	if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Hit, Start, End, GBWeapon::AimTraceChannel, Params))
+259: 	{
+260: 		return Hit.ImpactPoint;
+261: 	}
+262: 	return End;
+263: }
+264: 
+265: void AGBHeldItem::NotifyEquipmentChanged() const
+266: {
+267: 	const AGBPlayerCharacter* Player = GetPlayerOwner();
+268: 	if (UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr)
+269: 	{
+270: 		Equipment->OnEquipmentChanged.Broadcast();
+271: 	}
+272: }
+273: 
+274: 
+275: 
+276: 
+277: 
+278: 
+279: 
+280: 
+3016: 			FPlatformMisc::RequestExit(false);
+3017: 		});
+3018: 	}
+3019: 
+3020: 	static bool Tick(float)
+3021: 	{
+3022: 		UWorld* World = SmokeWorld.Get();
+3023: 		if (!World)
+3024: 		{
+3025: 			UE_LOG(LogGB, Error, TEXT("SMOKE aborted: the world went away"));
+3026: 			return false;
+3027: 		}
+3028: 		// Read the clock again for every step: a step may wind StartSeconds back (the reload steps stretch the run).
+3029: 		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
+3030: 		{
+3031: 			const FStep& Gate = Steps[NextStep];
+3032: 			if (Gate.MinSimSinceMark > 0.f && World->GetTimeSeconds() - SimMark < Gate.MinSimSinceMark
+3033: 				&& FPlatformTime::Seconds() - StartSeconds - Gate.Time < SimGateTimeoutSeconds)
+3034: 			{
+3035: 				break; // not enough simulated time since the first sample yet: try again next tick
+3036: 			}
+3037: 			const FStep& Step = Steps[NextStep++];
+3038: 			AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+3039: 			UE_LOG(LogGB, Display, TEXT("SMOKE step %d/%d (%.1f s): %s"), NextStep, Steps.Num(), Step.Time, Step.Name);
+3040: 			if (!Player)
+3041: 			{
+3042: 				UE_LOG(LogGB, Error, TEXT("SMOKE step skipped: there is no player character"));
+3043: 				continue;
+3044: 			}
+3045: 			Step.Run(World, Player);
+3046: 		}
+3047: 		return NextStep < Steps.Num();
+3048: 	}
+3049: 
+3050: 	static void Start(const TArray<FString>& Args, UWorld* World)
+Glyphbound/Content/Data/Weapons.json:13:				"FireInterval": 0.35,
+Glyphbound/Content/Data/Weapons.json:36:				"FireInterval": 0.6,
+Glyphbound/Content/Data/Weapons.json:61:				"FireInterval": 0.25,
+Glyphbound/Content/Data/Weapons.json:90:			"Id": "Shotgun",
+Glyphbound/Content/Data/Weapons.json:91:			"DisplayName": "Shotgun",
+Glyphbound/Content/Data/Weapons.json:95:			"ViewModel": "Shotgun",
+Glyphbound/Content/Data/Weapons.json:100:				"FireInterval": 0.8,
+Glyphbound/Content/Data/Weapons.json:140:				"FireInterval": 0.1,
+Glyphbound/Content/Data/Weapons.json:178:				"FireInterval": 0.5,
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:95:	// Shotgun art tuning from Glyphbound/SourceArt/Weapons/Shotgun/export_report.json (offsets in cm in the body's frame).
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:99:	const FGBGunModelArt ShotgunArt = {
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:100:		TEXT("Shotgun"), TEXT("/Game/Glyphbound/Weapons/Shotgun"), TEXT("SM_Shotgun_"), false,
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:111:		for (const FGBGunModelArt* Art : { &PistolArt, &RifleArt, &ShotgunArt })
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:183:	// Pump: shares of the gun's FireInterval. Provisional.
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:322:	const FName Required[] = { GBStat::Damage, GBStat::FireInterval, GBStat::MagazineSize, GBStat::SpareMagazines, GBStat::ReloadTime, GBStat::Range };
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:364:			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': unknown ViewModel '%s' (Pistol, Rifle or Shotgun); using the placeholder shapes instead."),
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:546:float AGBGun::GetViewModelRootOffsetCm() const
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:551:float AGBGun::GetViewModelRootAngleDeg() const
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:643:			// Shares of the current FireInterval: still, back, fully back, home, still.
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:644:			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:978:			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1179:	const bool bShotgun = PelletStat && *PelletStat > 1.f;
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1182:	const float BodyLength = bShotgun ? 24.f : (bAutomaticLook ? 26.f : 20.f);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1183:	const float BarrelLength = bShotgun ? 16.f : (bAutomaticLook ? 14.f : 9.f);
+Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:1184:	const float BarrelThickness = bShotgun ? 4.f : 3.f;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:112:	// Shotgun block of the smoke run (round-by-round reload and pump).
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:113:	static AGBGun* ShotgunInHand(AGBPlayerCharacter* Player)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:116:		return (Gun && Gun->GetWeaponId() == FName(TEXT("Shotgun"))) ? Gun : nullptr;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:118:	static TWeakObjectPtr<AGBEnemyCharacter> ShotgunFlashTarget;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:119:	static FGBAmmoState ShotgunAmmoBefore;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:121:	static double ShotgunReloadStartSim = 0.0;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:122:	static float ShotgunCycleSeconds = 0.333f;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:124:	static void CheckShotgunAtRest(const TCHAR* When, AGBGun* Gun)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:127:			&& Gun->GetViewModelPumpOffsetCm() < 0.05f && Gun->GetViewModelRootOffsetCm() < 0.05f && Gun->GetViewModelRootAngleDeg() < 0.5f;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:130:			Gun->GetViewModelPumpOffsetCm(), Gun->GetViewModelRootOffsetCm(), Gun->GetViewModelRootAngleDeg());
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:186:		const float RootCm = Item->GetViewModelRootOffsetCm();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:187:		const float RootDeg = Item->GetViewModelRootAngleDeg();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:215:			Item->GetViewModelRootOffsetCm(), Item->GetViewModelRootAngleDeg(), *Text, Ammo.InMagazine, Item->GetMagazineSize(),
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:218:			|| Item->GetViewModelRootOffsetCm() > 0.05f || Item->GetViewModelRootAngleDeg() > 0.5f)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:235:			Item->GetViewModelRootOffsetCm(), Item->GetViewModelRootAngleDeg(), Ammo.InMagazine, Ammo.SpareMagazines,
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:238:			|| Item->GetViewModelRootOffsetCm() > 0.05f || Item->GetViewModelRootAngleDeg() > 0.5f)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1807:		// ---- Shotgun: model, pump, shell-by-shell reload (feedback15). Its clock runs on from the rifle block and is wound back at the end. ----
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1811:			Player->GetEquipment()->GiveWeapon(TEXT("Shotgun"), false, false);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1812:			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Shotgun"));
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1825:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1845:			CheckShotgunAtRest(TEXT("hip"), Gun);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1850:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1869:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1889:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1895:			CheckShotgunAtRest(TEXT("after the pump"), Gun);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1899:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1907:			const float RootCm = Gun->GetViewModelRootOffsetCm();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1909:				Gun->GetViewModelRootAngleDeg(), *Gun->GetPumpHandShift().ToString());
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1918:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1925:			CheckShotgunAtRest(TEXT("pin released"), Gun);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1936:			ShotgunFlashTarget = Enemy;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1950:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1965:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1966:			AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1986:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:1998:			if (AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get())
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2002:			ShotgunFlashTarget.Reset();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2018:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2037:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2051:			ShotgunAmmoBefore = Gun->GetAmmo();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2053:			ShotgunReloadStartSim = World->GetTimeSeconds();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2054:			ShotgunCycleSeconds = Gun->GetStat(GBStat::ReloadTime, 2.f) / FMath::Max(1, Gun->GetMagazineSize());
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2055:			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload started: one shell takes %.3f s;"), ShotgunCycleSeconds);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2057:			if (!Gun->IsReloading() || ShotgunAmmoBefore.InMagazine != 3 || ShotgunAmmoBefore.SpareMagazines != 24)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2060:					Gun->IsReloading() ? 1 : 0, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2065:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2085:			if (AGBGun* Gun = ShotgunInHand(Player))
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2092:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2101:			const double Elapsed = World->GetTimeSeconds() - ShotgunReloadStartSim;
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2102:			auto ShellsAt = [](double T) { return FMath::Clamp(3 + FMath::FloorToInt(static_cast<float>(FMath::Max(0.0, T)) / ShotgunCycleSeconds), 3, 6); };
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2113:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2126:			CheckShotgunAtRest(TEXT("reload finished"), Gun);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2132:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2146:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2168:			if (AGBGun* Gun = ShotgunInHand(Player))
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2177:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2198:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2219:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2240:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2258:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2287:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2301:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2307:			ShotgunAmmoBefore = Gun->GetAmmo();
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2308:			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun cancel: switching away with %d / %d"), ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2314:			AGBGun* Gun = ShotgunInHand(Player);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2321:			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun cancel: back with %d / %d (was %d / %d)"), Ammo.InMagazine, Ammo.SpareMagazines, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2322:			if (ShotgunAmmoBefore.InMagazine < 2 || Ammo.InMagazine != ShotgunAmmoBefore.InMagazine || Ammo.SpareMagazines != ShotgunAmmoBefore.SpareMagazines)
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2325:					Ammo.InMagazine, Ammo.SpareMagazines, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2330:			if (AGBGun* Gun = ShotgunInHand(Player))
+Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp:2332:				CheckShotgunAtRest(TEXT("end of the block"), Gun);
+
+codex
+Found one real timing issue.
+
+- **[P2] [GBGun.cpp:977](C:/GameJam/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:977) — Pump playback can outlast the firing cooldown.** `EffectStep` discards time on every frame longer than 1/30 s, while attack readiness uses world time. At 15 FPS, the pump needs about **1.15 seconds** to reach its 0.576-second home threshold, but another shot is allowed after **0.8 seconds**. At that point `PumpElapsed` is approximately 0.4 seconds, leaving the pump substantially back. Firing again resets its timer, snapping the pump, rack, and hand toward rest before the return stroke completes. The smoke’s 0.7-second rest check also fails under these conditions. **Fix:** track gameplay elapsed separately and compress the remaining visual stroke into the remaining cooldown after a hitch, preserving a visible rack sample while ensuring it reaches home before another shot is allowed.
+
+No other concrete bugs found in the reviewed code: pose contributions return to zero, pistol/rifle pump fields remain zero, magazine drop compensates for the 130° roll, and reload/switch paths reset the pump. The smoke offsets remain internally consistent at normal frame rates: mid-pump is +0.37 seconds and home is +0.7 seconds, versus nominal home at +0.576 and firing readiness at +0.8. Later steps do not depend on the old shot time.
+
+Read-only review; no UE build or runtime smoke run performed.
+tokens used
+50,601
+Found one real timing issue.
+
+- **[P2] [GBGun.cpp:977](C:/GameJam/Glyphbound/Source/Glyphbound/Weapons/GBGun.cpp:977) — Pump playback can outlast the firing cooldown.** `EffectStep` discards time on every frame longer than 1/30 s, while attack readiness uses world time. At 15 FPS, the pump needs about **1.15 seconds** to reach its 0.576-second home threshold, but another shot is allowed after **0.8 seconds**. At that point `PumpElapsed` is approximately 0.4 seconds, leaving the pump substantially back. Firing again resets its timer, snapping the pump, rack, and hand toward rest before the return stroke completes. The smoke’s 0.7-second rest check also fails under these conditions. **Fix:** track gameplay elapsed separately and compress the remaining visual stroke into the remaining cooldown after a hitch, preserving a visible rack sample while ensuring it reaches home before another shot is allowed.
+
+No other concrete bugs found in the reviewed code: pose contributions return to zero, pistol/rifle pump fields remain zero, magazine drop compensates for the 130° roll, and reload/switch paths reset the pump. The smoke offsets remain internally consistent at normal frame rates: mid-pump is +0.37 seconds and home is +0.7 seconds, versus nominal home at +0.576 and firing readiness at +0.8. Later steps do not depend on the old shot time.
+
+Read-only review; no UE build or runtime smoke run performed.

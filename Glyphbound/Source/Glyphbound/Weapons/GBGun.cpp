@@ -56,8 +56,8 @@ struct FGBGunModelArt
 	bool bPump;                   // the model has a SM_<Prefix>Pump part
 	FVector PumpRest;             // pump position at rest
 	FVector PumpSlide;            // vector the pump slides along to the back of its travel
-	float PumpRackDipCm;          // the gun dips this much (cm, camera down) while the pump is back
-	float PumpRackRollDeg;        // and rolls this much
+	FVector PumpRackOffset;       // the gun moves this much (cm, camera frame: x forward, y right, z up) while the pump is back
+	FRotator PumpRackRot;         // and turns this much: the muzzle tips up and a roll bares the forend to the camera
 	FVector2D PumpHandTravel;     // HUD: sprite pixels (x right, y down) the left hand rides with the pump at full travel
 };
 
@@ -103,8 +103,8 @@ namespace
 		FLinearColor(0.10f, 0.85f, 1.00f), FVector(65.48f, 0.f, -1.24f), 13.f,
 		0.42f, 0.6f, 0.39f,
 		2.2f, 2.5f, true,
-		FVector(4.f, 1.7f, 8.f), FRotator(16.f, 0.f, 40.f), 32.f, 0.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f),
-		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), 0.5f, 1.5f, FVector2D(-6.f, 1.f) };
+		FVector(8.f, 3.f, 5.f), FRotator(15.f, 0.f, 130.f), 32.f, 0.f, 0.5f, FVector2D(12.f, -24.f), FVector2D(10.f, -19.f),
+		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), FVector(-2.f, -1.5f, -1.f), FRotator(7.f, -10.f, 12.f), FVector2D(-4.f, 6.f) };
 
 	const FGBGunModelArt* FindModelArt(const FString& Name)
 	{
@@ -842,9 +842,9 @@ void AGBGun::ApplyViewModelPose()
 		CurrentPoseAmount = 0.f;
 	}
 
-	// The pump's rack: the gun dips and rolls a little while the pump is back. It adds to the shot kick.
-	const FVector RackLoc(0.f, 0.f, -Art.PumpRackDipCm * CurrentPumpAmount);
-	const FRotator RackRot(0.f, 0.f, Art.PumpRackRollDeg * CurrentPumpAmount);
+	// The pump's rack: the gun is pulled in, tips up and rolls while the pump is back. It adds to the shot kick.
+	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
+	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
 	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
 	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
 }
@@ -965,6 +965,8 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 		}
 	}
 	// Pump timer: runs for PumpHomeShare of the fire interval, then the pump rests. No pump while a reload runs.
+	// Real time on purpose (not the clamped EffectStep): at a low frame rate a clamped pump would still be back when
+	// the next shot is allowed (Sol 6.1 review).
 	if (PumpElapsed >= 0.f)
 	{
 		if (bReloading)
