@@ -1,0 +1,3491 @@
+OpenAI Codex v0.167.2
+--------
+workdir: C:\GameJam
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a1d62b-d37d-7190-8e2d-95790dabeb9e
+--------
+user
+# Review: menu look transition and skill point confirmation — Glyphbound (UE 5.9, canvas HUD)
+
+You are reviewing, read-only. Run `git diff HEAD -- Glyphbound/Source` and read around it in `UI/GBHUD.h`,
+`UI/GBHUD.cpp`, `UI/GBHUD_Menus.cpp`, `Player/GBPlayerController.cpp` (how menu input reaches the HUD:
+`InputMenuConfirm`, `InputMenuBack`, `InputMenuTabKey`, `InputMenuClick`, `InputSkillTrees`, `InputInventory`) and the
+changed smoke steps in `Core/GBDevCommands.cpp` (UI block from "ui: future inventory"). Ignore Devlog files.
+
+What changed (owner's requests, Nov 13):
+1. **Transition when the menu's look changes while it stays open** (`DrawMenus` tracks `MenuSkinShown`; on a change
+   it stamps `MenuSkinChangeTime`, replays the title glitch through `MenuOpenTime`, and `DrawMenuSkinTransition`
+   draws for 0.42 s over the menu: into cyberpunk a scan line sweeping down over dark stone, into RPG a pixel dissolve
+   of near-black cells). Opening or closing a menu resets the tracking, so a menu never animates on open.
+2. **Every skill point asks first:** `ConfirmSkill` on a perk that can be bought sets `MenuState.PendingUnlock` and
+   returns; the dialog (`DrawUnlockConfirm`, drawn last in `DrawMenus`, in the screen's look) has Confirm / Cancel
+   buttons (`EMenuHitKind::ConfirmYes` / `ConfirmNo`). Enter (or Confirm) spends; Esc / B (`MenuBack`) cancels; a tab
+   key cancels and turns the page; arrows and R do nothing while it is up; hover and clicks on the page underneath
+   are ignored. A perk that cannot be bought shows its reason as before, with no dialog.
+
+## What to look for (ranked)
+1. A skill point spent without the dialog, or spent twice, or on a different node than the one the dialog names
+   (cursor moved by hover / click / tab while pending; Enter repeating; a click on Confirm while the cursor sits on
+   another node; the gun emblems' Enter, which opens a branch page, now interacting with `PendingUnlock`).
+2. A dialog that cannot be closed or that stays up on the wrong page (switching menus with K / I / Tab / Esc /
+   gamepad View / Menu, the inventory turning pages, death while a menu is open, `+1 skill point` or `Reset` buttons
+   clicked while pending, the node becoming unaffordable while pending).
+3. The transition: firing when it should not (menu open, every frame, a page change that keeps the same look),
+   timing with real time vs paused game time, the `MenuOpenTime` reuse changing anything else that reads it (the death
+   screen), drawing cost (the dissolve fills up to about 1,000 rectangles for 0.42 s).
+4. Smoke: are the new checks able to fail (Esc spending, one Enter spending)?
+
+Do not suggest style rewrites or new features, and do not judge the art. For each finding give: file:line, what goes
+wrong, a concrete scenario, and a fix. If you find nothing real, say so plainly.
+
+codex
+I’ll read the source diff, then trace menu input and the smoke checks for concrete failures. I won’t modify files.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'git diff HEAD -- Glyphbound/Source' in C:\GameJam
+ succeeded in 148ms:
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp', LF will be replaced by CRLF the next time Git touches it
+diff --git a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+index 536271b..aea39f6 100644
+--- a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -118,6 +118,7 @@ namespace GBSmokeRun
+ 	static TWeakObjectPtr<AGBEnemyCharacter> ShotgunFlashTarget;
+ 	static FGBAmmoState ShotgunAmmoBefore;
+ 	static int32 ShotgunTubePointsBefore = 0;
++	static int32 UiConfirmPointsBefore = 0;
+ 	// The reload from 3 shells: the game time it started and the time one shell takes (ReloadTime moves with the Rapid Reload perk).
+ 	static double ShotgunReloadStartSim = 0.0;
+ 	static float ShotgunCycleSeconds = 0.333f;
+@@ -3077,15 +3078,73 @@ namespace GBSmokeRun
+ 		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
+ 		Add(U + 28.45f, TEXT("ui: cyber skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
+ 		Add(U + 28.55f, TEXT("ui: screenshot cyber skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21b_cyber_skilltrees_other")); });
+-		Add(U + 28.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
++		// The menu look changes while the inventory stays open (owner, Nov 13): in the future, the Skills page on the
++		// spell tree is RPG and the other pages are cyberpunk. Each jump plays a transition; catch both mid-way.
++		Add(U + 28.6f, TEXT("ui: future inventory, skills page on the spell tree (RPG look)"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			Menu(Player, EGBMenu::Inventory);
++			Cursor(World, 3, 0, TEXT("Spell_FireballDamage"), false);
++		});
++		Add(U + 29.0f, TEXT("ui: tab to the spells page (into cyberpunk)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
++		Add(U + 29.12f, TEXT("ui: screenshot transition into cyberpunk"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_23_transition_to_cyber")); });
++		Add(U + 29.7f, TEXT("ui: tab back to the skills page (into RPG)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });
++		Add(U + 29.85f, TEXT("ui: screenshot transition into RPG"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_24_transition_to_rpg")); });
++		// Every skill point asks first (owner, Nov 13): Enter opens the dialog, Esc cancels it without spending, and
++		// Enter on the dialog spends exactly one rank.
++		Add(U + 30.4f, TEXT("ui: skill trees, Enter on Heavy Rounds opens the confirmation"), [Menu](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			Menu(Player, EGBMenu::SkillTrees);
++			if (AGBHUD* Hud = AGBHUD::Get(World))
++			{
++				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_Damage"), false);
++				UiConfirmPointsBefore = Player->GetSkillTree()->GetPoints();
++				Hud->MenuConfirm();
++			}
++		});
++		Add(U + 30.7f, TEXT("ui: screenshot cyberpunk confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_25_cyber_confirm")); });
++		Add(U + 31.3f, TEXT("ui: tab to the spell tree (cancels), Enter on a spell perk"), [](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			if (AGBHUD* Hud = AGBHUD::Get(World))
++			{
++				Hud->MenuTab(-1);
++				Hud->DebugSetMenuCursor(0, 0, TEXT("Spell_FireballDamage"), false);
++				Hud->MenuConfirm();
++			}
++		});
++		Add(U + 31.9f, TEXT("ui: screenshot RPG confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_26_rpg_confirm")); });
++		Add(U + 32.4f, TEXT("ui: Esc cancels: no point spent; then Enter, Enter spends one"), [](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			AGBHUD* Hud = AGBHUD::Get(World);
++			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
++			if (!Hud || !Skills)
++			{
++				return;
++			}
++			const FName Node(TEXT("Spell_FireballDamage"));
++			const int32 RankBefore = Skills->GetRank(Node);
++			const bool bClosed = !Hud->MenuBack(); // Esc: the dialog takes it (returns true) and closes
++			const int32 AfterCancel = Skills->GetPoints();
++			Hud->MenuConfirm(); // asks again
++			const int32 AfterAsk = Skills->GetPoints();
++			Hud->MenuConfirm(); // spends
++			const int32 AfterSpend = Skills->GetPoints();
++			UE_LOG(LogGB, Display, TEXT("SMOKE skill confirm: points %d before, %d after Esc, %d after one Enter, %d after Enter on the dialog; rank %d -> %d"),
++				UiConfirmPointsBefore, AfterCancel, AfterAsk, AfterSpend, RankBefore, Skills->GetRank(Node));
++			if (bClosed || AfterCancel != UiConfirmPointsBefore || AfterAsk != UiConfirmPointsBefore || AfterSpend != UiConfirmPointsBefore - 1 || Skills->GetRank(Node) != RankBefore + 1)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE skill confirm FAILED: Esc closed the menu=%d; points %d / %d / %d (expected %d, %d, %d); rank %d (expected %d)"),
++					bClosed ? 1 : 0, AfterCancel, AfterAsk, AfterSpend, UiConfirmPointsBefore, UiConfirmPointsBefore, UiConfirmPointsBefore - 1, Skills->GetRank(Node), RankBefore + 1);
++			}
++		});
++		Add(U + 32.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+ 		{
+ 			Menu(Player, EGBMenu::None);
+ 			FGBDamageInfo Info;
+ 			Info.Amount = 10000000.f;
+ 			UGBCombatLibrary::DealDamage(Player, Info, true);
+ 		});
+-		Add(U + 29.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
+-		Add(U + 30.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(U + 33.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
++		Add(U + 34.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+diff --git a/Glyphbound/Source/Glyphbound/UI/GBHUD.h b/Glyphbound/Source/Glyphbound/UI/GBHUD.h
+index bbb7197..c2ccdd0 100644
+--- a/Glyphbound/Source/Glyphbound/UI/GBHUD.h
++++ b/Glyphbound/Source/Glyphbound/UI/GBHUD.h
+@@ -129,6 +129,10 @@ protected:
+ 	bool bHasLastSkin = false;
+ 	/** Real time the open menu was opened (intro animation). */
+ 	double MenuOpenTime = -1000.0;
++	/** The look the open menu was last drawn in; a change while it stays open plays a transition (owner, Nov 13). */
++	EGBHudSkin MenuSkinShown = EGBHudSkin::Rpg90s;
++	bool bHasMenuSkin = false;
++	double MenuSkinChangeTime = -1000.0;
+ 
+ 	// ---- Player events (bound lazily: the pawn may not exist yet, or may be replaced) ----
+ 	void BindToPlayer(AGBPlayerCharacter* Player);
+@@ -191,6 +195,9 @@ protected:
+ 		SkillTreeTab,
+ 		/** Weapon tree: the Back button of a gun branch page. */
+ 		SkillBranchBack,
++		/** The skill point confirmation: spend, or cancel. */
++		ConfirmYes,
++		ConfirmNo,
+ 		DeathScreen
+ 	};
+ 	/** One clickable thing drawn this frame, in canvas coordinates. */
+@@ -243,6 +250,8 @@ protected:
+ 		FName SkillCursor = NAME_None;
+ 		/** Skill trees: the node last selected in each tree, so switching back returns to it. */
+ 		FName TreeCursor[2] = { NAME_None, NAME_None };
++		/** A perk waiting for the player to confirm the skill point (owner, Nov 13). None = no dialog. */
++		FName PendingUnlock = NAME_None;
+ 	};
+ 	FMenuState MenuState;
+ 
+@@ -445,6 +454,10 @@ protected:
+ 	void OpenSkillBranch(FName Branch);
+ 	/** Weapon tree: from a branch page back to the hub, on that branch's emblem. False if no branch page is shown. */
+ 	bool CloseSkillBranch();
++	/** The dialog that asks before a skill point is spent, in the screen's look, on top of everything. */
++	void DrawUnlockConfirm(AGBPlayerCharacter* Player, EGBHudSkin Skin);
++	/** Covers a change of the menu's look and reveals the new one (a scan sweep into cyberpunk, a pixel dissolve into RPG). */
++	void DrawMenuSkinTransition();
+ 	/** Weapon hub: one gun emblem (title, ranks owned, its perks). */
+ 	void DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef& Category, const TArray<FSkillNodeRef>& Nodes, float X, float Y, float W, float H);
+ 	void ConfirmItem(AGBPlayerCharacter* Player);
+diff --git a/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp b/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+index 7d03b3b..e7e4f29 100644
+--- a/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ b/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -149,6 +149,7 @@ void AGBHUD::OnMenuOpened(EGBMenu Menu)
+ {
+ 	MenuState = FMenuState();
+ 	MenuOpenTime = GetRealTime();
++	bHasMenuSkin = false;
+ 	ResetMenuMouse();
+ 	if (Menu == EGBMenu::SkillTrees)
+ 	{
+@@ -208,6 +209,7 @@ void AGBHUD::SelectSkillTree(int32 Tree)
+ void AGBHUD::OnMenuClosed(EGBMenu Menu)
+ {
+ 	MenuState = FMenuState();
++	bHasMenuSkin = false;
+ 	ResetMenuMouse();
+ }
+ 
+@@ -285,6 +287,10 @@ void AGBHUD::UpdateMenuMouse()
+ 
+ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
+ {
++	if (MenuState.PendingUnlock != NAME_None)
++	{
++		return; // the dialog is modal: the page under it does not follow the mouse
++	}
+ 	switch (Hit.Kind)
+ 	{
+ 	case EMenuHitKind::PauseEntry:
+@@ -316,6 +322,10 @@ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
+ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
+ {
+ 	AGBPlayerCharacter* Player = GetPlayer();
++	if (MenuState.PendingUnlock != NAME_None && Hit.Kind != EMenuHitKind::ConfirmYes && Hit.Kind != EMenuHitKind::ConfirmNo)
++	{
++		return; // the dialog is modal: a click on the page under it does nothing
++	}
+ 	switch (Hit.Kind)
+ 	{
+ 	case EMenuHitKind::PauseEntry:
+@@ -362,6 +372,13 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
+ 	case EMenuHitKind::SkillBranchBack:
+ 		CloseSkillBranch();
+ 		break;
++	case EMenuHitKind::ConfirmYes:
++		MenuState.SkillCursor = MenuState.PendingUnlock;
++		ConfirmSkill(Player);
++		break;
++	case EMenuHitKind::ConfirmNo:
++		MenuState.PendingUnlock = NAME_None;
++		break;
+ 	case EMenuHitKind::DeathScreen:
+ 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
+ 		// so a click respawns exactly once.
+@@ -392,6 +409,10 @@ bool AGBHUD::MenuClick(const FVector2D& ScreenPosition)
+ void AGBHUD::MenuNavigate(FIntPoint Direction)
+ {
+ 	using namespace GBHudMenuLocal;
++	if (MenuState.PendingUnlock != NAME_None)
++	{
++		return; // the confirmation only takes Enter (spend) or Esc (cancel)
++	}
+ 	AGBPlayerCharacter* Player = GetPlayer();
+ 	switch (GetOpenMenu())
+ 	{
+@@ -488,6 +509,11 @@ void AGBHUD::MenuConfirm()
+ 
+ bool AGBHUD::MenuBack()
+ {
++	if (MenuState.PendingUnlock != NAME_None)
++	{
++		MenuState.PendingUnlock = NAME_None;
++		return true;
++	}
+ 	switch (GetOpenMenu())
+ 	{
+ 	case EGBMenu::Inventory:
+@@ -523,6 +549,7 @@ void AGBHUD::MenuTab(int32 Direction)
+ 	{
+ 		return;
+ 	}
++	MenuState.PendingUnlock = NAME_None;
+ 	const EGBMenu Menu = GetOpenMenu();
+ 	if (Menu == EGBMenu::Inventory)
+ 	{
+@@ -962,6 +989,19 @@ void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
+ 		}
+ 	}
+ 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	// Every skill point is confirmed (owner, Nov 13): a perk that can be bought opens the dialog first; the dialog's
++	// Enter or click comes back here with the same node pending and spends it. A perk that cannot be bought says why.
++	if (MenuState.PendingUnlock != NodeId)
++	{
++		if (SkillTree->CanUnlock(NodeId) == EGBSkillUnlockResult::Ok)
++		{
++			MenuState.PendingUnlock = NodeId;
++			return;
++		}
++		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, SkillTree->CanUnlock(NodeId)), 2.f);
++		return;
++	}
++	MenuState.PendingUnlock = NAME_None;
+ 	const EGBSkillUnlockResult Result = SkillTree->Unlock(NodeId);
+ 	if (Result == EGBSkillUnlockResult::Ok)
+ 	{
+@@ -1008,7 +1048,7 @@ void AGBHUD::MenuReset()
+ {
+ 	const EGBMenu Menu = GetOpenMenu();
+ 	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
+-	if (!bShowsSkills)
++	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
+ 	{
+ 		return;
+ 	}
+@@ -1322,6 +1362,19 @@ namespace GBHudMenuDraw
+ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
+ {
+ 	const EGBHudSkin Skin = GetMenuSkin();
++	// The look changed while the menu stayed open (an inventory tab from or to the skills page in the other era, or a
++	// skill tree tab): cover the jump with a transition, and replay the title's glitch-in.
++	if (!bHasMenuSkin)
++	{
++		MenuSkinShown = Skin;
++		bHasMenuSkin = true;
++	}
++	else if (Skin != MenuSkinShown)
++	{
++		MenuSkinShown = Skin;
++		MenuSkinChangeTime = GetRealTime();
++		MenuOpenTime = MenuSkinChangeTime;
++	}
+ 	// Clickables are rebuilt while drawing, for the screen as it is now.
+ 	MenuHits.Reset();
+ 	MenuHitsMenu = GetOpenMenu();
+@@ -1392,6 +1445,175 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
+ 	default:
+ 		break;
+ 	}
++	const EGBMenu Open = GetOpenMenu();
++	const bool bSkillPage = Open == EGBMenu::SkillTrees || (Open == EGBMenu::Inventory && MenuState.Page == PageSkills);
++	if (!bSkillPage)
++	{
++		MenuState.PendingUnlock = NAME_None;
++	}
++	else if (MenuState.PendingUnlock != NAME_None && Player)
++	{
++		DrawUnlockConfirm(Player, Skin);
++	}
++	DrawMenuSkinTransition();
++}
++
++void AGBHUD::DrawUnlockConfirm(AGBPlayerCharacter* Player, EGBHudSkin Skin)
++{
++	using namespace GBHudMenuLocal;
++	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
++	const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree();
++	const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(MenuState.PendingUnlock) : nullptr;
++	if (!SkillTree || !Def)
++	{
++		MenuState.PendingUnlock = NAME_None;
++		return;
++	}
++	const float S = UIScale();
++	const float P = ArtPixel();
++	const float W = Canvas->ClipX;
++	const float H = Canvas->ClipY;
++	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
++	const int32 Rank = SkillTree->GetRank(Def->Id);
++	const int32 Cost = FMath::Max(1, Def->Cost);
++	const int32 Left = SkillTree->GetPoints() - Cost;
++	const FString Name = SkillName(Data, Def->Id);
++	const FString Ask = FString::Printf(TEXT("Spend %d skill point%s on %s?"), Cost, Cost == 1 ? TEXT("") : TEXT("s"), *Name);
++	const FString Detail = FString::Printf(TEXT("Rank %d -> %d of %d.  %d point%s left after."), Rank, Rank + 1, FMath::Max(1, Def->MaxRank), Left, Left == 1 ? TEXT("") : TEXT("s"));
++
++	// A modal: the whole screen dims, then a box in the screen's look with the question and two buttons.
++	FillRect(0.f, 0.f, W, H, FLinearColor(0.f, 0.f, 0.f, 0.55f));
++	// Wide enough for the question (perk names vary), never wider than most of the screen.
++	const float TextNeed = FMath::Max(UiMeasure(Skin, EGBTextSize::Body, Ask).X, UiMeasure(Skin, EGBTextSize::Small, Detail).X) + (bCyber ? 60.f * S : 20.f * P);
++	const float BoxW = FMath::RoundToFloat(FMath::Min(W * 0.9f, FMath::Max(bCyber ? 700.f * S : 150.f * P, TextNeed)) / P) * P;
++	const float BoxH = FMath::RoundToFloat((bCyber ? 230.f * S : 58.f * P) / P) * P;
++	const float BX = FMath::RoundToFloat((W - BoxW) * 0.5f / P) * P;
++	const float BY = FMath::RoundToFloat((H - BoxH) * 0.5f / P) * P;
++	float TextY = BY;
++	if (bCyber)
++	{
++		CyBox(BX, BY, BoxW, BoxH, 18.f * S, GBAlpha(GBCy::Ink, 0.97f), GBCy::Red, 0x5, 2.f);
++		CyScanlines(BX, BY, BoxW, BoxH, 0.2f);
++		FillRect(BX, BY + 16.f * S, 4.f * S, BoxH - 32.f * S, GBCy::Red);
++		FCyTextStyle Title;
++		Title.Face = ECyFace::Condensed;
++		Title.Px = 30.f;
++		Title.Spacing = 120;
++		Title.bUpper = true;
++		Title.Color = GBCy::Red;
++		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuSkinChangeTime) / 0.3f) * 4.f * S;
++		const FVector2D TS = DrawCyText(TEXT("Confirm upgrade"), BX + 30.f * S, BY + 20.f * S, Title, 0.f);
++		TextY = BY + 20.f * S + TS.Y + 14.f * S;
++	}
++	else
++	{
++		FillRect(BX, BY, BoxW, BoxH, GBRpg::StoneDeep);
++		RpgStone(BX, BY, BoxW, BoxH, FLinearColor(0.7f, 0.7f, 0.8f, 0.45f));
++		RpgFrame(BX, BY, BoxW, BoxH, ERpgFrame::Gold);
++		FPixelTextStyle Title;
++		Title.Scale = FMath::Max(2, FMath::RoundToInt(3.f * S));
++		Title.Ink = &GBRpg::InkGold;
++		Title.Outline = GBRpg::Outline;
++		Title.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
++		DrawPixelText(TEXT("SPEND A SKILL POINT?"), BX + BoxW * 0.5f, BY + 6.f * P, Title, 0.5f);
++		TextY = BY + 6.f * P + 7.f * Title.Scale + 5.f * P;
++	}
++	const float Pad = bCyber ? 30.f * S : 8.f * P;
++	const FVector2D AskSize = UiText(Skin, EGBTextSize::Body, EGBTextTone::Normal, Ask, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY, bCyber ? 0.f : 0.5f);
++	UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, Detail, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY + AskSize.Y + (bCyber ? 8.f * S : 2.f * P), bCyber ? 0.f : 0.5f);
++
++	// Buttons: Confirm (Enter) and Cancel (Esc), right-aligned in cyberpunk, centred in RPG.
++	const FString YesText(TEXT("Enter  Confirm"));
++	const FString NoText(TEXT("Esc  Cancel"));
++	const float BtnH = bCyber ? 40.f * S : 13.f * P;
++	const float YesW = UiMeasure(Skin, EGBTextSize::Small, YesText).X + (bCyber ? 44.f * S : 14.f * P);
++	const float NoW = UiMeasure(Skin, EGBTextSize::Small, NoText).X + (bCyber ? 44.f * S : 14.f * P);
++	const float Gap = bCyber ? 14.f * S : 4.f * P;
++	const float BtnY = BY + BoxH - BtnH - (bCyber ? 22.f * S : 6.f * P);
++	const float StartX = bCyber ? BX + BoxW - Pad - YesW - Gap - NoW : FMath::RoundToFloat((BX + BoxW * 0.5f - (YesW + Gap + NoW) * 0.5f) / P) * P;
++	const float YesX = StartX;
++	const float NoX = StartX + YesW + Gap;
++	MenuButton(Skin, YesX, BtnY, YesW, BtnH, YesText, true, true);
++	AddMenuHit(EMenuHitKind::ConfirmYes, YesX, BtnY, YesW, BtnH);
++	MenuButton(Skin, NoX, BtnY, NoW, BtnH, NoText, true, IsMouseOver(NoX, BtnY, NoW, BtnH));
++	AddMenuHit(EMenuHitKind::ConfirmNo, NoX, BtnY, NoW, BtnH);
++}
++
++namespace GBHudMenuLocal
++{
++	/** 0..1, stable per cell: the order in which the pixel dissolve uncovers the screen. */
++	float CellHash(int32 X, int32 Y)
++	{
++		uint32 H = static_cast<uint32>(X) * 73856093u ^ static_cast<uint32>(Y) * 19349663u;
++		H ^= H >> 13;
++		H *= 0x5bd1e995u;
++		H ^= H >> 15;
++		return static_cast<float>(H & 1023u) / 1024.f;
++	}
++}
++
++void AGBHUD::DrawMenuSkinTransition()
++{
++	// Owner, Nov 13: the menu jumped from one look to the other (an inventory tab to or from the skills page in the other
++	// era, a skill tree tab). For a short moment the old look's material covers the screen and the new look's signature
++	// uncovers it: a scan line sweeping down into cyberpunk, a pixel dissolve into the 90s RPG.
++	constexpr float Seconds = 0.42f;
++	const float Since = static_cast<float>(GetRealTime() - MenuSkinChangeTime);
++	if (Since < 0.f || Since >= Seconds)
++	{
++		return;
++	}
++	const float T = Since / Seconds;
++	const float S = UIScale();
++	const float P = ArtPixel();
++	const float W = Canvas->ClipX;
++	const float H = Canvas->ClipY;
++	if (MenuSkinShown == EGBHudSkin::Cyberpunk)
++	{
++		// Into cyberpunk: dark carved stone (the RPG look) below a cyan scan line that sweeps down, with glitch slices
++		// trailing over the new look and the scanlines fading out.
++		const float Ease = 1.f - (1.f - T) * (1.f - T);
++		const float LineY = FMath::RoundToFloat(H * Ease);
++		if (LineY < H)
++		{
++			FillRect(0.f, LineY, W, H - LineY, GBRpg::StoneDeep);
++			RpgStone(0.f, LineY, W, H - LineY, FLinearColor(0.75f, 0.75f, 0.85f, 0.55f));
++		}
++		for (int32 i = 0; i < 6; ++i)
++		{
++			const float Hash = GBHudMenuLocal::CellHash(i, FMath::FloorToInt(Since * 30.f));
++			const float SliceY = LineY - (12.f + 70.f * Hash + 20.f * i) * S;
++			const float SliceH = (2.f + 8.f * GBHudMenuLocal::CellHash(i + 7, i)) * S;
++			const float Shift = (Hash - 0.5f) * 60.f * S;
++			FillRect(FMath::Max(0.f, Shift), SliceY, W - FMath::Abs(Shift), SliceH, GBAlpha(i % 2 ? GBCy::Cyan : GBCy::Red, 0.28f * (1.f - T)));
++		}
++		DrawGlow(W * 0.5f, LineY, W * 0.7f, 36.f * S, GBAlpha(GBCy::Cyan, 0.35f * (1.f - T * 0.5f)));
++		FillRect(0.f, LineY - 1.f * S, W, FMath::Max(1.f, 3.f * S), GBAlpha(GBCy::Cyan, 0.95f));
++		CyScanlines(0.f, 0.f, W, LineY, 0.35f * (1.f - T));
++		return;
++	}
++	// Into the 90s RPG: the cyberpunk look's near-black breaks into big pixels that vanish in a scattered order, each
++	// one flashing gold just before it goes.
++	const float Cell = FMath::Max(8.f, 12.f * P);
++	const int32 Cols = FMath::CeilToInt(W / Cell);
++	const int32 Rows = FMath::CeilToInt(H / Cell);
++	for (int32 Y = 0; Y < Rows; ++Y)
++	{
++		for (int32 X = 0; X < Cols; ++X)
++		{
++			const float Hash = GBHudMenuLocal::CellHash(X, Y);
++			if (Hash < T)
++			{
++				continue;
++			}
++			const bool bEdge = Hash < T + 0.05f;
++			FillRect(X * Cell, Y * Cell, Cell, Cell, bEdge ? GBAlpha(GBRpg::Gold2, 0.75f) : GBAlpha(GBCy::Ink, 0.97f));
++		}
++	}
++	if (T < 0.5f)
++	{
++		CyScanlines(0.f, 0.f, W, H, 0.3f * (1.f - 2.f * T));
++	}
+ }
+ 
+ void AGBHUD::DrawPauseMenu(EGBHudSkin Skin)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g AGENTS.md -g '*GBHUD*' -g '*GBPlayerController*' -g '*GBDevCommands*'" in C:\GameJam
+ succeeded in 894ms:
+Glyphbound\Source\Glyphbound\Core\GBDevCommands.cpp
+Glyphbound\Source\Glyphbound\Player\GBPlayerController.h
+Glyphbound\Source\Glyphbound\Player\GBPlayerController.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD.h
+Glyphbound\Source\Glyphbound\UI\GBHUDShared.h
+Glyphbound\Source\Glyphbound\UI\GBHUD_Rpg.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD_Paint.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD_Menus.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD_DamageNumbers.cpp
+Glyphbound\Source\Glyphbound\UI\GBHUD_Cyber.cpp
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$paths = @('"'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp','Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp','Glyphbound/Source/Glyphbound/UI/GBHUD.cpp'); foreach ("'$p in $paths) { rg -n '"'MenuOpenTime|GetRealTime|DrawMenus|MenuConfirm|MenuBack|MenuTab|InputMenu|InputSkillTrees|InputInventory|SetOpenMenu|ToggleMenu|PendingUnlock|ConfirmSkill|DebugSetMenuCursor|OnMenu' "'$p }' in C:\GameJam
+ succeeded in 253ms:
+148:void AGBHUD::OnMenuOpened(EGBMenu Menu)
+151:	MenuOpenTime = GetRealTime();
+209:void AGBHUD::OnMenuClosed(EGBMenu Menu)
+290:	if (MenuState.PendingUnlock != NAME_None)
+325:	if (MenuState.PendingUnlock != NAME_None && Hit.Kind != EMenuHitKind::ConfirmYes && Hit.Kind != EMenuHitKind::ConfirmNo)
+333:		MenuConfirm();
+361:		ConfirmSkill(Player);
+376:		MenuState.SkillCursor = MenuState.PendingUnlock;
+377:		ConfirmSkill(Player);
+380:		MenuState.PendingUnlock = NAME_None;
+383:		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
+412:	if (MenuState.PendingUnlock != NAME_None)
+465:void AGBHUD::MenuConfirm()
+484:		ConfirmSkill(Player);
+501:			ConfirmSkill(Player);
+510:bool AGBHUD::MenuBack()
+512:	if (MenuState.PendingUnlock != NAME_None)
+514:		MenuState.PendingUnlock = NAME_None;
+546:void AGBHUD::MenuTab(int32 Direction)
+552:	MenuState.PendingUnlock = NAME_None;
+974:void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
+994:	if (MenuState.PendingUnlock != NodeId)
+998:			MenuState.PendingUnlock = NodeId;
+1004:	MenuState.PendingUnlock = NAME_None;
+1051:	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
+1100:void AGBHUD::DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode, bool bChoosingSpell)
+1112:void AGBHUD::MenuBackdrop(EGBHudSkin Skin)
+1362:void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
+1375:		MenuSkinChangeTime = GetRealTime();
+1376:		MenuOpenTime = MenuSkinChangeTime;
+1400:		MenuBackdrop(Skin);
+1413:			Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 6.f * S;
+1452:		MenuState.PendingUnlock = NAME_None;
+1454:	else if (MenuState.PendingUnlock != NAME_None && Player)
+1466:	const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(MenuState.PendingUnlock) : nullptr;
+1469:		MenuState.PendingUnlock = NAME_None;
+1504:		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuSkinChangeTime) / 0.3f) * 4.f * S;
+1561:	const float Since = static_cast<float>(GetRealTime() - MenuSkinChangeTime);
+1625:	MenuBackdrop(Skin);
+1643:		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 8.f * S;
+1711:	const float Since = (float)(GetRealTime() - MenuOpenTime);
+1778:	MenuBackdrop(Skin);
+1796:		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 6.f * S;
+2968:						const float D = FMath::Frac((float)GetRealTime() * 0.6f + A.X * 0.001f) * Len;
+126:	EIC->BindAction(InputSet->Inventory, ETriggerEvent::Started, this, &ThisClass::InputInventory);
+127:	EIC->BindAction(InputSet->SkillTrees, ETriggerEvent::Started, this, &ThisClass::InputSkillTrees);
+129:	EIC->BindAction(InputSet->MenuNavigate, ETriggerEvent::Started, this, &ThisClass::InputMenuNavigate);
+130:	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
+131:	EIC->BindAction(InputSet->MenuBack, ETriggerEvent::Started, this, &ThisClass::InputMenuBack);
+132:	EIC->BindAction(InputSet->MenuTabKey, ETriggerEvent::Started, this, &ThisClass::InputMenuTabKey);
+133:	EIC->BindAction(InputSet->MenuTab, ETriggerEvent::Started, this, &ThisClass::InputMenuTab);
+134:	EIC->BindAction(InputSet->MenuReset, ETriggerEvent::Started, this, &ThisClass::InputMenuReset);
+135:	EIC->BindAction(InputSet->MenuClick, ETriggerEvent::Started, this, &ThisClass::InputMenuClick);
+149:		HUD->OnMenuClosed(OldMenu);
+194:		HUD->OnMenuOpened(Menu);
+198:void AGBPlayerController::ToggleMenu(EGBMenu Menu)
+203:void AGBPlayerController::InputInventory()
+207:		ToggleMenu(EGBMenu::Inventory);
+211:void AGBPlayerController::InputSkillTrees()
+215:		ToggleMenu(EGBMenu::SkillTrees);
+228:void AGBPlayerController::InputMenuNavigate(const FInputActionValue& Value)
+255:void AGBPlayerController::InputMenuConfirm()
+271:		HUD->MenuConfirm();
+275:void AGBPlayerController::InputMenuBack()
+282:	if (!HUD || !HUD->MenuBack())
+288:void AGBPlayerController::InputMenuTabKey()
+295:	InputMenuBack();
+298:void AGBPlayerController::InputMenuTab(const FInputActionValue& Value)
+311:		HUD->MenuTab(Axis > 0.f ? 1 : -1);
+315:void AGBPlayerController::InputMenuReset()
+327:void AGBPlayerController::InputMenuClick()
+225:	const double Now = GetRealTime();
+248:	const double Now = GetRealTime();
+310:		LastDamageTime = GetRealTime();
+316:	LastCastTime = GetRealTime();
+354:	const double Now = GetRealTime();
+493:		DrawMenus(Player);
+541:	const bool bCastPose = (QTE && QTE->IsActive()) || (GetRealTime() - LastCastTime) < GBHudLayout::CastHandTime;
+627:	const double Now = GetRealTime();
+808:	const double Now = GetRealTime();
+1141:	const float Elapsed = (float)(GetRealTime() - LastDamageTime);
+1156:		const int32 Seed = FMath::FloorToInt((float)GetRealTime() * 30.f);
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path C:\\AGENTS.md,C:\\GameJam\\AGENTS.md,C:\\GameJam\\Glyphbound\\AGENTS.md,C:\\GameJam\\Glyphbound\\Source\\AGENTS.md -ErrorAction SilentlyContinue | ForEach-Object { "'$_.FullName; Get-Content -LiteralPath $_.FullName }' in C:\GameJam
+ exited 1 in 746ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp'; "'$s=Get-Content $p; foreach($range in @(@(1,286),@(322,590),@(875,1111),@(1360,1460),@(1690,1780))) { for($i=$range[0];$i -le $range[1];$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] } }' in C:\GameJam
+ succeeded in 616ms:
+1:// Menus of AGBHUD: pause, inventory (items, weapons, spells, skills), skill trees, death screen.
+2:// Keyboard, gamepad and mouse share one cursor: every clickable drawn in a frame is recorded in MenuHits.
+3:#include "UI/GBHUD.h"
+4:
+5:#include "UI/GBHUDShared.h"
+6:#include "Player/GBPlayerCharacter.h"
+7:#include "Player/GBPlayerController.h"
+8:#include "Spells/GBSpellbookComponent.h"
+9:#include "Items/GBInventoryComponent.h"
+10:#include "Progression/GBSkillTreeComponent.h"
+11:#include "Weapons/GBEquipmentComponent.h"
+12:#include "Weapons/GBHeldItem.h"
+13:#include "Data/GBDataSubsystem.h"
+14:#include "Core/GBGameMode.h"
+15:#include "Core/GBStatNames.h"
+16:
+17:#include "Engine/Canvas.h"
+18:#include "Kismet/KismetSystemLibrary.h"
+19:
+20:namespace GBHudMenuLocal
+21:{
+22:	const FLinearColor MenuWhite(1.f, 1.f, 1.f, 1.f);
+23:	const FLinearColor MenuDim(0.f, 0.f, 0.f, 0.6f);
+24:	const FLinearColor MenuGrey(0.55f, 0.55f, 0.55f, 1.f);
+25:
+26:	int32 Wrap(int32 Value, int32 Num)
+27:	{
+28:		return Num > 0 ? ((Value % Num) + Num) % Num : 0;
+29:	}
+30:
+31:	const TCHAR* SlotKey(int32 Slot)
+32:	{
+33:		static const TCHAR* Keys[] = { TEXT("RMB"), TEXT("1"), TEXT("2"), TEXT("3"), TEXT("4") };
+34:		return (Slot >= 0 && Slot < (int32)UE_ARRAY_COUNT(Keys)) ? Keys[Slot] : TEXT("?");
+35:	}
+36:
+37:	FString ItemTypeName(EGBItemType Type)
+38:	{
+39:		switch (Type)
+40:		{
+41:		case EGBItemType::Consumable: return TEXT("Consumable");
+42:		case EGBItemType::Throwable: return TEXT("Throwable");
+43:		case EGBItemType::Armor: return TEXT("Armor");
+44:		case EGBItemType::KeyItem: return TEXT("Key item");
+45:		case EGBItemType::Material: return TEXT("Material");
+46:		case EGBItemType::Ammo: return TEXT("Ammo");
+47:		}
+48:		return FString();
+49:	}
+50:
+51:	FString ItemName(const UGBDataSubsystem* Data, FName ItemId)
+52:	{
+53:		const FGBItemDefinition* Def = Data ? Data->FindItem(ItemId) : nullptr;
+54:		return (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : ItemId.ToString();
+55:	}
+56:
+57:	FString SkillName(const UGBDataSubsystem* Data, FName NodeId)
+58:	{
+59:		const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(NodeId) : nullptr;
+60:		return (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : NodeId.ToString();
+61:	}
+62:
+63:	FString SkillResultText(const UGBDataSubsystem* Data, FName NodeId, EGBSkillUnlockResult Result)
+64:	{
+65:		switch (Result)
+66:		{
+67:		case EGBSkillUnlockResult::Ok: return TEXT("Can be unlocked");
+68:		case EGBSkillUnlockResult::MaxRank: return TEXT("Max rank reached");
+69:		case EGBSkillUnlockResult::NotEnoughPoints: return TEXT("Not enough skill points");
+70:		case EGBSkillUnlockResult::UnknownNode: return TEXT("Unknown skill");
+71:		case EGBSkillUnlockResult::MissingRequirement:
+72:		{
+73:			FString Names;
+74:			if (const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(NodeId) : nullptr)
+75:			{
+76:				for (const FName& Req : Def->Requires)
+77:				{
+78:					Names += (Names.IsEmpty() ? TEXT("") : TEXT(", ")) + SkillName(Data, Req);
+79:				}
+80:			}
+81:			return Names.IsEmpty() ? FString(TEXT("Unlock the required skills first")) : FString::Printf(TEXT("Requires: %s"), *Names);
+82:		}
+83:		}
+84:		return FString();
+85:	}
+86:
+87:	bool IsWeaponTree(FName Tree)
+88:	{
+89:		// FName comparison ignores case.
+90:		return Tree == FName(TEXT("Weapon")) || Tree == FName(TEXT("Weapons"));
+91:	}
+92:
+93:	FString WeaponName(const UGBDataSubsystem* Data, FName WeaponId)
+94:	{
+95:		const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr;
+96:		return (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : WeaponId.ToString();
+97:	}
+98:
+99:	FString SlotName(EGBHeldSlot Slot, bool bPlural)
+100:	{
+101:		switch (Slot)
+102:		{
+103:		case EGBHeldSlot::Staff: return bPlural ? TEXT("Staffs") : TEXT("Staff");
+104:		case EGBHeldSlot::Gun: return bPlural ? TEXT("Guns") : TEXT("Gun");
+105:		case EGBHeldSlot::Sword: return TEXT("Sword");
+106:		}
+107:		return FString();
+108:	}
+109:
+110:	/** "Damage 10 x8   Fire interval 0.85 s   Magazine 6" from the base data. */
+111:	TArray<FString> WeaponStatLines(const FGBWeaponDefinition& Def)
+112:	{
+113:		TArray<FString> Lines;
+114:		const float Damage = Def.Stats.FindRef(GBStat::Damage);
+115:		const int32 Pellets = FMath::RoundToInt(Def.Stats.FindRef(GBStat::Pellets));
+116:		if (Damage > 0.f)
+117:		{
+118:			Lines.Add(Pellets > 1 ? FString::Printf(TEXT("Damage %d x%d"), FMath::RoundToInt(Damage), Pellets)
+119:				: FString::Printf(TEXT("Damage %d"), FMath::RoundToInt(Damage)));
+120:		}
+121:		const float Interval = Def.Stats.FindRef(GBStat::FireInterval);
+122:		if (Interval > 0.f)
+123:		{
+124:			Lines.Add(FString::Printf(TEXT("Fire interval %.2f s"), Interval));
+125:		}
+126:		const int32 Magazine = FMath::RoundToInt(Def.Stats.FindRef(GBStat::MagazineSize));
+127:		if (Def.Slot == EGBHeldSlot::Gun && Magazine > 0)
+128:		{
+129:			Lines.Add(FString::Printf(TEXT("Magazine %d"), Magazine));
+130:		}
+131:		return Lines;
+132:	}
+133:}
+134:
+135:// ======================================================================== state and input
+136:
+137:AGBPlayerController* AGBHUD::GetGBController() const
+138:{
+139:	return Cast<AGBPlayerController>(GetOwningPlayerController());
+140:}
+141:
+142:EGBMenu AGBHUD::GetOpenMenu() const
+143:{
+144:	const AGBPlayerController* PC = GetGBController();
+145:	return PC ? PC->GetOpenMenu() : EGBMenu::None;
+146:}
+147:
+148:void AGBHUD::OnMenuOpened(EGBMenu Menu)
+149:{
+150:	MenuState = FMenuState();
+151:	MenuOpenTime = GetRealTime();
+152:	bHasMenuSkin = false;
+153:	ResetMenuMouse();
+154:	if (Menu == EGBMenu::SkillTrees)
+155:	{
+156:		// The trees are two pages: open on the one of the held item (gun = weapons, anything else = spells).
+157:		const AGBPlayerCharacter* Player = GetPlayer();
+158:		const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+159:		const AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
+160:		SelectSkillTree(Item && Item->GetSlot() == EGBHeldSlot::Gun ? 1 : 0);
+161:	}
+162:}
+163:
+164:int32 AGBHUD::GetShownSkillTree() const
+165:{
+166:	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+167:	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+168:	// No cursor yet: the page draws the first node's tree (DrawSkillTrees), so the look follows the same rule.
+169:	return Current ? Current->Tree : (Nodes.Num() > 0 ? Nodes[0].Tree : 0);
+170:}
+171:
+172:void AGBHUD::SelectSkillTree(int32 Tree)
+173:{
+174:	Tree = FMath::Clamp(Tree, 0, 1);
+175:	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+176:	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+177:	if (Current)
+178:	{
+179:		if (Current->Tree == Tree)
+180:		{
+181:			return;
+182:		}
+183:		MenuState.TreeCursor[Current->Tree] = Current->Id;
+184:		// The clickables of the tree being left are stale until the next draw: a hover or a click on them must not
+185:		// pull the cursor back to (or unlock) a node that is no longer shown (Sol 6.1 review).
+186:		MenuHits.Reset();
+187:	}
+188:	const FName Remembered = MenuState.TreeCursor[Tree];
+189:	const FSkillNodeRef* Target = Nodes.FindByPredicate([Remembered, Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree && Node.Id == Remembered; });
+190:	if (!Target)
+191:	{
+192:		// The tree's front page: the weapon tree opens on its hub, not inside a gun branch.
+193:		Target = Nodes.FindByPredicate([Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree && Node.Branch == NAME_None && !Node.bCategory; });
+194:	}
+195:	if (!Target)
+196:	{
+197:		Target = Nodes.FindByPredicate([Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree; });
+198:	}
+199:	if (Target)
+200:	{
+201:		MenuState.SkillCursor = Target->Id;
+202:	}
+203:	else if (!Current && Nodes.Num() > 0)
+204:	{
+205:		MenuState.SkillCursor = Nodes[0].Id;
+206:	}
+207:}
+208:
+209:void AGBHUD::OnMenuClosed(EGBMenu Menu)
+210:{
+211:	MenuState = FMenuState();
+212:	bHasMenuSkin = false;
+213:	ResetMenuMouse();
+214:}
+215:
+216:void AGBHUD::SetInventoryPage(int32 NewPage)
+217:{
+218:	const FName KeepSkill = MenuState.SkillCursor;
+219:	const FName KeepTree0 = MenuState.TreeCursor[0];
+220:	const FName KeepTree1 = MenuState.TreeCursor[1];
+221:	MenuState = FMenuState();
+222:	MenuState.Page = GBHudMenuLocal::Wrap(NewPage, PageCount);
+223:	MenuState.SkillCursor = KeepSkill;
+224:	MenuState.TreeCursor[0] = KeepTree0;
+225:	MenuState.TreeCursor[1] = KeepTree1;
+226:}
+227:
+228:// ======================================================================== mouse
+229:
+230:void AGBHUD::ResetMenuMouse()
+231:{
+232:	MenuHits.Reset();
+233:	MenuHitsMenu = EGBMenu::None;
+234:	MenuHitsPage = -1;
+235:	bMenuHitsChoosing = false;
+236:	// The first position read after opening is only a baseline: an idle mouse must not steal the keyboard cursor.
+237:	bHasMenuMouse = false;
+238:}
+239:
+240:void AGBHUD::AddMenuHit(EMenuHitKind Kind, float X, float Y, float W, float H, int32 Index, FName Id)
+241:{
+242:	FMenuHit Hit;
+243:	Hit.Kind = Kind;
+244:	Hit.Min = FVector2D(X, Y);
+245:	Hit.Max = FVector2D(X + FMath::Max(0.f, W), Y + FMath::Max(0.f, H));
+246:	Hit.Index = Index;
+247:	Hit.Id = Id;
+248:	MenuHits.Add(Hit);
+249:}
+250:
+251:const AGBHUD::FMenuHit* AGBHUD::FindMenuHit(const FVector2D& CanvasPosition) const
+252:{
+253:	// Last drawn is on top.
+254:	for (int32 i = MenuHits.Num() - 1; i >= 0; --i)
+255:	{
+256:		const FMenuHit& Hit = MenuHits[i];
+257:		if (CanvasPosition.X >= Hit.Min.X && CanvasPosition.X <= Hit.Max.X && CanvasPosition.Y >= Hit.Min.Y && CanvasPosition.Y <= Hit.Max.Y)
+258:		{
+259:			return &Hit;
+260:		}
+261:	}
+262:	return nullptr;
+263:}
+264:
+265:void AGBHUD::UpdateMenuMouse()
+266:{
+267:	APlayerController* PC = GetOwningPlayerController();
+268:	float MouseX = 0.f;
+269:	float MouseY = 0.f;
+270:	if (!PC || !PC->GetMousePosition(MouseX, MouseY))
+271:	{
+272:		return;
+273:	}
+274:	const FVector2D Mouse(MouseX * MouseToCanvas, MouseY * MouseToCanvas);
+275:	const bool bMoved = bHasMenuMouse && !Mouse.Equals(LastMenuMouse, 0.5f);
+276:	LastMenuMouse = Mouse;
+277:	bHasMenuMouse = true;
+278:	// Hover uses last frame's clickables, so the highlight moves in the same frame it is drawn.
+279:	if (bMoved && MenuHitsMenu == GetOpenMenu())
+280:	{
+281:		if (const FMenuHit* Hit = FindMenuHit(Mouse))
+282:		{
+283:			ApplyMenuHover(*Hit);
+284:		}
+285:	}
+286:}
+322:void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
+323:{
+324:	AGBPlayerCharacter* Player = GetPlayer();
+325:	if (MenuState.PendingUnlock != NAME_None && Hit.Kind != EMenuHitKind::ConfirmYes && Hit.Kind != EMenuHitKind::ConfirmNo)
+326:	{
+327:		return; // the dialog is modal: a click on the page under it does nothing
+328:	}
+329:	switch (Hit.Kind)
+330:	{
+331:	case EMenuHitKind::PauseEntry:
+332:		MenuState.Cursor = Hit.Index;
+333:		MenuConfirm();
+334:		break;
+335:	case EMenuHitKind::Tab:
+336:		if (Hit.Index != MenuState.Page)
+337:		{
+338:			SetInventoryPage(Hit.Index);
+339:		}
+340:		break;
+341:	case EMenuHitKind::ItemRow:
+342:		MenuState.Cursor = Hit.Index;
+343:		ConfirmItem(Player);
+344:		break;
+345:	case EMenuHitKind::WeaponRow:
+346:		MenuState.Cursor = Hit.Index;
+347:		ConfirmWeapon(Player);
+348:		break;
+349:	case EMenuHitKind::SpellSlot:
+350:		// A click on another slot while choosing leaves the chooser and opens it for that slot.
+351:		MenuState.bChoosingSpell = false;
+352:		MenuState.Cursor = Hit.Index;
+353:		ConfirmSpellSlot(Player);
+354:		break;
+355:	case EMenuHitKind::SpellChoice:
+356:		MenuState.SubCursor = Hit.Index;
+357:		ConfirmSpellSlot(Player);
+358:		break;
+359:	case EMenuHitKind::SkillNode:
+360:		MenuState.SkillCursor = Hit.Id;
+361:		ConfirmSkill(Player);
+362:		break;
+363:	case EMenuHitKind::SkillReset:
+364:		ResetSkills(Player);
+365:		break;
+366:	case EMenuHitKind::SkillAddPoint:
+367:		AddTestSkillPoint(Player);
+368:		break;
+369:	case EMenuHitKind::SkillTreeTab:
+370:		SelectSkillTree(Hit.Index);
+371:		break;
+372:	case EMenuHitKind::SkillBranchBack:
+373:		CloseSkillBranch();
+374:		break;
+375:	case EMenuHitKind::ConfirmYes:
+376:		MenuState.SkillCursor = MenuState.PendingUnlock;
+377:		ConfirmSkill(Player);
+378:		break;
+379:	case EMenuHitKind::ConfirmNo:
+380:		MenuState.PendingUnlock = NAME_None;
+381:		break;
+382:	case EMenuHitKind::DeathScreen:
+383:		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
+384:		// so a click respawns exactly once.
+385:		break;
+386:	}
+387:}
+388:
+389:bool AGBHUD::MenuClick(const FVector2D& ScreenPosition)
+390:{
+391:	const EGBMenu Menu = GetOpenMenu();
+392:	// Only the clickables of the screen that is showing right now (not of a page left this frame).
+393:	if (Menu == EGBMenu::None || Menu != MenuHitsMenu || MenuHitsPage != MenuState.Page || bMenuHitsChoosing != MenuState.bChoosingSpell)
+394:	{
+395:		return false;
+396:	}
+397:	const FVector2D Position = ScreenPosition * MouseToCanvas;
+398:	const FMenuHit* Found = FindMenuHit(Position);
+399:	if (!Found)
+400:	{
+401:		return false;
+402:	}
+403:	// Copy: the action may change the menu, and the list is rebuilt on the next draw.
+404:	const FMenuHit Hit = *Found;
+405:	ActivateMenuHit(Hit);
+406:	return true;
+407:}
+408:
+409:void AGBHUD::MenuNavigate(FIntPoint Direction)
+410:{
+411:	using namespace GBHudMenuLocal;
+412:	if (MenuState.PendingUnlock != NAME_None)
+413:	{
+414:		return; // the confirmation only takes Enter (spend) or Esc (cancel)
+415:	}
+416:	AGBPlayerCharacter* Player = GetPlayer();
+417:	switch (GetOpenMenu())
+418:	{
+419:	case EGBMenu::Pause:
+420:		if (Direction.Y != 0)
+421:		{
+422:			MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, 2);
+423:		}
+424:		break;
+425:	case EGBMenu::SkillTrees:
+426:		NavigateSkills(Direction);
+427:		break;
+428:	case EGBMenu::Inventory:
+429:		if (MenuState.Page == PageSkills)
+430:		{
+431:			NavigateSkills(Direction);
+432:		}
+433:		else if (MenuState.Page == PageSpells)
+434:		{
+435:			if (Direction.Y == 0)
+436:			{
+437:				break;
+438:			}
+439:			if (MenuState.bChoosingSpell)
+440:			{
+441:				MenuState.SubCursor = Wrap(MenuState.SubCursor + Direction.Y, GetAssignableSpells(Player).Num());
+442:			}
+443:			else
+444:			{
+445:				MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, UGBSpellbookComponent::NumSlots + 1);
+446:			}
+447:		}
+448:		else if (MenuState.Page == PageWeapons)
+449:		{
+450:			if (Direction.Y != 0)
+451:			{
+452:				MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, GetWeaponList(Player).Num());
+453:			}
+454:		}
+455:		else if (Direction.Y != 0)
+456:		{
+457:			MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, GetInventoryList(Player).Num());
+458:		}
+459:		break;
+460:	default:
+461:		break;
+462:	}
+463:}
+464:
+465:void AGBHUD::MenuConfirm()
+466:{
+467:	AGBPlayerCharacter* Player = GetPlayer();
+468:	switch (GetOpenMenu())
+469:	{
+470:	case EGBMenu::Pause:
+471:		if (MenuState.Cursor == 0)
+472:		{
+473:			if (AGBPlayerController* PC = GetGBController())
+474:			{
+475:				PC->SetMenu(EGBMenu::None);
+476:			}
+477:		}
+478:		else
+479:		{
+480:			UKismetSystemLibrary::QuitGame(this, GetOwningPlayerController(), EQuitPreference::Quit, false);
+481:		}
+482:		break;
+483:	case EGBMenu::SkillTrees:
+484:		ConfirmSkill(Player);
+485:		break;
+486:	case EGBMenu::Inventory:
+487:		if (MenuState.Page == PageItems)
+488:		{
+489:			ConfirmItem(Player);
+490:		}
+491:		else if (MenuState.Page == PageWeapons)
+492:		{
+493:			ConfirmWeapon(Player);
+494:		}
+495:		else if (MenuState.Page == PageSpells)
+496:		{
+497:			ConfirmSpellSlot(Player);
+498:		}
+499:		else
+500:		{
+501:			ConfirmSkill(Player);
+502:		}
+503:		break;
+504:	default:
+505:		// Death: the controller handles the respawn confirm.
+506:		break;
+507:	}
+508:}
+509:
+510:bool AGBHUD::MenuBack()
+511:{
+512:	if (MenuState.PendingUnlock != NAME_None)
+513:	{
+514:		MenuState.PendingUnlock = NAME_None;
+515:		return true;
+516:	}
+517:	switch (GetOpenMenu())
+518:	{
+519:	case EGBMenu::Inventory:
+520:		if (MenuState.Page == PageItems && MenuState.PendingCombine != NAME_None)
+521:		{
+522:			MenuState.PendingCombine = NAME_None;
+523:			return true;
+524:		}
+525:		if (MenuState.Page == PageSpells && MenuState.bChoosingSpell)
+526:		{
+527:			MenuState.bChoosingSpell = false;
+528:			return true;
+529:		}
+530:		// A gun branch page goes back to the weapon hub first.
+531:		if (MenuState.Page == PageSkills && CloseSkillBranch())
+532:		{
+533:			return true;
+534:		}
+535:		return false;
+536:	case EGBMenu::SkillTrees:
+537:		return CloseSkillBranch();
+538:	case EGBMenu::Death:
+539:		// The death screen only closes by respawning.
+540:		return true;
+541:	default:
+542:		return false;
+543:	}
+544:}
+545:
+546:void AGBHUD::MenuTab(int32 Direction)
+547:{
+548:	if (Direction == 0)
+549:	{
+550:		return;
+551:	}
+552:	MenuState.PendingUnlock = NAME_None;
+553:	const EGBMenu Menu = GetOpenMenu();
+554:	if (Menu == EGBMenu::Inventory)
+555:	{
+556:		SetInventoryPage(MenuState.Page + Direction);
+557:	}
+558:	else if (Menu == EGBMenu::SkillTrees)
+559:	{
+560:		// Two pages: either tab key (Q / E, L1 / L2 / R1) turns to the other tree.
+561:		SelectSkillTree(1 - GetShownSkillTree());
+562:	}
+563:}
+564:
+565:// ======================================================================== lists
+566:
+567:TArray<FName> AGBHUD::GetInventoryList(AGBPlayerCharacter* Player) const
+568:{
+569:	TArray<FName> Result;
+570:	const UGBInventoryComponent* Inventory = Player ? Player->GetInventory() : nullptr;
+571:	if (!Inventory)
+572:	{
+573:		return Result;
+574:	}
+575:	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+576:	{
+577:		for (const FGBItemDefinition& Def : Data->GetItems())
+578:		{
+579:			if (Inventory->GetCount(Def.Id) > 0)
+580:			{
+581:				Result.Add(Def.Id);
+582:			}
+583:		}
+584:	}
+585:	// Items no longer in the data (after a reload) are still listed, at the end.
+586:	for (const TPair<FName, int32>& Entry : Inventory->GetItems())
+587:	{
+588:		if (Entry.Value > 0 && !Result.Contains(Entry.Key))
+589:		{
+590:			Result.Add(Entry.Key);
+875:		else
+876:		{
+877:			const FName Other = MenuState.PendingCombine;
+878:			MenuState.PendingCombine = NAME_None;
+879:			const FGBRecipeDefinition* Recipe = Inventory->FindRecipe(Other, ItemId);
+880:			// Copy what the toast needs before combining: the recipe pointer belongs to the data tables.
+881:			FString ResultName;
+882:			if (Recipe)
+883:			{
+884:				if (Recipe->ResultItem != NAME_None)
+885:				{
+886:					ResultName = ItemName(Data, Recipe->ResultItem);
+887:				}
+888:				else if (Recipe->ResultWeapon != NAME_None)
+889:				{
+890:					const FGBWeaponDefinition* Weapon = Data->FindWeapon(Recipe->ResultWeapon);
+891:					ResultName = (Weapon && !Weapon->DisplayName.IsEmpty()) ? Weapon->DisplayName : Recipe->ResultWeapon.ToString();
+892:				}
+893:			}
+894:			if (Recipe && Inventory->TryCombine(Other, ItemId))
+895:			{
+896:				ShowMessage(ResultName.IsEmpty() ? FString(TEXT("Combined")) : FString::Printf(TEXT("Created %s"), *ResultName), 2.5f);
+897:			}
+898:			else
+899:			{
+900:				ShowMessage(TEXT("These do not combine"), 1.5f);
+901:			}
+902:		}
+903:		break;
+904:	default:
+905:		break;
+906:	}
+907:}
+908:
+909:void AGBHUD::ConfirmWeapon(AGBPlayerCharacter* Player)
+910:{
+911:	UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+912:	const TArray<FName> List = GetWeaponList(Player);
+913:	if (!Equipment || List.Num() == 0)
+914:	{
+915:		return;
+916:	}
+917:	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
+918:	const FName WeaponId = List[MenuState.Cursor];
+919:	const FString Name = GBHudMenuLocal::WeaponName(UGBDataSubsystem::Get(this), WeaponId);
+920:	if (Equipment->IsWeaponEquipped(WeaponId))
+921:	{
+922:		ShowMessage(FString::Printf(TEXT("%s is already equipped"), *Name), 1.5f);
+923:	}
+924:	else if (Equipment->EquipOwnedWeapon(WeaponId))
+925:	{
+926:		ShowMessage(FString::Printf(TEXT("Equipped %s"), *Name), 2.f);
+927:	}
+928:	else
+929:	{
+930:		ShowMessage(TEXT("Cannot change weapons right now"), 1.5f);
+931:	}
+932:}
+933:
+934:void AGBHUD::ConfirmSpellSlot(AGBPlayerCharacter* Player)
+935:{
+936:	UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+937:	if (!Spellbook)
+938:	{
+939:		return;
+940:	}
+941:	const int32 NumSlots = UGBSpellbookComponent::NumSlots;
+942:	if (MenuState.bChoosingSpell)
+943:	{
+944:		const TArray<FName> Options = GetAssignableSpells(Player);
+945:		if (Options.IsValidIndex(MenuState.SubCursor) && MenuState.Cursor < NumSlots)
+946:		{
+947:			if (!Spellbook->EquipSpell(MenuState.Cursor, Options[MenuState.SubCursor]))
+948:			{
+949:				ShowMessage(TEXT("Cannot equip that spell"), 1.5f);
+950:			}
+951:		}
+952:		MenuState.bChoosingSpell = false;
+953:	}
+954:	else if (MenuState.Cursor < NumSlots)
+955:	{
+956:		const TArray<FName> Options = GetAssignableSpells(Player);
+957:		MenuState.bChoosingSpell = true;
+958:		MenuState.SubCursor = FMath::Max(0, Options.IndexOfByKey(Spellbook->GetSlotSpell(MenuState.Cursor)));
+959:	}
+960:	else
+961:	{
+962:		// The enchant slot: cycle its element Fire -> Lightning -> Ice.
+963:		EGBElement Next = EGBElement::Fire;
+964:		switch (Spellbook->GetEnchantElement())
+965:		{
+966:		case EGBElement::Fire: Next = EGBElement::Lightning; break;
+967:		case EGBElement::Lightning: Next = EGBElement::Ice; break;
+968:		default: Next = EGBElement::Fire; break;
+969:		}
+970:		Spellbook->SetEnchantElement(Next);
+971:	}
+972:}
+973:
+974:void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
+975:{
+976:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+977:	const FName NodeId = MenuState.SkillCursor;
+978:	if (!SkillTree || NodeId == NAME_None)
+979:	{
+980:		return;
+981:	}
+982:	// A gun emblem on the weapon hub opens its branch page instead of unlocking anything.
+983:	{
+984:		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+985:		if (const FSkillNodeRef* Category = Nodes.FindByPredicate([NodeId](const FSkillNodeRef& Node) { return Node.Id == NodeId && Node.bCategory; }))
+986:		{
+987:			OpenSkillBranch(Category->OpensBranch);
+988:			return;
+989:		}
+990:	}
+991:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+992:	// Every skill point is confirmed (owner, Nov 13): a perk that can be bought opens the dialog first; the dialog's
+993:	// Enter or click comes back here with the same node pending and spends it. A perk that cannot be bought says why.
+994:	if (MenuState.PendingUnlock != NodeId)
+995:	{
+996:		if (SkillTree->CanUnlock(NodeId) == EGBSkillUnlockResult::Ok)
+997:		{
+998:			MenuState.PendingUnlock = NodeId;
+999:			return;
+1000:		}
+1001:		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, SkillTree->CanUnlock(NodeId)), 2.f);
+1002:		return;
+1003:	}
+1004:	MenuState.PendingUnlock = NAME_None;
+1005:	const EGBSkillUnlockResult Result = SkillTree->Unlock(NodeId);
+1006:	if (Result == EGBSkillUnlockResult::Ok)
+1007:	{
+1008:		ShowMessage(FString::Printf(TEXT("Unlocked %s (rank %d)"), *GBHudMenuLocal::SkillName(Data, NodeId), SkillTree->GetRank(NodeId)), 2.f);
+1009:	}
+1010:	else
+1011:	{
+1012:		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, Result), 2.f);
+1013:	}
+1014:}
+1015:
+1016:void AGBHUD::ResetSkills(AGBPlayerCharacter* Player)
+1017:{
+1018:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+1019:	if (!SkillTree)
+1020:	{
+1021:		return;
+1022:	}
+1023:	const int32 Refunded = SkillTree->ResetAll();
+1024:	if (Refunded > 0)
+1025:	{
+1026:		ShowMessage(FString::Printf(TEXT("Skills reset: %d points refunded"), Refunded), 2.f);
+1027:	}
+1028:	else
+1029:	{
+1030:		ShowMessage(TEXT("No skills to reset"), 1.5f);
+1031:	}
+1032:}
+1033:
+1034:void AGBHUD::AddTestSkillPoint(AGBPlayerCharacter* Player)
+1035:{
+1036:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+1037:	if (!SkillTree)
+1038:	{
+1039:		return;
+1040:	}
+1041:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+1042:	const int32 Amount = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBHudKey::TestSkillPointAmount, 1.f))) : 1;
+1043:	SkillTree->AddPoints(Amount);
+1044:	ShowMessage(FString::Printf(TEXT("+%d skill point (%d)"), Amount, SkillTree->GetPoints()), 1.5f);
+1045:}
+1046:
+1047:void AGBHUD::MenuReset()
+1048:{
+1049:	const EGBMenu Menu = GetOpenMenu();
+1050:	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
+1051:	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
+1052:	{
+1053:		return;
+1054:	}
+1055:	ResetSkills(GetPlayer());
+1056:}
+1057:
+1058:// ======================================================================== drawing: shared widgets
+1059:
+1060:namespace GBHudMenuDraw
+1061:{
+1062:	/** Spell tree columns, in the order of GDD 18 "Spell tree" (fire, lightning, ice, casting): presentation only. */
+1063:	const TCHAR* SpellColumnName(int32 Column)
+1064:	{
+1065:		static const TCHAR* Names[] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice"), TEXT("Casting") };
+1066:		return (Column >= 0 && Column < 4) ? Names[Column] : TEXT("");
+1067:	}
+1068:	EGBElement SpellColumnElement(int32 Column)
+1069:	{
+1070:		static const EGBElement Elements[] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice, EGBElement::Arcane };
+1071:		return (Column >= 0 && Column < 4) ? Elements[Column] : EGBElement::Arcane;
+1072:	}
+1073:	/** Splits a name in two lines at the space nearest the middle (or keeps one line). */
+1074:	void SplitName(const FString& Name, FString& A, FString& B)
+1075:	{
+1076:		int32 Best = INDEX_NONE;
+1077:		for (int32 i = 0; i < Name.Len(); ++i)
+1078:		{
+1079:			if (Name[i] == TEXT(' ') && (Best == INDEX_NONE || FMath::Abs(i - Name.Len() / 2) < FMath::Abs(Best - Name.Len() / 2)))
+1080:			{
+1081:				Best = i;
+1082:			}
+1083:		}
+1084:		if (Best == INDEX_NONE)
+1085:		{
+1086:			A = Name;
+1087:			B.Reset();
+1088:			return;
+1089:		}
+1090:		A = Name.Left(Best);
+1091:		B = Name.Mid(Best + 1);
+1092:	}
+1093:}
+1094:
+1095:bool AGBHUD::IsMouseOver(float X, float Y, float W, float H) const
+1096:{
+1097:	return bHasMenuMouse && LastMenuMouse.X >= X && LastMenuMouse.X <= X + W && LastMenuMouse.Y >= Y && LastMenuMouse.Y <= Y + H;
+1098:}
+1099:
+1100:void AGBHUD::DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode, bool bChoosingSpell)
+1101:{
+1102:	MenuState.Page = GBHudMenuLocal::Wrap(Page, PageCount);
+1103:	MenuState.Cursor = FMath::Max(0, Cursor);
+1104:	MenuState.bChoosingSpell = bChoosingSpell;
+1105:	MenuState.SubCursor = bChoosingSpell ? 1 : 0;
+1106:	if (SkillNode != NAME_None)
+1107:	{
+1108:		MenuState.SkillCursor = SkillNode;
+1109:	}
+1110:}
+1111:
+1360:}
+1361:
+1362:void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
+1363:{
+1364:	const EGBHudSkin Skin = GetMenuSkin();
+1365:	// The look changed while the menu stayed open (an inventory tab from or to the skills page in the other era, or a
+1366:	// skill tree tab): cover the jump with a transition, and replay the title's glitch-in.
+1367:	if (!bHasMenuSkin)
+1368:	{
+1369:		MenuSkinShown = Skin;
+1370:		bHasMenuSkin = true;
+1371:	}
+1372:	else if (Skin != MenuSkinShown)
+1373:	{
+1374:		MenuSkinShown = Skin;
+1375:		MenuSkinChangeTime = GetRealTime();
+1376:		MenuOpenTime = MenuSkinChangeTime;
+1377:	}
+1378:	// Clickables are rebuilt while drawing, for the screen as it is now.
+1379:	MenuHits.Reset();
+1380:	MenuHitsMenu = GetOpenMenu();
+1381:	MenuHitsPage = MenuState.Page;
+1382:	bMenuHitsChoosing = MenuState.bChoosingSpell;
+1383:	switch (GetOpenMenu())
+1384:	{
+1385:	case EGBMenu::Pause:
+1386:		DrawPauseMenu(Skin);
+1387:		break;
+1388:	case EGBMenu::Death:
+1389:		DrawDeathScreen(Skin);
+1390:		break;
+1391:	case EGBMenu::Inventory:
+1392:		DrawInventory(Player, Skin);
+1393:		break;
+1394:	case EGBMenu::SkillTrees:
+1395:	{
+1396:		const float S = UIScale();
+1397:		const float P = ArtPixel();
+1398:		const float W = Canvas->ClipX;
+1399:		const float H = Canvas->ClipY;
+1400:		MenuBackdrop(Skin);
+1401:		const GBHudMenuDraw::FScreen Screen = GBHudMenuDraw::Layout(Skin, W, H, S, P);
+1402:		float ContentY = Screen.Y;
+1403:		float ContentX = Screen.X;
+1404:		float ContentW = Screen.W;
+1405:		if (Skin == EGBHudSkin::Cyberpunk)
+1406:		{
+1407:			FCyTextStyle Title;
+1408:			Title.Face = ECyFace::Condensed;
+1409:			Title.Px = 58.f;
+1410:			Title.Spacing = 80;
+1411:			Title.bUpper = true;
+1412:			Title.Color = GBCy::Red;
+1413:			Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 6.f * S;
+1414:			DrawCyText(TEXT("Skill trees"), Screen.X, 50.f * S, Title, 0.f);
+1415:			CyRuler(Screen.X, 134.f * S, Screen.W, GBAlpha(GBCy::RedDim, 0.8f));
+1416:			FillRect(Screen.X, Screen.FooterY - 14.f * S, Screen.W, 1.f, GBAlpha(GBCy::RedDim, 0.6f));
+1417:		}
+1418:		else
+1419:		{
+1420:			RpgWindow(Screen.X, Screen.Y, Screen.W, Screen.H);
+1421:			const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(6.f * S));
+1422:			const FBox2D Plaque = RpgPlaque(TEXT("SKILL TREES"), Screen.X + Screen.W * 0.5f, Screen.Y - 7.f * P, TitleScale);
+1423:			ContentY = Plaque.Max.Y + 4.f * P;
+1424:			ContentX = Screen.X + 9.f * P;
+1425:			ContentW = Screen.W - 18.f * P;
+1426:		}
+1427:		if (Player)
+1428:		{
+1429:			DrawSkillTrees(Player, Skin, ContentX, ContentY, ContentW, Screen.FooterY - 4.f * P - ContentY);
+1430:		}
+1431:		TArray<TPair<FString, FString>> Hints;
+1432:		Hints.Add(TPair<FString, FString>(TEXT("Arrows"), TEXT("Move")));
+1433:		Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Unlock")));
+1434:		Hints.Add(TPair<FString, FString>(TEXT("Q E"), TEXT("Other tree")));
+1435:		Hints.Add(TPair<FString, FString>(TEXT("R"), TEXT("Reset skills")));
+1436:		{
+1437:			// Inside a gun branch page Esc goes back to the weapon hub.
+1438:			const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+1439:			const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+1440:			Hints.Add(TPair<FString, FString>(TEXT("Esc"), Current && Current->Branch != NAME_None ? TEXT("Back") : TEXT("Close")));
+1441:		}
+1442:		MenuHints(Skin, Hints, Skin == EGBHudSkin::Cyberpunk ? Screen.X : W * 0.5f, Screen.FooterY, Skin == EGBHudSkin::Cyberpunk ? 0.f : 0.5f);
+1443:		break;
+1444:	}
+1445:	default:
+1446:		break;
+1447:	}
+1448:	const EGBMenu Open = GetOpenMenu();
+1449:	const bool bSkillPage = Open == EGBMenu::SkillTrees || (Open == EGBMenu::Inventory && MenuState.Page == PageSkills);
+1450:	if (!bSkillPage)
+1451:	{
+1452:		MenuState.PendingUnlock = NAME_None;
+1453:	}
+1454:	else if (MenuState.PendingUnlock != NAME_None && Player)
+1455:	{
+1456:		DrawUnlockConfirm(Player, Skin);
+1457:	}
+1458:	DrawMenuSkinTransition();
+1459:}
+1460:
+1690:		const float RowH = 16.f * P;
+1691:		const float RowY = PY + 22.f * P + i * 20.f * P;
+1692:		const bool bSelected = MenuState.Cursor == i;
+1693:		MenuRow(Skin, RowX, RowY, RowW, RowH, bSelected);
+1694:		AddMenuHit(EMenuHitKind::PauseEntry, RowX, RowY, RowW, RowH, i);
+1695:		const float LH = UiMeasure(Skin, EGBTextSize::Heading, Entries[i]).Y;
+1696:		UiText(Skin, EGBTextSize::Heading, bSelected ? EGBTextTone::Selected : EGBTextTone::Muted, Entries[i], RowX + RowW * 0.5f, RowY + FMath::RoundToFloat((RowH - LH) * 0.5f), 0.5f,
+1697:			bSelected ? nullptr : &GBRpg::BoneDim);
+1698:	}
+1699:	TArray<TPair<FString, FString>> Hints;
+1700:	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Select")));
+1701:	Hints.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Resume")));
+1702:	MenuHints(Skin, Hints, PX + PW * 0.5f, PY + PH - 16.f * P, 0.5f);
+1703:}
+1704:
+1705:void AGBHUD::DrawDeathScreen(EGBHudSkin Skin)
+1706:{
+1707:	const float S = UIScale();
+1708:	const float P = ArtPixel();
+1709:	const float W = Canvas->ClipX;
+1710:	const float H = Canvas->ClipY;
+1711:	const float Since = (float)(GetRealTime() - MenuOpenTime);
+1712:	AddMenuHit(EMenuHitKind::DeathScreen, 0.f, 0.f, W, H);
+1713:	TArray<TPair<FString, FString>> Hints;
+1714:	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Respawn at the last checkpoint")));
+1715:
+1716:	if (Skin == EGBHudSkin::Cyberpunk)
+1717:	{
+1718:		FillRect(0.f, 0.f, W, H, GBAlpha(GBCy::RedBlack, 0.82f));
+1719:		DrawGlow(W * 0.5f, H * 0.45f, W * 0.6f, H * 0.4f, GBAlpha(GBCy::Red, 0.18f));
+1720:		CyScanlines(0.f, 0.f, W, H, 0.3f);
+1721:		// A flat line across the screen with one heartbeat that dies out.
+1722:		const float LineY = H * 0.62f;
+1723:		FillRect(0.f, LineY, W, 2.f * S, GBAlpha(GBCy::Red, 0.75f));
+1724:		const float BX = W * 0.30f;
+1725:		TArray<FVector2D> Beat = { FVector2D(BX, LineY), FVector2D(BX + 14.f * S, LineY - 30.f * S), FVector2D(BX + 26.f * S, LineY + 22.f * S), FVector2D(BX + 38.f * S, LineY - 8.f * S), FVector2D(BX + 48.f * S, LineY) };
+1726:		for (int32 i = 1; i < Beat.Num(); ++i)
+1727:		{
+1728:			DrawLine(Beat[i - 1].X, Beat[i - 1].Y, Beat[i].X, Beat[i].Y, GBAlpha(GBCy::Red, 0.9f), 2.f * S);
+1729:		}
+1730:		FCyTextStyle Sub;
+1731:		Sub.Face = ECyFace::Mono;
+1732:		Sub.Px = 16.f;
+1733:		Sub.Color = GBCy::RedDim;
+1734:		DrawCyText(TEXT("VITAL SIGNS LOST // RESTORE POINT FOUND"), W * 0.5f, H * 0.33f, Sub, 0.5f);
+1735:		FCyTextStyle Title;
+1736:		Title.Face = ECyFace::Condensed;
+1737:		Title.Px = 150.f;
+1738:		Title.Spacing = 80;
+1739:		Title.bUpper = true;
+1740:		Title.Color = GBCy::Red;
+1741:		Title.Split = (Since < 0.5f ? (1.f - Since / 0.5f) * 14.f : 2.f + 2.f * FMath::Abs(FMath::Sin(Since * 9.f))) * S;
+1742:		DrawCyText(TEXT("Flatlined"), W * 0.5f, H * 0.36f, Title, 0.5f);
+1743:		MenuHints(Skin, Hints, W * 0.5f, H * 0.70f, 0.5f);
+1744:		return;
+1745:	}
+1746:	// RPG: the world sinks into a stepped blood vignette, a gold-and-blood epitaph, a divider.
+1747:	FillRect(0.f, 0.f, W, H, FLinearColor(0.08f, 0.f, 0.f, 0.62f));
+1748:	for (int32 k = 0; k < 8; ++k)
+1749:	{
+1750:		const float T = 4.f * P;
+1751:		const float In = k * T;
+1752:		const FLinearColor C = GBAlpha(GBRpg::HealthRamp[0], 0.5f * (1.f - k / 8.f));
+1753:		FillRect(In, In, W - 2.f * In, T, C);
+1754:		FillRect(In, H - In - T, W - 2.f * In, T, C);
+1755:		FillRect(In, In + T, T, H - 2.f * (In + T), C);
+1756:		FillRect(W - In - T, In + T, T, H - 2.f * (In + T), C);
+1757:	}
+1758:	const int32 Scale = FMath::Max(4, FMath::RoundToInt(11.f * S));
+1759:	FPixelTextStyle Title;
+1760:	Title.Scale = Scale;
+1761:	Title.Ink = &GBRpg::InkBlood;
+1762:	Title.Outline = GBRpg::Outline;
+1763:	Title.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
+1764:	Title.Color = FLinearColor(1.f, 1.f, 1.f, FMath::Clamp(Since / 0.6f, 0.f, 1.f));
+1765:	const float TitleY = FMath::RoundToFloat(H * 0.36f);
+1766:	DrawPixelText(TEXT("YOU HAVE FALLEN"), W * 0.5f, TitleY, Title, 0.5f);
+1767:	const float DW = FMath::RoundToFloat(W * 0.36f / P) * P;
+1768:	RpgDivider(FMath::RoundToFloat((W - DW) * 0.5f / P) * P, TitleY + 7.f * Scale + 8.f * P, DW);
+1769:	MenuHints(Skin, Hints, W * 0.5f, TitleY + 7.f * Scale + 18.f * P, 0.5f);
+1770:}
+1771:
+1772:void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, EGBHudSkin Skin)
+1773:{
+1774:	const float S = UIScale();
+1775:	const float P = ArtPixel();
+1776:	const float W = Canvas->ClipX;
+1777:	const float H = Canvas->ClipY;
+1778:	MenuBackdrop(Skin);
+1779:	const GBHudMenuDraw::FScreen Screen = GBHudMenuDraw::Layout(Skin, W, H, S, P);
+1780:	static const TCHAR* Tabs[] = { TEXT("Items"), TEXT("Weapons"), TEXT("Spells"), TEXT("Skills") };
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/Player/GBPlayerController.cpp'; "'$s=Get-Content $p; for($i=100;$i -le 375;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }; $p='"'Glyphbound/Source/Glyphbound/UI/GBHUD.cpp'; "'$s=Get-Content $p; for($i=420;$i -le 515;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }' in C:\GameJam
+ succeeded in 553ms:
+100:		if (OpenMenu == EGBMenu::None)
+101:		{
+102:			Subsystem->AddMappingContext(InputSet->GameplayContext, GameplayContextPriority);
+103:		}
+104:		else
+105:		{
+106:			Subsystem->AddMappingContext(InputSet->MenuContext, MenuContextPriority);
+107:		}
+108:	}
+109:	else
+110:	{
+111:		UE_LOG(LogGB, Warning, TEXT("GBPlayerController: no Enhanced Input subsystem, input will not work."));
+112:	}
+113:
+114:	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
+115:	if (!EIC)
+116:	{
+117:		UE_LOG(LogGB, Error, TEXT("GBPlayerController: the controller input component is not an UEnhancedInputComponent."));
+118:		return;
+119:	}
+120:	if (!bNewSet && EIC->GetActionEventBindings().Num() > 0)
+121:	{
+122:		return; // already bound to this set
+123:	}
+124:	EIC->ClearActionBindings();
+125:
+126:	EIC->BindAction(InputSet->Inventory, ETriggerEvent::Started, this, &ThisClass::InputInventory);
+127:	EIC->BindAction(InputSet->SkillTrees, ETriggerEvent::Started, this, &ThisClass::InputSkillTrees);
+128:	EIC->BindAction(InputSet->Pause, ETriggerEvent::Started, this, &ThisClass::InputPause);
+129:	EIC->BindAction(InputSet->MenuNavigate, ETriggerEvent::Started, this, &ThisClass::InputMenuNavigate);
+130:	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
+131:	EIC->BindAction(InputSet->MenuBack, ETriggerEvent::Started, this, &ThisClass::InputMenuBack);
+132:	EIC->BindAction(InputSet->MenuTabKey, ETriggerEvent::Started, this, &ThisClass::InputMenuTabKey);
+133:	EIC->BindAction(InputSet->MenuTab, ETriggerEvent::Started, this, &ThisClass::InputMenuTab);
+134:	EIC->BindAction(InputSet->MenuReset, ETriggerEvent::Started, this, &ThisClass::InputMenuReset);
+135:	EIC->BindAction(InputSet->MenuClick, ETriggerEvent::Started, this, &ThisClass::InputMenuClick);
+136:}
+137:
+138:void AGBPlayerController::SetMenu(EGBMenu Menu)
+139:{
+140:	if (Menu == OpenMenu)
+141:	{
+142:		return;
+143:	}
+144:	const EGBMenu OldMenu = OpenMenu;
+145:	AGBHUD* HUD = Cast<AGBHUD>(GetHUD());
+146:
+147:	if (OldMenu != EGBMenu::None && HUD)
+148:	{
+149:		HUD->OnMenuClosed(OldMenu);
+150:	}
+151:	OpenMenu = Menu;
+152:
+153:	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+154:	if (Menu == EGBMenu::None)
+155:	{
+156:		SetPause(false);
+157:		if (Subsystem && InputSet)
+158:		{
+159:			Subsystem->RemoveMappingContext(InputSet->MenuContext);
+160:			// A key or button still held from the menu (the click that closed it) does nothing until released.
+161:			FModifyContextOptions Options;
+162:			Options.bIgnoreAllPressedKeysUntilRelease = true;
+163:			Subsystem->AddMappingContext(InputSet->GameplayContext, GameplayContextPriority, Options);
+164:		}
+165:		bCenterCursorPending = false;
+166:		ApplyMouseMode(false);
+167:		return;
+168:	}
+169:
+170:	if (OldMenu == EGBMenu::None)
+171:	{
+172:		if (AGBPlayerCharacter* PlayerCharacter = Cast<AGBPlayerCharacter>(GetPawn()))
+173:		{
+174:			PlayerCharacter->ReleaseHeldInputs();
+175:		}
+176:	}
+177:	if (Subsystem && InputSet)
+178:	{
+179:		// The death screen also drops the gameplay keys: nothing to do in the world while dead.
+180:		Subsystem->RemoveMappingContext(InputSet->GameplayContext);
+181:		Subsystem->AddMappingContext(InputSet->MenuContext, MenuContextPriority);
+182:	}
+183:	SetPause(IsPausingMenu(Menu));
+184:
+185:	ApplyMouseMode(true);
+186:	if (OldMenu == EGBMenu::None)
+187:	{
+188:		CenterMouseCursor();
+189:		bCenterCursorPending = true;
+190:	}
+191:
+192:	if (HUD)
+193:	{
+194:		HUD->OnMenuOpened(Menu);
+195:	}
+196:}
+197:
+198:void AGBPlayerController::ToggleMenu(EGBMenu Menu)
+199:{
+200:	SetMenu(OpenMenu == Menu ? EGBMenu::None : Menu);
+201:}
+202:
+203:void AGBPlayerController::InputInventory()
+204:{
+205:	if (OpenMenu != EGBMenu::Death)
+206:	{
+207:		ToggleMenu(EGBMenu::Inventory);
+208:	}
+209:}
+210:
+211:void AGBPlayerController::InputSkillTrees()
+212:{
+213:	if (OpenMenu != EGBMenu::Death)
+214:	{
+215:		ToggleMenu(EGBMenu::SkillTrees);
+216:	}
+217:}
+218:
+219:void AGBPlayerController::InputPause()
+220:{
+221:	if (OpenMenu == EGBMenu::Death)
+222:	{
+223:		return;
+224:	}
+225:	SetMenu(OpenMenu == EGBMenu::None ? EGBMenu::Pause : EGBMenu::None);
+226:}
+227:
+228:void AGBPlayerController::InputMenuNavigate(const FInputActionValue& Value)
+229:{
+230:	if (OpenMenu == EGBMenu::None)
+231:	{
+232:		return;
+233:	}
+234:	// Value: x right, y up. One step per press along the dominant axis; the HUD wants y down.
+235:	const FVector2D Axis = Value.Get<FVector2D>();
+236:	if (Axis.IsNearlyZero())
+237:	{
+238:		return;
+239:	}
+240:	FIntPoint Step(0, 0);
+241:	if (FMath::Abs(Axis.X) >= FMath::Abs(Axis.Y))
+242:	{
+243:		Step.X = Axis.X > 0.f ? 1 : -1;
+244:	}
+245:	else
+246:	{
+247:		Step.Y = Axis.Y > 0.f ? -1 : 1;
+248:	}
+249:	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+250:	{
+251:		HUD->MenuNavigate(Step);
+252:	}
+253:}
+254:
+255:void AGBPlayerController::InputMenuConfirm()
+256:{
+257:	if (OpenMenu == EGBMenu::None)
+258:	{
+259:		return;
+260:	}
+261:	if (OpenMenu == EGBMenu::Death)
+262:	{
+263:		if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+264:		{
+265:			GameMode->RespawnPlayer();
+266:		}
+267:		return;
+268:	}
+269:	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+270:	{
+271:		HUD->MenuConfirm();
+272:	}
+273:}
+274:
+275:void AGBPlayerController::InputMenuBack()
+276:{
+277:	if (OpenMenu == EGBMenu::None || OpenMenu == EGBMenu::Death)
+278:	{
+279:		return;
+280:	}
+281:	AGBHUD* HUD = Cast<AGBHUD>(GetHUD());
+282:	if (!HUD || !HUD->MenuBack())
+283:	{
+284:		SetMenu(EGBMenu::None);
+285:	}
+286:}
+287:
+288:void AGBPlayerController::InputMenuTabKey()
+289:{
+290:	if (OpenMenu == EGBMenu::Inventory)
+291:	{
+292:		SetMenu(EGBMenu::None);
+293:		return;
+294:	}
+295:	InputMenuBack();
+296:}
+297:
+298:void AGBPlayerController::InputMenuTab(const FInputActionValue& Value)
+299:{
+300:	if (OpenMenu == EGBMenu::None || OpenMenu == EGBMenu::Death)
+301:	{
+302:		return;
+303:	}
+304:	const float Axis = Value.Get<float>();
+305:	if (FMath::Abs(Axis) < MenuAxisStepThreshold)
+306:	{
+307:		return;
+308:	}
+309:	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+310:	{
+311:		HUD->MenuTab(Axis > 0.f ? 1 : -1);
+312:	}
+313:}
+314:
+315:void AGBPlayerController::InputMenuReset()
+316:{
+317:	if (OpenMenu == EGBMenu::None || OpenMenu == EGBMenu::Death)
+318:	{
+319:		return;
+320:	}
+321:	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+322:	{
+323:		HUD->MenuReset();
+324:	}
+325:}
+326:
+327:void AGBPlayerController::InputMenuClick()
+328:{
+329:	if (OpenMenu == EGBMenu::None)
+330:	{
+331:		return;
+332:	}
+333:	if (OpenMenu == EGBMenu::Death)
+334:	{
+335:		// Like confirm: a click anywhere respawns.
+336:		if (AGBGameMode* GameMode = AGBGameMode::Get(this))
+337:		{
+338:			GameMode->RespawnPlayer();
+339:		}
+340:		return;
+341:	}
+342:	float MouseX = 0.f;
+343:	float MouseY = 0.f;
+344:	if (!GetMousePosition(MouseX, MouseY))
+345:	{
+346:		return;
+347:	}
+348:	if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+349:	{
+350:		HUD->MenuClick(FVector2D(MouseX, MouseY));
+351:	}
+352:}
+353:
+354:
+355:
+356:
+357:
+358:
+359:
+360:
+361:
+362:
+363:
+364:
+365:
+366:
+367:
+368:
+369:
+370:
+371:
+372:
+373:
+374:
+375:
+420:				{
+421:					continue;
+422:				}
+423:				TArray<FString> Lines;
+424:				const EGBElement Elements[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
+425:				const TCHAR* Names[3] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice") };
+426:				for (int32 i = 0; i < 3; ++i)
+427:				{
+428:					const EGBBuildUpPhase Phase = Elemental->GetPhase(Elements[i]);
+429:					if (Phase == EGBBuildUpPhase::Building)
+430:					{
+431:						const float Value = Elemental->GetBuildUp(Elements[i]);
+432:						if (Value <= 0.f)
+433:						{
+434:							continue;
+435:						}
+436:						const float Threshold = Elemental->GetThreshold(Elements[i]);
+437:						Lines.Add(FString::Printf(TEXT("%s %d/%d"), Names[i], FMath::RoundToInt(Value), FMath::RoundToInt(Threshold)));
+438:					}
+439:					else if (Phase == EGBBuildUpPhase::Active)
+440:					{
+441:						const FName Reaction = Elemental->GetReaction(Elements[i]);
+442:						Lines.Add(FString::Printf(TEXT("%s %s %.1fs"), Names[i], *Reaction.ToString(), Elemental->GetPhaseTimeRemaining(Elements[i])));
+443:					}
+444:					else
+445:					{
+446:						Lines.Add(FString::Printf(TEXT("%s IMMUNE %.1fs"), Names[i], Elemental->GetPhaseTimeRemaining(Elements[i])));
+447:					}
+448:				}
+449:				if (Enemy->GetControlLockTime() > 0.f)
+450:				{
+451:					Lines.Add(FString::Printf(TEXT("LOCK %.1fs"), Enemy->GetControlLockTime()));
+452:				}
+453:				float Y = Screen.Y;
+454:				for (const FString& Line : Lines)
+455:				{
+456:					DrawLabel(Line, FLinearColor::White, Screen.X, Y, 14.f, 0.5f, true, false);
+457:					Y += 16.f;
+458:				}
+459:			}
+460:		}
+461:	}
+462:	if (Player)
+463:	{
+464:		DrawHands(Player);
+465:		// Menus cover the game: the status HUD only shows while playing (and under the QTE).
+466:		if (!bMenuOpen && !Player->IsDead())
+467:		{
+468:			if (Skin == EGBHudSkin::Cyberpunk)
+469:			{
+470:				DrawCyberHud(Player);
+471:			}
+472:			else
+473:			{
+474:				DrawRpgHud(Player);
+475:			}
+476:			DrawCrosshair(Player, Skin);
+477:			DrawInteractPrompt(Player, Skin);
+478:		}
+479:	}
+480:	if (!bMenuOpen)
+481:	{
+482:		DrawToasts(Skin);
+483:	}
+484:	if (Player && Player->GetQTE() && Player->GetQTE()->IsActive())
+485:	{
+486:		DrawQTE(Player, Skin);
+487:	}
+488:	DrawDamageFlash(Skin);
+489:	DrawEraFade();
+490:	if (bMenuOpen)
+491:	{
+492:		UpdateMenuMouse();
+493:		DrawMenus(Player);
+494:		// Menu actions answer with toasts (skill unlocks, combines): above the menu, low, clear of titles and tabs.
+495:		DrawToasts(GetMenuSkin(), Canvas->ClipY * 0.80f);
+496:	}
+497:}
+498:
+499:// ======================================================================== hands (GDD 3: always pixel art)
+500:
+501:void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
+502:{
+503:	if (!Player->IsControlEnabled() || Player->IsDead())
+504:	{
+505:		return;
+506:	}
+507:	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
+508:	if (!Sprites)
+509:	{
+510:		return;
+511:	}
+512:
+513:	const float W = Canvas->ClipX;
+514:	// The RPG status bar covers the bottom of the view: the hands stand on it (as in the 90s games). Menus hide the bar.
+515:	const bool bOverBar = GetCurrentSkin() == EGBHudSkin::Rpg90s && GetOpenMenu() == EGBMenu::None;
+
+codex
+The input bindings use `Started`, and the pending dialog blocks navigation, hover, underlying clicks, and reset. I’m checking branch-page behavior and state left over between draws, especially when a menu closes during a transition.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n 'GetRealTime\\(|GetMenuSkin\\(|ArtPixel\\(|UIScale\\(|MenuOpenTime|SetMenu\\(EGBMenu::Death|MenuConfirm|MenuTabKey|Gamepad_Special' Glyphbound/Source/Glyphbound/UI/GBHUD.h Glyphbound/Source/Glyphbound/UI/GBHUD.cpp Glyphbound/Source/Glyphbound/Input Glyphbound/Source/Glyphbound/Player Glyphbound/Source/Glyphbound/Progression" in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp'; "'$s=Get-Content $p; for($i=850;$i -le 1110;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }' in C:\GameJam
+ exited 1 in 337ms:
+rg: Glyphbound/Source/Glyphbound/Input: El sistema no puede encontrar el archivo especificado. (os error 2)
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:201:EGBHudSkin AGBHUD::GetMenuSkin() const
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:225:	const double Now = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:248:	const double Now = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:310:		LastDamageTime = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:316:	LastCastTime = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:354:	const double Now = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:495:		DrawToasts(GetMenuSkin(), Canvas->ClipY * 0.80f);
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:516:	const float H = Canvas->ClipY - (bOverBar ? 22.f * ArtPixel() : 0.f);
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:541:	const bool bCastPose = (QTE && QTE->IsActive()) || (GetRealTime() - LastCastTime) < GBHudLayout::CastHandTime;
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:627:	const double Now = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:699:	const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:738:	const float Px = FMath::Max(2.f, FMath::RoundToFloat(ArtPixel() * 0.5f));
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:772:		const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:789:	const float P = ArtPixel();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:808:	const double Now = GetRealTime();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:814:		const float Step = Skin == EGBHudSkin::Cyberpunk ? 46.f * UIScale() : 16.f * ArtPixel();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:824:			const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:844:		const float P = ArtPixel();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:878:	const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:883:	const float P = ArtPixel();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:1089:	const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:1141:	const float Elapsed = (float)(GetRealTime() - LastDamageTime);
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:1151:		const float S = UIScale();
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:1156:		const int32 Seed = FMath::FloorToInt((float)GetRealTime() * 30.f);
+Glyphbound/Source/Glyphbound/UI/GBHUD.cpp:1168:	const float P = ArtPixel();
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:82:	EGBHudSkin GetMenuSkin() const;
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:89:	void MenuConfirm();
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:131:	double MenuOpenTime = -1000.0;
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:273:	double GetRealTime() const;
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:275:	float UIScale() const;
+Glyphbound/Source/Glyphbound/UI/GBHUD.h:277:	float ArtPixel() const;
+Glyphbound/Source/Glyphbound/Player\GBInputSet.h:69:	UPROPERTY() TObjectPtr<UInputAction> MenuConfirm;  // Enter / Space / Cross (A)
+Glyphbound/Source/Glyphbound/Player\GBInputSet.h:71:	UPROPERTY() TObjectPtr<UInputAction> MenuTabKey;   // Tab inside menus: closes the inventory (its own key), "back" elsewhere
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:139:	MenuConfirm = MakeAction(this, TEXT("IA_MenuConfirm"), EType::Boolean, true);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:141:	MenuTabKey = MakeAction(this, TEXT("IA_MenuTabKey"), EType::Boolean, true);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:192:	MapButton(G, Inventory, EKeys::Gamepad_Special_Left);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:195:	MapButton(G, Pause, EKeys::Gamepad_Special_Right);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:222:	MapButton(M, MenuConfirm, EKeys::Enter);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:223:	MapButton(M, MenuConfirm, EKeys::SpaceBar);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:224:	MapButton(M, MenuConfirm, EKeys::Gamepad_FaceButton_Bottom);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:229:	MapButton(M, MenuTabKey, EKeys::Tab);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:249:	MapButton(M, Pause, EKeys::Gamepad_Special_Right);
+Glyphbound/Source/Glyphbound/Player\GBInputSet.cpp:250:	MapButton(M, Inventory, EKeys::Gamepad_Special_Left);
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.cpp:130:	EIC->BindAction(InputSet->MenuConfirm, ETriggerEvent::Started, this, &ThisClass::InputMenuConfirm);
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.cpp:132:	EIC->BindAction(InputSet->MenuTabKey, ETriggerEvent::Started, this, &ThisClass::InputMenuTabKey);
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.cpp:255:void AGBPlayerController::InputMenuConfirm()
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.cpp:271:		HUD->MenuConfirm();
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.cpp:288:void AGBPlayerController::InputMenuTabKey()
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.h:57:	void InputMenuConfirm();
+Glyphbound/Source/Glyphbound/Player\GBPlayerController.h:59:	void InputMenuTabKey();
+
+ succeeded in 671ms:
+850:	case EGBItemType::Consumable:
+851:		if (!Inventory->UseItem(ItemId))
+852:		{
+853:			ShowMessage(TEXT("Cannot use that now"), 1.5f);
+854:		}
+855:		break;
+856:	case EGBItemType::Throwable:
+857:		ShowMessage(TEXT("Throw it with [F] (quick-use)"), 2.f);
+858:		break;
+859:	case EGBItemType::Armor:
+860:		if (!Inventory->EquipArmor(Inventory->GetEquippedArmor() == ItemId ? NAME_None : ItemId))
+861:		{
+862:			ShowMessage(TEXT("Cannot equip that"), 1.5f);
+863:		}
+864:		break;
+865:	case EGBItemType::Material:
+866:	case EGBItemType::KeyItem:
+867:		if (MenuState.PendingCombine == NAME_None)
+868:		{
+869:			MenuState.PendingCombine = ItemId;
+870:		}
+871:		else if (MenuState.PendingCombine == ItemId)
+872:		{
+873:			MenuState.PendingCombine = NAME_None;
+874:		}
+875:		else
+876:		{
+877:			const FName Other = MenuState.PendingCombine;
+878:			MenuState.PendingCombine = NAME_None;
+879:			const FGBRecipeDefinition* Recipe = Inventory->FindRecipe(Other, ItemId);
+880:			// Copy what the toast needs before combining: the recipe pointer belongs to the data tables.
+881:			FString ResultName;
+882:			if (Recipe)
+883:			{
+884:				if (Recipe->ResultItem != NAME_None)
+885:				{
+886:					ResultName = ItemName(Data, Recipe->ResultItem);
+887:				}
+888:				else if (Recipe->ResultWeapon != NAME_None)
+889:				{
+890:					const FGBWeaponDefinition* Weapon = Data->FindWeapon(Recipe->ResultWeapon);
+891:					ResultName = (Weapon && !Weapon->DisplayName.IsEmpty()) ? Weapon->DisplayName : Recipe->ResultWeapon.ToString();
+892:				}
+893:			}
+894:			if (Recipe && Inventory->TryCombine(Other, ItemId))
+895:			{
+896:				ShowMessage(ResultName.IsEmpty() ? FString(TEXT("Combined")) : FString::Printf(TEXT("Created %s"), *ResultName), 2.5f);
+897:			}
+898:			else
+899:			{
+900:				ShowMessage(TEXT("These do not combine"), 1.5f);
+901:			}
+902:		}
+903:		break;
+904:	default:
+905:		break;
+906:	}
+907:}
+908:
+909:void AGBHUD::ConfirmWeapon(AGBPlayerCharacter* Player)
+910:{
+911:	UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+912:	const TArray<FName> List = GetWeaponList(Player);
+913:	if (!Equipment || List.Num() == 0)
+914:	{
+915:		return;
+916:	}
+917:	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
+918:	const FName WeaponId = List[MenuState.Cursor];
+919:	const FString Name = GBHudMenuLocal::WeaponName(UGBDataSubsystem::Get(this), WeaponId);
+920:	if (Equipment->IsWeaponEquipped(WeaponId))
+921:	{
+922:		ShowMessage(FString::Printf(TEXT("%s is already equipped"), *Name), 1.5f);
+923:	}
+924:	else if (Equipment->EquipOwnedWeapon(WeaponId))
+925:	{
+926:		ShowMessage(FString::Printf(TEXT("Equipped %s"), *Name), 2.f);
+927:	}
+928:	else
+929:	{
+930:		ShowMessage(TEXT("Cannot change weapons right now"), 1.5f);
+931:	}
+932:}
+933:
+934:void AGBHUD::ConfirmSpellSlot(AGBPlayerCharacter* Player)
+935:{
+936:	UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+937:	if (!Spellbook)
+938:	{
+939:		return;
+940:	}
+941:	const int32 NumSlots = UGBSpellbookComponent::NumSlots;
+942:	if (MenuState.bChoosingSpell)
+943:	{
+944:		const TArray<FName> Options = GetAssignableSpells(Player);
+945:		if (Options.IsValidIndex(MenuState.SubCursor) && MenuState.Cursor < NumSlots)
+946:		{
+947:			if (!Spellbook->EquipSpell(MenuState.Cursor, Options[MenuState.SubCursor]))
+948:			{
+949:				ShowMessage(TEXT("Cannot equip that spell"), 1.5f);
+950:			}
+951:		}
+952:		MenuState.bChoosingSpell = false;
+953:	}
+954:	else if (MenuState.Cursor < NumSlots)
+955:	{
+956:		const TArray<FName> Options = GetAssignableSpells(Player);
+957:		MenuState.bChoosingSpell = true;
+958:		MenuState.SubCursor = FMath::Max(0, Options.IndexOfByKey(Spellbook->GetSlotSpell(MenuState.Cursor)));
+959:	}
+960:	else
+961:	{
+962:		// The enchant slot: cycle its element Fire -> Lightning -> Ice.
+963:		EGBElement Next = EGBElement::Fire;
+964:		switch (Spellbook->GetEnchantElement())
+965:		{
+966:		case EGBElement::Fire: Next = EGBElement::Lightning; break;
+967:		case EGBElement::Lightning: Next = EGBElement::Ice; break;
+968:		default: Next = EGBElement::Fire; break;
+969:		}
+970:		Spellbook->SetEnchantElement(Next);
+971:	}
+972:}
+973:
+974:void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
+975:{
+976:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+977:	const FName NodeId = MenuState.SkillCursor;
+978:	if (!SkillTree || NodeId == NAME_None)
+979:	{
+980:		return;
+981:	}
+982:	// A gun emblem on the weapon hub opens its branch page instead of unlocking anything.
+983:	{
+984:		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+985:		if (const FSkillNodeRef* Category = Nodes.FindByPredicate([NodeId](const FSkillNodeRef& Node) { return Node.Id == NodeId && Node.bCategory; }))
+986:		{
+987:			OpenSkillBranch(Category->OpensBranch);
+988:			return;
+989:		}
+990:	}
+991:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+992:	// Every skill point is confirmed (owner, Nov 13): a perk that can be bought opens the dialog first; the dialog's
+993:	// Enter or click comes back here with the same node pending and spends it. A perk that cannot be bought says why.
+994:	if (MenuState.PendingUnlock != NodeId)
+995:	{
+996:		if (SkillTree->CanUnlock(NodeId) == EGBSkillUnlockResult::Ok)
+997:		{
+998:			MenuState.PendingUnlock = NodeId;
+999:			return;
+1000:		}
+1001:		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, SkillTree->CanUnlock(NodeId)), 2.f);
+1002:		return;
+1003:	}
+1004:	MenuState.PendingUnlock = NAME_None;
+1005:	const EGBSkillUnlockResult Result = SkillTree->Unlock(NodeId);
+1006:	if (Result == EGBSkillUnlockResult::Ok)
+1007:	{
+1008:		ShowMessage(FString::Printf(TEXT("Unlocked %s (rank %d)"), *GBHudMenuLocal::SkillName(Data, NodeId), SkillTree->GetRank(NodeId)), 2.f);
+1009:	}
+1010:	else
+1011:	{
+1012:		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, Result), 2.f);
+1013:	}
+1014:}
+1015:
+1016:void AGBHUD::ResetSkills(AGBPlayerCharacter* Player)
+1017:{
+1018:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+1019:	if (!SkillTree)
+1020:	{
+1021:		return;
+1022:	}
+1023:	const int32 Refunded = SkillTree->ResetAll();
+1024:	if (Refunded > 0)
+1025:	{
+1026:		ShowMessage(FString::Printf(TEXT("Skills reset: %d points refunded"), Refunded), 2.f);
+1027:	}
+1028:	else
+1029:	{
+1030:		ShowMessage(TEXT("No skills to reset"), 1.5f);
+1031:	}
+1032:}
+1033:
+1034:void AGBHUD::AddTestSkillPoint(AGBPlayerCharacter* Player)
+1035:{
+1036:	UGBSkillTreeComponent* SkillTree = Player ? Player->GetSkillTree() : nullptr;
+1037:	if (!SkillTree)
+1038:	{
+1039:		return;
+1040:	}
+1041:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+1042:	const int32 Amount = Data ? FMath::Max(0, FMath::RoundToInt(Data->GetGameValue(GBHudKey::TestSkillPointAmount, 1.f))) : 1;
+1043:	SkillTree->AddPoints(Amount);
+1044:	ShowMessage(FString::Printf(TEXT("+%d skill point (%d)"), Amount, SkillTree->GetPoints()), 1.5f);
+1045:}
+1046:
+1047:void AGBHUD::MenuReset()
+1048:{
+1049:	const EGBMenu Menu = GetOpenMenu();
+1050:	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
+1051:	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
+1052:	{
+1053:		return;
+1054:	}
+1055:	ResetSkills(GetPlayer());
+1056:}
+1057:
+1058:// ======================================================================== drawing: shared widgets
+1059:
+1060:namespace GBHudMenuDraw
+1061:{
+1062:	/** Spell tree columns, in the order of GDD 18 "Spell tree" (fire, lightning, ice, casting): presentation only. */
+1063:	const TCHAR* SpellColumnName(int32 Column)
+1064:	{
+1065:		static const TCHAR* Names[] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice"), TEXT("Casting") };
+1066:		return (Column >= 0 && Column < 4) ? Names[Column] : TEXT("");
+1067:	}
+1068:	EGBElement SpellColumnElement(int32 Column)
+1069:	{
+1070:		static const EGBElement Elements[] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice, EGBElement::Arcane };
+1071:		return (Column >= 0 && Column < 4) ? Elements[Column] : EGBElement::Arcane;
+1072:	}
+1073:	/** Splits a name in two lines at the space nearest the middle (or keeps one line). */
+1074:	void SplitName(const FString& Name, FString& A, FString& B)
+1075:	{
+1076:		int32 Best = INDEX_NONE;
+1077:		for (int32 i = 0; i < Name.Len(); ++i)
+1078:		{
+1079:			if (Name[i] == TEXT(' ') && (Best == INDEX_NONE || FMath::Abs(i - Name.Len() / 2) < FMath::Abs(Best - Name.Len() / 2)))
+1080:			{
+1081:				Best = i;
+1082:			}
+1083:		}
+1084:		if (Best == INDEX_NONE)
+1085:		{
+1086:			A = Name;
+1087:			B.Reset();
+1088:			return;
+1089:		}
+1090:		A = Name.Left(Best);
+1091:		B = Name.Mid(Best + 1);
+1092:	}
+1093:}
+1094:
+1095:bool AGBHUD::IsMouseOver(float X, float Y, float W, float H) const
+1096:{
+1097:	return bHasMenuMouse && LastMenuMouse.X >= X && LastMenuMouse.X <= X + W && LastMenuMouse.Y >= Y && LastMenuMouse.Y <= Y + H;
+1098:}
+1099:
+1100:void AGBHUD::DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode, bool bChoosingSpell)
+1101:{
+1102:	MenuState.Page = GBHudMenuLocal::Wrap(Page, PageCount);
+1103:	MenuState.Cursor = FMath::Max(0, Cursor);
+1104:	MenuState.bChoosingSpell = bChoosingSpell;
+1105:	MenuState.SubCursor = bChoosingSpell ? 1 : 0;
+1106:	if (SkillNode != NAME_None)
+1107:	{
+1108:		MenuState.SkillCursor = SkillNode;
+1109:	}
+1110:}
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp'; "'$s=Get-Content $p; for($i=2880;$i -le 3190;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }' in C:\GameJam
+ succeeded in 650ms:
+2880:			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball impact clips=%d projectiles=%d"), Clips, Projectiles);
+2881:			if (Clips != 0 || Projectiles != 0)
+2882:			{
+2883:				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: after the impact there are %d baked clips (expected 0: no baked explosion) and %d projectiles (expected 0: it landed, and its flame went with it)"), Clips, Projectiles);
+2884:			}
+2885:			if (!bPixelVfxImpactSeen)
+2886:			{
+2887:				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: the Fireball never reported its impact, so there is no impact screenshot"));
+2888:			}
+2889:		}, 0.5f);
+2890:		Add(69.3f + S, TEXT("pixelvfx: remove the clips and look ahead again, so the steps after this block are not affected"), [](UWorld* World, AGBPlayerCharacter* Player)
+2891:		{
+2892:			for (TActorIterator<AActor> It(World); It; ++It)
+2893:			{
+2894:				if (It->GetClass()->GetName() == TEXT("GBPixelVfxActor"))
+2895:				{
+2896:					It->Destroy();
+2897:				}
+2898:			}
+2899:			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+2900:			{
+2901:				PC->SetControlRotation(FRotator(0.f, PC->GetControlRotation().Yaw, 0.f));
+2902:			}
+2903:			if (!PixelVfxPreviousSlot0.IsNone() && PixelVfxPreviousSlot0 != FName(TEXT("Fireball")))
+2904:			{
+2905:				Player->GetSpellbook()->EquipSpell(0, PixelVfxPreviousSlot0);
+2906:			}
+2907:		}, 0.7f);
+2908:		// ---- UI block (gb.Smoke ui): every HUD state and menu in both skins, one screenshot each. No checks: these are
+2909:		// for people (and the architect) to look at. The RPG skin in the past with the staff, then the cyberpunk skin in
+2910:		// the future with the pistol.
+2911:		const float U = 69.4f + S;
+2912:		auto Menu = [](AGBPlayerCharacter* Player, EGBMenu Which)
+2913:		{
+2914:			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+2915:			{
+2916:				PC->SetMenu(Which);
+2917:			}
+2918:		};
+2919:		auto Cursor = [](UWorld* World, int32 Page, int32 Row, FName Node, bool bChoosing)
+2920:		{
+2921:			if (AGBHUD* Hud = AGBHUD::Get(World))
+2922:			{
+2923:				Hud->DebugSetMenuCursor(Page, Row, Node, bChoosing);
+2924:			}
+2925:		};
+2926:		Add(U + 0.0f, TEXT("ui: setup, past, staff, bag, skill points, one cooldown"), [Menu](UWorld* World, AGBPlayerCharacter* Player)
+2927:		{
+2928:			Menu(Player, EGBMenu::None);
+2929:			SetQTEEnabled(false);
+2930:			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+2931:			Player->GetAttributes()->RestoreAll();
+2932:			UGBInventoryComponent* Inventory = Player->GetInventory();
+2933:			for (const TCHAR* Item : { TEXT("HealthPotion"), TEXT("ManaPotion"), TEXT("Gem_Fire"), TEXT("SwordHilt"), TEXT("Armor_Chronoweave"), TEXT("ElectricGrenade") })
+2934:			{
+2935:				Inventory->AddItem(Item, 2);
+2936:			}
+2937:			for (const TCHAR* Spell : { TEXT("Flamethrower"), TEXT("LightningRune"), TEXT("IceFloor"), TEXT("IceWall") })
+2938:			{
+2939:				if (!Player->GetSpellbook()->KnowsSpell(Spell))
+2940:				{
+2941:					Player->GetSpellbook()->LearnSpell(Spell);
+2942:				}
+2943:			}
+2944:			Player->GetSkillTree()->AddPoints(6);
+2945:			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+2946:			{
+2947:				int32 Unlocked = 0;
+2948:				for (const FGBSkillNodeDefinition& Node : Data->GetSkillNodes())
+2949:				{
+2950:					if (Node.Row == 0 && Unlocked < 3)
+2951:					{
+2952:						Unlocked += Player->GetSkillTree()->Unlock(Node.Id) == EGBSkillUnlockResult::Ok ? 1 : 0;
+2953:					}
+2954:				}
+2955:			}
+2956:			Player->GetSpellbook()->TryCastSlot(0);
+2957:			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.72f, Player->GetAttributes()->GetMaxMana() * 0.45f);
+2958:			if (AGBHUD* Hud = AGBHUD::Get(World))
+2959:			{
+2960:				Hud->ShowMessage(TEXT("Checkpoint reached"), 4.f);
+2961:			}
+2962:		});
+2963:		Add(U + 0.7f, TEXT("ui: screenshot rpg hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_01_rpg_hud")); });
+2964:		Add(U + 0.9f, TEXT("ui: rpg low health, shield and effects"), [](UWorld*, AGBPlayerCharacter* Player)
+2965:		{
+2966:			Player->GetSpellbook()->LearnSpell(TEXT("IceShield"));
+2967:			Player->GetSpellbook()->EquipSpell(4, TEXT("IceShield"));
+2968:			Player->GetAttributes()->RestoreAll();
+2969:			Player->GetSpellbook()->TryCastSlot(4);
+2970:			Player->GetStatusEffects()->ApplyEffect(TEXT("Slow"), Player);
+2971:			Player->GetStatusEffects()->ApplyEffect(TEXT("Ignite"), Player);
+2972:			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.2f, Player->GetAttributes()->GetMaxMana() * 0.08f);
+2973:		});
+2974:		Add(U + 1.5f, TEXT("ui: screenshot rpg low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_02_rpg_low")); });
+2975:		Add(U + 1.7f, TEXT("ui: rpg pause"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Player->GetAttributes()->RestoreAll(); Menu(Player, EGBMenu::Pause); });
+2976:		Add(U + 2.1f, TEXT("ui: screenshot rpg pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_03_rpg_pause")); });
+2977:		Add(U + 2.3f, TEXT("ui: rpg inventory items"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::Inventory); Cursor(World, 0, 1, NAME_None, false); });
+2978:		Add(U + 2.7f, TEXT("ui: screenshot rpg items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_04_rpg_items")); });
+2979:		Add(U + 2.9f, TEXT("ui: rpg inventory weapons"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 1, 0, NAME_None, false); });
+2980:		Add(U + 3.3f, TEXT("ui: screenshot rpg weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_05_rpg_weapons")); });
+2981:		Add(U + 3.5f, TEXT("ui: rpg inventory spells"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 0, NAME_None, false); });
+2982:		Add(U + 3.9f, TEXT("ui: screenshot rpg spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_06_rpg_spells")); });
+2983:		Add(U + 4.1f, TEXT("ui: rpg spell chooser"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 1, NAME_None, true); });
+2984:		Add(U + 4.5f, TEXT("ui: screenshot rpg spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_07_rpg_spell_choose")); });
+2985:		Add(U + 4.7f, TEXT("ui: rpg inventory skills, spell tree"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, TEXT("Spell_FireballDamage"), false); });
+2986:		Add(U + 5.1f, TEXT("ui: screenshot rpg skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_08_rpg_skills_page")); });
+2987:		Add(U + 5.3f, TEXT("ui: rpg skill trees, a weapon node"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
+2988:		{
+2989:			Menu(Player, EGBMenu::SkillTrees);
+2990:			Cursor(World, 0, 0, TEXT("Weapon_Rifle_FireRate"), false);
+2991:		});
+2992:		Add(U + 5.7f, TEXT("ui: screenshot rpg skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09_rpg_skilltrees")); });
+2993:		Add(U + 5.75f, TEXT("ui: rpg skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });
+2994:		Add(U + 5.85f, TEXT("ui: screenshot rpg skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09b_rpg_skilltrees_other")); });
+2995:		Add(U + 5.9f, TEXT("ui: rpg QTE"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+2996:		{
+2997:			Menu(Player, EGBMenu::None);
+2998:			Player->GetAttributes()->RestoreAll();
+2999:			SetQTEEnabled(true);
+3000:			Player->GetSpellbook()->TryCastSlot(1);
+3001:		});
+3002:		Add(U + 6.2f, TEXT("ui: rpg QTE, one key"), [](UWorld*, AGBPlayerCharacter* Player)
+3003:		{
+3004:			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+3005:			{
+3006:				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+3007:			}
+3008:		});
+3009:		Add(U + 6.5f, TEXT("ui: screenshot rpg QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_10_rpg_qte")); });
+3010:		Add(U + 10.8f, TEXT("ui: rpg death"), [](UWorld*, AGBPlayerCharacter* Player)
+3011:		{
+3012:			SetQTEEnabled(false);
+3013:			FGBDamageInfo Info;
+3014:			Info.Amount = 10000000.f;
+3015:			UGBCombatLibrary::DealDamage(Player, Info, true);
+3016:		});
+3017:		Add(U + 11.6f, TEXT("ui: screenshot rpg death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_11_rpg_death")); });
+3018:		Add(U + 14.8f, TEXT("ui: travel to the future, pistol in hand"), [](UWorld* World, AGBPlayerCharacter* Player)
+3019:		{
+3020:			UGBEraSubsystem::Get(World)->RequestTravel(EGBEra::Future, Player);
+3021:		});
+3022:		Add(U + 17.8f, TEXT("ui: cyber QTE (enchant), pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+3023:		{
+3024:			Player->GetEquipment()->GiveWeapon(TEXT("Pistol"), true, false);
+3025:			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+3026:			Player->GetAttributes()->RestoreAll();
+3027:			SetQTEEnabled(true);
+3028:			Player->GetSpellbook()->TryCastEnchant();
+3029:		});
+3030:		Add(U + 18.1f, TEXT("ui: cyber QTE, one key"), [](UWorld*, AGBPlayerCharacter* Player)
+3031:		{
+3032:			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+3033:			{
+3034:				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+3035:			}
+3036:		});
+3037:		Add(U + 18.4f, TEXT("ui: screenshot cyber QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_12_cyber_qte")); });
+3038:		Add(U + 22.8f, TEXT("ui: cyber setup, enchanted, spent rounds"), [](UWorld* World, AGBPlayerCharacter* Player)
+3039:		{
+3040:			SetQTEEnabled(false);
+3041:			Player->GetStatusEffects()->ApplyEffect(TEXT("Enchant_Fire"), Player);
+3042:			if (AGBHeldItem* Gun = Player->GetEquipment()->GetActiveItem())
+3043:			{
+3044:				FGBAmmoState Ammo = Gun->GetAmmo();
+3045:				Ammo.InMagazine = FMath::Max(0, Ammo.InMagazine - 4);
+3046:				Gun->SetAmmo(Ammo);
+3047:			}
+3048:			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.72f, Player->GetAttributes()->GetMaxMana() * 0.45f);
+3049:			if (AGBHUD* Hud = AGBHUD::Get(World))
+3050:			{
+3051:				Hud->ShowMessage(TEXT("Picked up Pistol"), 4.f);
+3052:			}
+3053:		});
+3054:		Add(U + 23.5f, TEXT("ui: screenshot cyber hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_13_cyber_hud")); });
+3055:		Add(U + 23.7f, TEXT("ui: cyber low health, reloading"), [](UWorld*, AGBPlayerCharacter* Player)
+3056:		{
+3057:			Player->GetStatusEffects()->ApplyEffect(TEXT("Slow"), Player);
+3058:			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.2f, Player->GetAttributes()->GetMaxMana() * 0.1f);
+3059:			if (AGBHeldItem* Gun = Player->GetEquipment()->GetActiveItem())
+3060:			{
+3061:				Gun->Reload();
+3062:			}
+3063:		});
+3064:		Add(U + 24.2f, TEXT("ui: screenshot cyber low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_14_cyber_low")); });
+3065:		Add(U + 24.4f, TEXT("ui: cyber pause"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Player->GetAttributes()->RestoreAll(); Menu(Player, EGBMenu::Pause); });
+3066:		Add(U + 24.8f, TEXT("ui: screenshot cyber pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_15_cyber_pause")); });
+3067:		Add(U + 25.0f, TEXT("ui: cyber inventory items"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::Inventory); Cursor(World, 0, 1, NAME_None, false); });
+3068:		Add(U + 25.4f, TEXT("ui: screenshot cyber items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_16_cyber_items")); });
+3069:		Add(U + 25.6f, TEXT("ui: cyber inventory weapons"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 1, 1, NAME_None, false); });
+3070:		Add(U + 26.0f, TEXT("ui: screenshot cyber weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_17_cyber_weapons")); });
+3071:		Add(U + 26.2f, TEXT("ui: cyber inventory spells"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 5, NAME_None, false); });
+3072:		Add(U + 26.6f, TEXT("ui: screenshot cyber spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_18_cyber_spells")); });
+3073:		Add(U + 26.8f, TEXT("ui: cyber spell chooser"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 2, NAME_None, true); });
+3074:		Add(U + 27.2f, TEXT("ui: screenshot cyber spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_19_cyber_spell_choose")); });
+3075:		Add(U + 27.4f, TEXT("ui: cyber inventory skills"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, TEXT("Weapon_Damage"), false); });
+3076:		Add(U + 27.8f, TEXT("ui: screenshot cyber skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_20_cyber_skills_page")); });
+3077:		Add(U + 28.0f, TEXT("ui: cyber skill trees"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::SkillTrees); });
+3078:		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
+3079:		Add(U + 28.45f, TEXT("ui: cyber skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
+3080:		Add(U + 28.55f, TEXT("ui: screenshot cyber skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21b_cyber_skilltrees_other")); });
+3081:		// The menu look changes while the inventory stays open (owner, Nov 13): in the future, the Skills page on the
+3082:		// spell tree is RPG and the other pages are cyberpunk. Each jump plays a transition; catch both mid-way.
+3083:		Add(U + 28.6f, TEXT("ui: future inventory, skills page on the spell tree (RPG look)"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
+3084:		{
+3085:			Menu(Player, EGBMenu::Inventory);
+3086:			Cursor(World, 3, 0, TEXT("Spell_FireballDamage"), false);
+3087:		});
+3088:		Add(U + 29.0f, TEXT("ui: tab to the spells page (into cyberpunk)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
+3089:		Add(U + 29.12f, TEXT("ui: screenshot transition into cyberpunk"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_23_transition_to_cyber")); });
+3090:		Add(U + 29.7f, TEXT("ui: tab back to the skills page (into RPG)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });
+3091:		Add(U + 29.85f, TEXT("ui: screenshot transition into RPG"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_24_transition_to_rpg")); });
+3092:		// Every skill point asks first (owner, Nov 13): Enter opens the dialog, Esc cancels it without spending, and
+3093:		// Enter on the dialog spends exactly one rank.
+3094:		Add(U + 30.4f, TEXT("ui: skill trees, Enter on Heavy Rounds opens the confirmation"), [Menu](UWorld* World, AGBPlayerCharacter* Player)
+3095:		{
+3096:			Menu(Player, EGBMenu::SkillTrees);
+3097:			if (AGBHUD* Hud = AGBHUD::Get(World))
+3098:			{
+3099:				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_Damage"), false);
+3100:				UiConfirmPointsBefore = Player->GetSkillTree()->GetPoints();
+3101:				Hud->MenuConfirm();
+3102:			}
+3103:		});
+3104:		Add(U + 30.7f, TEXT("ui: screenshot cyberpunk confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_25_cyber_confirm")); });
+3105:		Add(U + 31.3f, TEXT("ui: tab to the spell tree (cancels), Enter on a spell perk"), [](UWorld* World, AGBPlayerCharacter* Player)
+3106:		{
+3107:			if (AGBHUD* Hud = AGBHUD::Get(World))
+3108:			{
+3109:				Hud->MenuTab(-1);
+3110:				Hud->DebugSetMenuCursor(0, 0, TEXT("Spell_FireballDamage"), false);
+3111:				Hud->MenuConfirm();
+3112:			}
+3113:		});
+3114:		Add(U + 31.9f, TEXT("ui: screenshot RPG confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_26_rpg_confirm")); });
+3115:		Add(U + 32.4f, TEXT("ui: Esc cancels: no point spent; then Enter, Enter spends one"), [](UWorld* World, AGBPlayerCharacter* Player)
+3116:		{
+3117:			AGBHUD* Hud = AGBHUD::Get(World);
+3118:			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+3119:			if (!Hud || !Skills)
+3120:			{
+3121:				return;
+3122:			}
+3123:			const FName Node(TEXT("Spell_FireballDamage"));
+3124:			const int32 RankBefore = Skills->GetRank(Node);
+3125:			const bool bClosed = !Hud->MenuBack(); // Esc: the dialog takes it (returns true) and closes
+3126:			const int32 AfterCancel = Skills->GetPoints();
+3127:			Hud->MenuConfirm(); // asks again
+3128:			const int32 AfterAsk = Skills->GetPoints();
+3129:			Hud->MenuConfirm(); // spends
+3130:			const int32 AfterSpend = Skills->GetPoints();
+3131:			UE_LOG(LogGB, Display, TEXT("SMOKE skill confirm: points %d before, %d after Esc, %d after one Enter, %d after Enter on the dialog; rank %d -> %d"),
+3132:				UiConfirmPointsBefore, AfterCancel, AfterAsk, AfterSpend, RankBefore, Skills->GetRank(Node));
+3133:			if (bClosed || AfterCancel != UiConfirmPointsBefore || AfterAsk != UiConfirmPointsBefore || AfterSpend != UiConfirmPointsBefore - 1 || Skills->GetRank(Node) != RankBefore + 1)
+3134:			{
+3135:				UE_LOG(LogGB, Error, TEXT("SMOKE skill confirm FAILED: Esc closed the menu=%d; points %d / %d / %d (expected %d, %d, %d); rank %d (expected %d)"),
+3136:					bClosed ? 1 : 0, AfterCancel, AfterAsk, AfterSpend, UiConfirmPointsBefore, UiConfirmPointsBefore, UiConfirmPointsBefore - 1, Skills->GetRank(Node), RankBefore + 1);
+3137:			}
+3138:		});
+3139:		Add(U + 32.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+3140:		{
+3141:			Menu(Player, EGBMenu::None);
+3142:			FGBDamageInfo Info;
+3143:			Info.Amount = 10000000.f;
+3144:			UGBCombatLibrary::DealDamage(Player, Info, true);
+3145:		});
+3146:		Add(U + 33.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
+3147:		Add(U + 34.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+3148:		{
+3149:			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+3150:			FPlatformMisc::RequestExit(false);
+3151:		});
+3152:	}
+3153:
+3154:	static bool Tick(float)
+3155:	{
+3156:		UWorld* World = SmokeWorld.Get();
+3157:		if (!World)
+3158:		{
+3159:			UE_LOG(LogGB, Error, TEXT("SMOKE aborted: the world went away"));
+3160:			return false;
+3161:		}
+3162:		// Read the clock again for every step: a step may wind StartSeconds back (the reload steps stretch the run).
+3163:		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
+3164:		{
+3165:			const FStep& Gate = Steps[NextStep];
+3166:			if (Gate.MinSimSinceMark > 0.f && World->GetTimeSeconds() - SimMark < Gate.MinSimSinceMark
+3167:				&& FPlatformTime::Seconds() - StartSeconds - Gate.Time < SimGateTimeoutSeconds)
+3168:			{
+3169:				break; // not enough simulated time since the first sample yet: try again next tick
+3170:			}
+3171:			const FStep& Step = Steps[NextStep++];
+3172:			AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+3173:			UE_LOG(LogGB, Display, TEXT("SMOKE step %d/%d (%.1f s): %s"), NextStep, Steps.Num(), Step.Time, Step.Name);
+3174:			if (!Player)
+3175:			{
+3176:				UE_LOG(LogGB, Error, TEXT("SMOKE step skipped: there is no player character"));
+3177:				continue;
+3178:			}
+3179:			Step.Run(World, Player);
+3180:		}
+3181:		return NextStep < Steps.Num();
+3182:	}
+3183:
+3184:	static void Start(const TArray<FString>& Args, UWorld* World)
+3185:	{
+3186:		if (!World || !World->IsGameWorld())
+3187:		{
+3188:			UE_LOG(LogGB, Warning, TEXT("gb.Smoke needs a running game world"));
+3189:			return;
+3190:		}
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -A 14 -B 3 'double AGBHUD::GetRealTime|float AGBHUD::UIScale|float AGBHUD::ArtPixel|SetMenu\\(EGBMenu::Death|EGBSkillUnlockResult UGBSkillTreeComponent::(Unlock|CanUnlock)' Glyphbound/Source; rg --files Glyphbound | rg 'Skill.*\\.(csv|json)"'$|AGENTS.md$'"'" in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/UI/GBHUD.cpp'; "'$s=Get-Content $p; for($i=170;$i -le 225;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }; $p='"'Glyphbound/Source/Glyphbound/UI/GBHUD.h'; "'$s=Get-Content $p; for($i=75;$i -le 285;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }' in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p='"'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp'; "'$s=Get-Content $p; foreach($range in @(@(635,850),@(2670,2800))) { for($i=$range[0];$i -le $range[1];$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] } }' in C:\GameJam
+ succeeded in 697ms:
+170:}
+171:
+172:void AGBHUD::BeginPlay()
+173:{
+174:	Super::BeginPlay();
+175:	EnsureArt();
+176:	BindToPlayer(GetPlayer());
+177:	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBHUD::HandleDamageDealt);
+178:}
+179:
+180:void AGBHUD::EndPlay(const EEndPlayReason::Type EndPlayReason)
+181:{
+182:	// The damage delegate is global: it must never call into a dead HUD.
+183:	UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
+184:	DamageDealtHandle.Reset();
+185:	BindToPlayer(nullptr);
+186:	Super::EndPlay(EndPlayReason);
+187:}
+188:
+189:AGBPlayerCharacter* AGBHUD::GetPlayer() const
+190:{
+191:	return Cast<AGBPlayerCharacter>(GetOwningPawn());
+192:}
+193:
+194:EGBHudSkin AGBHUD::GetCurrentSkin() const
+195:{
+196:	const AGBPlayerCharacter* Player = GetPlayer();
+197:	const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+198:	return Equipment ? Equipment->GetHudSkin() : EGBHudSkin::Rpg90s;
+199:}
+200:
+201:EGBHudSkin AGBHUD::GetMenuSkin() const
+202:{
+203:	// The skill pages (the Skill Trees screen and the inventory's Skills page) take the shown tree's look for the whole
+204:	// screen (owner, Nov 13): spells = 90s RPG, weapons = cyberpunk, whatever the era.
+205:	const EGBMenu Menu = GetOpenMenu();
+206:	if (Menu == EGBMenu::SkillTrees || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills))
+207:	{
+208:		return GetShownSkillTree() == 1 ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+209:	}
+210:	// Menus both eras share (inventory, pause, death) take the look of the era the player is in
+211:	// (owner, Nov 13): the past is the 90s RPG, the future is cyberpunk. The in-game HUD keeps following the held item.
+212:	if (const UGBEraSubsystem* Era = UGBEraSubsystem::Get(this))
+213:	{
+214:		return Era->GetCurrentEra() == EGBEra::Future ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+215:	}
+216:	return GetCurrentSkin();
+217:}
+218:
+219:void AGBHUD::ShowMessage(const FString& Text, float Duration)
+220:{
+221:	if (Text.IsEmpty())
+222:	{
+223:		return;
+224:	}
+225:	const double Now = GetRealTime();
+75:	virtual void DrawHUD() override;
+76:
+77:	/** A short message in the middle-top of the screen ("Checkpoint", "Picked up Pistol", "Not enough mana"). */
+78:	void ShowMessage(const FString& Text, float Duration = 2.5f);
+79:
+80:	EGBHudSkin GetCurrentSkin() const;
+81:	/** Skin of the menus both eras share: the current era's look (past = RPG, future = cyberpunk). */
+82:	EGBHudSkin GetMenuSkin() const;
+83:
+84:	// ---- Menu input, forwarded by AGBPlayerController while a menu is open ----
+85:	void OnMenuOpened(EGBMenu Menu);
+86:	void OnMenuClosed(EGBMenu Menu);
+87:	/** Direction: x = -1 left / +1 right, y = -1 up / +1 down. */
+88:	void MenuNavigate(FIntPoint Direction);
+89:	void MenuConfirm();
+90:	/** Returns true if the menu handled it (e.g. left a sub-page); false = the controller should close the menu. */
+91:	bool MenuBack();
+92:	/** Switches page inside a menu (inventory tabs). */
+93:	void MenuTab(int32 Direction);
+94:	/** Keyboard / gamepad shortcut for the skill reset button (R / top face button). */
+95:	void MenuReset();
+96:	/** Refunds every owned skill node (see UGBSkillTreeComponent::ResetAll). The cursor stays on its node. */
+97:	void ResetSkills(AGBPlayerCharacter* Player);
+98:	/** Test option (owner, GDD 18 provisional): gives one free skill point. Not a refund: it adds to the pool. */
+99:	void AddTestSkillPoint(AGBPlayerCharacter* Player);
+100:	/**
+101:	 * Mouse in menus: the cursor is visible while a menu is open, the entry under it is highlighted (the HUD
+102:	 * reads the mouse position itself while drawing), and a left click on an entry does what confirm does there
+103:	 * (tabs and buttons included). ScreenPosition is in viewport pixels. Returns true if something was clicked.
+104:	 */
+105:	bool MenuClick(const FVector2D& ScreenPosition);
+106:
+107:	/** Smoke run only: moves the menu cursor (page, row, skill node) so screenshots show every screen. */
+108:	void DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode = NAME_None, bool bChoosingSpell = false);
+109:
+110:protected:
+111:	virtual void BeginPlay() override;
+112:	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+113:
+114:	AGBPlayerCharacter* GetPlayer() const;
+115:
+116:	struct FToast
+117:	{
+118:		FString Text;
+119:		double StartTime = 0.0;
+120:		double EndTime = 0.0;
+121:	};
+122:	TArray<FToast> Toasts;
+123:
+124:	/** Real time of the last damage taken, for the red flash. */
+125:	double LastDamageTime = -1000.0;
+126:	/** Real time the held item's skin last changed (the new HUD plays a short intro), and the skin then. */
+127:	double SkinChangeTime = -1000.0;
+128:	EGBHudSkin LastSkin = EGBHudSkin::Rpg90s;
+129:	bool bHasLastSkin = false;
+130:	/** Real time the open menu was opened (intro animation). */
+131:	double MenuOpenTime = -1000.0;
+132:	/** The look the open menu was last drawn in; a change while it stays open plays a transition (owner, Nov 13). */
+133:	EGBHudSkin MenuSkinShown = EGBHudSkin::Rpg90s;
+134:	bool bHasMenuSkin = false;
+135:	double MenuSkinChangeTime = -1000.0;
+136:
+137:	// ---- Player events (bound lazily: the pawn may not exist yet, or may be replaced) ----
+138:	void BindToPlayer(AGBPlayerCharacter* Player);
+139:	void HandleDamaged(const FGBDamageInfo& Info, float ActualDamage);
+140:	void HandleCastFailed(FName SpellId, EGBCastFailReason Reason);
+141:	void HandleSpellCast(const FGBSpellCast& SpellCast);
+142:
+143:	TWeakObjectPtr<AGBPlayerCharacter> BoundPlayer;
+144:	FDelegateHandle DamagedHandle;
+145:	FDelegateHandle CastFailedHandle;
+146:	FDelegateHandle SpellCastHandle;
+147:	/** Real time of the last successful cast, to raise the casting hand. */
+148:	double LastCastTime = -1000.0;
+149:
+150:	// ---- Summoned shield in first person (GBHUD.cpp) ----
+151:	/** 0 = lowered (off screen), 1 = fully raised. Slides towards IsBlockRaised() every frame. */
+152:	float ShieldRaise01 = 0.f;
+153:	double LastShieldUpdateTime = -1.0;
+154:
+155:	// ---- Smoothed bars (the "lost health" trail behind the health bar) ----
+156:	float HealthTrail01 = 1.f;
+157:	float HealthShown01 = 1.f;
+158:	double LastTrailUpdateTime = -1.0;
+159:	void UpdateTrails(AGBPlayerCharacter* Player);
+160:
+161:	// ---- Floating damage numbers (GBHUD_DamageNumbers.cpp) ----
+162:	struct FDamageNumber
+163:	{
+164:		TWeakObjectPtr<AActor> Target;
+165:		FVector WorldPosition = FVector::ZeroVector;
+166:		/** Sideways screen drift, -1..1. */
+167:		float Drift = 0.f;
+168:		float Amount = 0.f;
+169:		/** Target max health when the number was made (0 = unknown), for the big-hit rule after merging. */
+170:		float TargetMaxHealth = 0.f;
+171:		EGBElement Element = EGBElement::Physical;
+172:		bool bBig = false;
+173:		/** World time (slows down with the QTE time dilation). */
+174:		double StartTime = 0.0;
+175:	};
+176:	TArray<FDamageNumber> DamageNumbers;
+177:	FDelegateHandle DamageDealtHandle;
+178:	void HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float DamageDealt);
+179:	void DrawDamageNumbers(EGBHudSkin Skin);
+180:	double GetWorldTime() const;
+181:
+182:	// ---- Mouse in menus (GBHUD_Menus.cpp) ----
+183:	enum class EMenuHitKind : uint8
+184:	{
+185:		PauseEntry,
+186:		Tab,
+187:		ItemRow,
+188:		WeaponRow,
+189:		SpellSlot,
+190:		SpellChoice,
+191:		SkillNode,
+192:		SkillReset,
+193:		SkillAddPoint,
+194:		/** Skill trees: the tab of one tree (Index 0 = spells, 1 = weapons). */
+195:		SkillTreeTab,
+196:		/** Weapon tree: the Back button of a gun branch page. */
+197:		SkillBranchBack,
+198:		/** The skill point confirmation: spend, or cancel. */
+199:		ConfirmYes,
+200:		ConfirmNo,
+201:		DeathScreen
+202:	};
+203:	/** One clickable thing drawn this frame, in canvas coordinates. */
+204:	struct FMenuHit
+205:	{
+206:		EMenuHitKind Kind = EMenuHitKind::PauseEntry;
+207:		FVector2D Min = FVector2D::ZeroVector;
+208:		FVector2D Max = FVector2D::ZeroVector;
+209:		int32 Index = 0;
+210:		FName Id = NAME_None;
+211:	};
+212:	/** Clickables of the last drawn menu frame, and which menu / page they belong to. */
+213:	TArray<FMenuHit> MenuHits;
+214:	EGBMenu MenuHitsMenu = EGBMenu::None;
+215:	int32 MenuHitsPage = -1;
+216:	bool bMenuHitsChoosing = false;
+217:	/** Canvas pixels per viewport pixel (the canvas is divided by the DPI scale). Updated every frame. */
+218:	float MouseToCanvas = 1.f;
+219:	/** Last mouse position seen while a menu was open (canvas space); hover only acts when it moves. */
+220:	FVector2D LastMenuMouse = FVector2D::ZeroVector;
+221:	bool bHasMenuMouse = false;
+222:	void AddMenuHit(EMenuHitKind Kind, float X, float Y, float W, float H, int32 Index = 0, FName Id = NAME_None);
+223:	const FMenuHit* FindMenuHit(const FVector2D& CanvasPosition) const;
+224:	/** True if the mouse is over this rectangle (for the hover look of buttons and tabs). */
+225:	bool IsMouseOver(float X, float Y, float W, float H) const;
+226:	/** Reads the mouse; if it moved over a clickable, moves the keyboard cursor there. Before drawing a menu. */
+227:	void UpdateMenuMouse();
+228:	void ApplyMenuHover(const FMenuHit& Hit);
+229:	void ActivateMenuHit(const FMenuHit& Hit);
+230:	void ResetMenuMouse();
+231:
+232:	// ---- Menu state (GBHUD_Menus.cpp) ----
+233:	static constexpr int32 PageItems = 0;
+234:	static constexpr int32 PageWeapons = 1;
+235:	static constexpr int32 PageSpells = 2;
+236:	static constexpr int32 PageSkills = 3;
+237:	static constexpr int32 PageCount = 4;
+238:	struct FMenuState
+239:	{
+240:		/** Inventory page (PageItems, PageWeapons, PageSpells, PageSkills). */
+241:		int32 Page = 0;
+242:		/** Row in the current list (pause entries, items, weapons, spell slots). */
+243:		int32 Cursor = 0;
+244:		/** Spells page: picking the spell for slot Cursor. */
+245:		bool bChoosingSpell = false;
+246:		int32 SubCursor = 0;
+247:		/** Items page: item marked to be combined with the next confirmed one. */
+248:		FName PendingCombine = NAME_None;
+249:		/** Skill trees: the selected node (kept by id, data can be reloaded). */
+250:		FName SkillCursor = NAME_None;
+251:		/** Skill trees: the node last selected in each tree, so switching back returns to it. */
+252:		FName TreeCursor[2] = { NAME_None, NAME_None };
+253:		/** A perk waiting for the player to confirm the skill point (owner, Nov 13). None = no dialog. */
+254:		FName PendingUnlock = NAME_None;
+255:	};
+256:	FMenuState MenuState;
+257:
+258:	struct FSkillNodeRef
+259:	{
+260:		FName Id = NAME_None;
+261:		/** 0 = spell tree (left), 1 = weapon tree (right). */
+262:		int32 Tree = 0;
+263:		int32 Column = 0;
+264:		int32 Row = 0;
+265:		/** Weapon tree: the gun branch page the node is on (None = the hub page). */
+266:		FName Branch = NAME_None;
+267:		/** A gun emblem on the weapon hub (not a perk): confirming it opens its Branch page. Its Id is "Branch_<Branch>". */
+268:		bool bCategory = false;
+269:		FName OpensBranch = NAME_None;
+270:	};
+271:
+272:	// ======================================================================== painting (GBHUD_Paint.cpp)
+273:	double GetRealTime() const;
+274:	/** Canvas height / 1080: every cyberpunk layout size is multiplied by it. */
+275:	float UIScale() const;
+276:	/** Size in screen pixels of one RPG art pixel (4 at 1080p, 3 at 720p): the RPG skin is laid out in these. */
+277:	float ArtPixel() const;
+278:
+279:	/** While true (the cyberpunk HUD over the bright world), every cyberpunk text gets a soft dark shadow. */
+280:	bool bForceTextShadow = false;
+281:	UPROPERTY(Transient) TObjectPtr<UGBPixelFont> PixelFont;
+282:	/** Engine Roboto (runtime font cache): the canvas only draws Slate font text when the item also has a runtime UFont. */
+283:	UPROPERTY() TObjectPtr<UFont> RuntimeFont;
+284:	/** Tiled dark stone blocks of the RPG panels (wrap, nearest). */
+285:	UPROPERTY(Transient) TObjectPtr<UTexture2D> RpgStoneTexture;
+
+ succeeded in 683ms:
+635:	{
+636:		return Result;
+637:	}
+638:	for (const FName& SpellId : Spellbook->GetKnownSpells())
+639:	{
+640:		const FGBSpellDefinition* Def = Data->FindSpell(SpellId);
+641:		if (Def && !Def->bPassive && !Def->bRequiresGun && SpellId != Spellbook->GetEnchantSpell())
+642:		{
+643:			Result.Add(SpellId);
+644:		}
+645:	}
+646:	return Result;
+647:}
+648:
+649:TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
+650:{
+651:	TArray<FSkillNodeRef> Result;
+652:	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+653:	{
+654:		for (const FGBSkillNodeDefinition& Def : Data->GetSkillNodes())
+655:		{
+656:			FSkillNodeRef Ref;
+657:			Ref.Id = Def.Id;
+658:			Ref.Tree = GBHudMenuLocal::IsWeaponTree(Def.Tree) ? 1 : 0;
+659:			Ref.Column = FMath::Max(0, Def.Column);
+660:			Ref.Row = FMath::Max(0, Def.Row);
+661:			Ref.Branch = Ref.Tree == 1 ? Def.Branch : NAME_None;
+662:			Result.Add(Ref);
+663:		}
+664:		// The weapon hub (owner, Nov 13, "similar to Cyberpunk"): the root perks on top, then one emblem per gun
+665:		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
+666:		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
+667:		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
+668:		// The emblems hang right under the hub's root perk (the one with no requirement: Heavy Rounds), centred on its
+669:		// column; the general perks sit beside them in the data's own columns.
+670:		int32 RootColumn = -1;
+671:		int32 RootRow = 0;
+672:		for (const FSkillNodeRef& Ref : Result)
+673:		{
+674:			if (Ref.Tree != 1)
+675:			{
+676:				continue;
+677:			}
+678:			if (Ref.Branch != NAME_None)
+679:			{
+680:				Branches.AddUnique(Ref.Branch);
+681:			}
+682:			else if (RootColumn < 0)
+683:			{
+684:				const FGBSkillNodeDefinition* Def = Data->FindSkillNode(Ref.Id);
+685:				if (Def && Def->Requires.Num() == 0)
+686:				{
+687:					RootColumn = Ref.Column;
+688:					RootRow = Ref.Row;
+689:				}
+690:			}
+691:		}
+692:		// Each emblem takes the free column nearest the root's (an emblem is about two rows tall, so a perk in its row
+693:		// or the row under it blocks the column), then the emblems keep their order left to right (Sol 6.1 review: a
+694:		// fourth gun must not land on a general perk).
+695:		const int32 Center = RootColumn < 0 ? 1 : RootColumn;
+696:		auto Blocked = [&Result, RootRow](int32 Column)
+697:		{
+698:			return Result.ContainsByPredicate([Column, RootRow](const FSkillNodeRef& Ref)
+699:			{
+700:				return Ref.Tree == 1 && Ref.Branch == NAME_None && !Ref.bCategory && Ref.Column == Column && (Ref.Row == RootRow + 1 || Ref.Row == RootRow + 2);
+701:			});
+702:		};
+703:		TArray<int32> Columns;
+704:		for (int32 Distance = 0; Columns.Num() < Branches.Num() && Distance < 64; ++Distance)
+705:		{
+706:			for (const int32 Column : { Center - Distance, Center + Distance })
+707:			{
+708:				if (Column >= 0 && Columns.Num() < Branches.Num() && !Columns.Contains(Column) && !Blocked(Column))
+709:				{
+710:					Columns.Add(Column);
+711:				}
+712:			}
+713:		}
+714:		Columns.Sort();
+715:		for (int32 i = 0; i < Branches.Num() && i < Columns.Num(); ++i)
+716:		{
+717:			FSkillNodeRef Category;
+718:			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
+719:			Category.Tree = 1;
+720:			Category.Column = Columns[i];
+721:			Category.Row = RootRow + 1;
+722:			Category.bCategory = true;
+723:			Category.OpensBranch = Branches[i];
+724:			Result.Add(Category);
+725:		}
+726:	}
+727:	return Result;
+728:}
+729:
+730:void AGBHUD::OpenSkillBranch(FName Branch)
+731:{
+732:	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+733:	const FSkillNodeRef* First = nullptr;
+734:	for (const FSkillNodeRef& Node : Nodes)
+735:	{
+736:		if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Branch
+737:			&& (!First || Node.Row < First->Row || (Node.Row == First->Row && Node.Column < First->Column)))
+738:		{
+739:			First = &Node;
+740:		}
+741:	}
+742:	if (First)
+743:	{
+744:		MenuState.SkillCursor = First->Id;
+745:		// The hub's clickables are stale until the next draw.
+746:		MenuHits.Reset();
+747:	}
+748:}
+749:
+750:bool AGBHUD::CloseSkillBranch()
+751:{
+752:	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+753:	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+754:	if (!Current || Current->Tree != 1 || Current->Branch == NAME_None)
+755:	{
+756:		return false;
+757:	}
+758:	const FName Branch = Current->Branch;
+759:	if (const FSkillNodeRef* Category = Nodes.FindByPredicate([Branch](const FSkillNodeRef& Node) { return Node.bCategory && Node.OpensBranch == Branch; }))
+760:	{
+761:		MenuState.SkillCursor = Category->Id;
+762:		MenuHits.Reset();
+763:		return true;
+764:	}
+765:	return false;
+766:}
+767:
+768:void AGBHUD::NavigateSkills(FIntPoint Direction)
+769:{
+770:	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+771:	if (Nodes.Num() == 0 || Direction == FIntPoint::ZeroValue)
+772:	{
+773:		return;
+774:	}
+775:	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+776:	if (!Current)
+777:	{
+778:		MenuState.SkillCursor = Nodes[0].Id;
+779:		return;
+780:	}
+781:
+782:	// One tree per page: pick the nearest node of the shown tree in the pressed direction.
+783:	auto GridPos = [](const FSkillNodeRef& Node)
+784:	{
+785:		return FVector2D(Node.Column, Node.Row);
+786:	};
+787:	const FVector2D Dir(Direction.X, Direction.Y);
+788:	const FVector2D From = GridPos(*Current);
+789:	float BestCost = TNumericLimits<float>::Max();
+790:	FName Best = NAME_None;
+791:	for (const FSkillNodeRef& Node : Nodes)
+792:	{
+793:		if (Node.Id == Current->Id || Node.Tree != Current->Tree || Node.Branch != Current->Branch)
+794:		{
+795:			continue;
+796:		}
+797:		const FVector2D Delta = GridPos(Node) - From;
+798:		const float Along = FVector2D::DotProduct(Delta, Dir);
+799:		if (Along <= 0.f)
+800:		{
+801:			continue;
+802:		}
+803:		const float Across = FMath::Abs(FVector2D::CrossProduct(Delta, Dir));
+804:		const float Cost = Along + 2.f * Across;
+805:		if (Cost < BestCost)
+806:		{
+807:			BestCost = Cost;
+808:			Best = Node.Id;
+809:		}
+810:	}
+811:	if (Best != NAME_None)
+812:	{
+813:		MenuState.SkillCursor = Best;
+814:	}
+815:	else if (Direction.X != 0 && GetOpenMenu() == EGBMenu::Inventory)
+816:	{
+817:		// The inventory's Q / E switch its pages, so there left / right past the tree's edge turns to the other tree
+818:		// (spells on the left, weapons on the right).
+819:		const int32 Other = Direction.X > 0 ? 1 : 0;
+820:		if (Other != Current->Tree)
+821:		{
+822:			SelectSkillTree(Other);
+823:		}
+824:	}
+825:}
+826:
+827:// ======================================================================== confirm actions
+828:
+829:void AGBHUD::ConfirmItem(AGBPlayerCharacter* Player)
+830:{
+831:	using namespace GBHudMenuLocal;
+832:	UGBInventoryComponent* Inventory = Player ? Player->GetInventory() : nullptr;
+833:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+834:	const TArray<FName> List = GetInventoryList(Player);
+835:	if (!Inventory || List.Num() == 0)
+836:	{
+837:		return;
+838:	}
+839:	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
+840:	const FName ItemId = List[MenuState.Cursor];
+841:	const FGBItemDefinition* Def = Data ? Data->FindItem(ItemId) : nullptr;
+842:	if (!Def)
+843:	{
+844:		ShowMessage(TEXT("Unknown item"), 1.5f);
+845:		return;
+846:	}
+847:
+848:	switch (Def->Type)
+849:	{
+850:	case EGBItemType::Consumable:
+2670:		const int32 Points = SkillTree->GetPoints();
+2671:		const FString PointsText = FString::Printf(TEXT("%d"), Points);
+2672:		const float RowY = Y;
+2673:		const float BtnH = bCyber ? 36.f * S : 13.f * P;
+2674:		const float CX = X + W * 0.5f;
+2675:		const FVector2D LabelSize = UiMeasure(Skin, EGBTextSize::Small, TEXT("SKILL POINTS"));
+2676:		const FVector2D NumSize = UiMeasure(Skin, EGBTextSize::Heading, PointsText);
+2677:		const float GroupW = LabelSize.X + (bCyber ? 14.f * S : 4.f * P) + NumSize.X;
+2678:		UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("SKILL POINTS"), CX - GroupW * 0.5f, RowY + (BtnH - LabelSize.Y) * 0.5f);
+2679:		UiText(Skin, EGBTextSize::Heading, Points > 0 ? EGBTextTone::Warn : EGBTextTone::Accent, PointsText, CX + GroupW * 0.5f - NumSize.X, RowY + (BtnH - NumSize.Y) * 0.5f);
+2680:		const int32 Spent = SkillTree->GetPointsSpent();
+2681:		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d)"), Spent);
+2682:		const FString AddText(TEXT("+1 skill point"));
+2683:		const float ResetW = UiMeasure(Skin, EGBTextSize::Small, ResetText).X + (bCyber ? 40.f * S : 14.f * P);
+2684:		const float AddW = UiMeasure(Skin, EGBTextSize::Small, AddText).X + (bCyber ? 40.f * S : 14.f * P);
+2685:		const float Margin = bCyber ? 40.f * S : 12.f * P;
+2686:		const float ResetX = CX + GroupW * 0.5f + Margin;
+2687:		const float AddX = CX - GroupW * 0.5f - Margin - AddW;
+2688:		MenuButton(Skin, ResetX, RowY, ResetW, BtnH, ResetText, Spent > 0, IsMouseOver(ResetX, RowY, ResetW, BtnH));
+2689:		AddMenuHit(EMenuHitKind::SkillReset, ResetX, RowY, ResetW, BtnH);
+2690:		MenuButton(Skin, AddX, RowY, AddW, BtnH, AddText, true, IsMouseOver(AddX, RowY, AddW, BtnH));
+2691:		AddMenuHit(EMenuHitKind::SkillAddPoint, AddX, RowY, AddW, BtnH);
+2692:		Y += BtnH + (bCyber ? 18.f * S : 6.f * P);
+2693:		H -= BtnH + (bCyber ? 18.f * S : 6.f * P);
+2694:	}
+2695:	if (Nodes.Num() == 0)
+2696:	{
+2697:		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, TEXT("No skills defined (Skills.json)."), X + W * 0.5f, Y + 20.f * S, 0.5f);
+2698:		return;
+2699:	}
+2700:	const FSkillNodeRef* Selected = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+2701:	if (!Selected)
+2702:	{
+2703:		MenuState.SkillCursor = Nodes[0].Id;
+2704:		Selected = &Nodes[0];
+2705:	}
+2706:
+2707:	// GDD 13: the spell tree has the 90s RPG look, the weapon tree the cyberpunk look, whatever the held item.
+2708:	// One tree per page (owner, Nov 13): two tabs, each in its own tree's look, then the shown tree at full width.
+2709:	static const TCHAR* Titles[] = { TEXT("SPELLS"), TEXT("WEAPONS") };
+2710:	const int32 ShownTree = Selected->Tree == 1 ? 1 : 0;
+2711:	{
+2712:		const int32 TabScale = FMath::Max(2, FMath::RoundToInt(3.f * S));
+2713:		FCyTextStyle CyTab;
+2714:		CyTab.Face = ECyFace::Condensed;
+2715:		CyTab.Px = 22.f;
+2716:		CyTab.Spacing = 140;
+2717:		CyTab.bUpper = true;
+2718:		const float TabH = FMath::RoundToFloat(FMath::Max(40.f * S, 7.f * TabScale + 8.f * P) / P) * P;
+2719:		const float SpellW = FMath::CeilToFloat((MeasurePixelText(Titles[0], TabScale).X + 20.f * P) / P) * P;
+2720:		const float WeaponW = FMath::CeilToFloat(MeasureCyText(Titles[1], CyTab).X + 48.f * S);
+2721:		const float TabGap = FMath::RoundToFloat(10.f * S);
+2722:		const float TabX0 = FMath::RoundToFloat((X + W * 0.5f - (SpellW + TabGap + WeaponW) * 0.5f) / P) * P;
+2723:		const float TabY = FMath::RoundToFloat(Y / P) * P;
+2724:		// Spells: a stone tab with a gold frame when shown.
+2725:		{
+2726:			const bool bShown = ShownTree == 0;
+2727:			const bool bHover = IsMouseOver(TabX0, TabY, SpellW, TabH);
+2728:			FillRect(TabX0, TabY, SpellW, TabH, GBRpg::Stone1);
+2729:			RpgStone(TabX0, TabY, SpellW, TabH, bShown ? FLinearColor(1.3f, 1.15f, 1.f, 1.f) : FLinearColor(0.7f, 0.7f, 0.75f, 1.f));
+2730:			RpgFrame(TabX0, TabY, SpellW, TabH, bShown ? ERpgFrame::Gold : ERpgFrame::Iron);
+2731:			if (bShown)
+2732:			{
+2733:				DrawGlow(TabX0 + SpellW * 0.5f, TabY + TabH, SpellW * 0.7f, TabH, GBAlpha(GBRpg::EmberLight, 0.18f));
+2734:			}
+2735:			FPixelTextStyle Style;
+2736:			Style.Scale = TabScale;
+2737:			Style.Ink = bShown ? &GBRpg::InkGold : (bHover ? &GBRpg::InkBone : nullptr);
+2738:			Style.Color = bShown || bHover ? FLinearColor::White : GBRpg::BoneDim;
+2739:			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+2740:			DrawPixelText(Titles[0], TabX0 + SpellW * 0.5f, TabY + FMath::RoundToFloat((TabH - 7.f * TabScale) * 0.5f / P) * P, Style, 0.5f);
+2741:			AddMenuHit(EMenuHitKind::SkillTreeTab, TabX0, TabY, SpellW, TabH, 0);
+2742:		}
+2743:		// Weapons: a cut-corner cyberpunk tab, filled red when shown.
+2744:		{
+2745:			const float TX = TabX0 + SpellW + TabGap;
+2746:			const bool bShown = ShownTree == 1;
+2747:			const bool bHover = IsMouseOver(TX, TabY, WeaponW, TabH);
+2748:			if (bShown)
+2749:			{
+2750:				CyBox(TX, TabY, WeaponW, TabH, 10.f * S, GBCy::Red, FLinearColor::Transparent, 0x4);
+2751:			}
+2752:			else
+2753:			{
+2754:				CyBox(TX, TabY, WeaponW, TabH, 10.f * S, GBAlpha(GBCy::Ink, 0.85f), bHover ? GBCy::RedBright : GBCy::RedDeep, 0x4);
+2755:			}
+2756:			CyTab.Color = bShown ? GBCy::Ink : (bHover ? GBCy::Pale : GBCy::RedDim);
+2757:			const FVector2D Size = MeasureCyText(Titles[1], CyTab);
+2758:			DrawCyText(Titles[1], TX + WeaponW * 0.5f, TabY + (TabH - Size.Y) * 0.5f, CyTab, 0.5f);
+2759:			AddMenuHit(EMenuHitKind::SkillTreeTab, TX, TabY, WeaponW, TabH, 1);
+2760:		}
+2761:		// The tab keys on both sides, in the screen's look (the inventory's skills page uses its own Q / E for pages).
+2762:		if (GetOpenMenu() == EGBMenu::SkillTrees)
+2763:		{
+2764:			if (bCyber)
+2765:			{
+2766:				CyKey(TabX0 - 36.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("Q"), GBCy::Cyan, 22.f);
+2767:				CyKey(TabX0 + SpellW + TabGap + WeaponW + 12.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("E"), GBCy::Cyan, 22.f);
+2768:			}
+2769:			else
+2770:			{
+2771:				RpgKeyCap(TabX0 - 13.f * P, TabY + 3.f * P, TEXT("Q"));
+2772:				RpgKeyCap(TabX0 + SpellW + TabGap + WeaponW + 3.f * P, TabY + 3.f * P, TEXT("E"));
+2773:			}
+2774:		}
+2775:		const float Below = TabH + (bCyber ? 14.f * S : 3.f * P);
+2776:		Y += Below;
+2777:		H -= Below;
+2778:	}
+2779:
+2780:	const float DetailH = FMath::RoundToFloat(FMath::Max(110.f * S, 26.f * P));
+2781:	const float AreaW = W;
+2782:	const float AreaY = Y;
+2783:	const float AreaH = FMath::Max(100.f * S, H - DetailH - 12.f * S);
+2784:
+2785:	// Weapon tree: the hub page (Branch None: the root perks and the gun emblems) or one gun branch page.
+2786:	const FName ShownBranch = ShownTree == 1 ? Selected->Branch : NAME_None;
+2787:	auto OnPage = [ShownTree, ShownBranch](const FSkillNodeRef& Node) { return Node.Tree == ShownTree && Node.Branch == ShownBranch; };
+2788:
+2789:	for (int32 Tree = ShownTree; Tree == ShownTree; ++Tree)
+2790:	{
+2791:		const float AX = X;
+2792:		const bool bTreeCyber = Tree == 1;
+2793:		const EGBHudSkin TreeSkin = bTreeCyber ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+2794:		float GridTop = AreaY;
+2795:		if (bTreeCyber)
+2796:		{
+2797:			CyBox(AX, AreaY, AreaW, AreaH, 22.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
+2798:			CyScanlines(AX, AreaY, AreaW, AreaH, 0.25f);
+2799:			DrawGlow(AX + AreaW * 0.5f, AreaY, AreaW * 0.6f, AreaH * 0.4f, GBAlpha(GBCy::Red, 0.08f));
+2800:			// The tab above names the tree; the panel keeps only a small tag (the hub) or Back and the gun's name (a
+
+ exited 1 in 831ms:
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-60-	return Ranks.FindRef(NodeId);
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-61-}
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-62-
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp:63:EGBSkillUnlockResult UGBSkillTreeComponent::CanUnlock(FName NodeId) const
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-64-{
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-65-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-66-	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-67-	if (!Node)
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-68-	{
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-69-		return EGBSkillUnlockResult::UnknownNode;
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-70-	}
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-71-	return EvaluateUnlock(*Node, Ranks, Points);
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-72-}
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-73-
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp:74:EGBSkillUnlockResult UGBSkillTreeComponent::Unlock(FName NodeId)
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-75-{
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-76-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-77-	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-78-	if (!Node)
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-79-	{
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-80-		UE_LOG(LogGB, Warning, TEXT("Unlock: unknown skill node '%s'."), *NodeId.ToString());
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-81-		return EGBSkillUnlockResult::UnknownNode;
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-82-	}
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-83-
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-84-	const EGBSkillUnlockResult Result = EvaluateUnlock(*Node, Ranks, Points);
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-85-	if (Result != EGBSkillUnlockResult::Ok)
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-86-	{
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-87-		return Result;
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp-88-	}
+--
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-158-	{
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-159-		if (AGBPlayerController* Controller = Cast<AGBPlayerController>(Player->GetController()))
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-160-		{
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp:161:			Controller->SetMenu(EGBMenu::Death);
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-162-		}
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-163-	}
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-164-
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-165-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-166-	if (!Data)
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-167-	{
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-168-		UE_LOG(LogGB, Warning, TEXT("GameMode: no data subsystem, using the default respawn delay."));
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-169-	}
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-170-	const float Delay = FMath::Max(0.f, Data ? Data->GetGameValue(GBGameValue::RespawnDelay, 2.5f) : 2.5f);
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-171-	if (Delay <= 0.f)
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-172-	{
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-173-		RespawnPlayer();
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-174-		return;
+Glyphbound/Source\Glyphbound\Core\GBGameMode.cpp-175-	}
+--
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-133-
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-134-// ======================================================================== basics
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-135-
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp:136:double AGBHUD::GetRealTime() const
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-137-{
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-138-	const UWorld* World = GetWorld();
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-139-	return World ? World->GetRealTimeSeconds() : 0.0;
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-140-}
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-141-
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp:142:float AGBHUD::UIScale() const
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-143-{
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-144-	return Canvas ? FMath::Max(0.1f, Canvas->ClipY / 1080.f) : 1.f;
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-145-}
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-146-
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp:147:float AGBHUD::ArtPixel() const
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-148-{
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-149-	return Canvas ? FMath::Max(2.f, (float)FMath::RoundToInt(Canvas->ClipY / 270.f)) : 4.f;
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-150-}
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-151-
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-152-void AGBHUD::EnsureArt()
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-153-{
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-154-	using namespace GBPaintLocal;
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-155-	if (!PixelFont)
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-156-	{
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-157-		PixelFont = NewObject<UGBPixelFont>(this);
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-158-		PixelFont->Init();
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-159-	}
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-160-	if (!RpgStoneTexture)
+Glyphbound/Source\Glyphbound\UI\GBHUD_Paint.cpp-161-	{
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -uu -g AGENTS.md -g Skills.json -g '*Skill*.json' -g '*Skill*.csv' -g '"'!Devlog*'"' -g '"'!Intermediate/**'"' -g '"'!Saved/**'"' -g '"'!Binaries/**'"' -g '"'!DerivedDataCache/**'"'; "'$p='"'Glyphbound/Source/Glyphbound/Player/GBInputSet.cpp'; "'$s=Get-Content $p; for($i=210;$i -le 254;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }; $p='"'Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp'; "'$s=Get-Content $p; for($i=1;$i -le 110;$i++){ '"'{0}:{1}' -f "'$i,$s[$i-1] }' in C:\GameJam
+ succeeded in 625ms:
+rg: ./Incoming: Acceso denegado. (os error 5)
+Glyphbound\Content\Data\Skills.json
+Glyphbound\Build\Windows\Glyphbound\Content\Data\Skills.json
+Glyphbound\Saved\StagedBuilds\Windows\Glyphbound\Content\Data\Skills.json
+Glyphbound\Intermediate\Build\Win64\x64\UnrealGame\Development\Glyphbound\GBSkillTreeComponent.cpp.dep.json
+Glyphbound\Intermediate\Build\Win64\x64\UnrealEditor\Development\Glyphbound\GBSkillTreeComponent.cpp.dep.json
+210:
+211:	MapDir2D(M, MenuNavigate, EKeys::Up, EDir2D::Up);
+212:	MapDir2D(M, MenuNavigate, EKeys::Down, EDir2D::Down);
+213:	MapDir2D(M, MenuNavigate, EKeys::Left, EDir2D::Left);
+214:	MapDir2D(M, MenuNavigate, EKeys::Right, EDir2D::Right);
+215:	MapWASD(M, MenuNavigate);
+216:	MapDir2D(M, MenuNavigate, EKeys::Gamepad_DPad_Up, EDir2D::Up);
+217:	MapDir2D(M, MenuNavigate, EKeys::Gamepad_DPad_Down, EDir2D::Down);
+218:	MapDir2D(M, MenuNavigate, EKeys::Gamepad_DPad_Left, EDir2D::Left);
+219:	MapDir2D(M, MenuNavigate, EKeys::Gamepad_DPad_Right, EDir2D::Right);
+220:	MapStick(M, MenuNavigate, EKeys::Gamepad_Left2D, MenuStickDeadZone);
+221:
+222:	MapButton(M, MenuConfirm, EKeys::Enter);
+223:	MapButton(M, MenuConfirm, EKeys::SpaceBar);
+224:	MapButton(M, MenuConfirm, EKeys::Gamepad_FaceButton_Bottom);
+225:
+226:	MapButton(M, MenuBack, EKeys::Escape);
+227:	// Tab is the inventory's own key: there it closes the inventory even from a gun branch page or a sub-choice
+228:	// (Sol 6.1 review); on the other screens it is still "back".
+229:	MapButton(M, MenuTabKey, EKeys::Tab);
+230:	MapButton(M, MenuBack, EKeys::Gamepad_FaceButton_Right);
+231:
+232:	MapAxis1D(M, MenuTab, EKeys::Q, true);
+233:	MapAxis1D(M, MenuTab, EKeys::E);
+234:	MapAxis1D(M, MenuTab, EKeys::Gamepad_LeftShoulder, true);
+235:	MapAxis1D(M, MenuTab, EKeys::Gamepad_RightShoulder);
+236:	// L2 also turns pages (owner: "L1 y L2" between the two skill trees). In the gameplay context it is aim / block,
+237:	// but that context is not read while a menu is open.
+238:	MapAxis1D(M, MenuTab, EKeys::Gamepad_LeftTrigger);
+239:
+240:	MapButton(M, MenuClick, EKeys::LeftMouseButton);
+241:
+242:	// Skill reset shortcut (menu context only): R and the gamepad top face button. Neither is mapped
+243:	// to another menu action (R is Reload only in the gameplay context; the top face button is only
+244:	// a raw FaceUp gameplay input), so no existing menu binding is changed.
+245:	MapButton(M, MenuReset, EKeys::R);
+246:	MapButton(M, MenuReset, EKeys::Gamepad_FaceButton_Top);
+247:
+248:	// Inside menus: the gamepad Menu / View buttons, I and K still toggle their screens (Esc is "back"; Tab closes the inventory, "back" elsewhere).
+249:	MapButton(M, Pause, EKeys::Gamepad_Special_Right);
+250:	MapButton(M, Inventory, EKeys::Gamepad_Special_Left);
+251:	MapButton(M, Inventory, EKeys::I);
+252:	MapButton(M, SkillTrees, EKeys::K);
+253:}
+254:
+1:#include "Progression/GBSkillTreeComponent.h"
+2:
+3:#include "Data/GBDataSubsystem.h"
+4:#include "Stats/GBStatsComponent.h"
+5:#include "World/GBProgressSubsystem.h"
+6:
+7:UGBSkillTreeComponent::UGBSkillTreeComponent()
+8:{
+9:	PrimaryComponentTick.bCanEverTick = false;
+10:}
+11:
+12:void UGBSkillTreeComponent::BeginPlay()
+13:{
+14:	Super::BeginPlay();
+15:
+16:	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+17:	{
+18:		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &UGBSkillTreeComponent::HandleDataReloaded);
+19:	}
+20:}
+21:
+22:void UGBSkillTreeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+23:{
+24:	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+25:	{
+26:		Data->OnDataReloaded.Remove(DataReloadedHandle);
+27:	}
+28:	DataReloadedHandle.Reset();
+29:
+30:	Super::EndPlay(EndPlayReason);
+31:}
+32:
+33:void UGBSkillTreeComponent::InitializeFromData()
+34:{
+35:	RemoveAllModifiers();
+36:	Ranks.Reset();
+37:	PointsSpent = 0;
+38:
+39:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+40:	if (!Data)
+41:	{
+42:		UE_LOG(LogGB, Warning, TEXT("Skill tree: no data subsystem, starting with 0 points."));
+43:	}
+44:	Points = Data ? FMath::Max(0, Data->GetPlayer().StartingSkillPoints) : 0;
+45:	OnSkillsChanged.Broadcast();
+46:}
+47:
+48:void UGBSkillTreeComponent::AddPoints(int32 Amount)
+49:{
+50:	if (Amount == 0)
+51:	{
+52:		return;
+53:	}
+54:	Points = FMath::Max(0, Points + Amount);
+55:	OnSkillsChanged.Broadcast();
+56:}
+57:
+58:int32 UGBSkillTreeComponent::GetRank(FName NodeId) const
+59:{
+60:	return Ranks.FindRef(NodeId);
+61:}
+62:
+63:EGBSkillUnlockResult UGBSkillTreeComponent::CanUnlock(FName NodeId) const
+64:{
+65:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+66:	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+67:	if (!Node)
+68:	{
+69:		return EGBSkillUnlockResult::UnknownNode;
+70:	}
+71:	return EvaluateUnlock(*Node, Ranks, Points);
+72:}
+73:
+74:EGBSkillUnlockResult UGBSkillTreeComponent::Unlock(FName NodeId)
+75:{
+76:	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+77:	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+78:	if (!Node)
+79:	{
+80:		UE_LOG(LogGB, Warning, TEXT("Unlock: unknown skill node '%s'."), *NodeId.ToString());
+81:		return EGBSkillUnlockResult::UnknownNode;
+82:	}
+83:
+84:	const EGBSkillUnlockResult Result = EvaluateUnlock(*Node, Ranks, Points);
+85:	if (Result != EGBSkillUnlockResult::Ok)
+86:	{
+87:		return Result;
+88:	}
+89:
+90:	Points -= FMath::Max(0, Node->Cost);
+91:	PointsSpent += FMath::Max(0, Node->Cost);
+92:	Ranks.FindOrAdd(NodeId) += 1;
+93:	ApplyNodeModifiers(NodeId);
+94:	OnSkillsChanged.Broadcast();
+95:	return EGBSkillUnlockResult::Ok;
+96:}
+97:
+98:int32 UGBSkillTreeComponent::ResetAll()
+99:{
+100:	if (Ranks.Num() == 0)
+101:	{
+102:		return 0;
+103:	}
+104:	RemoveAllModifiers();
+105:	const int32 Refunded = PointsSpent;
+106:	Points += PointsSpent;
+107:	PointsSpent = 0;
+108:	Ranks.Reset();
+109:	OnSkillsChanged.Broadcast();
+110:	return Refunded;
+
+codex
+Found one concrete issue:
+
+- **[P2] Transition survives closing or switching menus** — [GBHUD_Menus.cpp:152](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:152) and [GBHUD_Menus.cpp:212](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:212). Both handlers reset `bHasMenuSkin` but leave `MenuSkinChangeTime` active. Switch skill trees to start a transition, then immediately press I: the newly opened inventory draws the remaining transition because `DrawMenuSkinTransition()` still sees an elapsed time below 0.42 seconds. Closing and quickly reopening also reproduces it; switching to the death screen can carry it over too. **Fix:** reset `MenuSkinChangeTime` to its inactive sentinel in both handlers.
+
+I found no concrete spending bypass, double spend, wrong-node purchase, or stuck-dialog issue in the traced input paths. The smoke assertions can detect Esc spending and the first Enter spending.
+
+Read-only source review; no runtime validation performed.
+tokens used
+76,819
+Found one concrete issue:
+
+- **[P2] Transition survives closing or switching menus** — [GBHUD_Menus.cpp:152](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:152) and [GBHUD_Menus.cpp:212](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:212). Both handlers reset `bHasMenuSkin` but leave `MenuSkinChangeTime` active. Switch skill trees to start a transition, then immediately press I: the newly opened inventory draws the remaining transition because `DrawMenuSkinTransition()` still sees an elapsed time below 0.42 seconds. Closing and quickly reopening also reproduces it; switching to the death screen can carry it over too. **Fix:** reset `MenuSkinChangeTime` to its inactive sentinel in both handlers.
+
+I found no concrete spending bypass, double spend, wrong-node purchase, or stuck-dialog issue in the traced input paths. The smoke assertions can detect Esc spending and the first Enter spending.
+
+Read-only source review; no runtime validation performed.

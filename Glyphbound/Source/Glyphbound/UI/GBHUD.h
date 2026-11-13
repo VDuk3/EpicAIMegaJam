@@ -129,6 +129,10 @@ protected:
 	bool bHasLastSkin = false;
 	/** Real time the open menu was opened (intro animation). */
 	double MenuOpenTime = -1000.0;
+	/** The look the open menu was last drawn in; a change while it stays open plays a transition (owner, Nov 13). */
+	EGBHudSkin MenuSkinShown = EGBHudSkin::Rpg90s;
+	bool bHasMenuSkin = false;
+	double MenuSkinChangeTime = -1000.0;
 
 	// ---- Player events (bound lazily: the pawn may not exist yet, or may be replaced) ----
 	void BindToPlayer(AGBPlayerCharacter* Player);
@@ -191,6 +195,9 @@ protected:
 		SkillTreeTab,
 		/** Weapon tree: the Back button of a gun branch page. */
 		SkillBranchBack,
+		/** The skill point confirmation: spend, or cancel. */
+		ConfirmYes,
+		ConfirmNo,
 		DeathScreen
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */
@@ -243,6 +250,8 @@ protected:
 		FName SkillCursor = NAME_None;
 		/** Skill trees: the node last selected in each tree, so switching back returns to it. */
 		FName TreeCursor[2] = { NAME_None, NAME_None };
+		/** A perk waiting for the player to confirm the skill point (owner, Nov 13). None = no dialog. */
+		FName PendingUnlock = NAME_None;
 	};
 	FMenuState MenuState;
 
@@ -445,6 +454,10 @@ protected:
 	void OpenSkillBranch(FName Branch);
 	/** Weapon tree: from a branch page back to the hub, on that branch's emblem. False if no branch page is shown. */
 	bool CloseSkillBranch();
+	/** The dialog that asks before a skill point is spent, in the screen's look, on top of everything. */
+	void DrawUnlockConfirm(AGBPlayerCharacter* Player, EGBHudSkin Skin);
+	/** Covers a change of the menu's look and reveals the new one (a scan sweep into cyberpunk, a pixel dissolve into RPG). */
+	void DrawMenuSkinTransition();
 	/** Weapon hub: one gun emblem (title, ranks owned, its perks). */
 	void DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef& Category, const TArray<FSkillNodeRef>& Nodes, float X, float Y, float W, float H);
 	void ConfirmItem(AGBPlayerCharacter* Player);

@@ -149,6 +149,8 @@ void AGBHUD::OnMenuOpened(EGBMenu Menu)
 {
 	MenuState = FMenuState();
 	MenuOpenTime = GetRealTime();
+	bHasMenuSkin = false;
+	MenuSkinChangeTime = -1000.0; // a transition of the menu left behind must not play over this one (Sol 6.1 review)
 	ResetMenuMouse();
 	if (Menu == EGBMenu::SkillTrees)
 	{
@@ -208,6 +210,8 @@ void AGBHUD::SelectSkillTree(int32 Tree)
 void AGBHUD::OnMenuClosed(EGBMenu Menu)
 {
 	MenuState = FMenuState();
+	bHasMenuSkin = false;
+	MenuSkinChangeTime = -1000.0;
 	ResetMenuMouse();
 }
 
@@ -285,6 +289,10 @@ void AGBHUD::UpdateMenuMouse()
 
 void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
 {
+	if (MenuState.PendingUnlock != NAME_None)
+	{
+		return; // the dialog is modal: the page under it does not follow the mouse
+	}
 	switch (Hit.Kind)
 	{
 	case EMenuHitKind::PauseEntry:
@@ -316,6 +324,10 @@ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
 void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 {
 	AGBPlayerCharacter* Player = GetPlayer();
+	if (MenuState.PendingUnlock != NAME_None && Hit.Kind != EMenuHitKind::ConfirmYes && Hit.Kind != EMenuHitKind::ConfirmNo)
+	{
+		return; // the dialog is modal: a click on the page under it does nothing
+	}
 	switch (Hit.Kind)
 	{
 	case EMenuHitKind::PauseEntry:
@@ -362,6 +374,13 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 	case EMenuHitKind::SkillBranchBack:
 		CloseSkillBranch();
 		break;
+	case EMenuHitKind::ConfirmYes:
+		MenuState.SkillCursor = MenuState.PendingUnlock;
+		ConfirmSkill(Player);
+		break;
+	case EMenuHitKind::ConfirmNo:
+		MenuState.PendingUnlock = NAME_None;
+		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
 		// so a click respawns exactly once.
@@ -392,6 +411,10 @@ bool AGBHUD::MenuClick(const FVector2D& ScreenPosition)
 void AGBHUD::MenuNavigate(FIntPoint Direction)
 {
 	using namespace GBHudMenuLocal;
+	if (MenuState.PendingUnlock != NAME_None)
+	{
+		return; // the confirmation only takes Enter (spend) or Esc (cancel)
+	}
 	AGBPlayerCharacter* Player = GetPlayer();
 	switch (GetOpenMenu())
 	{
@@ -488,6 +511,11 @@ void AGBHUD::MenuConfirm()
 
 bool AGBHUD::MenuBack()
 {
+	if (MenuState.PendingUnlock != NAME_None)
+	{
+		MenuState.PendingUnlock = NAME_None;
+		return true;
+	}
 	switch (GetOpenMenu())
 	{
 	case EGBMenu::Inventory:
@@ -523,6 +551,7 @@ void AGBHUD::MenuTab(int32 Direction)
 	{
 		return;
 	}
+	MenuState.PendingUnlock = NAME_None;
 	const EGBMenu Menu = GetOpenMenu();
 	if (Menu == EGBMenu::Inventory)
 	{
@@ -962,6 +991,19 @@ void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
 		}
 	}
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	// Every skill point is confirmed (owner, Nov 13): a perk that can be bought opens the dialog first; the dialog's
+	// Enter or click comes back here with the same node pending and spends it. A perk that cannot be bought says why.
+	if (MenuState.PendingUnlock != NodeId)
+	{
+		if (SkillTree->CanUnlock(NodeId) == EGBSkillUnlockResult::Ok)
+		{
+			MenuState.PendingUnlock = NodeId;
+			return;
+		}
+		ShowMessage(GBHudMenuLocal::SkillResultText(Data, NodeId, SkillTree->CanUnlock(NodeId)), 2.f);
+		return;
+	}
+	MenuState.PendingUnlock = NAME_None;
 	const EGBSkillUnlockResult Result = SkillTree->Unlock(NodeId);
 	if (Result == EGBSkillUnlockResult::Ok)
 	{
@@ -1008,7 +1050,7 @@ void AGBHUD::MenuReset()
 {
 	const EGBMenu Menu = GetOpenMenu();
 	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
-	if (!bShowsSkills)
+	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
 	{
 		return;
 	}
@@ -1322,6 +1364,19 @@ namespace GBHudMenuDraw
 void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 {
 	const EGBHudSkin Skin = GetMenuSkin();
+	// The look changed while the menu stayed open (an inventory tab from or to the skills page in the other era, or a
+	// skill tree tab): cover the jump with a transition, and replay the title's glitch-in.
+	if (!bHasMenuSkin)
+	{
+		MenuSkinShown = Skin;
+		bHasMenuSkin = true;
+	}
+	else if (Skin != MenuSkinShown)
+	{
+		MenuSkinShown = Skin;
+		MenuSkinChangeTime = GetRealTime();
+		MenuOpenTime = MenuSkinChangeTime;
+	}
 	// Clickables are rebuilt while drawing, for the screen as it is now.
 	MenuHits.Reset();
 	MenuHitsMenu = GetOpenMenu();
@@ -1391,6 +1446,175 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 	}
 	default:
 		break;
+	}
+	const EGBMenu Open = GetOpenMenu();
+	const bool bSkillPage = Open == EGBMenu::SkillTrees || (Open == EGBMenu::Inventory && MenuState.Page == PageSkills);
+	if (!bSkillPage)
+	{
+		MenuState.PendingUnlock = NAME_None;
+	}
+	else if (MenuState.PendingUnlock != NAME_None && Player)
+	{
+		DrawUnlockConfirm(Player, Skin);
+	}
+	DrawMenuSkinTransition();
+}
+
+void AGBHUD::DrawUnlockConfirm(AGBPlayerCharacter* Player, EGBHudSkin Skin)
+{
+	using namespace GBHudMenuLocal;
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree();
+	const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(MenuState.PendingUnlock) : nullptr;
+	if (!SkillTree || !Def)
+	{
+		MenuState.PendingUnlock = NAME_None;
+		return;
+	}
+	const float S = UIScale();
+	const float P = ArtPixel();
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
+	const int32 Rank = SkillTree->GetRank(Def->Id);
+	const int32 Cost = FMath::Max(1, Def->Cost);
+	const int32 Left = SkillTree->GetPoints() - Cost;
+	const FString Name = SkillName(Data, Def->Id);
+	const FString Ask = FString::Printf(TEXT("Spend %d skill point%s on %s?"), Cost, Cost == 1 ? TEXT("") : TEXT("s"), *Name);
+	const FString Detail = FString::Printf(TEXT("Rank %d -> %d of %d.  %d point%s left after."), Rank, Rank + 1, FMath::Max(1, Def->MaxRank), Left, Left == 1 ? TEXT("") : TEXT("s"));
+
+	// A modal: the whole screen dims, then a box in the screen's look with the question and two buttons.
+	FillRect(0.f, 0.f, W, H, FLinearColor(0.f, 0.f, 0.f, 0.55f));
+	// Wide enough for the question (perk names vary), never wider than most of the screen.
+	const float TextNeed = FMath::Max(UiMeasure(Skin, EGBTextSize::Body, Ask).X, UiMeasure(Skin, EGBTextSize::Small, Detail).X) + (bCyber ? 60.f * S : 20.f * P);
+	const float BoxW = FMath::RoundToFloat(FMath::Min(W * 0.9f, FMath::Max(bCyber ? 700.f * S : 150.f * P, TextNeed)) / P) * P;
+	const float BoxH = FMath::RoundToFloat((bCyber ? 230.f * S : 58.f * P) / P) * P;
+	const float BX = FMath::RoundToFloat((W - BoxW) * 0.5f / P) * P;
+	const float BY = FMath::RoundToFloat((H - BoxH) * 0.5f / P) * P;
+	float TextY = BY;
+	if (bCyber)
+	{
+		CyBox(BX, BY, BoxW, BoxH, 18.f * S, GBAlpha(GBCy::Ink, 0.97f), GBCy::Red, 0x5, 2.f);
+		CyScanlines(BX, BY, BoxW, BoxH, 0.2f);
+		FillRect(BX, BY + 16.f * S, 4.f * S, BoxH - 32.f * S, GBCy::Red);
+		FCyTextStyle Title;
+		Title.Face = ECyFace::Condensed;
+		Title.Px = 30.f;
+		Title.Spacing = 120;
+		Title.bUpper = true;
+		Title.Color = GBCy::Red;
+		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuSkinChangeTime) / 0.3f) * 4.f * S;
+		const FVector2D TS = DrawCyText(TEXT("Confirm upgrade"), BX + 30.f * S, BY + 20.f * S, Title, 0.f);
+		TextY = BY + 20.f * S + TS.Y + 14.f * S;
+	}
+	else
+	{
+		FillRect(BX, BY, BoxW, BoxH, GBRpg::StoneDeep);
+		RpgStone(BX, BY, BoxW, BoxH, FLinearColor(0.7f, 0.7f, 0.8f, 0.45f));
+		RpgFrame(BX, BY, BoxW, BoxH, ERpgFrame::Gold);
+		FPixelTextStyle Title;
+		Title.Scale = FMath::Max(2, FMath::RoundToInt(3.f * S));
+		Title.Ink = &GBRpg::InkGold;
+		Title.Outline = GBRpg::Outline;
+		Title.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
+		DrawPixelText(TEXT("SPEND A SKILL POINT?"), BX + BoxW * 0.5f, BY + 6.f * P, Title, 0.5f);
+		TextY = BY + 6.f * P + 7.f * Title.Scale + 5.f * P;
+	}
+	const float Pad = bCyber ? 30.f * S : 8.f * P;
+	const FVector2D AskSize = UiText(Skin, EGBTextSize::Body, EGBTextTone::Normal, Ask, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY, bCyber ? 0.f : 0.5f);
+	UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, Detail, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY + AskSize.Y + (bCyber ? 8.f * S : 2.f * P), bCyber ? 0.f : 0.5f);
+
+	// Buttons: Confirm (Enter) and Cancel (Esc), right-aligned in cyberpunk, centred in RPG.
+	const FString YesText(TEXT("Enter  Confirm"));
+	const FString NoText(TEXT("Esc  Cancel"));
+	const float BtnH = bCyber ? 40.f * S : 13.f * P;
+	const float YesW = UiMeasure(Skin, EGBTextSize::Small, YesText).X + (bCyber ? 44.f * S : 14.f * P);
+	const float NoW = UiMeasure(Skin, EGBTextSize::Small, NoText).X + (bCyber ? 44.f * S : 14.f * P);
+	const float Gap = bCyber ? 14.f * S : 4.f * P;
+	const float BtnY = BY + BoxH - BtnH - (bCyber ? 22.f * S : 6.f * P);
+	const float StartX = bCyber ? BX + BoxW - Pad - YesW - Gap - NoW : FMath::RoundToFloat((BX + BoxW * 0.5f - (YesW + Gap + NoW) * 0.5f) / P) * P;
+	const float YesX = StartX;
+	const float NoX = StartX + YesW + Gap;
+	MenuButton(Skin, YesX, BtnY, YesW, BtnH, YesText, true, true);
+	AddMenuHit(EMenuHitKind::ConfirmYes, YesX, BtnY, YesW, BtnH);
+	MenuButton(Skin, NoX, BtnY, NoW, BtnH, NoText, true, IsMouseOver(NoX, BtnY, NoW, BtnH));
+	AddMenuHit(EMenuHitKind::ConfirmNo, NoX, BtnY, NoW, BtnH);
+}
+
+namespace GBHudMenuLocal
+{
+	/** 0..1, stable per cell: the order in which the pixel dissolve uncovers the screen. */
+	float CellHash(int32 X, int32 Y)
+	{
+		uint32 H = static_cast<uint32>(X) * 73856093u ^ static_cast<uint32>(Y) * 19349663u;
+		H ^= H >> 13;
+		H *= 0x5bd1e995u;
+		H ^= H >> 15;
+		return static_cast<float>(H & 1023u) / 1024.f;
+	}
+}
+
+void AGBHUD::DrawMenuSkinTransition()
+{
+	// Owner, Nov 13: the menu jumped from one look to the other (an inventory tab to or from the skills page in the other
+	// era, a skill tree tab). For a short moment the old look's material covers the screen and the new look's signature
+	// uncovers it: a scan line sweeping down into cyberpunk, a pixel dissolve into the 90s RPG.
+	constexpr float Seconds = 0.42f;
+	const float Since = static_cast<float>(GetRealTime() - MenuSkinChangeTime);
+	if (Since < 0.f || Since >= Seconds)
+	{
+		return;
+	}
+	const float T = Since / Seconds;
+	const float S = UIScale();
+	const float P = ArtPixel();
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	if (MenuSkinShown == EGBHudSkin::Cyberpunk)
+	{
+		// Into cyberpunk: dark carved stone (the RPG look) below a cyan scan line that sweeps down, with glitch slices
+		// trailing over the new look and the scanlines fading out.
+		const float Ease = 1.f - (1.f - T) * (1.f - T);
+		const float LineY = FMath::RoundToFloat(H * Ease);
+		if (LineY < H)
+		{
+			FillRect(0.f, LineY, W, H - LineY, GBRpg::StoneDeep);
+			RpgStone(0.f, LineY, W, H - LineY, FLinearColor(0.75f, 0.75f, 0.85f, 0.55f));
+		}
+		for (int32 i = 0; i < 6; ++i)
+		{
+			const float Hash = GBHudMenuLocal::CellHash(i, FMath::FloorToInt(Since * 30.f));
+			const float SliceY = LineY - (12.f + 70.f * Hash + 20.f * i) * S;
+			const float SliceH = (2.f + 8.f * GBHudMenuLocal::CellHash(i + 7, i)) * S;
+			const float Shift = (Hash - 0.5f) * 60.f * S;
+			FillRect(FMath::Max(0.f, Shift), SliceY, W - FMath::Abs(Shift), SliceH, GBAlpha(i % 2 ? GBCy::Cyan : GBCy::Red, 0.28f * (1.f - T)));
+		}
+		DrawGlow(W * 0.5f, LineY, W * 0.7f, 36.f * S, GBAlpha(GBCy::Cyan, 0.35f * (1.f - T * 0.5f)));
+		FillRect(0.f, LineY - 1.f * S, W, FMath::Max(1.f, 3.f * S), GBAlpha(GBCy::Cyan, 0.95f));
+		CyScanlines(0.f, 0.f, W, LineY, 0.35f * (1.f - T));
+		return;
+	}
+	// Into the 90s RPG: the cyberpunk look's near-black breaks into big pixels that vanish in a scattered order, each
+	// one flashing gold just before it goes.
+	const float Cell = FMath::Max(8.f, 12.f * P);
+	const int32 Cols = FMath::CeilToInt(W / Cell);
+	const int32 Rows = FMath::CeilToInt(H / Cell);
+	for (int32 Y = 0; Y < Rows; ++Y)
+	{
+		for (int32 X = 0; X < Cols; ++X)
+		{
+			const float Hash = GBHudMenuLocal::CellHash(X, Y);
+			if (Hash < T)
+			{
+				continue;
+			}
+			const bool bEdge = Hash < T + 0.05f;
+			FillRect(X * Cell, Y * Cell, Cell, Cell, bEdge ? GBAlpha(GBRpg::Gold2, 0.75f) : GBAlpha(GBCy::Ink, 0.97f));
+		}
+	}
+	if (T < 0.5f)
+	{
+		CyScanlines(0.f, 0.f, W, H, 0.3f * (1.f - 2.f * T));
 	}
 }
 

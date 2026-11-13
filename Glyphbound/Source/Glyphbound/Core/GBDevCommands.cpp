@@ -118,6 +118,7 @@ namespace GBSmokeRun
 	static TWeakObjectPtr<AGBEnemyCharacter> ShotgunFlashTarget;
 	static FGBAmmoState ShotgunAmmoBefore;
 	static int32 ShotgunTubePointsBefore = 0;
+	static int32 UiConfirmPointsBefore = 0;
 	// The reload from 3 shells: the game time it started and the time one shell takes (ReloadTime moves with the Rapid Reload perk).
 	static double ShotgunReloadStartSim = 0.0;
 	static float ShotgunCycleSeconds = 0.333f;
@@ -3077,15 +3078,73 @@ namespace GBSmokeRun
 		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
 		Add(U + 28.45f, TEXT("ui: cyber skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
 		Add(U + 28.55f, TEXT("ui: screenshot cyber skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21b_cyber_skilltrees_other")); });
-		Add(U + 28.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+		// The menu look changes while the inventory stays open (owner, Nov 13): in the future, the Skills page on the
+		// spell tree is RPG and the other pages are cyberpunk. Each jump plays a transition; catch both mid-way.
+		Add(U + 28.6f, TEXT("ui: future inventory, skills page on the spell tree (RPG look)"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::Inventory);
+			Cursor(World, 3, 0, TEXT("Spell_FireballDamage"), false);
+		});
+		Add(U + 29.0f, TEXT("ui: tab to the spells page (into cyberpunk)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
+		Add(U + 29.12f, TEXT("ui: screenshot transition into cyberpunk"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_23_transition_to_cyber")); });
+		Add(U + 29.7f, TEXT("ui: tab back to the skills page (into RPG)"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });
+		Add(U + 29.85f, TEXT("ui: screenshot transition into RPG"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_24_transition_to_rpg")); });
+		// Every skill point asks first (owner, Nov 13): Enter opens the dialog, Esc cancels it without spending, and
+		// Enter on the dialog spends exactly one rank.
+		Add(U + 30.4f, TEXT("ui: skill trees, Enter on Heavy Rounds opens the confirmation"), [Menu](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::SkillTrees);
+			if (AGBHUD* Hud = AGBHUD::Get(World))
+			{
+				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_Damage"), false);
+				UiConfirmPointsBefore = Player->GetSkillTree()->GetPoints();
+				Hud->MenuConfirm();
+			}
+		});
+		Add(U + 30.7f, TEXT("ui: screenshot cyberpunk confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_25_cyber_confirm")); });
+		Add(U + 31.3f, TEXT("ui: tab to the spell tree (cancels), Enter on a spell perk"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (AGBHUD* Hud = AGBHUD::Get(World))
+			{
+				Hud->MenuTab(-1);
+				Hud->DebugSetMenuCursor(0, 0, TEXT("Spell_FireballDamage"), false);
+				Hud->MenuConfirm();
+			}
+		});
+		Add(U + 31.9f, TEXT("ui: screenshot RPG confirmation"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_26_rpg_confirm")); });
+		Add(U + 32.4f, TEXT("ui: Esc cancels: no point spent; then Enter, Enter spends one"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBHUD* Hud = AGBHUD::Get(World);
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			if (!Hud || !Skills)
+			{
+				return;
+			}
+			const FName Node(TEXT("Spell_FireballDamage"));
+			const int32 RankBefore = Skills->GetRank(Node);
+			const bool bClosed = !Hud->MenuBack(); // Esc: the dialog takes it (returns true) and closes
+			const int32 AfterCancel = Skills->GetPoints();
+			Hud->MenuConfirm(); // asks again
+			const int32 AfterAsk = Skills->GetPoints();
+			Hud->MenuConfirm(); // spends
+			const int32 AfterSpend = Skills->GetPoints();
+			UE_LOG(LogGB, Display, TEXT("SMOKE skill confirm: points %d before, %d after Esc, %d after one Enter, %d after Enter on the dialog; rank %d -> %d"),
+				UiConfirmPointsBefore, AfterCancel, AfterAsk, AfterSpend, RankBefore, Skills->GetRank(Node));
+			if (bClosed || AfterCancel != UiConfirmPointsBefore || AfterAsk != UiConfirmPointsBefore || AfterSpend != UiConfirmPointsBefore - 1 || Skills->GetRank(Node) != RankBefore + 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE skill confirm FAILED: Esc closed the menu=%d; points %d / %d / %d (expected %d, %d, %d); rank %d (expected %d)"),
+					bClosed ? 1 : 0, AfterCancel, AfterAsk, AfterSpend, UiConfirmPointsBefore, UiConfirmPointsBefore, UiConfirmPointsBefore - 1, Skills->GetRank(Node), RankBefore + 1);
+			}
+		});
+		Add(U + 32.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Menu(Player, EGBMenu::None);
 			FGBDamageInfo Info;
 			Info.Amount = 10000000.f;
 			UGBCombatLibrary::DealDamage(Player, Info, true);
 		});
-		Add(U + 29.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
-		Add(U + 30.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(U + 33.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
+		Add(U + 34.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);
