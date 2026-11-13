@@ -199,10 +199,11 @@ def add_magazine(bm):
 
 
 def add_display_plane(bm):
-    """The ammo display: a 2:1 hologram pane 2.5 mm behind the sight eyepiece (rear face Y = 0.211, facing +Y, the
-    player), as wide as the sight's whole rear face (X -0.034 .. 0.024, Z 0.106 .. 0.135).
+    """The ammo display: a 2:1 hologram pane 1.5 mm behind the rear face of the sight's eyepiece (Y = 0.211, facing +Y,
+    the player), inside that face (X -0.0185 .. 0.0085, half a millimetre in from its edges). The first version spanned the whole sight 4 cm behind its main
+    face and seen from the first-person camera it stuck out past the sight (owner: fix the imperfections).
     UV: U to the viewer's right (-X seen from behind), V up in Blender (down in Unreal), so a texture reads upright."""
-    y, x0, x1, z0, z1 = 0.2135, -0.034, 0.024, 0.106, 0.135
+    y, x0, x1, z0, z1 = 0.2125, -0.0185, 0.0085, 0.12175, 0.13525
     uv = bm.loops.layers.uv.get("UVMap") or bm.loops.layers.uv.new("UVMap")
     vs = [bm.verts.new((x, y, z)) for x, z in [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]]
     face = bm.faces.new(vs)

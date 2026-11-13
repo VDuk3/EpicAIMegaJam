@@ -31,6 +31,7 @@ TEXTURES = {
 }
 MAX_TEXTURE_SIZE = 2048   # the Tripo maps are 4096; half is plenty for a viewmodel and keeps the package small
 RIFLE_MINT = (0.05, 0.9, 0.6)
+ALBEDO_SCALE = 0.8
 
 SOLID = "M_GunSolid"
 SLOT_MATERIALS = {
@@ -89,6 +90,8 @@ def import_textures():
         texture.set_editor_property("srgb", srgb)
         texture.set_editor_property("lod_group", unreal.TextureGroup.TEXTUREGROUP_WEAPON)
         texture.set_editor_property("max_texture_size", MAX_TEXTURE_SIZE)
+        # Always resident: streamed, the rifle showed its lowest mip (flat, blurry) for the first second after equip.
+        texture.set_editor_property("never_stream", True)
         textures[name] = texture
         log("texture %s %s srgb=%s max=%d" % (name, compression, srgb, MAX_TEXTURE_SIZE))
     return textures
@@ -217,6 +220,8 @@ def finish(material, name):
 
 
 def opaque(material):
+    # One-sided on purpose: the Tripo body has panels doubled back to back; two-sided, they z-fight and the whole
+    # rifle looks grainy (tried, seen in the smoke screenshot).
     material.set_editor_property("blend_mode", unreal.BlendMode.BLEND_OPAQUE)
     material.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
     material.set_editor_property("two_sided", False)
@@ -226,7 +231,8 @@ def surface(g, textures):
     """Albedo from the Tripo map; white polymer roughness and metallic (the source has no ORM). Returns the mask."""
     base = g.node(unreal.MaterialExpressionTextureSample, -1400, -600, texture=textures["T_Rifle_BaseColor"],
                   sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
-    g.out(base, "RGB", unreal.MaterialProperty.MP_BASE_COLOR)
+    # The white polymer read washed out next to the pistol in the arena light: albedo x ALBEDO_SCALE.
+    g.out(g.mul(base, g.const(ALBEDO_SCALE, -1200, -450), -900, -600, a_out="RGB"), "", unreal.MaterialProperty.MP_BASE_COLOR)
     g.out(g.const(0.15, -600, -450), "", unreal.MaterialProperty.MP_METALLIC)
     g.out(g.const(0.42, -600, -380), "", unreal.MaterialProperty.MP_ROUGHNESS)
     return g.node(unreal.MaterialExpressionTextureSample, -1400, -300, texture=textures["T_Rifle_EmissiveMask"],

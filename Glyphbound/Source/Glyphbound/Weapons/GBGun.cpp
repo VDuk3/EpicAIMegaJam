@@ -67,7 +67,7 @@ namespace
 	// and root offset were tuned from the smoke screenshots.
 	const FGBGunModelArt RifleArt = {
 		TEXT("Rifle"), TEXT("/Game/Glyphbound/Weapons/Rifle"), TEXT("SM_Rifle_"), false,
-		0.62f, FVector(8.f, -3.f, 2.f), -10.f,
+		0.62f, FVector(-12.f, -6.f, 2.f), -0.4f,
 		FVector(6.5f, 0.f, 0.3f), FVector(15.8f, 0.f, -2.8f), FVector(2.f, 0.f, -17.f),
 		FLinearColor(0.05f, 0.9f, 0.6f), FVector(69.f, 0.f, 6.6f), 13.f,
 		0.75f, 0.85f, 0.47f,
