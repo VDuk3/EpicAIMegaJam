@@ -229,19 +229,11 @@
 			"Enabled": false
 		},
 		{
-			"Name": "CableComponent",
-			"Enabled": false
-		},
-		{
 			"Name": "CameraShakePreviewer",
 			"Enabled": false
 		},
 		{
 			"Name": "ChangelistReview",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosCloth",
 			"Enabled": false
 		},
 		{
@@ -554,6 +546,10 @@
 		},
 		{
 			"Name": "GBPixelVfx",
+			"Enabled": true
+		},
+		{
+			"Name": "Water",
 			"Enabled": true
 		}
 	]
