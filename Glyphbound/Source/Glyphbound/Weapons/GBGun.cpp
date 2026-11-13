@@ -110,6 +110,10 @@ namespace
 	// PistolWeakPointFlashFade seconds (Game.json; halved by the owner, GDD v0.30). The key names stay, both guns use them.
 	const FName WeakPointFlashHoldKey(TEXT("PistolWeakPointFlashHold"));
 	const FName WeakPointFlashFadeKey(TEXT("PistolWeakPointFlashFade"));
+	// Energy bar: it blinks while the enchant has GunEnchantBlinkSeconds or less left, GunEnchantBlinkHz times per
+	// second (Game.json; owner: "the light that shows the enchant's time starts to blink when 3 seconds are left").
+	const FName EnchantBlinkSecondsKey(TEXT("GunEnchantBlinkSeconds"));
+	const FName EnchantBlinkHzKey(TEXT("GunEnchantBlinkHz"));
 	// Holographic ammo display: render target size in pixels. Provisional, owner's note 1.
 	constexpr int32 AmmoDisplayWidth = 256;
 	constexpr int32 AmmoDisplayHeight = 128;
@@ -717,6 +721,7 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 	FLinearColor GlowColor = Art.IdleGlow;
 	float Imbue = 0.f;
 	bool bEnchanted = false;
+	bool bBarBlinking = false;
 	if (GetActiveEnchant(EnchantElement, EnchantEffect))
 	{
 		bEnchanted = true;
@@ -737,6 +742,19 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 						// centres ((i + 0.5) / cells). Adding half a cell lights ceil(Left x cells) cells, so the
 						// last cell goes dark exactly when the enchant ends (owner, GDD v0.30), not half a cell early.
 						Imbue = Left > 0.f ? FMath::Min(1.f, Left + 0.5f / Art.EnergyCells) : 0.f;
+						// Last seconds: the lit cells blink. The phase comes from the time left, so the bar is lit
+						// as the blinking starts, each blink is half lit and half dark, and it ends dark.
+						const UGBDataSubsystem* BlinkData = UGBDataSubsystem::Get(this);
+						const float BlinkSeconds = BlinkData ? BlinkData->GetGameValue(EnchantBlinkSecondsKey, 3.f) : 3.f;
+						const float BlinkHz = FMath::Max(0.1f, BlinkData ? BlinkData->GetGameValue(EnchantBlinkHzKey, 4.f) : 4.f);
+						if (Active.TimeRemaining > 0.f && Active.TimeRemaining <= BlinkSeconds)
+						{
+							bBarBlinking = true;
+							if (FMath::Frac(Active.TimeRemaining * BlinkHz) < 0.5f)
+							{
+								Imbue = 0.f;
+							}
+						}
 						break;
 					}
 				}
@@ -759,6 +777,7 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 	}
 	LastGlowElement = EnchantElement;
 	bLastGlowEnchanted = bEnchanted;
+	bEnergyBarBlinking = bBarBlinking;
 
 	// Weak-point light: full for WeakPointFlashHold, then a linear fade over WeakPointFlashFade; off while not equipped.
 	float Flash = 0.f;

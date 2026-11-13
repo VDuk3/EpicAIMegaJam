@@ -82,6 +82,8 @@ public:
 	bool IsViewModelGlowEnchanted() const { return bLastGlowEnchanted; }
 	/** Last ImbueRemaining value sent to the model materials. */
 	float GetViewModelImbueSent() const { return LastImbueSent; }
+	/** Whether the energy bar is in its last-seconds blink (the enchant is about to end). The value sent is 0 in the dark half of each blink. */
+	bool IsViewModelEnergyBarBlinking() const { return bEnergyBarBlinking; }
 	/** Text currently drawn on the holographic ammo display (rounds in the magazine, "--" while reloading). */
 	const FString& GetViewModelDisplayText() const { return ShownDisplayText; }
 	/** Last Flash value sent to the weak-point light (0 = off, 1 = full glow). */
@@ -197,6 +199,7 @@ protected:
 	float LastImbueSent = 0.f;
 	EGBElement LastGlowElement = EGBElement::Physical;
 	bool bLastGlowEnchanted = false;
+	bool bEnergyBarBlinking = false;
 
 	FGBAmmoState Ammo;
 	bool bReloading = false;

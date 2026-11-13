@@ -97,6 +97,41 @@ namespace GBSmokeRun
 		const float RootCm = Item->GetViewModelRootOffsetCm();
 		const float RootDeg = Item->GetViewModelRootAngleDeg();
 		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload at %.2f: magazine visible=%d offset=%.1f cm, root %.1f cm and %.1f deg from rest"),
+	// Energy bar blink (the enchant's last seconds). SetEnchantTimeLeft moves the active weapon enchant's clock.
+	static void SetEnchantTimeLeft(AGBPlayerCharacter* Player, float Seconds)
+	{
+		UGBStatusEffectComponent* Effects = Player->GetStatusEffects();
+		if (!Effects)
+		{
+			return;
+		}
+		FName EnchantId = NAME_None;
+		for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+		{
+			if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+			{
+				EnchantId = Active.EffectId;
+				break;
+			}
+		}
+		if (EnchantId.IsNone())
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE enchant blink: no weapon enchant is active"));
+			return;
+		}
+		Effects->SetTimeRemaining(EnchantId, Seconds);
+	}
+
+	static void CheckEnchantBlink(const TCHAR* Gun, const AGBGun* Item, bool bExpected, const TCHAR* When)
+	{
+		const bool bBlinking = Item->IsViewModelEnergyBarBlinking();
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s energy bar blinking=%d (%s)"), Gun, bBlinking ? 1 : 0, When);
+		if (bBlinking != bExpected)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s energy bar blink FAILED: blinking=%d %s (expected %d)"), Gun, bBlinking ? 1 : 0, When, bExpected ? 1 : 0);
+		}
+	}
+
 			Gun, Progress, bVisible ? 1 : 0, Magazine, RootCm, RootDeg);
 		if (!FMath::IsNearlyEqual(Item->GetReloadAnimProgress(), Progress, 0.001f))
 		{
@@ -1388,6 +1423,7 @@ namespace GBSmokeRun
 		});
 		Add(54.5f + S, TEXT("pistol shot kick and muzzle flash"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
+			CheckEnchantBlink(TEXT("pistol"), Gun, false, TEXT("at half the enchant"));
 			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
 			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
 			{
@@ -1415,9 +1451,14 @@ namespace GBSmokeRun
 		Add(55.2f + S, TEXT("rifle: own it, equip it in the gun slot, full magazine, no enchant"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetEquipment()->GiveWeapon(TEXT("Rifle"), false, false);
+			SetEnchantTimeLeft(Player, 2.5f);
 			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Rifle"));
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			if (const AGBGun* BlinkGun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
+			{
+				CheckEnchantBlink(TEXT("pistol"), BlinkGun, true, TEXT("with 2 seconds left"));
+			}
 			{
 				Effects->RemoveAllEffects();
 			}
@@ -1681,6 +1722,7 @@ namespace GBSmokeRun
 		});
 		Add(61.0f + S, TEXT("rifle shot kick and muzzle flash, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
+			CheckEnchantBlink(TEXT("rifle"), Gun, false, TEXT("at half the enchant"));
 			AGBGun* Gun = RifleInHand(Player);
 			if (!Gun)
 			{
@@ -1704,10 +1746,15 @@ namespace GBSmokeRun
 		});
 		Add(62.2f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
+			SetEnchantTimeLeft(Player, 2.5f);
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);
 		});
 	}
+			if (const AGBGun* BlinkGun = RifleInHand(Player))
+			{
+				CheckEnchantBlink(TEXT("rifle"), BlinkGun, true, TEXT("with 2 seconds left"));
+			}
 
 	static bool Tick(float)
 	{
