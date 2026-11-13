@@ -46,7 +46,9 @@ namespace GBStat
 	inline const FName MantleMinHeight(TEXT("MantleMinHeight"));         // cm: from the ground, a ledge lower than this is jumped / stepped, not climbed
 	inline const FName MantleAirMinHeight(TEXT("MantleAirMinHeight"));   // cm: in the air, a ledge top less than this above the feet is landed on, not climbed
 	inline const FName MantleProbeDistance(TEXT("MantleProbeDistance")); // cm: how far in front of the capsule a wall is looked for
-	inline const FName MantleFacingMinDot(TEXT("MantleFacingMinDot"));   // the view's yaw forward must face the wall this much
+	inline const FName MantleApproachMinDot(TEXT("MantleApproachMinDot")); // the probe direction must meet the wall at most 60 degrees off its normal
+	inline const FName MantleAirSearchMinSpeed(TEXT("MantleAirSearchMinSpeed")); // cm/s: in the air, slower than this searches all around
+	inline const FName MantleTurnMinAngle(TEXT("MantleTurnMinAngle")); // degrees: a wall further off the view than this turns the view to it during the climb
 	inline const FName MantleTopInset(TEXT("MantleTopInset"));           // cm: the capsule ends this far past the ledge edge
 	inline const FName MantleBaseDuration(TEXT("MantleBaseDuration"));   // s
 	inline const FName MantleDurationPerMeter(TEXT("MantleDurationPerMeter")); // s per metre of rise

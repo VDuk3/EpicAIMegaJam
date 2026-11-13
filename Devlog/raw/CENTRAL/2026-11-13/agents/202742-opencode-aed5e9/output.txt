@@ -1,0 +1,960 @@
+[0m
+> build · muse-spark-1.3-contributor
+Climbing behind you — wiring up wall detection in every direction.
+[0m→ [0mRead CLAUDE.md 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBMantle.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBMantle.cpp 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBStatNames.h 
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGlob "Source/Glyphbound/Player/*" [90m0 matches[0m
+[0m✱ [0mGrep "MantleFacingMinDot|MantleAirSearch|MantleTurnMin|FindMantleLedge|GetProbeDirections|TurnFraction|MantleTurn|LastMoveInput|GetMoveInputWorldDirection|SetMoveInputForTest" [90m100 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp 
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp 
+[0m→ [0mRead Glyphbound/Content/Data/Player.json 
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=10, offset=1629][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Prompts/mantle_any_direction.md 
+[0m✱ [0mGrep "mantle" [90min Glyphbound/Source/Glyphbound/Core · 25 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=220, offset=3160][0m
+> build · muse-spark-1.3-contributor
+I've got the shape of the current mantle code. Now let me look at the smoke harness timing and a few remaining details.
+[0m✗ [0mRead Glyphbound/Saved/machine.lock failed
+[91m[1mError: [0mFile not found: C:\GameJam\Glyphbound\Saved\machine.lock
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=120, offset=3040][0m
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "void Add\(|MarkSim|static void Shot|bool Tick\(|SimTime|Arrow" [90min Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp · 17 matches[0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=200, offset=40][0m
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp [90m[limit=120, offset=3377][0m
+[0m✱ [0mGrep "Only|Prefix|ShouldRun|bFiltered|Name\.StartsWith|Contains\(" [90min Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp · 6 matches[0m
+> build · muse-spark-1.3-contributor
+Harness understood: filtered runs keep `mantle:*` + `quit` and re-time from 1s, so I just need non-overlapping relative offsets. Checking for any other references before editing:
+[0m✱ [0mGrep "MantleFacingMinDot|FindMantleLedge" [90min Glyphbound · 7 matches[0m
+> build · muse-spark-1.3-contributor
+All references mapped. Now implementing — starting with the pure math in `GBMantle`:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBMantle.h
+Index: Glyphbound/Source/Glyphbound/Player/GBMantle.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBMantle.h
++++ Glyphbound/Source/Glyphbound/Player/GBMantle.h
+@@ -23,8 +23,11 @@
+ 		float Grip01 = 0.f;
+ 		float CameraDip01 = 0.f;
+ 	};
+ 
++	/** How many probe directions the directionless search tries (45 degrees apart, covering the full circle). */
++	constexpr int32 MaxProbeDirections = 8;
++
+ 	/** One jump's rise: v^2 / (2 g). Guards a non-positive gravity (returns 0). Units follow the inputs (cm). */
+ 	float JumpRise(float JumpZVelocity, float Gravity);
+ 	/** From the ground, on a jump press: MinHeight <= LedgeHeight <= JumpRise + MaxReach. */
+ 	bool CanMantleFromGround(float LedgeHeight, float JumpRiseCm, const FMantleParams& Params);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBMantle.h
+Index: Glyphbound/Source/Glyphbound/Player/GBMantle.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBMantle.h
++++ Glyphbound/Source/Glyphbound/Player/GBMantle.h
+@@ -42,5 +42,18 @@
+ 	 */
+ 	FVector EvaluatePath(const FVector& Start, const FVector& End, float Alpha, float RiseShare);
+ 	/** View pose weights at Alpha (clamped). All exactly 0 at Alpha 0 and at Alpha 1. */
+ 	FMantlePose EvaluatePose(float Alpha, float RiseShare);
++	/**
++	 * Directions to probe for a ledge, in priority order (2D unit vectors).
++	 * With an intent (non-zero IntentDir) only that direction: the player chose where to go. Without one,
++	 * MaxProbeDirections directions 45 degrees apart, starting with ViewForward, then +45, -45, +90, -90,
++	 * +135, -135 and 180 degrees (positive = counterclockwise first), so the nearest to the view wins.
++	 * Uses an inline allocator: no heap allocation, safe to call every tick.
++	 */
++	void GetProbeDirections(const FVector2D& ViewForward, const FVector2D& IntentDir, TArray<FVector2D, TInlineAllocator<MaxProbeDirections>>& Out);
++	/**
++	 * Share of the view's yaw turn to the wall applied by Alpha in [0,1] (clamped): smoothstep from 0 at
++	 * Alpha 0 to 1 at Alpha = RiseShare, 1 after. The climb adds deltas of this times the total turn.
++	 */
++	float TurnFraction(float Alpha, float RiseShare);
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+@@ -70,10 +70,9 @@
+ 	{
+ 		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
+ 		FMantlePose Pose;
+ 		Pose.ItemLower01 = Smooth01(0.f, 0.2f, A) * (1.f - Smooth01(0.75f, 1.f, A));
+-		Pose.Grip01 = Smooth01(0.f, 0.15f, A) * (1.f - Smooth01(0.7f, 0.9f, A));
+-		const float Share = FMath::Clamp(RiseShare, 0.f, 1.f);
++		Pose.Grip01 = Smooth01(0.f, 0.15f, A) * (1.f - Smooth01(0.7f, 0.9f, A));		const float Share = FMath::Clamp(RiseShare, 0.f, 1.f);
+ 		if (Share <= KINDA_SMALL_NUMBER || Share >= 1.f - KINDA_SMALL_NUMBER)
+ 		{
+ 			Pose.CameraDip01 = FMath::Sin(UE_PI * A);
+ 		}
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+That edit was a no-op — let me append the new implementations properly:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBMantle.cpp
+@@ -85,5 +85,49 @@
+ 			Pose.CameraDip01 = 1.f - Smooth01(Share, 1.f, A);
+ 		}
+ 		return Pose;
+ 	}
++
++	void GetProbeDirections(const FVector2D& ViewForward, const FVector2D& IntentDir, TArray<FVector2D, TInlineAllocator<MaxProbeDirections>>& Out)
++	{
++		Out.Reset();
++		if (!IntentDir.IsNearlyZero())
++		{
++			Out.Add(IntentDir.GetSafeNormal());
++			return;
++		}
++		FVector2D Forward = ViewForward.GetSafeNormal();
++		if (Forward.IsNearlyZero())
++		{
++			Forward = FVector2D(1.f, 0.f);
++		}
++		// 0, +45, -45, +90, -90, +135, -135, 180 degrees (positive = counterclockwise).
++		static constexpr float OffsetsDeg[MaxProbeDirections] = { 0.f, 45.f, -45.f, 90.f, -90.f, 135.f, -135.f, 180.f };
++		for (float OffsetDeg : OffsetsDeg)
++		{
++			const float Radians = FMath::DegreesToRadians(OffsetDeg);
++			const float C = FMath::Cos(Radians);
++			const float S = FMath::Sin(Radians);
++			Out.Add(FVector2D(Forward.X * C - Forward.Y * S, Forward.X * S + Forward.Y * C).GetSafeNormal());
++		}
++	}
++
++	float TurnFraction(float Alpha, float RiseShare)
++	{
++		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
++		const float Share = FMath::Clamp(RiseShare, 0.f, 1.f);
++		if (A <= 0.f)
++		{
++			return 0.f;
++		}
++		if (Share <= KINDA_SMALL_NUMBER)
++		{
++			return 1.f;
++		}
++		if (A >= Share)
++		{
++			return 1.f;
++		}
++		const float T = A / Share;
++		return T * T * (3.f - 2.f * T);
++	}
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+Index: Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBStatNames.h
++++ Glyphbound/Source/Glyphbound/Core/GBStatNames.h
+@@ -45,9 +45,11 @@
+ 	inline const FName MantleMaxReach(TEXT("MantleMaxReach"));           // cm: the highest a ledge top above the feet the hands can reach
+ 	inline const FName MantleMinHeight(TEXT("MantleMinHeight"));         // cm: from the ground, a ledge lower than this is jumped / stepped, not climbed
+ 	inline const FName MantleAirMinHeight(TEXT("MantleAirMinHeight"));   // cm: in the air, a ledge top less than this above the feet is landed on, not climbed
+ 	inline const FName MantleProbeDistance(TEXT("MantleProbeDistance")); // cm: how far in front of the capsule a wall is looked for
+-	inline const FName MantleFacingMinDot(TEXT("MantleFacingMinDot"));   // the view's yaw forward must face the wall this much
++	inline const FName MantleApproachMinDot(TEXT("MantleApproachMinDot")); // the probe direction must meet the wall at most 60 degrees off its normal
++	inline const FName MantleAirSearchMinSpeed(TEXT("MantleAirSearchMinSpeed")); // cm/s: in the air, slower than this searches all around
++	inline const FName MantleTurnMinAngle(TEXT("MantleTurnMinAngle")); // degrees: a wall further off the view than this turns the view to it during the climb
+ 	inline const FName MantleTopInset(TEXT("MantleTopInset"));           // cm: the capsule ends this far past the ledge edge
+ 	inline const FName MantleBaseDuration(TEXT("MantleBaseDuration"));   // s
+ 	inline const FName MantleDurationPerMeter(TEXT("MantleDurationPerMeter")); // s per metre of rise
+ 	inline const FName MantleRiseShare(TEXT("MantleRiseShare"));         // share of the duration spent rising straight up
+System.Management.Automation.RemoteException
+[0m← [0mEdit Glyphbound/Content/Data/Player.json
+Index: Glyphbound/Content/Data/Player.json
+===================================================================
+--- Glyphbound/Content/Data/Player.json
++++ Glyphbound/Content/Data/Player.json
+@@ -34,9 +34,11 @@
+ 		"MantleMaxReach": 160,
+ 		"MantleMinHeight": 50,
+ 		"MantleAirMinHeight": 15,
+ 		"MantleProbeDistance": 40,
+-		"MantleFacingMinDot": 0.5,
++		"MantleApproachMinDot": 0.5,
++		"MantleAirSearchMinSpeed": 150,
++		"MantleTurnMinAngle": 60,
+ 		"MantleTopInset": 10,
+ 		"MantleBaseDuration": 0.22,
+ 		"MantleDurationPerMeter": 0.18,
+ 		"MantleRiseShare": 0.6
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the character header:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -104,12 +104,14 @@
+ 		float RiseCm = 0.f;
+ 		FVector2D WallNormal2D = FVector2D::ZeroVector;
+ 	};
+ 	/**
+-	 * Looks for a climbable ledge in front of the player (wall + top + room for the capsule at the end).
++	 * Looks for a climbable ledge in one probe direction (a 2D unit vector): wall sweep along it, top, room and
++	 * support, with dot(ProbeDir, -WallNormal2D) >= MantleApproachMinDot. The caller tries each probe direction
++	 * from GBMantle::GetProbeDirections in order (intent first, else all around starting with the view).
+ 	 * bFromGround uses the ground limits (MinHeight .. JumpRise + MaxReach), otherwise the air limits.
+ 	 */
+-	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const;
++	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const;
+ 	/** True while the climb animation runs (movement input, jump, dash and attacks are blocked). */
+ 	bool IsMantling() const { return bMantling; }
+ 	/** 0..1 along the climb; 0 when not mantling. */
+ 	float GetMantleAlpha() const;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.h. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+125: 	void PressJump();
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h [90m[limit=15, offset=118][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -122,8 +122,10 @@
+ 	/** To Falling, everything visual back to rest. Called by anything that takes control away from the player. */
+ 	void CancelMantle();
+ 	/** Jump press: climbs a ledge in front instead when there is one (the smoke run calls this directly). */
+ 	void PressJump();
++	/** Test hook for the smoke run: pretends the movement input is held (sets LastMoveInput as a fresh Move event would). */
++	void SetMoveInputForTest(const FVector2D& Input);
+ 
+ 	// ---- Interaction ----
+ 	/** The interactable the player is looking at and can use right now, or null. The HUD shows its prompt. */
+ 	IGBInteractable* GetFocusedInteractable() const;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h
+@@ -297,7 +297,11 @@
+ 	float MantleRiseShare = 0.6f;
+ 	FVector MantleStart = FVector::ZeroVector;
+ 	FVector MantleEnd = FVector::ZeroVector;
+ 	FVector MantleLedgePoint = FVector::ZeroVector;
++	/** Signed yaw the view turns to face the wall during the climb (0 = the wall was already in front). */
++	float MantleTotalTurn = 0.f;
++	/** TurnFraction at the last mantle tick: each tick adds the delta times the total turn to the view yaw. */
++	float MantlePrevTurnFraction = 0.f;
+ 	/** Jump count when the climb started: restored if the climb is cancelled (releasing jump while Flying clears it). */
+ 	int32 MantleSavedJumpCount = 0;
+ };
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the `.cpp` — tick air-grab, probe-direction ledge search, intent loop, and view turn:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -223,21 +223,12 @@
+ 		TickMantle(DeltaSeconds);
+ 	}
+ 	else if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+ 	{
+-		// In the air (rising or falling): grab a ledge in front instead of sailing past it.
++		// In the air (rising or falling): grab a ledge around the player instead of sailing past it.
+ 		if (CanMantleNow() && MoveComp->MovementMode == MOVE_Falling)
+ 		{
+-			FGBMantleLedge AirLedge;
+-			if (FindMantleLedge(AirLedge, /*bFromGround*/ false))
+-			{
+-				const FVector Velocity = MoveComp->Velocity;
+-				const float Approach = -(Velocity.X * AirLedge.WallNormal2D.X + Velocity.Y * AirLedge.WallNormal2D.Y);
+-				if (Approach >= -50.f)
+-				{
+-					StartMantle(AirLedge);
+-				}
+-			}
++			TryStartMantle(/*bFromGround*/ false);
+ 		}
+ 	}
+ 
+ 	TickRecoil(DeltaSeconds);
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -427,9 +427,9 @@
+ {
+ 	return bControlEnabled && !IsDead() && !IsQTEActive() && !bDashing && !bMovementFrozen && !bMantling;
+ }
+ 
+-bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const
++bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const
+ {
+ 	UWorld* World = GetWorld();
+ 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+ 	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+@@ -437,19 +437,22 @@
+ 	{
+ 		return false;
+ 	}
+ 
++	const FVector2D Probe2D = ProbeDir.GetSafeNormal();
++	if (Probe2D.IsNearlyZero())
++	{
++		return false;
++	}
++
+ 	const float Radius = Capsule->GetScaledCapsuleRadius();
+ 	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+ 	const FVector ActorLocation = GetActorLocation();
+ 	const float Feet = ActorLocation.Z - HalfHeight;
+-	const float Yaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+-	const FVector Forward = FRotator(0.f, Yaw, 0.f).Vector();
+-	const FVector2D Forward2D = FVector2D(Forward.X, Forward.Y).GetSafeNormal();
+ 
+ 	const GBMantle::FMantleParams Params = GetMantleParams();
+ 	const float ProbeDistance = ReadStat(GBStat::MantleProbeDistance, 40.f);
+-	const float FacingMinDot = ReadStat(GBStat::MantleFacingMinDot, 0.5f);
++	const float ApproachMinDot = ReadStat(GBStat::MantleApproachMinDot, 0.5f);
+ 	const float TopInset = ReadStat(GBStat::MantleTopInset, 10.f);
+ 
+ 	float JumpRiseCm = 0.f;
+ 	if (bFromGround)
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✗ [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp failed
+[91m[1mError: [0mCould not find oldString in C:\GameJam\Glyphbound\Source\Glyphbound\Player\GBPlayerCharacter.cpp. It must match exactly, including whitespace and indentation.
+System.Management.Automation.RemoteException
+The closest lines in the file:
+478: 	const FVector WallBase = ActorLocation + FVector(0.f, 0.f, WallSweepLiftCm);
+479: 	const float ShrunkRadius = FMath::Max(1.f, Radius - 2.f);
+480: 	const FCollisionShape WallShape = FCollisionShape::MakeCapsule(ShrunkRadius, HalfHeight);
+481: 	FHitResult WallHit;
+482: 	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + Forward * ProbeDistance,
+483: 		FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams)
+484: 		|| !WallHit.bBlockingHit || WallHit.bStartPenetrating)
+485: 	{
+486: 		return false;
+487: 	}
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -478,9 +478,9 @@
+ 	const FVector WallBase = ActorLocation + FVector(0.f, 0.f, WallSweepLiftCm);
+ 	const float ShrunkRadius = FMath::Max(1.f, Radius - 2.f);
+ 	const FCollisionShape WallShape = FCollisionShape::MakeCapsule(ShrunkRadius, HalfHeight);
+ 	FHitResult WallHit;
+-	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + Forward * ProbeDistance,
++	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + FVector(Probe2D.X, Probe2D.Y, 0.f) * ProbeDistance,
+ 		FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams)
+ 		|| !WallHit.bBlockingHit || WallHit.bStartPenetrating)
+ 	{
+ 		return false;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -498,9 +498,9 @@
+ 	if (!WallNormal2D.Normalize())
+ 	{
+ 		return false;
+ 	}
+-	if (FVector2D::DotProduct(Forward2D, -WallNormal2D) < FacingMinDot)
++	if (FVector2D::DotProduct(Probe2D, -WallNormal2D) < ApproachMinDot)
+ 	{
+ 		return false;
+ 	}
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now `TryStartMantle` with intent probing:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -593,10 +593,52 @@
+ 			return false;
+ 		}
+ 	}
+ 	FGBMantleLedge Ledge;
+-	if (!FindMantleLedge(Ledge, bFromGround))
++	bool bFound = false;
++	// Intent: on the ground the held movement input's world direction, in the air the horizontal velocity when
++	// it is fast enough (jumps commit to their direction). With an intent only that way is tried, so holding away
++	// from a wall behind never climbs it; without one every direction is tried, starting with the view.
++	FVector2D Intent2D = FVector2D::ZeroVector;
++	if (bFromGround)
+ 	{
++		const FVector WorldDir = GetMoveInputWorldDirection(LastMoveInput);
++		Intent2D = FVector2D(WorldDir.X, WorldDir.Y);
++	}
++	else if (MoveComp)
++	{
++		const FVector Velocity = MoveComp->Velocity;
++		const FVector2D Velocity2D(Velocity.X, Velocity.Y);
++		if (Velocity2D.Size() >= ReadStat(GBStat::MantleAirSearchMinSpeed, 150.f))
++		{
++			Intent2D = Velocity2D;
++		}
++	}
++	const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
++	const FVector ViewForward = FRotator(0.f, ViewYaw, 0.f).Vector();
++	TArray<FVector2D, TInlineAllocator<GBMantle::MaxProbeDirections>> Probes;
++	GBMantle::GetProbeDirections(FVector2D(ViewForward.X, ViewForward.Y), Intent2D, Probes);
++	for (const FVector2D& Probe : Probes)
++	{
++		if (!FindMantleLedge(Ledge, bFromGround, Probe))
++		{
++			continue;
++		}
++		if (!bFromGround && MoveComp)
++		{
++			// Still falling away from the found wall: not a grab, keep looking around.
++			const FVector Velocity = MoveComp->Velocity;
++			const float Approach = -(Velocity.X * Ledge.WallNormal2D.X + Velocity.Y * Ledge.WallNormal2D.Y);
++			if (Approach < -50.f)
++			{
++				continue;
++			}
++		}
++		bFound = true;
++		break;
++	}
++	if (!bFound)
++	{
+ 		return false;
+ 	}
+ 	StartMantle(Ledge);
+ 	return true;
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=85, offset=576][0m
+> build · muse-spark-1.3-contributor
+`MoveComp` is out of scope in my new code — fixing:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -578,9 +578,10 @@
+ 	if (!CanMantleNow())
+ 	{
+ 		return false;
+ 	}
+-	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
++	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
++	if (MoveComp)
+ 	{
+ 		if (bFromGround)
+ 		{
+ 			if (!MoveComp->IsMovingOnGround())
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=65, offset=647][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -663,8 +663,21 @@
+ 	MantleLedgePoint = Ledge.LedgePoint;
+ 	MantleRiseShare = Params.RiseShare;
+ 	MantleDuration = GBMantle::Duration(Ledge.RiseCm, Params);
+ 	MantleElapsed = 0.f;
++	// The view turns to the wall during the climb when it faces away from it: the signed shortest yaw delta
++	// from the view to the wall-facing yaw. A wall already in front turns nothing.
++	MantleTotalTurn = 0.f;
++	MantlePrevTurnFraction = 0.f;
++	{
++		const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
++		const float WallFacingYaw = FMath::RadiansToDegrees(FMath::Atan2(-Ledge.WallNormal2D.Y, -Ledge.WallNormal2D.X));
++		const float Turn = FRotator::NormalizeAxis(WallFacingYaw - ViewYaw);
++		if (FMath::Abs(Turn) > ReadStat(GBStat::MantleTurnMinAngle, 60.f))
++		{
++			MantleTotalTurn = Turn;
++		}
++	}
+ 	bMantling = true;
+ 	ApplyCameraPose();
+ }
+ 
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -689,8 +689,21 @@
+ 	}
+ 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+ 	MantleElapsed += DeltaSeconds;
+ 	const float Alpha = GetMantleAlpha();
++	// The view yaw turns to the wall in deltas, so the mouse still works during the climb and both add up.
++	if (MantleTotalTurn != 0.f && Controller)
++	{
++		const float Fraction = GBMantle::TurnFraction(Alpha, MantleRiseShare);
++		const float TurnDelta = (Fraction - MantlePrevTurnFraction) * MantleTotalTurn;
++		MantlePrevTurnFraction = Fraction;
++		if (!FMath::IsNearlyZero(TurnDelta))
++		{
++			FRotator ControlRotation = Controller->GetControlRotation();
++			ControlRotation.Yaw = FRotator::NormalizeAxis(ControlRotation.Yaw + TurnDelta);
++			Controller->SetControlRotation(ControlRotation);
++		}
++	}
+ 	SetActorLocation(GBMantle::EvaluatePath(MantleStart, MantleEnd, Alpha, MantleRiseShare),
+ 		false, nullptr, ETeleportType::TeleportPhysics);
+ 	if (MoveComp)
+ 	{
+@@ -705,8 +718,10 @@
+ 			MoveComp->Velocity = FVector::ZeroVector;
+ 		}
+ 		bMantling = false;
+ 		MantleElapsed = 0.f;
++		MantleTotalTurn = 0.f;
++		MantlePrevTurnFraction = 0.f;
+ 	}
+ }
+ 
+ void AGBPlayerCharacter::CancelMantle()
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp [90m[limit=40, offset=712][0m
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -732,8 +732,10 @@
+ 	}
+ 	bMantling = false;
+ 	MantleElapsed = 0.f;
+ 	MantleDuration = 0.f;
++	MantleTotalTurn = 0.f;
++	MantlePrevTurnFraction = 0.f;
+ 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+ 	{
+ 		if (!bMovementFrozen)
+ 		{
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the test hook implementation, next to `PressJump`:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+Index: Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
++++ Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.cpp
+@@ -1479,8 +1479,14 @@
+ 	}
+ 	Jump();
+ }
+ 
++void AGBPlayerCharacter::SetMoveInputForTest(const FVector2D& Input)
++{
++	LastMoveInput = Input;
++	LastMoveInputFrame = GFrameCounter;
++}
++
+ void AGBPlayerCharacter::InputJump()
+ {
+ 	PressJump();
+ }
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+Now the pure test:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+Index: Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
++++ Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp
+@@ -177,5 +177,120 @@
+ 
+ 	return true;
+ }
+ 
++IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerMantleProbeTest, "Glyphbound.Player.MantleProbe",
++	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
++
++bool FGBPlayerMantleProbeTest::RunTest(const FString& Parameters)
++{
++	auto CheckNear = [&](const TCHAR* What, double Actual, double Expected, double Tolerance)
++	{
++		TestTrue(What, FMath::Abs(Actual - Expected) <= Tolerance);
++	};
++	auto AngleDeg = [](const FVector2D& A, const FVector2D& B)
++	{
++		return FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector2D::DotProduct(A.GetSafeNormal(), B.GetSafeNormal()), -1.f, 1.f)));
++	};
++
++	using FProbeList = TArray<FVector2D, TInlineAllocator<GBMantle::MaxProbeDirections>>;
++
++	// Intent: exactly one direction, the normalized intent (also when it is not normalized).
++	{
++		FProbeList WithIntent;
++		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D(0.f, 1.f), WithIntent);
++		TestTrue(TEXT("Intent gives exactly one direction"), WithIntent.Num() == 1);
++		CheckNear(TEXT("Intent direction is the intent X"), WithIntent[0].X, 0.0, 1.e-4);
++		CheckNear(TEXT("Intent direction is the intent Y"), WithIntent[0].Y, 1.0, 1.e-4);
++
++		FProbeList LongIntent;
++		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D(0.f, 5.f), LongIntent);
++		TestTrue(TEXT("Non-normalized intent gives exactly one direction"), LongIntent.Num() == 1);
++		CheckNear(TEXT("Non-normalized intent is normalized X"), LongIntent[0].X, 0.0, 1.e-4);
++		CheckNear(TEXT("Non-normalized intent is normalized Y"), LongIntent[0].Y, 1.0, 1.e-4);
++
++		FProbeList AwayIntent;
++		GBMantle::GetProbeDirections(FVector2D(0.f, -1.f), FVector2D(-2.f, 0.f), AwayIntent);
++		TestTrue(TEXT("Off-view intent gives exactly one direction"), AwayIntent.Num() == 1);
++		CheckNear(TEXT("Off-view intent is normalized X"), AwayIntent[0].X, -1.0, 1.e-4);
++		CheckNear(TEXT("Off-view intent is normalized Y"), AwayIntent[0].Y, 0.0, 1.e-4);
++	}
++
++	// No intent: 8 unit directions starting with the view, ending behind it, 45 degrees apart.
++	{
++		FProbeList All;
++		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D::ZeroVector, All);
++		TestTrue(TEXT("No intent gives 8 directions"), All.Num() == 8);
++		for (int32 i = 0; i < All.Num(); ++i)
++		{
++			CheckNear(TEXT("Each probe direction is unit length"), All[i].Size(), 1.0, 1.e-4);
++		}
++		CheckNear(TEXT("First probe is the view forward X"), All[0].X, 1.0, 1.e-4);
++		CheckNear(TEXT("First probe is the view forward Y"), All[0].Y, 0.0, 1.e-4);
++		CheckNear(TEXT("Last probe is behind the view X"), All[7].X, -1.0, 1.e-4);
++		CheckNear(TEXT("Last probe is behind the view Y"), All[7].Y, 0.0, 1.e-4);
++		const float Cos45 = FMath::Cos(FMath::DegreesToRadians(45.f));
++		const float Sin45 = FMath::Sin(FMath::DegreesToRadians(45.f));
++		CheckNear(TEXT("Second probe is +45 X"), All[1].X, Cos45, 1.e-4);
++		CheckNear(TEXT("Second probe is +45 Y"), All[1].Y, Sin45, 1.e-4);
++		CheckNear(TEXT("Third probe is -45 X"), All[2].X, Cos45, 1.e-4);
++		CheckNear(TEXT("Third probe is -45 Y"), All[2].Y, -Sin45, 1.e-4);
++		for (int32 i = 0; i < All.Num(); ++i)
++		{
++			float Nearest = 180.f;
++			for (int32 j = 0; j < All.Num(); ++j)
++			{
++				if (i != j)
++				{
++					Nearest = FMath::Min(Nearest, AngleDeg(All[i], All[j]));
++				}
++			}
++			CheckNear(TEXT("Each probe's nearest neighbour is 45 degrees away"), Nearest, 45.0, 1.0);
++			for (int32 j = i + 1; j < All.Num(); ++j)
++			{
++				TestTrue(TEXT("All 8 probe directions are distinct"), AngleDeg(All[i], All[j]) > 1.0);
++			}
++		}
++	}
++
++	// A different view forward rotates the whole list (not fixed world axes).
++	{
++		FProbeList East;
++		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D::ZeroVector, East);
++		FProbeList North;
++		GBMantle::GetProbeDirections(FVector2D(0.f, 1.f), FVector2D::ZeroVector, North);
++		TestTrue(TEXT("Rotated view still gives 8 directions"), North.Num() == 8);
++		for (int32 i = 0; i < FMath::Min(East.Num(), North.Num()); ++i)
++		{
++			// Counterclockwise quarter turn: (x, y) -> (-y, x).
++			const FVector2D Rotated(-East[i].Y, East[i].X);
++			CheckNear(TEXT("Rotated view rotates the list X"), North[i].X, Rotated.X, 1.e-3);
++			CheckNear(TEXT("Rotated view rotates the list Y"), North[i].Y, Rotated.Y, 1.e-3);
++		}
++		CheckNear(TEXT("North-first probe is the north view X"), North[0].X, 0.0, 1.e-4);
++		CheckNear(TEXT("North-first probe is the north view Y"), North[0].Y, 1.0, 1.e-4);
++	}
++
++	// TurnFraction: smoothstep from 0 at Alpha 0 to 1 at Alpha = RiseShare, 1 after.
++	{
++		constexpr float Share = 0.6f;
++		CheckNear(TEXT("TurnFraction is 0 at 0"), GBMantle::TurnFraction(0.f, Share), 0.0, 1.e-6);
++		CheckNear(TEXT("TurnFraction is 1 at RiseShare"), GBMantle::TurnFraction(Share, Share), 1.0, 1.e-6);
++		CheckNear(TEXT("TurnFraction is 1 at 1"), GBMantle::TurnFraction(1.f, Share), 1.0, 1.e-6);
++		const float Half = GBMantle::TurnFraction(Share * 0.5f, Share);
++		TestTrue(TEXT("TurnFraction is strictly between at half the rise"), Half > 0.01f && Half < 0.99f);
++		float Prev = -1.f;
++		for (int32 i = 0; i <= 50; ++i)
++		{
++			const float Value = GBMantle::TurnFraction(i / 50.f, Share);
++			TestTrue(TEXT("TurnFraction never decreases"), Value >= Prev - 1.e-6f);
++			Prev = Value;
++		}
++		const float AtPointThreeA = GBMantle::TurnFraction(0.3f, 0.6f);
++		const float AtPointThreeB = GBMantle::TurnFraction(0.3f, 0.8f);
++		TestTrue(TEXT("TurnFraction at 0.3 moves with RiseShare"), FMath::Abs(AtPointThreeA - AtPointThreeB) > 0.05f);
++	}
++
++	return true;
++}
++
+ #endif // WITH_DEV_AUTOMATION_TESTS
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m→ [0mRead Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp [90m[limit=15, offset=176][0m
+> build · muse-spark-1.3-contributor
+Now the smoke steps — insert before "back to the arena start" and shift it + `quit`:
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -3350,10 +3350,120 @@
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE mantle air FAILED: feet %.0f (expected 600 +- 10) x %.0f (expected over 1800)"), Feet, Loc.X);
+ 			}
+ 		}, 1.0f);
+-		Add(M + 3.5f, TEXT("mantle: back to the arena start"), [](UWorld*, AGBPlayerCharacter* Player)
++		Add(M + 3.5f, TEXT("mantle: back to the 200 cm wall, standing jump press"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
++			float R = 38.f;
++			float HH = 90.f;
++			MantleCapsule(Player, R, HH);
++			// LastMoveInput is protected: ReleaseHeldInputs clears it instead of reading it back.
++			Player->ReleaseHeldInputs();
++			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
++			{
++				PC->SetControlRotation(FRotator(0.f, 90.f, 0.f)); // back to the wall
++			}
++			Player->SetActorLocation(FVector(-2500.f, -1100.f + R + 5.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
++			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
++			{
++				Move->SetMovementMode(MOVE_Walking);
++				Move->Velocity = FVector::ZeroVector;
++			}
++			MarkSim(World);
++			Player->PressJump();
++			const bool bStarted = Player->IsMantling();
++			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back started=%d"), bStarted ? 1 : 0);
++			if (!bStarted)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back FAILED: no mantle started on jump press with the back to the 200 cm wall"));
++			}
++		});
++		Add(M + 4.9f, TEXT("mantle: back climb result"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
++		{
++			float R = 38.f;
++			float HH = 90.f;
++			MantleCapsule(Player, R, HH);
++			(void)R;
++			const FVector Loc = Player->GetActorLocation();
++			const float Feet = Loc.Z - HH;
++			const UCharacterMovementComponent* GroundMove = Player->GetCharacterMovement();
++			const bool bWalking = !Player->IsMantling() && GroundMove && GroundMove->IsMovingOnGround();
++			const float ControlYaw = Player->GetController() ? Player->GetController()->GetControlRotation().Yaw : 0.f;
++			const float YawError = FMath::Abs(FRotator::NormalizeAxis(ControlYaw + 90.f));
++			const bool bOnTop = FMath::Abs(Feet - 200.f) <= 10.f && Loc.Y < -1100.f;
++			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back feet=%.0f y=%.0f mantling=%d walking=%d yaw=%.0f"), Feet, Loc.Y,
++				Player->IsMantling() ? 1 : 0, bWalking ? 1 : 0, ControlYaw);
++			if (!bOnTop || !bWalking || YawError > 15.f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back FAILED: onTop=%d walking=%d yaw error=%.0f (expected the 200 cm top and the view turned to -90)"),
++					bOnTop ? 1 : 0, bWalking ? 1 : 0, YawError);
++			}
++		}, 1.0f);
++		Add(M + 5.1f, TEXT("mantle: back to the platform, air grab"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			float R = 38.f;
++			float HH = 90.f;
++			MantleCapsule(Player, R, HH);
++			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
++			{
++				PC->SetControlRotation(FRotator(0.f, 180.f, 0.f)); // back to the platform
++			}
++			Player->SetActorLocation(FVector(1800.f - R - 5.f, 2600.f, 600.f - 120.f + HH), false, nullptr, ETeleportType::TeleportPhysics);
++			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
++			{
++				Move->SetMovementMode(MOVE_Falling);
++				Move->Velocity = FVector::ZeroVector;
++			}
++			MarkSim(World);
++		});
++		Add(M + 6.1f, TEXT("mantle: back air result"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
++		{
++			float R = 38.f;
++			float HH = 90.f;
++			MantleCapsule(Player, R, HH);
++			(void)R;
++			const FVector Loc = Player->GetActorLocation();
++			const float Feet = Loc.Z - HH;
++			const UCharacterMovementComponent* AirMove = Player->GetCharacterMovement();
++			const bool bWalking = !Player->IsMantling() && AirMove && AirMove->IsMovingOnGround();
++			const float ControlYaw = Player->GetController() ? Player->GetController()->GetControlRotation().Yaw : 0.f;
++			const float YawError = FMath::Abs(FRotator::NormalizeAxis(ControlYaw));
++			const bool bOnTop = FMath::Abs(Feet - 600.f) <= 10.f && Loc.X > 1800.f;
++			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back air feet=%.0f x=%.0f mantling=%d walking=%d yaw=%.0f"), Feet, Loc.X,
++				Player->IsMantling() ? 1 : 0, bWalking ? 1 : 0, ControlYaw);
++			if (!bOnTop || !bWalking || YawError > 15.f)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back air FAILED: onTop=%d walking=%d yaw error=%.0f (expected the 600 cm top and the view turned to 0)"),
++					bOnTop ? 1 : 0, bWalking ? 1 : 0, YawError);
++			}
++		}, 1.0f);
++		Add(M + 6.3f, TEXT("mantle: holding away from a wall behind is a jump"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
++		{
++			float R = 38.f;
++			float HH = 90.f;
++			MantleCapsule(Player, R, HH);
++			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
++			{
++				PC->SetControlRotation(FRotator(0.f, 90.f, 0.f)); // back to the wall
++			}
++			Player->SetActorLocation(FVector(-2500.f, -1100.f + R + 5.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
++			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
++			{
++				Move->SetMovementMode(MOVE_Walking);
++				Move->Velocity = FVector::ZeroVector;
++			}
++			Player->SetMoveInputForTest(FVector2D(0.f, 1.f)); // forward, away from the wall behind
++			MarkSim(World);
++			Player->PressJump();
++			const bool bMantling = Player->IsMantling();
++			UE_LOG(LogGB, Display, TEXT("SMOKE mantle held away mantling=%d"), bMantling ? 1 : 0);
++			if (bMantling)
++			{
++				UE_LOG(LogGB, Error, TEXT("SMOKE mantle held away FAILED: a mantle started while holding away from the wall behind"));
++			}
++		});
++		Add(M + 6.5f, TEXT("mantle: back to the arena start"), [](UWorld*, AGBPlayerCharacter* Player)
++		{
+ 			FVector EnemySpawn;
+ 			FVector PlayerSpot;
+ 			AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+ 			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m← [0mEdit Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+Index: Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+===================================================================
+--- Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -3476,9 +3476,9 @@
+ 				Move->SetMovementMode(MOVE_Falling);
+ 				Move->Velocity = FVector::ZeroVector;
+ 			}
+ 		});
+-		Add(U + 40.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
++		Add(U + 43.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+ 		{
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+ 			FPlatformMisc::RequestExit(false);
+ 		});
+System.Management.Automation.RemoteException
+> build · muse-spark-1.3-contributor
+[0m✱ [0mGrep "Add\(U \+ (3[6-9]|4\d)" [90min Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp · 1 match[0m
+> build · muse-spark-1.3-contributor
+`quit` is the last step. Now checking the build script usage, then building:
+[0m→ [0mRead Tools/Jam/Build-Jam.ps1 
+> build · muse-spark-1.3-contributor
+[0m$ [0m$lock = 'Glyphbound/Saved/machine.lock'; if (Test-Path $lock) { $age = (Get-Date) - (Get-Item $lock).LastWriteTime; Write-Output ('LOCK present, age minutes: ' + $age.TotalMinutes); if ($age.TotalMinutes -lt 45) { exit 3 } }; Set-Content $lock ('muse-mantle | build | ' + (Get-Date).ToUniversalTime().ToString('u')); & ./Tools/Jam/Build-Jam.ps1; $code = $LASTEXITCODE; exit $code
+Result: Succeeded
+Build time: 96 s  (exit 0)  log: C:\GameJam\Glyphbound\Saved\Logs\build_last.log
+> build · muse-spark-1.3-contributor
+Build succeeded. Running the player tests:
+[0m$ [0mSet-Content Glyphbound/Saved/machine.lock ('muse-mantle | test | ' + (Get-Date).ToUniversalTime().ToString('u')); powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.Player.'; $code = $LASTEXITCODE; exit $code
+Tests: 4 run, 0 failed, test time 0.06 s, wall time 53 s, ensures in log: 0
+Report: C:\GameJam\Glyphbound\Saved\TestRuns\20261113-203450
+> build · muse-spark-1.3-contributor
+All 4 player tests pass. Now the mantle smoke:
+[0m$ [0mSet-Content Glyphbound/Saved/machine.lock ('muse-mantle | smoke | ' + (Get-Date).ToUniversalTime().ToString('u')); powershell -File Tools/Jam/Smoke-Jam.ps1 -Only mantle -Offscreen; $code = $LASTEXITCODE; exit $code
+LogCsvProfiler: Display: Metadata set : commandline="" C:\GameJam\Glyphbound\Glyphbound.uproject -game -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261113-203546.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds="gb.Smoke mantle" -RenderOffscreen""
+LogInit: Command Line: -abslog=C:\GameJam\Glyphbound\Saved\Logs\smoke_20261113-203546.log -windowed -ResX=1280 -ResY=720 -unattended -nosplash -nosound -ExecCmds="gb.Smoke mantle" -RenderOffscreen -game
+LogGB: Display: SMOKE started: 18 steps
+LogGB: Display: SMOKE step 1/18 (1.0 s): mantle: let the renderer settle
+LogGB: Display: SMOKE step 2/18 (4.0 s): mantle: ground press next to the 200 cm wall
+LogGB: Display: SMOKE mantle ground started=1
+LogGB: Display: SMOKE step 3/18 (4.1 s): mantle: screenshot mid-climb
+LogGB: Display: SMOKE mantle shot mantle_grip mantling=1 alpha=0.21 grip=1.00 lower=1.00 dip=0.29 control=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/mantle_grip.png
+LogGB: Display: SMOKE step 4/18 (4.8 s): mantle: resume time after the shot
+LogGB: Display: SMOKE step 5/18 (5.4 s): mantle: ground result
+LogGB: Display: SMOKE mantle ground feet=202 y=-1148 mantling=0 cam=(0.0,0.0,-0.0) item=V(X=30.00, Y=15.00, Z=-15.00)
+LogGB: Display: SMOKE step 6/18 (5.6 s): mantle: wall too high is a normal jump
+LogGB: Display: SMOKE mantle too high mantling=0
+LogGB: Display: SMOKE step 7/18 (5.9 s): mantle: wall too high leaves the ground
+LogGB: Display: SMOKE mantle too high airborne=1 rise=141 mantling=0
+LogGB: Display: SMOKE step 8/18 (6.1 s): mantle: air grab at the platform edge
+LogGB: Display: SMOKE step 9/18 (6.2 s): mantle: screenshot mid air-climb
+LogGB: Display: SMOKE mantle shot mantle_grip_air mantling=1 alpha=0.22 grip=1.00 lower=1.00 dip=0.31 control=1
+LogGB: Display: SMOKE screenshot ../../../../../../GameJam/Glyphbound/Saved/Screenshots/Smoke/mantle_grip_air.png
+LogGB: Display: SMOKE step 10/18 (6.7 s): mantle: resume time after the air shot
+LogGB: Display: SMOKE step 11/18 (7.3 s): mantle: air result on the platform
+LogGB: Display: SMOKE mantle air feet=602 x=1848 mantling=0 walking=1
+LogGB: Display: SMOKE step 12/18 (7.5 s): mantle: back to the 200 cm wall, standing jump press
+LogGB: Display: SMOKE mantle back started=1
+LogGB: Display: SMOKE step 13/18 (8.9 s): mantle: back climb result
+LogGB: Display: SMOKE mantle back feet=202 y=-1148 mantling=0 walking=1 yaw=-90
+LogGB: Display: SMOKE step 14/18 (9.1 s): mantle: back to the platform, air grab
+LogGB: Display: SMOKE step 15/18 (10.1 s): mantle: back air result
+LogGB: Display: SMOKE mantle back air feet=602 x=1848 mantling=0 walking=1 yaw=0
+LogGB: Display: SMOKE step 16/18 (10.3 s): mantle: holding away from a wall behind is a jump
+LogGB: Display: SMOKE mantle held away mantling=0
+LogGB: Display: SMOKE step 17/18 (10.5 s): mantle: back to the arena start
+LogGB: Display: SMOKE step 18/18 (10.9 s): quit
+LogGB: Display: SMOKE DONE
+---- problems in our code (LogGB warnings/errors, asserts, crashes) ----
+(none)
+---- other engine errors: 0 ----
+---- screenshots: 2 in C:\GameJam\Glyphbound\Saved\Screenshots\Smoke ----
+mantle_grip.png
+mantle_grip_air.png
+Smoke: done=True crashed=False LogGB errors=0 timedOut=False wall=28 s  log: C:\GameJam\Glyphbound\Saved\Logs\smoke_20261113-203546.log
+> build · muse-spark-1.3-contributor
+All 18 steps pass with zero errors. Cleaning up the lock:
+[0m$ [0mRemove-Item Glyphbound/Saved/machine.lock -Force; Write-Output 'lock removed'
+lock removed
+> build · muse-spark-1.3-contributor
+Done. Climbing works in any direction now, and the view turns to the wall during back-climbs.
+
+## Files changed
+- `Glyphbound/Source/Glyphbound/Player/GBMantle.h/.cpp` — new pure `GetProbeDirections` (intent → that single normalized direction; no intent → 8 unit directions 45° apart starting with the view: 0, +45, −45, +90, −90, +135, −135, 180, CCW positive) with inline-allocator `TArray` (no heap, tick-safe); new pure `TurnFraction` (smoothstep 0→1 over Alpha 0→RiseShare, 1 after).
+- `Glyphbound/Source/Glyphbound/Player/GBPlayerCharacter.h/.cpp` — `FindMantleLedge` now takes a probe direction and checks `dot(ProbeDir, −WallNormal2D) >= MantleApproachMinDot`; `TryStartMantle` builds the intent (ground: held-input world direction; air: horizontal velocity if ≥ `MantleAirSearchMinSpeed`) and tries directions in order, keeping the `Approach >= −50` check per found wall; air tick now goes through `TryStartMantle(false)`; `StartMantle` computes the signed shortest yaw turn when it exceeds `MantleTurnMinAngle`, `TickMantle` applies it in `TurnFraction` deltas (mouse still works, pitch untouched), `CancelMantle`/finish reset it; new `SetMoveInputForTest` smoke hook.
+- `Glyphbound/Source/Glyphbound/Core/GBStatNames.h`, `Glyphbound/Content/Data/Player.json` — renamed `MantleFacingMinDot` → `MantleApproachMinDot` (0.5), added `MantleAirSearchMinSpeed` (150) and `MantleTurnMinAngle` (60).
+- `Glyphbound/Source/Glyphbound/Tests/GBPlayerTests.cpp` — new `Glyphbound.Player.MantleProbe` (intent single/normalized, 8-dir shape/order, rotation with view, `TurnFraction` shape/monotonicity/RiseShare dependence).
+- `Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp` — 4 new `mantle:` steps before "back to the arena start" (back standing press, back result, back air grab + result, held-away-is-a-jump); arena-start shifted to M+6.5, `quit` to U+43.5.
+
+## Verification
+- **Build** (Editor only): `Result: Succeeded`, 96 s.
+- **Tests** `^Glyphbound.Player.`: 4 run, 0 failed, 0 ensures.
+- **Smoke** `-Only mantle -Offscreen`: `done=True crashed=False LogGB errors=0`, 18/18 steps:
+  - `SMOKE mantle ground started=1` / `feet=202 ...` (existing, still fine)
+  - `SMOKE mantle back started=1`
+  - `SMOKE mantle back feet=202 y=-1148 mantling=0 walking=1 yaw=-90`
+  - `SMOKE mantle back air feet=602 x=1848 mantling=0 walking=1 yaw=0`
+  - `SMOKE mantle held away mantling=0`
+  - `SMOKE DONE`
+
+Not committed, per instructions.

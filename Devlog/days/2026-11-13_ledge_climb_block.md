@@ -55,3 +55,29 @@ The reach (1.6 m), the speed (0.22 s + 0.18 s per metre) and the "must face the 
 ## Package
 - `TeamTBD_Glyphbound.zip` from commit `9bf924a`: 299.7 MB, BuildCookRun 153 s. The full smoke on the packaged game is clean (142 s, no LogGB errors). Climb numbers match the Editor run: wall 202 cm, platform 602 cm, the 6 m wall is a normal jump (145 cm of rise).
 - In the full run the climb block runs in the future era with the shotgun in hand: the 3D gun drops out of view and the pixel hands grip, with the cyberpunk HUD around them (`media/2026-11-13/ledgeclimb_grip_packaged_cyber_720.png`). Sent to the owner to play.
+
+## Second round: climbing in any direction (GDD v0.45)
+After the package, the owner wrote, in Spanish:
+
+> *"Implementa que se pueda escalar sin mirar el muro, estando de espalda por ejemplo."*
+
+Translation: "Make it possible to climb without looking at the wall, with your back to it, for example."
+
+**Design (architect, provisional).** The view no longer picks the wall. The player's intent does:
+- **On the ground:** the held movement direction. With no direction held, the climb looks all around in 8 directions, the view's first, then +-45, +-90, +-135 and 180 degrees. So with your back to a wall and no keys held, a jump press climbs it. Holding S into a wall behind you climbs it. Holding W away from a wall behind you is a normal jump forward, never a climb backwards.
+- **In the air:** the jump's own direction (jumps commit to it). When the horizontal speed is under 1.5 m/s (a vertical jump, or a jump the wall has stopped), the climb looks all around.
+- **The view turns.** When the wall is more than 60 degrees off the view, the view turns to it during the rise, so the player ends on top looking across. The turn is applied in deltas, so the mouse keeps working during it.
+- Stats: `MantleFacingMinDot` became `MantleApproachMinDot` (the probe has to meet the wall within 60 degrees of its face). New: `MantleAirSearchMinSpeed` (150) and `MantleTurnMinAngle` (60).
+
+**Build.**
+- Brief `Prompts/mantle_any_direction.md`, implemented by **Muse Spark 1.3 Contributor (High)** via OpenCode (default implementer).
+- New pure functions `GBMantle::GetProbeDirections` and `TurnFraction`, test `Glyphbound.Player.MantleProbe`, and four new `mantle:` smoke steps: back to the 2 m wall, back to the platform in the air, and holding away from a wall behind.
+
+**Review: GPT Sol 6.1** (run `203639-codex-a57072`, prompt `Prompts/mantle_any_direction_review_sol.md`). Four findings, all fixed by the architect (small, already diagnosed):
+- **P2, a real input-order bug:** Enhanced Input fires the jump's `Started` before the same frame's `Move` event. So pressing W and jump together with your back to a wall read "no direction held" and would climb backwards. The climb now reads the Move action's current value (`UEnhancedPlayerInput::GetActionValue`), not the last Move event.
+- **P3:** the "held away" smoke step only checked "not climbing" right after the press. It now also checks, 0.2 simulated seconds later, a real jump: falling, rising and moving away from the wall. That follow-up check caught a gap in the smoke's own input hook: the hook fed the climb decision but not the jump's take-off direction. The jump left with no speed and grabbed the wall behind it in the air. In the game, a held W gives the jump its speed (450 cm/s) by take-off. The hook now feeds both.
+- **P3:** the probe test now checks the full priority order, and the turn test checks smoothstep values at a quarter and three quarters of the rise (a linear turn would pass the old one).
+
+**Known trade-off for the owner:** a jump in place right next to a block now climbs it even if the player is not looking at it. From 0.5 m up it climbs on the press; lower blocks (15 to 50 cm) are grabbed once in the air, because the air search looks all around. That is what was asked, but in combat it may happen by accident.
+
+**Checks.** Game target build succeeded; full suite 48 tests green (1.01 s); full smoke clean (155 s, no LogGB errors or warnings): back to the wall climbs and turns the view to -90, the air grab with the back to the platform turns it to 0, and holding away is a jump at 540 cm/s away from the wall.

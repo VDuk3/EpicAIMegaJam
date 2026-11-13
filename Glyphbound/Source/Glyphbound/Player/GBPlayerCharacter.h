@@ -105,10 +105,12 @@ public:
 		FVector2D WallNormal2D = FVector2D::ZeroVector;
 	};
 	/**
-	 * Looks for a climbable ledge in front of the player (wall + top + room for the capsule at the end).
+	 * Looks for a climbable ledge in one probe direction (a 2D unit vector): wall sweep along it, top, room and
+	 * support, with dot(ProbeDir, -WallNormal2D) >= MantleApproachMinDot. The caller tries each probe direction
+	 * from GBMantle::GetProbeDirections in order (intent first, else all around starting with the view).
 	 * bFromGround uses the ground limits (MinHeight .. JumpRise + MaxReach), otherwise the air limits.
 	 */
-	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const;
+	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const;
 	/** True while the climb animation runs (movement input, jump, dash and attacks are blocked). */
 	bool IsMantling() const { return bMantling; }
 	/** 0..1 along the climb; 0 when not mantling. */
@@ -121,6 +123,8 @@ public:
 	void CancelMantle();
 	/** Jump press: climbs a ledge in front instead when there is one (the smoke run calls this directly). */
 	void PressJump();
+	/** Test hook for the smoke run (it has no keys): the next PressJump reads this as the held movement input, and a jump takes off in its direction. */
+	void SetMoveInputForTest(const FVector2D& Input);
 
 	// ---- Interaction ----
 	/** The interactable the player is looking at and can use right now, or null. The HUD shows its prompt. */
@@ -270,6 +274,14 @@ protected:
 	FVector2D LastMoveInput = FVector2D::ZeroVector;
 	/** Frame of the last Move event outside the QTE; LastMoveInput is cleared when it gets stale. */
 	uint64 LastMoveInputFrame = 0;
+	/** Set by SetMoveInputForTest, consumed by the next PressJump. */
+	TOptional<FVector2D> MoveInputTestOverride;
+	/**
+	 * The movement input held right now (x = right, y = forward), read from the Move action's current value.
+	 * The jump's Started event fires before the Move event of the same frame, so LastMoveInput can be a frame old
+	 * (pressing W and jump together would read no direction). Falls back to LastMoveInput without Enhanced Input.
+	 */
+	FVector2D GetLiveMoveInput() const;
 	/** Secondary (right click / L2) is held: on gamepad with the staff, L2 + face button casts slots 2-5. */
 	bool bSecondaryHeld = false;
 	/** World time of the last Precision Recovery heal (a stamp, not a timer: no reset on death). */
@@ -294,6 +306,10 @@ protected:
 	FVector MantleStart = FVector::ZeroVector;
 	FVector MantleEnd = FVector::ZeroVector;
 	FVector MantleLedgePoint = FVector::ZeroVector;
+	/** Signed yaw the view turns to face the wall during the climb (0 = the wall was already in front). */
+	float MantleTotalTurn = 0.f;
+	/** TurnFraction at the last mantle tick: each tick adds the delta times the total turn to the view yaw. */
+	float MantlePrevTurnFraction = 0.f;
 	/** Jump count when the climb started: restored if the climb is cancelled (releasing jump while Flying clears it). */
 	int32 MantleSavedJumpCount = 0;
 };

@@ -1,0 +1,16 @@
+ Design/GDD.md                                      |   5 +-
+ Devlog/raw/CENTRAL/2026-11-13/agents.jsonl         |   1 +
+ ...aude-9b1aa844-2005-4517-81bd-8ed323ceef60.jsonl |  15 +++
+ .../9b1aa844-2005-4517-81bd-8ed323ceef60.jsonl     |  94 +++++++++++++++++
+ ...rsor-55363ab3-6057-498b-97fb-dce8d9a56f3c.jsonl |  96 +++++++++++++++++
+ ...6f3c-55363ab3-6057-498b-97fb-dce8d9a56f3c.jsonl |   7 ++
+ Devlog/raw/_import.log                             |   4 +
+ Glyphbound/Content/Data/Player.json                |   4 +-
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       | 114 +++++++++++++++++++-
+ Glyphbound/Source/Glyphbound/Core/GBStatNames.h    |   4 +-
+ Glyphbound/Source/Glyphbound/Player/GBMantle.cpp   |  47 ++++++++-
+ Glyphbound/Source/Glyphbound/Player/GBMantle.h     |  16 +++
+ .../Source/Glyphbound/Player/GBPlayerCharacter.cpp | 113 ++++++++++++++++----
+ .../Source/Glyphbound/Player/GBPlayerCharacter.h   |  12 ++-
+ .../Source/Glyphbound/Tests/GBPlayerTests.cpp      | 115 +++++++++++++++++++++
+ 15 files changed, 617 insertions(+), 30 deletions(-)

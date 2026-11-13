@@ -224,19 +224,10 @@ void AGBPlayerCharacter::Tick(float DeltaSeconds)
 	}
 	else if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
-		// In the air (rising or falling): grab a ledge in front instead of sailing past it.
+		// In the air (rising or falling): grab a ledge around the player instead of sailing past it.
 		if (CanMantleNow() && MoveComp->MovementMode == MOVE_Falling)
 		{
-			FGBMantleLedge AirLedge;
-			if (FindMantleLedge(AirLedge, /*bFromGround*/ false))
-			{
-				const FVector Velocity = MoveComp->Velocity;
-				const float Approach = -(Velocity.X * AirLedge.WallNormal2D.X + Velocity.Y * AirLedge.WallNormal2D.Y);
-				if (Approach >= -50.f)
-				{
-					StartMantle(AirLedge);
-				}
-			}
+			TryStartMantle(/*bFromGround*/ false);
 		}
 	}
 
@@ -437,7 +428,7 @@ bool AGBPlayerCharacter::CanMantleNow() const
 	return bControlEnabled && !IsDead() && !IsQTEActive() && !bDashing && !bMovementFrozen && !bMantling;
 }
 
-bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const
+bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const
 {
 	UWorld* World = GetWorld();
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
@@ -447,17 +438,20 @@ bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) 
 		return false;
 	}
 
+	const FVector2D Probe2D = ProbeDir.GetSafeNormal();
+	if (Probe2D.IsNearlyZero())
+	{
+		return false;
+	}
+
 	const float Radius = Capsule->GetScaledCapsuleRadius();
 	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
 	const FVector ActorLocation = GetActorLocation();
 	const float Feet = ActorLocation.Z - HalfHeight;
-	const float Yaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
-	const FVector Forward = FRotator(0.f, Yaw, 0.f).Vector();
-	const FVector2D Forward2D = FVector2D(Forward.X, Forward.Y).GetSafeNormal();
 
 	const GBMantle::FMantleParams Params = GetMantleParams();
 	const float ProbeDistance = ReadStat(GBStat::MantleProbeDistance, 40.f);
-	const float FacingMinDot = ReadStat(GBStat::MantleFacingMinDot, 0.5f);
+	const float ApproachMinDot = ReadStat(GBStat::MantleApproachMinDot, 0.5f);
 	const float TopInset = ReadStat(GBStat::MantleTopInset, 10.f);
 
 	float JumpRiseCm = 0.f;
@@ -485,7 +479,7 @@ bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) 
 	const float ShrunkRadius = FMath::Max(1.f, Radius - 2.f);
 	const FCollisionShape WallShape = FCollisionShape::MakeCapsule(ShrunkRadius, HalfHeight);
 	FHitResult WallHit;
-	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + Forward * ProbeDistance,
+	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + FVector(Probe2D.X, Probe2D.Y, 0.f) * ProbeDistance,
 		FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams)
 		|| !WallHit.bBlockingHit || WallHit.bStartPenetrating)
 	{
@@ -505,7 +499,7 @@ bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) 
 	{
 		return false;
 	}
-	if (FVector2D::DotProduct(Forward2D, -WallNormal2D) < FacingMinDot)
+	if (FVector2D::DotProduct(Probe2D, -WallNormal2D) < ApproachMinDot)
 	{
 		return false;
 	}
@@ -585,7 +579,8 @@ bool AGBPlayerCharacter::TryStartMantle(bool bFromGround)
 	{
 		return false;
 	}
-	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (MoveComp)
 	{
 		if (bFromGround)
 		{
@@ -600,7 +595,49 @@ bool AGBPlayerCharacter::TryStartMantle(bool bFromGround)
 		}
 	}
 	FGBMantleLedge Ledge;
-	if (!FindMantleLedge(Ledge, bFromGround))
+	bool bFound = false;
+	// Intent: on the ground the held movement input's world direction, in the air the horizontal velocity when
+	// it is fast enough (jumps commit to their direction). With an intent only that way is tried, so holding away
+	// from a wall behind never climbs it; without one every direction is tried, starting with the view.
+	FVector2D Intent2D = FVector2D::ZeroVector;
+	if (bFromGround)
+	{
+		const FVector WorldDir = GetMoveInputWorldDirection(GetLiveMoveInput());
+		Intent2D = FVector2D(WorldDir.X, WorldDir.Y);
+	}
+	else if (MoveComp)
+	{
+		const FVector Velocity = MoveComp->Velocity;
+		const FVector2D Velocity2D(Velocity.X, Velocity.Y);
+		if (Velocity2D.Size() >= ReadStat(GBStat::MantleAirSearchMinSpeed, 150.f))
+		{
+			Intent2D = Velocity2D;
+		}
+	}
+	const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+	const FVector ViewForward = FRotator(0.f, ViewYaw, 0.f).Vector();
+	TArray<FVector2D, TInlineAllocator<GBMantle::MaxProbeDirections>> Probes;
+	GBMantle::GetProbeDirections(FVector2D(ViewForward.X, ViewForward.Y), Intent2D, Probes);
+	for (const FVector2D& Probe : Probes)
+	{
+		if (!FindMantleLedge(Ledge, bFromGround, Probe))
+		{
+			continue;
+		}
+		if (!bFromGround && MoveComp)
+		{
+			// Still falling away from the found wall: not a grab, keep looking around.
+			const FVector Velocity = MoveComp->Velocity;
+			const float Approach = -(Velocity.X * Ledge.WallNormal2D.X + Velocity.Y * Ledge.WallNormal2D.Y);
+			if (Approach < -50.f)
+			{
+				continue;
+			}
+		}
+		bFound = true;
+		break;
+	}
+	if (!bFound)
 	{
 		return false;
 	}
@@ -627,6 +664,19 @@ void AGBPlayerCharacter::StartMantle(const FGBMantleLedge& Ledge)
 	MantleRiseShare = Params.RiseShare;
 	MantleDuration = GBMantle::Duration(Ledge.RiseCm, Params);
 	MantleElapsed = 0.f;
+	// The view turns to the wall during the climb when it faces away from it: the signed shortest yaw delta
+	// from the view to the wall-facing yaw. A wall already in front turns nothing.
+	MantleTotalTurn = 0.f;
+	MantlePrevTurnFraction = 0.f;
+	{
+		const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+		const float WallFacingYaw = FMath::RadiansToDegrees(FMath::Atan2(-Ledge.WallNormal2D.Y, -Ledge.WallNormal2D.X));
+		const float Turn = FRotator::NormalizeAxis(WallFacingYaw - ViewYaw);
+		if (FMath::Abs(Turn) > ReadStat(GBStat::MantleTurnMinAngle, 60.f))
+		{
+			MantleTotalTurn = Turn;
+		}
+	}
 	bMantling = true;
 	ApplyCameraPose();
 }
@@ -640,6 +690,19 @@ void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	MantleElapsed += DeltaSeconds;
 	const float Alpha = GetMantleAlpha();
+	// The view yaw turns to the wall in deltas, so the mouse still works during the climb and both add up.
+	if (MantleTotalTurn != 0.f && Controller)
+	{
+		const float Fraction = GBMantle::TurnFraction(Alpha, MantleRiseShare);
+		const float TurnDelta = (Fraction - MantlePrevTurnFraction) * MantleTotalTurn;
+		MantlePrevTurnFraction = Fraction;
+		if (!FMath::IsNearlyZero(TurnDelta))
+		{
+			FRotator ControlRotation = Controller->GetControlRotation();
+			ControlRotation.Yaw = FRotator::NormalizeAxis(ControlRotation.Yaw + TurnDelta);
+			Controller->SetControlRotation(ControlRotation);
+		}
+	}
 	SetActorLocation(GBMantle::EvaluatePath(MantleStart, MantleEnd, Alpha, MantleRiseShare),
 		false, nullptr, ETeleportType::TeleportPhysics);
 	if (MoveComp)
@@ -656,6 +719,8 @@ void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
 		}
 		bMantling = false;
 		MantleElapsed = 0.f;
+		MantleTotalTurn = 0.f;
+		MantlePrevTurnFraction = 0.f;
 	}
 }
 
@@ -668,6 +733,8 @@ void AGBPlayerCharacter::CancelMantle()
 	bMantling = false;
 	MantleElapsed = 0.f;
 	MantleDuration = 0.f;
+	MantleTotalTurn = 0.f;
+	MantlePrevTurnFraction = 0.f;
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		if (!bMovementFrozen)
@@ -1405,12 +1472,38 @@ void AGBPlayerCharacter::PressJump()
 	}
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
-		if (MoveComp->IsMovingOnGround() && TryStartMantle(/*bFromGround*/ true))
+		const bool bClimbed = MoveComp->IsMovingOnGround() && TryStartMantle(/*bFromGround*/ true);
+		MoveInputTestOverride.Reset();
+		if (bClimbed)
 		{
 			return;
 		}
 	}
+	MoveInputTestOverride.Reset();
 	Jump();
+}
+
+void AGBPlayerCharacter::SetMoveInputForTest(const FVector2D& Input)
+{
+	MoveInputTestOverride = Input;
+	// Also as if a Move event came this frame, so the jump that may follow takes off in this direction (OnJumped).
+	LastMoveInput = Input;
+	LastMoveInputFrame = GFrameCounter;
+}
+
+FVector2D AGBPlayerCharacter::GetLiveMoveInput() const
+{
+	if (MoveInputTestOverride.IsSet())
+	{
+		return MoveInputTestOverride.GetValue();
+	}
+	const APlayerController* PC = Cast<APlayerController>(Controller);
+	const UEnhancedPlayerInput* PlayerInput = PC ? Cast<UEnhancedPlayerInput>(PC->PlayerInput) : nullptr;
+	if (PlayerInput && InputSet && InputSet->Move)
+	{
+		return PlayerInput->GetActionValue(InputSet->Move).Get<FVector2D>();
+	}
+	return LastMoveInput;
 }
 
 void AGBPlayerCharacter::InputJump()

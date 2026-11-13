@@ -178,4 +178,130 @@ bool FGBPlayerMantlePathTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerMantleProbeTest, "Glyphbound.Player.MantleProbe",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerMantleProbeTest::RunTest(const FString& Parameters)
+{
+	auto CheckNear = [&](const TCHAR* What, double Actual, double Expected, double Tolerance)
+	{
+		TestTrue(What, FMath::Abs(Actual - Expected) <= Tolerance);
+	};
+	auto AngleDeg = [](const FVector2D& A, const FVector2D& B)
+	{
+		return FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector2D::DotProduct(A.GetSafeNormal(), B.GetSafeNormal()), -1.f, 1.f)));
+	};
+
+	using FProbeList = TArray<FVector2D, TInlineAllocator<GBMantle::MaxProbeDirections>>;
+
+	// Intent: exactly one direction, the normalized intent (also when it is not normalized).
+	{
+		FProbeList WithIntent;
+		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D(0.f, 1.f), WithIntent);
+		TestTrue(TEXT("Intent gives exactly one direction"), WithIntent.Num() == 1);
+		CheckNear(TEXT("Intent direction is the intent X"), WithIntent[0].X, 0.0, 1.e-4);
+		CheckNear(TEXT("Intent direction is the intent Y"), WithIntent[0].Y, 1.0, 1.e-4);
+
+		FProbeList LongIntent;
+		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D(0.f, 5.f), LongIntent);
+		TestTrue(TEXT("Non-normalized intent gives exactly one direction"), LongIntent.Num() == 1);
+		CheckNear(TEXT("Non-normalized intent is normalized X"), LongIntent[0].X, 0.0, 1.e-4);
+		CheckNear(TEXT("Non-normalized intent is normalized Y"), LongIntent[0].Y, 1.0, 1.e-4);
+
+		FProbeList AwayIntent;
+		GBMantle::GetProbeDirections(FVector2D(0.f, -1.f), FVector2D(-2.f, 0.f), AwayIntent);
+		TestTrue(TEXT("Off-view intent gives exactly one direction"), AwayIntent.Num() == 1);
+		CheckNear(TEXT("Off-view intent is normalized X"), AwayIntent[0].X, -1.0, 1.e-4);
+		CheckNear(TEXT("Off-view intent is normalized Y"), AwayIntent[0].Y, 0.0, 1.e-4);
+	}
+
+	// No intent: 8 unit directions starting with the view, ending behind it, 45 degrees apart.
+	{
+		FProbeList All;
+		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D::ZeroVector, All);
+		TestTrue(TEXT("No intent gives 8 directions"), All.Num() == 8);
+		for (int32 i = 0; i < All.Num(); ++i)
+		{
+			CheckNear(TEXT("Each probe direction is unit length"), All[i].Size(), 1.0, 1.e-4);
+		}
+		CheckNear(TEXT("First probe is the view forward X"), All[0].X, 1.0, 1.e-4);
+		CheckNear(TEXT("First probe is the view forward Y"), All[0].Y, 0.0, 1.e-4);
+		CheckNear(TEXT("Last probe is behind the view X"), All[7].X, -1.0, 1.e-4);
+		CheckNear(TEXT("Last probe is behind the view Y"), All[7].Y, 0.0, 1.e-4);
+		const float Cos45 = FMath::Cos(FMath::DegreesToRadians(45.f));
+		const float Sin45 = FMath::Sin(FMath::DegreesToRadians(45.f));
+		CheckNear(TEXT("Second probe is +45 X"), All[1].X, Cos45, 1.e-4);
+		CheckNear(TEXT("Second probe is +45 Y"), All[1].Y, Sin45, 1.e-4);
+		CheckNear(TEXT("Third probe is -45 X"), All[2].X, Cos45, 1.e-4);
+		CheckNear(TEXT("Third probe is -45 Y"), All[2].Y, -Sin45, 1.e-4);
+		for (int32 i = 0; i < All.Num(); ++i)
+		{
+			float Nearest = 180.f;
+			for (int32 j = 0; j < All.Num(); ++j)
+			{
+				if (i != j)
+				{
+					Nearest = FMath::Min(Nearest, AngleDeg(All[i], All[j]));
+				}
+			}
+			CheckNear(TEXT("Each probe's nearest neighbour is 45 degrees away"), Nearest, 45.0, 1.0);
+			for (int32 j = i + 1; j < All.Num(); ++j)
+			{
+				TestTrue(TEXT("All 8 probe directions are distinct"), AngleDeg(All[i], All[j]) > 1.0);
+			}
+		}
+	}
+
+	// A different view forward rotates the whole list (not fixed world axes).
+	{
+		FProbeList East;
+		GBMantle::GetProbeDirections(FVector2D(1.f, 0.f), FVector2D::ZeroVector, East);
+		FProbeList North;
+		GBMantle::GetProbeDirections(FVector2D(0.f, 1.f), FVector2D::ZeroVector, North);
+		TestTrue(TEXT("Rotated view still gives 8 directions"), North.Num() == 8);
+		for (int32 i = 0; i < FMath::Min(East.Num(), North.Num()); ++i)
+		{
+			// Counterclockwise quarter turn: (x, y) -> (-y, x).
+			const FVector2D Rotated(-East[i].Y, East[i].X);
+			CheckNear(TEXT("Rotated view rotates the list X"), North[i].X, Rotated.X, 1.e-3);
+			CheckNear(TEXT("Rotated view rotates the list Y"), North[i].Y, Rotated.Y, 1.e-3);
+		}
+		CheckNear(TEXT("North-first probe is the north view X"), North[0].X, 0.0, 1.e-4);
+		CheckNear(TEXT("North-first probe is the north view Y"), North[0].Y, 1.0, 1.e-4);
+		// The whole priority order: nearest to the view first, counterclockwise before clockwise.
+		const float OrderDeg[8] = { 0.f, 45.f, -45.f, 90.f, -90.f, 135.f, -135.f, 180.f };
+		for (int32 i = 0; i < FMath::Min(8, East.Num()); ++i)
+		{
+			const float Rad = FMath::DegreesToRadians(OrderDeg[i]);
+			CheckNear(TEXT("Probe order X (0, +45, -45, +90, -90, +135, -135, 180)"), East[i].X, FMath::Cos(Rad), 1.e-4);
+			CheckNear(TEXT("Probe order Y (0, +45, -45, +90, -90, +135, -135, 180)"), East[i].Y, FMath::Sin(Rad), 1.e-4);
+		}
+	}
+
+	// TurnFraction: smoothstep from 0 at Alpha 0 to 1 at Alpha = RiseShare, 1 after.
+	{
+		constexpr float Share = 0.6f;
+		CheckNear(TEXT("TurnFraction is 0 at 0"), GBMantle::TurnFraction(0.f, Share), 0.0, 1.e-6);
+		CheckNear(TEXT("TurnFraction is 1 at RiseShare"), GBMantle::TurnFraction(Share, Share), 1.0, 1.e-6);
+		CheckNear(TEXT("TurnFraction is 1 at 1"), GBMantle::TurnFraction(1.f, Share), 1.0, 1.e-6);
+		const float Half = GBMantle::TurnFraction(Share * 0.5f, Share);
+		TestTrue(TEXT("TurnFraction is strictly between at half the rise"), Half > 0.01f && Half < 0.99f);
+		// Smoothstep, not linear: eases in and out (3t^2 - 2t^3).
+		CheckNear(TEXT("TurnFraction at a quarter of the rise is smoothstep"), GBMantle::TurnFraction(Share * 0.25f, Share), 0.15625, 1.e-4);
+		CheckNear(TEXT("TurnFraction at three quarters of the rise is smoothstep"), GBMantle::TurnFraction(Share * 0.75f, Share), 0.84375, 1.e-4);
+		float Prev = -1.f;
+		for (int32 i = 0; i <= 50; ++i)
+		{
+			const float Value = GBMantle::TurnFraction(i / 50.f, Share);
+			TestTrue(TEXT("TurnFraction never decreases"), Value >= Prev - 1.e-6f);
+			Prev = Value;
+		}
+		const float AtPointThreeA = GBMantle::TurnFraction(0.3f, 0.6f);
+		const float AtPointThreeB = GBMantle::TurnFraction(0.3f, 0.8f);
+		TestTrue(TEXT("TurnFraction at 0.3 moves with RiseShare"), FMath::Abs(AtPointThreeA - AtPointThreeB) > 0.05f);
+	}
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

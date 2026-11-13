@@ -87,4 +87,48 @@ namespace GBMantle
 		}
 		return Pose;
 	}
+
+	void GetProbeDirections(const FVector2D& ViewForward, const FVector2D& IntentDir, TArray<FVector2D, TInlineAllocator<MaxProbeDirections>>& Out)
+	{
+		Out.Reset();
+		if (!IntentDir.IsNearlyZero())
+		{
+			Out.Add(IntentDir.GetSafeNormal());
+			return;
+		}
+		FVector2D Forward = ViewForward.GetSafeNormal();
+		if (Forward.IsNearlyZero())
+		{
+			Forward = FVector2D(1.f, 0.f);
+		}
+		// 0, +45, -45, +90, -90, +135, -135, 180 degrees (positive = counterclockwise).
+		static constexpr float OffsetsDeg[MaxProbeDirections] = { 0.f, 45.f, -45.f, 90.f, -90.f, 135.f, -135.f, 180.f };
+		for (float OffsetDeg : OffsetsDeg)
+		{
+			const float Radians = FMath::DegreesToRadians(OffsetDeg);
+			const float C = FMath::Cos(Radians);
+			const float S = FMath::Sin(Radians);
+			Out.Add(FVector2D(Forward.X * C - Forward.Y * S, Forward.X * S + Forward.Y * C).GetSafeNormal());
+		}
+	}
+
+	float TurnFraction(float Alpha, float RiseShare)
+	{
+		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
+		const float Share = FMath::Clamp(RiseShare, 0.f, 1.f);
+		if (A <= 0.f)
+		{
+			return 0.f;
+		}
+		if (Share <= KINDA_SMALL_NUMBER)
+		{
+			return 1.f;
+		}
+		if (A >= Share)
+		{
+			return 1.f;
+		}
+		const float T = A / Share;
+		return T * T * (3.f - 2.f * T);
+	}
 }

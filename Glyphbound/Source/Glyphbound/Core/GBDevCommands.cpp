@@ -3351,7 +3351,131 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE mantle air FAILED: feet %.0f (expected 600 +- 10) x %.0f (expected over 1800)"), Feet, Loc.X);
 			}
 		}, 1.0f);
-		Add(M + 3.5f, TEXT("mantle: back to the arena start"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(M + 3.5f, TEXT("mantle: back to the 200 cm wall, standing jump press"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			// LastMoveInput is protected: ReleaseHeldInputs clears it instead of reading it back.
+			Player->ReleaseHeldInputs();
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 90.f, 0.f)); // back to the wall
+			}
+			Player->SetActorLocation(FVector(-2500.f, -1100.f + R + 5.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Walking);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			MarkSim(World);
+			Player->PressJump();
+			const bool bStarted = Player->IsMantling();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back started=%d"), bStarted ? 1 : 0);
+			if (!bStarted)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back FAILED: no mantle started on jump press with the back to the 200 cm wall"));
+			}
+		});
+		Add(M + 4.9f, TEXT("mantle: back climb result"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			(void)R;
+			const FVector Loc = Player->GetActorLocation();
+			const float Feet = Loc.Z - HH;
+			const UCharacterMovementComponent* GroundMove = Player->GetCharacterMovement();
+			const bool bWalking = !Player->IsMantling() && GroundMove && GroundMove->IsMovingOnGround();
+			const float ControlYaw = Player->GetController() ? Player->GetController()->GetControlRotation().Yaw : 0.f;
+			const float YawError = FMath::Abs(FRotator::NormalizeAxis(ControlYaw + 90.f));
+			const bool bOnTop = FMath::Abs(Feet - 200.f) <= 10.f && Loc.Y < -1100.f;
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back feet=%.0f y=%.0f mantling=%d walking=%d yaw=%.0f"), Feet, Loc.Y,
+				Player->IsMantling() ? 1 : 0, bWalking ? 1 : 0, ControlYaw);
+			if (!bOnTop || !bWalking || YawError > 15.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back FAILED: onTop=%d walking=%d yaw error=%.0f (expected the 200 cm top and the view turned to -90)"),
+					bOnTop ? 1 : 0, bWalking ? 1 : 0, YawError);
+			}
+		}, 1.0f);
+		Add(M + 5.1f, TEXT("mantle: back to the platform, air grab"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 180.f, 0.f)); // back to the platform
+			}
+			Player->SetActorLocation(FVector(1800.f - R - 5.f, 2600.f, 600.f - 120.f + HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Falling);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			MarkSim(World);
+		});
+		Add(M + 6.1f, TEXT("mantle: back air result"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			(void)R;
+			const FVector Loc = Player->GetActorLocation();
+			const float Feet = Loc.Z - HH;
+			const UCharacterMovementComponent* AirMove = Player->GetCharacterMovement();
+			const bool bWalking = !Player->IsMantling() && AirMove && AirMove->IsMovingOnGround();
+			const float ControlYaw = Player->GetController() ? Player->GetController()->GetControlRotation().Yaw : 0.f;
+			const float YawError = FMath::Abs(FRotator::NormalizeAxis(ControlYaw));
+			const bool bOnTop = FMath::Abs(Feet - 600.f) <= 10.f && Loc.X > 1800.f;
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle back air feet=%.0f x=%.0f mantling=%d walking=%d yaw=%.0f"), Feet, Loc.X,
+				Player->IsMantling() ? 1 : 0, bWalking ? 1 : 0, ControlYaw);
+			if (!bOnTop || !bWalking || YawError > 15.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle back air FAILED: onTop=%d walking=%d yaw error=%.0f (expected the 600 cm top and the view turned to 0)"),
+					bOnTop ? 1 : 0, bWalking ? 1 : 0, YawError);
+			}
+		}, 1.0f);
+		Add(M + 6.3f, TEXT("mantle: holding away from a wall behind is a jump"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 90.f, 0.f)); // back to the wall
+			}
+			Player->SetActorLocation(FVector(-2500.f, -1100.f + R + 5.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Walking);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			Player->SetMoveInputForTest(FVector2D(0.f, 1.f)); // forward, away from the wall behind
+			MarkSim(World);
+			MantleJumpStartZ = Player->GetActorLocation().Z;
+			Player->PressJump();
+			const bool bMantling = Player->IsMantling();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle held away mantling=%d"), bMantling ? 1 : 0);
+			if (bMantling)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle held away FAILED: a mantle started while holding away from the wall behind"));
+			}
+		});
+		Add(M + 6.4f, TEXT("mantle: held away result, a real jump away from the wall"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			// The wall is behind (south, -Y): a normal jump forward rises and moves north, never climbs.
+			const UCharacterMovementComponent* Move = Player->GetCharacterMovement();
+			const float Rise = Player->GetActorLocation().Z - MantleJumpStartZ;
+			const float AwaySpeed = Move ? Move->Velocity.Y : 0.f;
+			const bool bJump = Move && Move->MovementMode == MOVE_Falling && Rise > 10.f && AwaySpeed > 100.f && !Player->IsMantling();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle held away jump=%d rise=%.0f away_speed=%.0f mantling=%d"), bJump ? 1 : 0, Rise, AwaySpeed, Player->IsMantling() ? 1 : 0);
+			if (!bJump)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle held away FAILED: expected a jump away from the wall (falling, rising, moving north, not climbing)"));
+			}
+		}, 0.2f);
+		Add(M + 6.5f, TEXT("mantle: back to the arena start"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			FVector EnemySpawn;
 			FVector PlayerSpot;
@@ -3367,7 +3491,7 @@ namespace GBSmokeRun
 				Move->Velocity = FVector::ZeroVector;
 			}
 		});
-		Add(U + 40.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(U + 43.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);
