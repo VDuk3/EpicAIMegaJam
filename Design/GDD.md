@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.45, 2026-11-13** — owner's vision plus fifteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.46, 2026-11-13** — owner's vision plus sixteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.46 (2026-11-13): owner: **the real map**, the same site in two times. The past is the **medieval castle**; the future is a **futuristic military base** on the same site. Besides the intro and the Valkyrie, the future has **several wave arenas** and a **mini-boss: the tentacle machine** already in the project. Combat is **fast and wide** (Cyberpunk 2077 style): the main fights happen in **large rooms**, only a few in corridors. The map is a bit bigger than "compact"; the Blender spaceship corridor is prepared and used. Spaces are built from the **kits' modular pieces**; only the castle of the medieval pack is kept (it will be converted to pixel art). The plan, drawn by a Claude Fable 5.2 planner, is in `Design/Levels/WORLD_PLAN.md` (§4 "The site"); every zone name, lock rule and reward in it is provisional.
 - v0.45 (2026-11-13): owner: **climbing does not need the view on the wall** ("with your back to it, for example"). The climb now follows the player's intent: the held direction on the ground, the jump's direction in the air, and all around when there is none. When the wall is behind or beside the view, the view turns to it during the climb (architect, provisional; §18 "Ledge climb").
 - v0.44 (2026-11-13): owner: **the player climbs ledges**. A jump that ends at the edge of a structure climbs onto it, and pressing jump right against a block climbs it instead of jumping when one jump can reach its top. In first person the climb is the camera dipping over the edge, the held item dropping out of view and the two pixel hands gripping the ledge. Architect, provisional: the reach, durations and the "facing the wall" rule (§18 "Ledge climb"); the test arena's gates were re-sized for the extra reach.
 - v0.43 (2026-11-13): owner: **the weapon enchant's element is chosen in its QTE**, always in the same places (never shuffled): a first step shows fire (A / Square), lightning (W / Triangle) and ice (D / Circle); the key picks it, then the usual key sequence and gesture follow. Also from the owner the same day: menus play a transition when their look changes, every skill point asks for confirmation, and the weapon tree is a hub with gun pages (v0.39 to v0.42).
@@ -109,6 +110,12 @@ Working title: **TBD**. Project code name: **Glyphbound**.
 - **Era travel restores everything** (health, mana, ammo), a bit like the rest points of classic action RPGs. Portals are the safe points of the map.
 
 - A third, separate map unlocks late: a **dimension between space and time** where the true final boss lives (see §11).
+
+### The site (owner, 2026-11-13; plan provisional)
+- **Past:** a medieval castle. **Future:** a futuristic military base built on the same site, on the castle's wall lines, so the player recognises it.
+- **Plan:** `Design/Levels/WORLD_PLAN.md`, with top-down plans of both eras and `world_layout.json` (every coordinate). A 3 x 3 block castle on a 16 m grid around a courtyard. The courtyard is the base's yard, the Great Hall is the Containment Hall (the Valkyrie in both eras), the two wings hold the Fire and Lightning zones in the past and wave arenas in the future, the north corners hold the Ice and Air zones in the past and only corridors in the future. South of the gate, future only, a damaged corridor and a hangar where the tentacle machine fights as a mini-boss (provisional name "the Herald").
+- **Route (provisional):** 21 stations, six portals, four era-gated zones, three cross-era unlocks; about 22 to 25 minutes for a first run.
+- **Building:** a greybox first (collision boxes, `Tools/Jam/Build-SiteMap.py`), then the kits as looks. Maps: `/Game/Glyphbound/Maps/Site` with the sub-levels `Site_Past` and `Site_Future`.
 
 ### Story
 - The player is a **mage** who travels to the castle out of **curiosity**: he had heard it was a mysterious place.

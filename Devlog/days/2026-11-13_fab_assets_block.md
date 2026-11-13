@@ -154,6 +154,29 @@ It read mesh bounds, vertices and collision through the Editor's MCP, and change
 
 Its source files moved to `Glyphbound/SourceArt/Environment/SpaceshipCorridor/`.
 
+## Assembly starts (owner: "Sí, adelante")
+**The work is split by the team rules.**
+- **Code (Muse Spark 1.3 Contributor via OpenCode, the default implementer):** the plan's code needs. Brief: `Prompts/site_code_needs.md`.
+  - `AGBEraBlock`: a placed piece that exists in one era and/or depends on flags.
+  - The seal (`AGBSeal`) and caption cutscenes.
+  - `RequiredFlags` on encounters, plus a starter interactable for the Valkyrie fights.
+  - The data: a gun-carrier orc, the Herald, two corridor skirmishes.
+  - The final portal.
+- **Map (the architect, as the owner asked):** the assembly in the Editor.
+
+**The town is gone.**
+- **The keep list:** the planner's `castle_keep_list.txt` (101 packages: the 31 castle meshes and their materials and textures).
+- **Deleted:** with the Editor closed, the other 1,697 `CastleTown` files (7.2 GB) and the pack's seven orphan `__ExternalActors__` / `__ExternalObjects__` folders.
+- **Where they went:** the Windows Recycle Bin, not a permanent delete.
+- **Result:** `CastleTown` is now 651 MB.
+
+**The map builder.** `Tools/Jam/Build-SiteMap.py` runs in the Editor's Python and reads `world_layout.json`. It builds `/Game/Glyphbound/Maps/Site` (persistent) and its sub-levels `Site_Past` / `Site_Future`.
+- **Shell, ceilings and structures:** engine cubes with the engine's world-aligned grid material, and ramps for the stairs.
+- **Era blocks:** door locks, pylons and the cryo tube, once `AGBEraBlock` exists.
+- **Gameplay actors:** portals, encounters (spawn points, trigger boxes, required flags), checkpoints, the player start, the navmesh bounds and `KillZ`.
+- **Lighting:** sun, sky light, atmosphere and fog per era.
+- **Idempotent:** every generated actor is tagged `GBGen`, and a run replaces only those.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.
