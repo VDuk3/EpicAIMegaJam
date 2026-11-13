@@ -62,21 +62,38 @@ PART_TONES = {2: (0.70, 0.42, 0.55),    # sight: darker satin metal
               3: (0.55, 0.38, 0.70),    # trigger: steel
               4: (0.45, 0.82, 0.00)}    # butt pad: rubber
 BUTT_BOX = ((-0.060, 0.410, 0.090), (0.060, 0.520, 0.320))
-# The cell: its glow is ragged in the texture and its surface is lumpy. A cylinder is modelled over it, along Y (axis
-# and radius fitted to the glowing texels; front and rear ends given): dim glass with three bright rings, slightly
-# proud, where the texture has its bright bands (centre, half width). The GLB's own cell underneath goes dark, and
-# whatever else glows inside the box is put out.
+# The handguard's strip is on its top face; the projection spilled it onto the sides as ragged blobs. Glow there only
+# on faces that look up, within GLOW_STRIP_HALF of the centre line; none on the barrel's top (frost).
 GLOW_UP_ONLY = ((-0.070, -0.520, 0.185), (0.070, -0.240, 0.240))
-GLOW_STRIP_HALF = 0.013    # ...and within this of the centre line
-GLOW_NONE = [((-0.060, -0.262, 0.185), (0.060, -0.110, 0.270))]   # the barrel's top between handguard and sight: frost
+GLOW_STRIP_HALF = 0.013
+GLOW_NONE = [((-0.060, -0.262, 0.185), (0.060, -0.110, 0.270))]
+# The cell. In the GLB it is a lumpy cylinder with a ragged glow, fused into the body, in a bay under the barrel
+# whose two walls lean forward (the forend's rear wall 14 deg, the receiver's front wall 20.5 deg: CELL_WALLS gives
+# each wall's y at the axis height and its slope, y per z). The first modelled cell was a plain cylinder with square
+# ends, fatter than the bay: it cut through both walls at a slant (owner: "it lacks form, looks out of place and
+# crooked"). Now: the GLB's own cell is deleted (faces within CELL_GONE of the fitted axis that face away from it),
+# and a canister takes its place on the same axis: a metal collar at each end, long enough to sink into its wall,
+# a thinner glass body that glows evenly, two metal bands, and four guard rods from collar to collar.
 CELL_BOX = ((-0.045, -0.236, 0.098), (0.045, -0.114, 0.178))
-CELL_SKIN = (-0.009, 0.004)   # metres from the fitted cylinder that still count as the cell (it has grooves)
+CELL_WALLS = ((-0.2415, -0.25), (-0.1100, -0.375))
+CELL_GONE = 0.0315
+CELL_COLLAR, CELL_STEP, CELL_GLASS_R, CELL_BAND_R = 0.0305, 0.0285, 0.0258, 0.0276
+CELL_FRONT = (-0.262, -0.2285, -0.2225)      # y: the front collar's buried end, its step, where the glass starts
+CELL_REAR = (-0.1295, -0.1235, -0.092)       # y: where the glass ends, the rear collar's step, its buried end
+CELL_BANDS = [(-0.192, 0.0026), (-0.160, 0.0026)]     # y of each band's centre, half width
+CELL_RODS = (0.0292, 0.0016, (150.0, 210.0, 30.0, 330.0))   # radius they sit at, their own radius, angles (deg from +X)
+CELL_GLASS_GLOW = 0.36
+CELL_GLASS_BASE = (0.020, 0.085, 0.105)      # dark teal under the glow, so the lights still shade the glass round
+# What holds it: a saddle between the canister and the barrel's underside, sunk into both walls, and a foot under each
+# band, down to the keel. (x half width, z from, z to); the saddle also has its y from and to.
+CELL_SADDLE = (0.011, 0.156, 0.172, -0.256, -0.112)
+CELL_FOOT = (0.012, 0.098, 0.1125, 0.0040)   # ...and each foot's half length along the gun
+CELL_BAY_R = 0.0345        # every leftover of the GLB's cell within this of the axis goes too (not the barrel's underside)
+CELL_SIDES = 40
+CELL_SKIN = (-0.009, 0.004)   # texels this far from the fitted cylinder are the GLB's cell: no details there
 SMALL_ISLAND = 3000        # texels: below this an island is too small to tell a weave on its own
 GLOW_ISLAND = (1200, 0.05) # an island glows if it has this many glowing texels, or this share of them
-CELL_Y = (-0.2295, -0.1235)
-CELL_RINGS = [(-0.2205, 0.0065), (-0.1860, 0.0065), (-0.1340, 0.0065)]
-CELL_DIM = 0.14
-CELL_PROUD, CELL_RING_PROUD, CELL_SIDES = 0.0045, 0.0012, 40   # metres over the fitted radius; sides of the cylinder
+CELL_Y = (-0.2295, -0.1235)   # y range of the GLB's own cell (its texels get no details)
 DEEP = (0.30, 0.65, 0.0)            # deep recesses: (the navy times this, roughness, metallic)
 DEEP_AT = (0.105, 0.065)            # surroundings' brightness where the recess tone starts and where it is full
 DARK_DETAIL = (0.36, 0.80, 0.0)     # (the tone's colour times this, roughness, metallic)
@@ -147,6 +164,18 @@ SCREEN_HALF = (0.0250, 0.0125)
 # The weak-point light: a lens on the sight's rear lower panel, a plane leaning LIGHT_LEAN (y per z) through LIGHT_C.
 LIGHT_C, LIGHT_LEAN = Vector((0.0085, -0.0063, 0.329)), -0.3375
 LIGHT_HALF, LIGHT_SLAB = (0.017, 0.0035), (-0.0020, 0.0026)
+
+# The side plates. The GLB has a slab on each side of the receiver with a painted data screen (owner: "remove that
+# panel that simulates a screen; put some design, something that is not electronic"). The slab stays; its face is
+# redrawn by position: an engraved border, a bolt in each corner, an engraved sigil inlaid with the glow (an abstract
+# mark: a diamond, a smaller one inside, a bar on each side), and three slanted slots. PLATE_BOX holds the left face;
+# the right one is its mirror. Lengths in metres on the plate, u along it towards the rear, v up.
+PLATE_BOX = ((0.036, -0.135, 0.145), (0.050, 0.000, 0.232))
+PLATE_BORDER, PLATE_LINE = 0.0042, 0.0010        # the border's distance from the plate's edge; engraved line width
+PLATE_BOLT = (0.0085, 0.0024)                    # bolts: distance from the edges, radius
+PLATE_SIGIL = (-0.016, 0.0, 0.0150, 0.0105, 0.0014)   # centre u, v; half height, half width of the diamond; line width
+PLATE_SLOTS = (0.021, 0.0105, 0.0125, 0.0022, 3)      # first slot's u; pitch; half length; width; how many
+PLATE_INLAY = 0.80                               # how brightly the sigil's inlay glows (emissive mask)
 
 # Flat tones of the modelled parts (sRGB, roughness, metallic), each on its own block of the atlas.
 DARK_POLYMER = ((0.062, 0.100, 0.135), 0.75, 0.0)   # pump
@@ -516,6 +545,62 @@ def layer(base, value, alpha):
     return base + (np.asarray(value, np.float32) - base) * (alpha[..., None] if base.ndim == 3 else alpha)
 
 
+def band(d, width):
+    """1 on a line of this width around d = 0, 0 away from it, a quarter millimetre of soft edge."""
+    return 1.0 - smoothstep(width / 2 - 0.00025, width / 2 + 0.00025, np.abs(d))
+
+
+def segment(u, v, a, b):
+    """Distance from (u, v) to the segment a-b."""
+    au, av, bu, bv = a[0], a[1], b[0], b[1]
+    t = np.clip(((u - au) * (bu - au) + (v - av) * (bv - av)) / ((bu - au) ** 2 + (bv - av) ** 2), 0.0, 1.0)
+    return np.sqrt((u - au - t * (bu - au)) ** 2 + (v - av - t * (bv - av)) ** 2)
+
+
+for side, facing_bin in ((1.0, 1), (-1.0, 0)):
+    lo_ = (min(side * PLATE_BOX[0][0], side * PLATE_BOX[1][0]), PLATE_BOX[0][1], PLATE_BOX[0][2])
+    hi_ = (max(side * PLATE_BOX[0][0], side * PLATE_BOX[1][0]), PLATE_BOX[1][1], PLATE_BOX[1][2])
+    cand = in_box(lo_, hi_) & (part == 0) & (facing == facing_bin)
+    if cand.sum() < 5000:
+        raise SystemExit("shotgun_build_blend: side plate not found on side %+d" % side)
+    plane = float(np.median(pos[..., 0][cand]))
+    plate = cand & (np.abs(pos[..., 0] - plane) < 0.0012)
+    yz = np.stack([pos[..., 1][plate], pos[..., 2][plate]], axis=1).astype(np.float64)
+    centre = yz.mean(axis=0)
+    w_, vecs = np.linalg.eigh(np.cov((yz - centre).T))
+    ax_u = vecs[:, 1] * (1.0 if vecs[0, 1] > 0 else -1.0)       # the long axis, towards the rear
+    ax_v = np.array([-ax_u[1], ax_u[0]])                        # across it, upwards
+    pu_, pv_ = (yz - centre) @ ax_u, (yz - centre) @ ax_v
+    u0, u1 = np.percentile(pu_, (1.5, 98.5))
+    v0, v1 = np.percentile(pv_, (1.5, 98.5))
+    U, V = pu_ - (u0 + u1) / 2, pv_ - (v0 + v1) / 2
+    hu, hv = (u1 - u0) / 2, (v1 - v0) / 2
+    print("PLATE side %+d: plane x %.1f mm, %d texels, %.1f x %.1f mm, tilted %.1f deg" %
+          (side, plane * 1000, plate.sum(), hu * 2000, hv * 2000, math.degrees(math.atan2(ax_u[1], ax_u[0]))))
+    engraved = band(np.maximum(np.abs(U) - (hu - PLATE_BORDER), np.abs(V) - (hv - PLATE_BORDER)), PLATE_LINE)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            bu, bv = su * (hu - PLATE_BOLT[0]), sv * (hv - PLATE_BOLT[0])
+            r_ = np.sqrt((U - bu) ** 2 + (V - bv) ** 2)
+            engraved = np.maximum(engraved, band(r_ - PLATE_BOLT[1], PLATE_LINE))
+            engraved = np.maximum(engraved, band(segment(U, V, (bu - 0.0014, bv - 0.0008), (bu + 0.0014, bv + 0.0008)), 0.0007))
+    first, pitch, half_len, width, count = PLATE_SLOTS
+    for k in range(count):
+        cu = first + k * pitch
+        engraved = np.maximum(engraved, band(segment(U, V, (cu - 0.0030, -half_len), (cu + 0.0030, half_len)), width))
+    su_, sv_, sh, sw, line = PLATE_SIGIL
+    scale = sh * sw / math.hypot(sh, sw)                        # turns the diamond's |u|/w + |v|/h - 1 into a distance
+    d_outer = (np.abs(U - su_) / sw + np.abs(V - sv_) / sh - 1.0) * scale
+    d_inner = (np.abs(U - su_) / (sw * 0.36) + np.abs(V - sv_) / (sh * 0.36) - 1.0) * scale * 0.36
+    inlay = np.maximum(band(d_outer, line), 1.0 - smoothstep(-0.00025, 0.00025, d_inner))
+    for sgn in (-1, 1):
+        inlay = np.maximum(inlay, band(segment(U, V, (su_ + sgn * (sw + 0.0030), sv_), (su_ + sgn * (sw + 0.0095), sv_)), line))
+    dark[plate] = engraved
+    carbon[plate] = 0.0
+    deep[plate] = 0.0
+    neon_a[plate] = inlay * PLATE_INLAY
+    keep[plate] = False
+
 shade = 1.0 + SHADE * np.clip(around / mid - 1.0, -1.0, 1.0)
 base = navy[None, None, :] * shade[..., None]
 rough = np.full((H, W), NAVY[0], np.float32)
@@ -579,12 +664,9 @@ def claim_block(what):
     return block, ((fx + 0.5) / W, (fy + 0.5) / H)
 
 
-_, CELL_DIM_UV = claim_block("the cell's glass")
-neon_a[BLOCKS[-1]] = CELL_DIM
-base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEON_BASE[0], 0.18, 0.0, 1.0
-_, CELL_RING_UV = claim_block("the cell's rings")
-neon_a[BLOCKS[-1]] = 1.0
-base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEON_BASE[0], 0.18, 0.0, 1.0
+_, CELL_GLASS_UV = claim_block("the cell's glass")
+neon_a[BLOCKS[-1]] = CELL_GLASS_GLOW
+base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = CELL_GLASS_BASE, 0.12, 0.0, 1.0
 _, STRIP_UV = claim_block("the energy strip")
 neon_a[BLOCKS[-1]] = 1.0
 base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEON_BASE[0], NEON_BASE[1], 0.0, 1.0
@@ -636,6 +718,31 @@ bpy.ops.mesh.select_all(action="SELECT")
 bpy.ops.mesh.remove_doubles(threshold=1e-5)
 bpy.ops.mesh.select_all(action="DESELECT")
 bpy.ops.object.mode_set(mode="OBJECT")
+# The GLB's own cell goes: body faces in the bay, near the fitted axis, that face away from it (the barrel's underside
+# and the walls face towards it and stay).
+n_poly = len(me.polygons)
+p_c = np.empty(n_poly * 3, np.float32)
+me.polygons.foreach_get("center", p_c)
+p_c = p_c.reshape(-1, 3)
+p_n = np.empty(n_poly * 3, np.float32)
+me.polygons.foreach_get("normal", p_n)
+p_n = p_n.reshape(-1, 3)
+p_part = np.empty(n_poly, np.int32)
+me.attributes["part"].data.foreach_get("value", p_part)
+rx, rz = p_c[:, 0] - CELL_AXIS[0], p_c[:, 2] - CELL_AXIS[1]
+rr = np.sqrt(rx ** 2 + rz ** 2)
+outward = (p_n[:, 0] * rx + p_n[:, 2] * rz) / np.maximum(rr, 1e-6)
+wall_f = CELL_WALLS[0][0] + CELL_WALLS[0][1] * (p_c[:, 2] - CELL_AXIS[1])
+wall_r = CELL_WALLS[1][0] + CELL_WALLS[1][1] * (p_c[:, 2] - CELL_AXIS[1])
+in_bay = (p_part == 0) & (p_c[:, 1] > wall_f + 0.003) & (p_c[:, 1] < wall_r - 0.003)
+gone = in_bay & (rr < CELL_GONE) & (outward > 0.15)
+barrel_underside = (outward < -0.3) & (p_c[:, 2] > 0.160)
+gone |= in_bay & (rr < CELL_BAY_R) & (p_c[:, 2] > 0.114) & ~barrel_underside
+me.polygons.foreach_set("select", gone.tolist())
+bpy.ops.object.mode_set(mode="EDIT")
+bpy.ops.mesh.delete(type="FACE")
+bpy.ops.object.mode_set(mode="OBJECT")
+print("CELL faces of the GLB's own cell deleted:", int(gone.sum()))
 bpy.ops.mesh.customdata_custom_splitnormals_clear()
 me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
 me.set_sharp_from_angle(angle=math.radians(SHARP_ANGLE))
@@ -711,42 +818,50 @@ print("CABLES tris", sum(len(p.vertices) - 2 for p in cm.polygons))
 
 
 def build_cell():
-    """The cell: a closed cylinder along Y in bands, glass and rings in turn; each band's UVs sit on its flat block."""
+    """The canister: rings along Y joined into tubes, each tube's UVs on its flat block; then the guard rods."""
     b = bmesh.new()
-    layer_uv = b.loops.layers.uv.verify()
-    cuts = [CELL_Y[0]]
-    for centre, half in sorted(CELL_RINGS):
-        cuts += [centre - half, centre + half]
-    cuts.append(CELL_Y[1])
     ax, az = CELL_AXIS
+    metal_uv, glass_uv = FLAT_UV["metal"], CELL_GLASS_UV
+    c = 0.0007                                             # chamfer of the collars' and bands' corners
+    # (y, radius) corners of the outline from front to rear, and what the stretch after each corner is made of
+    outline = [(CELL_FRONT[0], CELL_COLLAR, "m"), (CELL_FRONT[1] - c, CELL_COLLAR, "m"), (CELL_FRONT[1], CELL_COLLAR - c, "m"),
+               (CELL_FRONT[1], CELL_STEP, "m"), (CELL_FRONT[2] - c, CELL_STEP, "m"), (CELL_FRONT[2], CELL_STEP - c, "m"),
+               (CELL_FRONT[2], CELL_GLASS_R, "g")]
+    for centre, half in sorted(CELL_BANDS):
+        outline += [(centre - half, CELL_GLASS_R, "m"), (centre - half, CELL_BAND_R - c, "m"), (centre - half + c, CELL_BAND_R, "m"),
+                    (centre + half - c, CELL_BAND_R, "m"), (centre + half, CELL_BAND_R - c, "m"), (centre + half, CELL_GLASS_R, "g")]
+    outline += [(CELL_REAR[0], CELL_GLASS_R, "m"), (CELL_REAR[0], CELL_STEP - c, "m"), (CELL_REAR[0] + c, CELL_STEP, "m"),
+                (CELL_REAR[1], CELL_STEP, "m"), (CELL_REAR[1], CELL_COLLAR - c, "m"), (CELL_REAR[1] + c, CELL_COLLAR, "m"),
+                (CELL_REAR[2], CELL_COLLAR, "m")]
 
-    def loop_at(y_, r_):
-        return [b.verts.new((ax + r_ * math.cos(2 * math.pi * k / CELL_SIDES), y_, az + r_ * math.sin(2 * math.pi * k / CELL_SIDES)))
-                for k in range(CELL_SIDES)]
+    def loop_at(cx, cz, y_, r_, sides):
+        return [b.verts.new((cx + r_ * math.cos(2 * math.pi * k / sides), y_, cz + r_ * math.sin(2 * math.pi * k / sides)))
+                for k in range(sides)]
 
     def tube(a_, c_, uv_c):
-        for k in range(CELL_SIDES):
-            j = (k + 1) % CELL_SIDES
-            f = b.faces.new((a_[k], a_[j], c_[j], c_[k]))
-            for l_ in f.loops:
-                l_[layer_uv].uv = uv_c
+        faces = []
+        for k in range(len(a_)):
+            j = (k + 1) % len(a_)
+            faces.append(b.faces.new((a_[k], a_[j], c_[j], c_[k])))
+        set_uv(b, faces, uv_c)
 
-    prev = None
-    for i in range(len(cuts) - 1):
-        is_ring = i % 2 == 1
-        r_ = CELL_R + CELL_PROUD + (CELL_RING_PROUD if is_ring else 0.0)
-        a_, c_ = loop_at(cuts[i], r_), loop_at(cuts[i + 1], r_)
-        if prev is not None:
-            tube(prev, a_, CELL_RING_UV)                # the step between a band and the next
-        tube(a_, c_, CELL_RING_UV if is_ring else CELL_DIM_UV)
-        if i == 0:
-            f = b.faces.new(a_)
-            for l_ in f.loops:
-                l_[layer_uv].uv = CELL_DIM_UV
-        prev = c_
-    f = b.faces.new(list(reversed(prev)))
-    for l_ in f.loops:
-        l_[layer_uv].uv = CELL_DIM_UV
+    rings = [loop_at(ax, az, y_, r_, CELL_SIDES) for y_, r_, _ in outline]
+    for (a_, c_), (_, _, kind) in zip(zip(rings, rings[1:]), outline):
+        tube(a_, c_, glass_uv if kind == "g" else metal_uv)
+    set_uv(b, [b.faces.new(rings[0]), b.faces.new(list(reversed(rings[-1])))], metal_uv)
+    rod_at, rod_r, angles = CELL_RODS
+    for deg in angles:
+        cx, cz = ax + rod_at * math.cos(math.radians(deg)), az + rod_at * math.sin(math.radians(deg))
+        a_, c_ = loop_at(cx, cz, CELL_FRONT[1] - 0.002, rod_r, 8), loop_at(cx, cz, CELL_REAR[1] + 0.002, rod_r, 8)
+        tube(a_, c_, metal_uv)
+        set_uv(b, [b.faces.new(a_), b.faces.new(list(reversed(c_)))], metal_uv)
+    world_axes = (Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0)))
+    centre_line = Vector((ax, 0.0, 0.0))
+    hw, z0, z1, y0, y1 = CELL_SADDLE
+    box(b, centre_line, *world_axes, (-hw, y0, z0), (hw, y1, z1), metal_uv)
+    hw, z0, z1, half = CELL_FOOT
+    for centre, _ in CELL_BANDS:
+        box(b, centre_line, *world_axes, (-hw, centre - half, z0), (hw, centre + half, z1), metal_uv)
     bmesh.ops.recalc_face_normals(b, faces=b.faces[:])
     bmesh.ops.triangulate(b, faces=b.faces[:])
     for f in b.faces:
@@ -759,7 +874,8 @@ def build_cell():
     ob = bpy.data.objects.new("Shotgun_Cell", new_me)
     scene.collection.objects.link(ob)
     new_me.set_sharp_from_angle(angle=math.radians(SHARP_ANGLE))
-    print("MODELLED Shotgun_Cell tris", len(new_me.polygons), "radius %.1f mm" % ((CELL_R + CELL_PROUD) * 1000))
+    print("MODELLED Shotgun_Cell tris", len(new_me.polygons), "glass radius %.1f mm, collars %.1f mm" %
+          (CELL_GLASS_R * 1000, CELL_COLLAR * 1000))
     return ob
 
 
