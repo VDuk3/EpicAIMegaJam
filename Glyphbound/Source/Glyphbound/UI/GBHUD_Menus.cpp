@@ -1524,9 +1524,9 @@ void AGBHUD::DrawUnlockConfirm(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 	const FVector2D AskSize = UiText(Skin, EGBTextSize::Body, EGBTextTone::Normal, Ask, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY, bCyber ? 0.f : 0.5f);
 	UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, Detail, bCyber ? BX + Pad : BX + BoxW * 0.5f, TextY + AskSize.Y + (bCyber ? 8.f * S : 2.f * P), bCyber ? 0.f : 0.5f);
 
-	// Buttons: Confirm (Enter) and Cancel (Esc), right-aligned in cyberpunk, centred in RPG.
-	const FString YesText(TEXT("Enter  Confirm"));
-	const FString NoText(TEXT("Esc  Cancel"));
+	// Buttons: Confirm and Cancel (owner: no key names on them; Enter and Esc still work), right-aligned in cyberpunk, centred in RPG.
+	const FString YesText(TEXT("Confirm"));
+	const FString NoText(TEXT("Cancel"));
 	const float BtnH = bCyber ? 40.f * S : 13.f * P;
 	const float YesW = UiMeasure(Skin, EGBTextSize::Small, YesText).X + (bCyber ? 44.f * S : 14.f * P);
 	const float NoW = UiMeasure(Skin, EGBTextSize::Small, NoText).X + (bCyber ? 44.f * S : 14.f * P);

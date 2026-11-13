@@ -45,3 +45,8 @@ Sol found no way to spend a point without the dialog, to spend twice, or to buy 
 - `menutransition_into_cyber_1080.png`: a third of the way into the transition to cyberpunk. The scan line has revealed the Spells page; the stone below it is still the old look.
 - `menutransition_into_rpg_1080.png`: the pixel dissolve into the RPG Skills page, mid-way.
 - `skillconfirm_cyber_1080.png`, `skillconfirm_rpg_720.png`: the dialog in both looks.
+
+## Follow-up: shorter button labels
+Owner: *"En los botones de confirmacion de uso de skill point, que solo diga Confirm y Cancel, no es necesario que diga Enter y Esc"* ("On the skill point confirmation buttons, just Confirm and Cancel; there is no need to say Enter and Esc").
+
+The buttons now read **Confirm** and **Cancel**; Enter and Esc still work. The change was checked with the UI smoke at 1080p (`media/2026-11-13/skillconfirm_rpg_short_labels_1080.png`), and the Editor and game builds both succeeded.
