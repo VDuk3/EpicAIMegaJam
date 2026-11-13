@@ -27,6 +27,7 @@ TRIGGER_PIVOT = Vector((CX, 0.125, 0.003))
 MAG_PIVOT = Vector((CX, 0.032, -0.028))
 MAG_OUT = Vector((0.0, -0.02, -0.17))   # slide-out vector of the magazine on reload, source frame
 TURN = Matrix.Rotation(math.pi / 2, 4, "Z")
+SHARP_ANGLE = 30.0   # degrees: edges sharper than this are shaded hard
 # Neon strip span along Y (source frame): from its muzzle end to its rear end, below the sight.
 STRIP_Y0, STRIP_Y1, STRIP_ZMAX = -0.345, 0.085, 0.1
 
@@ -104,6 +105,9 @@ def build(name, pivot, faces=None, material=None, extra=None, imbue=False, slot_
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
+    # The GLB's custom normals do not survive the bmesh round trip, and every face is smooth-shaded: the hard-surface
+    # gun rendered soft and rounded (owner: "it looks made of jelly"). Hard edges above SHARP_ANGLE restore the panels.
+    me.set_sharp_from_angle(angle=math.radians(SHARP_ANGLE))
     for m in materials:
         me.materials.append(m)
     ob = bpy.data.objects.new(name, me)

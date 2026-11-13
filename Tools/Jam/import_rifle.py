@@ -29,9 +29,12 @@ TEXTURES = {
     "T_Rifle_BaseColor": (unreal.TextureCompressionSettings.TC_DEFAULT, True),
     "T_Rifle_EmissiveMask": (unreal.TextureCompressionSettings.TC_MASKS, False),
 }
-MAX_TEXTURE_SIZE = 2048   # the Tripo maps are 4096; half is plenty for a viewmodel and keeps the package small
+MAX_TEXTURE_SIZE = 4096   # the Tripo maps at full size: at 2048 the parts nearest the camera looked blurry and soft
 RIFLE_MINT = (0.05, 0.9, 0.6)
 ALBEDO_SCALE = 0.8
+ROUGH_POLYMER = 0.68
+ROUGH_METAL = 0.36
+METAL_DARK = 0.6
 
 SOLID = "M_GunSolid"
 SLOT_MATERIALS = {
@@ -228,13 +231,27 @@ def opaque(material):
 
 
 def surface(g, textures):
-    """Albedo from the Tripo map; white polymer roughness and metallic (the source has no ORM). Returns the mask."""
+    """Albedo from the Tripo map; roughness and metallic derived from its brightness (no ORM). Returns the mask."""
     base = g.node(unreal.MaterialExpressionTextureSample, -1400, -600, texture=textures["T_Rifle_BaseColor"],
                   sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
     # The white polymer read washed out next to the pistol in the arena light: albedo x ALBEDO_SCALE.
     g.out(g.mul(base, g.const(ALBEDO_SCALE, -1200, -450), -900, -600, a_out="RGB"), "", unreal.MaterialProperty.MP_BASE_COLOR)
-    g.out(g.const(0.15, -600, -450), "", unreal.MaterialProperty.MP_METALLIC)
-    g.out(g.const(0.42, -600, -380), "", unreal.MaterialProperty.MP_ROUGHNESS)
+    # No ORM in the source: the albedo's brightness tells polymer from metal. Light parts are matte white polymer
+    # (roughness ROUGH_POLYMER, not metallic); dark parts are satin metal (ROUGH_METAL, metallic METAL_DARK). One flat
+    # value for the whole gun made it read soft and glossy.
+    lum = g.node(unreal.MaterialExpressionDotProduct, -1100, -380)
+    g.connect(base, "RGB", lum, "A")
+    g.connect(g.node(unreal.MaterialExpressionConstant3Vector, -1300, -300, constant=unreal.LinearColor(0.3, 0.59, 0.11, 1.0)), "", lum, "B")
+    light = g.unary(unreal.MaterialExpressionSaturate,
+                    g.mul(g.binary(unreal.MaterialExpressionSubtract, lum, g.const(0.1, -1000, -260), -900, -380),
+                          g.const(1.0 / 0.3, -900, -260), -750, -380), -600, -380)
+    rough = g.node(unreal.MaterialExpressionLinearInterpolate, -400, -380)
+    g.connect(g.const(ROUGH_METAL, -550, -300), "", rough, "A")
+    g.connect(g.const(ROUGH_POLYMER, -550, -240), "", rough, "B")
+    g.connect(light, "", rough, "Alpha")
+    g.out(rough, "", unreal.MaterialProperty.MP_ROUGHNESS)
+    metal = g.mul(g.unary(unreal.MaterialExpressionOneMinus, light, -450, -460), g.const(METAL_DARK, -450, -520), -300, -480)
+    g.out(metal, "", unreal.MaterialProperty.MP_METALLIC)
     return g.node(unreal.MaterialExpressionTextureSample, -1400, -300, texture=textures["T_Rifle_EmissiveMask"],
                   sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
 

@@ -198,7 +198,10 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 		Part->SetRelativeLocation(Location);
 		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Part->SetGenerateOverlapEvents(false);
-		Part->SetCastShadow(false);
+		// Self-shadow only: the gun shades itself (panels, sight, magazine well), which gives it volume; without it the
+		// rifle looked soft, "made of jelly" (owner). It casts no shadow on the world, where a floating gun would look wrong.
+		Part->SetCastShadow(true);
+		Part->bSelfShadowOnly = true;
 		Part->SetStaticMesh(Mesh);
 		Part->RegisterComponent();
 		return Part;
