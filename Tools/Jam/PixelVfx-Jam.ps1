@@ -87,7 +87,9 @@ function Invoke-PixelVfxRun([string]$modeArg, [int]$resX, [int]$resY) {
     if ($Action -eq 'Bake') { $argList += @('-UseFixedTimeStep', '-FPS=60') }
     if ($HardwareRT) {
         # r.RayTracing is read once at startup: it has to come from the ini layer, not from a console command.
-        $argList += @('-dx12', '-ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing=1,r.Lumen.HardwareRayTracing=1')
+        # Ray tracing refuses to start without the skin cache shaders (fatal error in RenderUtils.cpp), so that goes with it.
+        # The first run compiles the ray tracing shader permutations: give it a long -TimeoutSeconds.
+        $argList += @('-dx12', '-ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing=1,r.Lumen.HardwareRayTracing=1,r.SkinCache.CompileShaders=1')
     }
     $sw = [Diagnostics.Stopwatch]::StartNew()
     $p = Start-Process -FilePath $editor -ArgumentList $argList -PassThru

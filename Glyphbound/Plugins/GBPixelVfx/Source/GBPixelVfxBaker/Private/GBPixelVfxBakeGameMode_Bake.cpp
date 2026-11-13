@@ -271,11 +271,15 @@ bool AGBPixelVfxBakeGameMode::BakeSpawnRig(int32 RTWidth)
 	CaptureActor->SetRootComponent(CaptureComp);
 	CaptureComp->RegisterComponent();
 	CaptureComp->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-	CaptureComp->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
-	if (!bLegacyCapture)
+	if (bLegacyCapture)
+	{
+		CaptureComp->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_LegacySceneCapture;
+	}
+	else
 	{
 		CaptureComp->ShowOnlyComponent(NiagaraComp);
 	}
+	CaptureComp->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	CaptureComp->bCaptureEveryFrame = false;
 	CaptureComp->bCaptureOnMovement = false;
 	CaptureComp->bAlwaysPersistRenderingState = true;
@@ -374,7 +378,8 @@ void AGBPixelVfxBakeGameMode::BakeFillCaptureTicks(bool bPrepassNow)
 		CaptureStride = FMath::Max(1, FMath::RoundToInt(static_cast<float>(Job.SimFps) / FMath::Max(1, Job.Fps)));
 		for (int32 i = 0; i < Total; ++i)
 		{
-			CaptureAtTicks.Add(WarmupFrames + i * CaptureStride);
+			// Each sample is scheduled independently so non-divisible rates keep the declared fps.
+			CaptureAtTicks.Add(WarmupFrames + FMath::RoundToInt(static_cast<float>(i * Job.SimFps) / FMath::Max(1, Job.Fps)));
 		}
 		CaptureTotalFrames = Total;
 	}
@@ -436,7 +441,9 @@ void AGBPixelVfxBakeGameMode::BakeAnalysePrepass()
 				const int32 At = y * Frame.Width + x;
 				const float Opacity = Frame.Opacity[At];
 				const FLinearColor& RGB = Frame.Color[At];
-				const float Lum = RGB.R * 0.2126f + RGB.G * 0.7152f + RGB.B * 0.0722f;
+				// Conversion evaluates alpha after Capture.Exposure: the prepass must too,
+				// or a raised exposure can make outer pixels visible only in the final pass.
+				const float Lum = (RGB.R * 0.2126f + RGB.G * 0.7152f + RGB.B * 0.0722f) * Job.Exposure;
 				MaxOpacity = FMath::Max(MaxOpacity, Opacity);
 				MaxLuminance = FMath::Max(MaxLuminance, Lum);
 				float A = Opacity;
@@ -475,6 +482,23 @@ void AGBPixelVfxBakeGameMode::BakeAnalysePrepass()
 			*Job.Id.ToString(), MaxOpacity, MaxLuminance);
 		BakeLogAndCleanup(false);
 		return;
+	}
+	// The stored pivot must stay valid without clamping: include the projected source
+	// origin (the job actor at world 0,0,0) in the framing box before fitting the aspect.
+	{
+		const FRotator CamRotKeys = CaptureComp ? CaptureComp->GetComponentRotation() : FRotator::ZeroRotator;
+		const FVector RightKeys = CamRotKeys.RotateVector(FVector::RightVector);
+		const FVector UpKeys = CamRotKeys.RotateVector(FVector::UpVector);
+		const float FramingHeightKeys = FramingWidthCm * Job.FrameHeight / static_cast<float>(FMath::Max(1, Job.FrameWidth));
+		const FVector RelO = FVector::ZeroVector - FramingCenterCm;
+		const float AO = FVector::DotProduct(RelO, RightKeys) / FMath::Max(1.f, FramingWidthCm) + 0.5f;
+		const float BO = 0.5f - FVector::DotProduct(RelO, UpKeys) / FMath::Max(1.f, FramingHeightKeys);
+		const int32 OPX = FMath::FloorToInt(AO * RTW - 0.5f);
+		const int32 OPY = FMath::FloorToInt(BO * RTH - 0.5f);
+		MinX = FMath::Min(MinX, OPX);
+		MaxX = FMath::Max(MaxX, OPX);
+		MinY = FMath::Min(MinY, OPY);
+		MaxY = FMath::Max(MaxY, OPY);
 	}
 	const bool bTouchesEdge = (MinX <= 1 || MinY <= 1 || MaxX >= RTW - 2 || MaxY >= RTH - 2);
 	if (bTouchesEdge && !bRetriedWide)
@@ -560,14 +584,29 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 	Settings.Hysteresis = Job.Hysteresis;
 	Settings.MinIslandPixels = Job.MinIslandPixels;
 	Settings.bFillHoles = Job.bFillHoles;
+	Settings.MinColorClusterPixels = Job.MinColorClusterPixels;
+	Settings.FadeOutFrames = Job.FadeOutFrames;
+	Settings.FadeOutMode = Job.FadeOutMode;
 	Settings.Outline = Job.Outline;
 	Settings.bLightEnabled = Job.bLightEnabled;
 
 	if (Settings.Ramps.Num() == 0)
 	{
-		UE_LOG(LogGBPixelVfx, Error, TEXT("PVFX %s: the job has no palette ramps."), *Job.Id.ToString());
-		BakeLogAndCleanup(false);
-		return;
+		// A job without Ramps uses one default ramp (the FluidFire fire ramp).
+		UE_LOG(LogGBPixelVfx, Warning, TEXT("PVFX %s: the job has no palette ramps, using the default fire ramp."),
+			*Job.Id.ToString());
+		TArray<FColor> DefaultRamp;
+		const TCHAR* Hex[] = { TEXT("#4B0F0F"), TEXT("#BC2A12"), TEXT("#F03416"),
+			TEXT("#F3610B"), TEXT("#E2DE9C"), TEXT("#F5F3CF") };
+		for (const TCHAR* H : Hex)
+		{
+			FColor Srgb;
+			if (GBPixelVfxConvert::ParseHexColor(FString(H), Srgb))
+			{
+				DefaultRamp.Add(Srgb);
+			}
+		}
+		Settings.Ramps.Add(MoveTemp(DefaultRamp));
 	}
 	TArray<FWorkFrame> Frames;
 	Frames.Reserve(SimFrames.Num());
@@ -614,6 +653,13 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 			FillOnePixelHoles(Map);
 		}
 	}
+	// Color clusters, then the one-shot fade-out, both before the outline.
+	// The light track is computed after the fade so a faded frame emits less.
+	for (FFrameMap& Map : Maps)
+	{
+		RecolorSmallColorClusters(Map, Settings, Settings.MinColorClusterPixels);
+	}
+	ApplyFadeOut(Maps, Settings);
 	TArray<float> Track;
 	float AnchorU = 0.5f;
 	float AnchorV = 0.6f;
@@ -646,8 +692,8 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 	Clip.bLoop = Job.bLoop;
 	Clip.WorldWidthCm = FramingWidthCm;
 	Clip.WorldHeightCm = FramingHeightCm;
-	Clip.PivotU = FMath::Clamp(PivotU, 0.f, 1.f);
-	Clip.PivotV = FMath::Clamp(PivotV, 0.f, 1.f);
+	Clip.PivotU = PivotU;
+	Clip.PivotV = PivotV;
 	if (Job.Facing.Equals(TEXT("Billboard"), ESearchCase::IgnoreCase)) Clip.Facing = EGBPixelVfxFacing::Billboard;
 	else if (Job.Facing.Equals(TEXT("Ground"), ESearchCase::IgnoreCase)) Clip.Facing = EGBPixelVfxFacing::Ground;
 	else if (Job.Facing.Equals(TEXT("Fixed"), ESearchCase::IgnoreCase)) Clip.Facing = EGBPixelVfxFacing::Fixed;
@@ -727,6 +773,7 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 	const int32 SheetW = SheetCols * CellW + (SheetCols + 1) * Gutter;
 	const int32 SheetH = SheetRows * CellH + (SheetRows + 1) * Gutter;
 	const FColor Bg(0x3A, 0x3A, 0x3A, 255);
+	const FColor CellBg(0x16, 0x16, 0x1C, 255);
 	TArray<FColor> Sheet;
 	Sheet.SetNum(SheetW * SheetH);
 	for (FColor& Cell : Sheet)
@@ -746,6 +793,14 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 		const int32 SX = Gutter + (f % SheetCols) * (CellW + Gutter);
 		const int32 SY = Gutter + (f / SheetCols) * (CellH + Gutter);
 		BlitPixelCell(Pixels[f].GetData(), Job.FrameWidth, Job.FrameHeight, CellBuf.GetData(), CellW, CellH);
+		// Baked cells are opaque on a dark background so viewers never show them as white.
+		for (int32 i = 0; i < CellBuf.Num(); ++i)
+		{
+			if (CellBuf[i].A == 0)
+			{
+				CellBuf[i] = CellBg;
+			}
+		}
 		for (int32 y = 0; y < CellH; ++y)
 		{
 			for (int32 x = 0; x < CellW; ++x)
@@ -784,6 +839,13 @@ void AGBPixelVfxBakeGameMode::BakeConvertAndWrite()
 		TArray<FColor> Big;
 		Big.SetNum(BigW * BigH);
 		BlitPixelCell(Pixels[BigFrame].GetData(), Job.FrameWidth, Job.FrameHeight, Big.GetData(), BigW, BigH);
+		for (FColor& Pixel : Big)
+		{
+			if (Pixel.A == 0)
+			{
+				Pixel = CellBg;
+			}
+		}
 		SavePng(ReviewDir / TEXT("frame_big.png"), BigW, BigH, Big);
 	}
 
@@ -850,7 +912,6 @@ void AGBPixelVfxBakeGameMode::TickBake()
 		if (!BakeSpawnRig(Job.bAutoFrame ? 256 : Job.Resolution))
 		{
 			BakeLogAndCleanup(false);
-			++BakeJobIndex;
 			return;
 		}
 		SimTick = 0;
@@ -884,7 +945,6 @@ void AGBPixelVfxBakeGameMode::TickBake()
 			UE_LOG(LogGBPixelVfx, Error, TEXT("PVFX %s: the system never became ready to run."),
 				*Job.Id.ToString());
 			BakeLogAndCleanup(false);
-			++BakeJobIndex;
 		}
 		break;
 	}
@@ -898,7 +958,6 @@ void AGBPixelVfxBakeGameMode::TickBake()
 				UE_LOG(LogGBPixelVfx, Error, TEXT("PVFX %s: capture readback failed at sim tick %d."),
 					*Job.Id.ToString(), SimTick);
 				BakeLogAndCleanup(false);
-				++BakeJobIndex;
 				break;
 			}
 			++CaptureCursor;

@@ -58,7 +58,8 @@
     "Hysteresis": 0.03,
     "MinIslandPixels": 3,
     "FillHoles": true,
-    "Outline": "None"
+    "Outline": "None",
+    "MinColorClusterPixels": 3
   },
   "Light": {
     "Enabled": true,

@@ -110,12 +110,31 @@ int32 FGBPixelVfxClip::FrameAtTime(const FGBPixelVfxClip& Clip, float Seconds, b
 		const int32 Wrapped = Stepped % Clip.FrameCount;
 		return Wrapped >= 0 ? Wrapped : Wrapped + Clip.FrameCount;
 	}
+	// One-shots show every frame for exactly one frame duration: the last frame is
+	// not finished until FrameCount / Fps seconds have elapsed.
 	if (Stepped >= Clip.FrameCount)
 	{
 		bOutFinished = true;
 		return Clip.FrameCount - 1;
 	}
 	return FMath::Max(0, Stepped);
+}
+
+void FGBPixelVfxClip::ComputeQuadAndLightPlacement(const FGBPixelVfxClip& Clip, float SizeScale,
+	const FVector& ComponentLocation, const FQuat& R,
+	FVector& OutQuadLocation, FVector& OutLightLocation)
+{
+	const float W = Clip.WorldWidthCm * SizeScale;
+	const float H = Clip.WorldHeightCm * SizeScale;
+	// Quad-local offset (cm) of the pivot point from the quad center.
+	const FVector PivotLocal((Clip.PivotU - 0.5f) * W, (0.5f - Clip.PivotV) * H, 0.f);
+	// Quad-local offset (cm) from the pivot point to the light anchor.
+	const FVector AnchorOffset((Clip.Light.AnchorU - Clip.PivotU) * W,
+		(Clip.PivotV - Clip.Light.AnchorV) * H, 0.f);
+	OutQuadLocation = ComponentLocation - R.RotateVector(PivotLocal);
+	// 10 cm toward the camera (along the quad normal) so the light is not inside the quad plane.
+	OutLightLocation = ComponentLocation + R.RotateVector(AnchorOffset)
+		+ R.RotateVector(FVector(0.f, 0.f, 10.f));
 }
 
 bool FGBPixelVfxClip::LoadFromJsonString(const FString& Text)

@@ -20,7 +20,7 @@
     "Projection": "Perspective",
     "FovDeg": 10,
     "WarmupSeconds": 0,
-    "DurationSeconds": 2.5,
+    "DurationSeconds": 3,
     "SimFps": 60,
     "Exposure": 1,
     "KeyLight": true,
@@ -58,7 +58,10 @@
     "Hysteresis": 0.03,
     "MinIslandPixels": 3,
     "FillHoles": true,
-    "Outline": "None"
+    "Outline": "None",
+    "MinColorClusterPixels": 3,
+    "FadeOutFrames": 8,
+    "FadeOutMode": "Erode"
   },
   "Light": {
     "Enabled": true,

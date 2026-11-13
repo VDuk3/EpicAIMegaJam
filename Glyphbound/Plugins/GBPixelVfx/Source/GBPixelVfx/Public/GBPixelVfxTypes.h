@@ -136,6 +136,13 @@ struct GBPIXELVFX_API FGBPixelVfxClip
 	// last frame and set bOutFinished once it has been shown for one frame duration.
 	static int32 FrameAtTime(const FGBPixelVfxClip& Clip, float Seconds, bool& bOutFinished);
 
+	// Quad + light placement in world space. R is the quad's final world rotation
+	// (component rotation for Fixed, yaw-only component rotation for Ground, camera
+	// facing for Upright/Billboard). Quad local X = U right, Y = V up, both in cm.
+	static void ComputeQuadAndLightPlacement(const FGBPixelVfxClip& Clip, float SizeScale,
+		const FVector& ComponentLocation, const FQuat& R,
+		FVector& OutQuadLocation, FVector& OutLightLocation);
+
 	bool LoadFromJsonString(const FString& Text);
 	bool SaveToJsonString(FString& OutText) const;
 };

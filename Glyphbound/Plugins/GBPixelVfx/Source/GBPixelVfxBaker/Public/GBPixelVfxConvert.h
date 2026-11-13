@@ -27,6 +27,9 @@ struct FSettings
 	float Hysteresis = 0.03f;
 	int32 MinIslandPixels = 0;
 	bool bFillHoles = false;
+	int32 MinColorClusterPixels = 0;
+	int32 FadeOutFrames = 0;
+	FString FadeOutMode = TEXT("Dissolve"); // Dissolve, Erode
 	FString Outline = TEXT("None"); // None, Black, Darkest
 	bool bLightEnabled = true;
 };
@@ -103,6 +106,18 @@ GBPIXELVFXBAKER_API void RemoveSmallIslands(FFrameMap& Map, int32 MinIslandPixel
 
 // A transparent pixel whose 4 neighbors are all solid becomes solid with the most common neighbor color.
 GBPIXELVFXBAKER_API void FillOnePixelHoles(FFrameMap& Map);
+
+// Every 4-connected region of solid pixels with the same ramp and index that is
+// smaller than MinPixels is recolored with the most common color among the solid
+// pixels 4-adjacent to the region (ties: the darker one). No-op when MinPixels <= 1.
+// Regions are found on the state before the pass (one pass).
+GBPIXELVFXBAKER_API void RecolorSmallColorClusters(FFrameMap& Map, const FSettings& Settings, int32 MinPixels);
+
+// Fade-out for one-shot clips (no-op when bLoop or FadeOutFrames <= 0). Over the last
+// FadeOutFrames frames progress t goes from 1/(N+1) to N/(N+1). Dissolve removes a solid
+// pixel when Bayer4x4(x,y) < t; Erode removes solid pixels within ceil(t*MaxDepth)
+// 4-connected steps of a transparent pixel or the frame edge.
+GBPIXELVFXBAKER_API void ApplyFadeOut(TArray<FFrameMap>& Maps, const FSettings& Settings);
 
 // Transparent pixels 4-adjacent to a solid pixel become the outline color. Returns false for "None".
 GBPIXELVFXBAKER_API bool ResolveOutlineColor(const FSettings& Settings, FColor& OutColor);

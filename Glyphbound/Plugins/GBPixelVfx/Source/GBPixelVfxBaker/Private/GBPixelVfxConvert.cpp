@@ -61,8 +61,9 @@ namespace GBPixelVfxConvertLocal
 			const TArray<FColor>& Colors = Settings.Ramps[Ramp];
 			for (int32 i = 0; i < Colors.Num(); ++i)
 			{
-				const FVector Candidate = GBPixelVfxConvert::LabFromLinear(
-					ToneMapForNearest(FLinearColor(Colors[i]), Peak));
+				// Palette colors are used directly (sRGB -> linear -> OKLab):
+				// tone-mapping them would move the palette positions in OKLab.
+				const FVector Candidate = GBPixelVfxConvert::LabFromLinear(FLinearColor(Colors[i]));
 				const float Dist = static_cast<float>(FVector::DistSquared(Target, Candidate));
 				if (Dist < Best)
 				{
@@ -536,6 +537,259 @@ void FillOnePixelHoles(FFrameMap& Map)
 			}
 			Map.Pixels[At] = Votes[Best];
 			Map.Pixels[At].bSolid = true;
+		}
+	}
+}
+
+void RecolorSmallColorClusters(FFrameMap& Map, const FSettings& Settings, int32 MinPixels)
+{
+	using namespace GBPixelVfxConvertLocal;
+	if (MinPixels <= 1 || Map.Width <= 0 || Map.Height <= 0
+		|| Map.Pixels.Num() != Map.Width * Map.Height)
+	{
+		return;
+	}
+	const int32 W = Map.Width;
+	const int32 H = Map.Height;
+	const TArray<FMappedPixel> Orig = Map.Pixels;
+	TArray<uint8> Seen;
+	Seen.SetNumZeroed(W * H);
+	const int32 DX[4] = { 1, -1, 0, 0 };
+	const int32 DY[4] = { 0, 0, 1, -1 };
+	TArray<int32> Island;
+	TArray<int32> Stack;
+	for (int32 Start = 0; Start < W * H; ++Start)
+	{
+		if (!Orig[Start].bSolid || Seen[Start])
+		{
+			continue;
+		}
+		Island.Reset();
+		Stack.Reset();
+		Stack.Add(Start);
+		Seen[Start] = 1;
+		while (Stack.Num() > 0)
+		{
+			const int32 At = Stack.Pop();
+			Island.Add(At);
+			const int32 X = At % W;
+			const int32 Y = At / W;
+			for (int32 d = 0; d < 4; ++d)
+			{
+				const int32 NX = X + DX[d];
+				const int32 NY = Y + DY[d];
+				if (!Inside(NX, NY, W, H))
+				{
+					continue;
+				}
+				const int32 NAt = NY * W + NX;
+				if (!Seen[NAt] && Orig[NAt].bSolid
+					&& Orig[NAt].Ramp == Orig[Start].Ramp && Orig[NAt].Index == Orig[Start].Index)
+				{
+					Seen[NAt] = 1;
+					Stack.Add(NAt);
+				}
+			}
+		}
+		if (Island.Num() >= MinPixels)
+		{
+			continue;
+		}
+		// Border: solid 4-neighbors of the region with a different color (found on the pre-pass state).
+		TArray<int32> Border;
+		for (int32 At : Island)
+		{
+			const int32 X = At % W;
+			const int32 Y = At / W;
+			for (int32 d = 0; d < 4; ++d)
+			{
+				const int32 NX = X + DX[d];
+				const int32 NY = Y + DY[d];
+				if (!Inside(NX, NY, W, H) || !Orig[NY * W + NX].bSolid)
+				{
+					continue;
+				}
+				const int32 NAt = NY * W + NX;
+				if (Orig[NAt].Ramp == Orig[Start].Ramp && Orig[NAt].Index == Orig[Start].Index)
+				{
+					continue;
+				}
+				Border.Add(NAt);
+			}
+		}
+		if (Border.Num() == 0)
+		{
+			continue;
+		}
+		uint8 BestRamp = Orig[Border[0]].Ramp;
+		uint8 BestIndex = Orig[Border[0]].Index;
+		int32 BestVotes = -1;
+		float BestLum = FLT_MAX;
+		for (int32 a = 0; a < Border.Num(); ++a)
+		{
+			const uint8 AR = Orig[Border[a]].Ramp;
+			const uint8 AI = Orig[Border[a]].Index;
+			bool bCounted = false;
+			for (int32 b = 0; b < a; ++b)
+			{
+				if (Orig[Border[b]].Ramp == AR && Orig[Border[b]].Index == AI)
+				{
+					bCounted = true;
+					break;
+				}
+			}
+			if (bCounted)
+			{
+				continue;
+			}
+			int32 VotesForA = 0;
+			for (int32 b = 0; b < Border.Num(); ++b)
+			{
+				if (Orig[Border[b]].Ramp == AR && Orig[Border[b]].Index == AI)
+				{
+					++VotesForA;
+				}
+			}
+			float Lum = FLT_MAX;
+			if (AR < Settings.Ramps.Num() && AI < Settings.Ramps[AR].Num())
+			{
+				Lum = PixelLuminance(FLinearColor(Settings.Ramps[AR][AI]));
+			}
+			if (VotesForA > BestVotes || (VotesForA == BestVotes && Lum < BestLum))
+			{
+				BestVotes = VotesForA;
+				BestLum = Lum;
+				BestRamp = AR;
+				BestIndex = AI;
+			}
+		}
+		for (int32 At : Island)
+		{
+			Map.Pixels[At].Ramp = BestRamp;
+			Map.Pixels[At].Index = BestIndex;
+		}
+	}
+}
+
+void ApplyFadeOut(TArray<FFrameMap>& Maps, const FSettings& Settings)
+{
+	using namespace GBPixelVfxConvertLocal;
+	if (Settings.bLoop || Settings.FadeOutFrames <= 0 || Maps.Num() == 0)
+	{
+		return;
+	}
+	const int32 N = FMath::Min(Settings.FadeOutFrames, Maps.Num());
+	const bool bErode = Settings.FadeOutMode.Equals(TEXT("Erode"), ESearchCase::IgnoreCase);
+	static const uint8 Bayer[4][4] = { { 0, 8, 2, 10 }, { 12, 4, 14, 6 }, { 3, 11, 1, 9 }, { 15, 7, 13, 5 } };
+	for (int32 k = 0; k < N; ++k)
+	{
+		const int32 f = Maps.Num() - N + k;
+		FFrameMap& Map = Maps[f];
+		if (Map.Width <= 0 || Map.Height <= 0 || Map.Pixels.Num() != Map.Width * Map.Height)
+		{
+			continue;
+		}
+		const float T = (static_cast<float>(k) + 1.f) / (static_cast<float>(N) + 1.f);
+		if (!bErode)
+		{
+			for (int32 y = 0; y < Map.Height; ++y)
+			{
+				for (int32 x = 0; x < Map.Width; ++x)
+				{
+					const int32 At = y * Map.Width + x;
+					if (!Map.Pixels[At].bSolid)
+					{
+						continue;
+					}
+					const float Gate = static_cast<float>(Bayer[y % 4][x % 4]) / 16.f;
+					if (Gate < T)
+					{
+						Map.Pixels[At].bSolid = false;
+					}
+				}
+			}
+		}
+		else
+		{
+			const int32 W = Map.Width;
+			const int32 H = Map.Height;
+			TArray<int32> Dist;
+			Dist.SetNum(W * H);
+			for (int32 i = 0; i < W * H; ++i)
+			{
+				Dist[i] = -1;
+			}
+			TArray<int32> Queue;
+			Queue.Reserve(W * H);
+			int32 QHead = 0;
+			for (int32 i = 0; i < W * H; ++i)
+			{
+				if (!Map.Pixels[i].bSolid)
+				{
+					Dist[i] = 0;
+					Queue.Add(i);
+				}
+			}
+			// The frame edge counts as transparent: edge pixels are one step away.
+			for (int32 y = 0; y < H; ++y)
+			{
+				for (int32 x = 0; x < W; ++x)
+				{
+					if (x != 0 && y != 0 && x != W - 1 && y != H - 1)
+					{
+						continue;
+					}
+					const int32 At = y * W + x;
+					if (Map.Pixels[At].bSolid && Dist[At] < 0)
+					{
+						Dist[At] = 1;
+						Queue.Add(At);
+					}
+				}
+			}
+			const int32 DXE[4] = { 1, -1, 0, 0 };
+			const int32 DYE[4] = { 0, 0, 1, -1 };
+			while (QHead < Queue.Num())
+			{
+				const int32 At = Queue[QHead++];
+				const int32 X = At % W;
+				const int32 Y = At / W;
+				for (int32 d = 0; d < 4; ++d)
+				{
+					const int32 NX = X + DXE[d];
+					const int32 NY = Y + DYE[d];
+					if (!Inside(NX, NY, W, H))
+					{
+						continue;
+					}
+					const int32 NAt = NY * W + NX;
+					if (Dist[NAt] < 0 && Map.Pixels[NAt].bSolid)
+					{
+						Dist[NAt] = Dist[At] + 1;
+						Queue.Add(NAt);
+					}
+				}
+			}
+			int32 MaxDepth = 0;
+			for (int32 i = 0; i < W * H; ++i)
+			{
+				if (Map.Pixels[i].bSolid)
+				{
+					MaxDepth = FMath::Max(MaxDepth, Dist[i] < 0 ? 1 : Dist[i]);
+				}
+			}
+			if (MaxDepth <= 0)
+			{
+				continue;
+			}
+			const int32 KillDist = FMath::CeilToInt(T * static_cast<float>(MaxDepth));
+			for (int32 i = 0; i < W * H; ++i)
+			{
+				if (Map.Pixels[i].bSolid && Dist[i] >= 0 && Dist[i] <= KillDist)
+				{
+					Map.Pixels[i].bSolid = false;
+				}
+			}
 		}
 	}
 }

@@ -63,9 +63,12 @@ public:
 
 protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
 private:
 	void EnsureBuilt();
+	void RefreshClipMaterial();
 	void RebuildLight();
 	void UpdateFrame(bool bForce);
 	void UpdateQuadTransform();

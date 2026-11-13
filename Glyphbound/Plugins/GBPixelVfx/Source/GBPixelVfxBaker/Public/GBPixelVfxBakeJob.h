@@ -35,16 +35,19 @@ struct FGBPixelVfxBakeJob
 	bool bLoop = true;
 	int32 LoopBlendFrames = 6;
 	FString AlphaMode = TEXT("Max");
-	float AlphaThreshold = 0.3f;
+	float AlphaThreshold = 0.25f;
 	FString ColorMode = TEXT("Split");
 	float HotLuminance = 0.55f;
 	float HotSaturation = 0.35f;
 	TArray<TArray<FColor>> Ramps;
-	float LevelsPercentile = 0.99f;
-	float Gamma = 1.f;
+	float LevelsPercentile = 0.95f;
+	float Gamma = 0.7f;
 	float Hysteresis = 0.03f;
-	int32 MinIslandPixels = 2;
+	int32 MinIslandPixels = 0;
 	bool bFillHoles = false;
+	int32 MinColorClusterPixels = 0;
+	int32 FadeOutFrames = 0;
+	FString FadeOutMode = TEXT("Dissolve");
 	FString Outline = TEXT("None");
 
 	// Light

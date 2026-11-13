@@ -154,7 +154,7 @@ def add_sprite_sampling(graph, atlas, frame_u, frame_v, frame_w, frame_h):
     return sample
 
 
-def add_sprite_color(graph, sample, tint, glow):
+def add_sprite_color(graph, sample, tint, glow, lit):
     tint_r = single_mask(graph, tint, -150, -300, "r")
     tint_g = single_mask(graph, tint, -150, -220, "g")
     tint_b = single_mask(graph, tint, -150, -140, "b")
@@ -167,13 +167,19 @@ def add_sprite_color(graph, sample, tint, glow):
     color = graph.node(unreal.MaterialExpressionMultiply, 300, -300)
     graph.connect(sample, "RGB", color, "A")
     graph.connect(tint_rgb2, "", color, "B")
-    one = graph.node(unreal.MaterialExpressionConstant, 300, 0, r=1.0)
-    one_plus_glow = graph.node(unreal.MaterialExpressionAdd, 450, 0)
-    graph.connect(one, "", one_plus_glow, "A")
-    graph.connect(glow, "", one_plus_glow, "B")
-    emissive = graph.node(unreal.MaterialExpressionMultiply, 600, -150)
-    graph.connect(color, "", emissive, "A")
-    graph.connect(one_plus_glow, "", emissive, "B")
+    if lit:
+        # Lit sprites receive scene light: emissive is only the glow contribution.
+        emissive = graph.node(unreal.MaterialExpressionMultiply, 600, -150)
+        graph.connect(color, "", emissive, "A")
+        graph.connect(glow, "", emissive, "B")
+    else:
+        one = graph.node(unreal.MaterialExpressionConstant, 300, 0, r=1.0)
+        one_plus_glow = graph.node(unreal.MaterialExpressionAdd, 450, 0)
+        graph.connect(one, "", one_plus_glow, "A")
+        graph.connect(glow, "", one_plus_glow, "B")
+        emissive = graph.node(unreal.MaterialExpressionMultiply, 600, -150)
+        graph.connect(color, "", emissive, "A")
+        graph.connect(one_plus_glow, "", emissive, "B")
     return color, emissive
 
 
@@ -190,7 +196,7 @@ def build_sprite(name, lit):
     g = Graph(material)
     atlas, frame_u, frame_v, frame_w, frame_h, tint, glow = add_sprite_params(g)
     sample = add_sprite_sampling(g, atlas, frame_u, frame_v, frame_w, frame_h)
-    color, emissive = add_sprite_color(g, sample, tint, glow)
+    color, emissive = add_sprite_color(g, sample, tint, glow, lit)
 
     if lit:
         g.to_property(color, "", unreal.MaterialProperty.MP_BASE_COLOR)

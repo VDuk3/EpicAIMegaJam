@@ -14,9 +14,8 @@
 
 namespace GBPixelVfxComponentLocal
 {
-	// The Plane mesh is 100x100 cm in XY and faces +Z. Its TexCoord0 is assumed to run
-	// U along +X and V along +Y with V = 0 at the bottom (-Y); UE samples textures with
-	// (0, 0) at the image top-left, so V is flipped when the FrameRect is pushed below.
+	// Quad mesh: the engine plane (100 x 100 cm in XY, normal +Z, two triangles). The sprite material is
+	// two-sided, so the back of the quad shows the sprite mirrored.
 	const TCHAR* MeshPath = TEXT("/Engine/BasicShapes/Plane.Plane");
 	const TCHAR* SpriteMaterialPath = TEXT("/Game/Glyphbound/Materials/M_PixelVfxSprite.M_PixelVfxSprite");
 	const TCHAR* LitMaterialPath = TEXT("/Game/Glyphbound/Materials/M_PixelVfxSpriteLit.M_PixelVfxSpriteLit");
@@ -111,46 +110,63 @@ void UGBPixelVfxComponent::EnsureBuilt()
 		Quad->SetVisibleInRayTracing(true);
 		Quad->SetAffectDynamicIndirectLighting(true);
 		Quad->bVisibleInReflectionCaptures = true;
+		// Final size is known now (clip + SizeScale): set it before registering so the
+		// initial render bounds are correct.
+		Quad->SetRelativeScale3D(FVector(
+			FMath::Max(0.01f, CurrentClip->WorldWidthCm * SizeScale / 100.f),
+			FMath::Max(0.01f, CurrentClip->WorldHeightCm * SizeScale / 100.f), 1.f));
 		Quad->RegisterComponent();
+		Quad->MarkRenderStateDirty();
+	}
+	RefreshClipMaterial();
+	RebuildLight();
+}
 
-		const TCHAR* MaterialPath = CurrentClip->bLit
-			? GBPixelVfxComponentLocal::LitMaterialPath
-			: GBPixelVfxComponentLocal::SpriteMaterialPath;
-		UMaterialInterface* Base = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(),
-			nullptr, MaterialPath));
-		if (!Base && !bQuadMissingMaterialWarned)
+void UGBPixelVfxComponent::RefreshClipMaterial()
+{
+	// Clip-dependent material state is refreshed on every successful Play so that
+	// switching clips without Stop() picks up the new atlas, variant and glow.
+	if (!Quad || !CurrentClip.IsValid())
+	{
+		return;
+	}
+	const TCHAR* MaterialPath = CurrentClip->bLit
+		? GBPixelVfxComponentLocal::LitMaterialPath
+		: GBPixelVfxComponentLocal::SpriteMaterialPath;
+	UMaterialInterface* Base = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(),
+		nullptr, MaterialPath));
+	if (!Base && !bQuadMissingMaterialWarned)
+	{
+		bQuadMissingMaterialWarned = true;
+		UE_LOG(LogGBPixelVfx, Warning, TEXT("PixelVfx: material %s is missing, falling back to %s."),
+			MaterialPath, GBPixelVfxComponentLocal::FallbackMaterialPath);
+		Base = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(),
+			nullptr, GBPixelVfxComponentLocal::FallbackMaterialPath));
+	}
+	if (!Base)
+	{
+		return;
+	}
+	QuadMaterial = UMaterialInstanceDynamic::Create(Base, this);
+	UGBPixelVfxSubsystem* Subsystem = nullptr;
+	if (UWorld* World = GetWorld())
+	{
+		if (UGameInstance* GameInstance = World->GetGameInstance())
 		{
-			bQuadMissingMaterialWarned = true;
-			UE_LOG(LogGBPixelVfx, Warning, TEXT("PixelVfx: material %s is missing, falling back to %s."),
-				MaterialPath, GBPixelVfxComponentLocal::FallbackMaterialPath);
-			Base = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(),
-				nullptr, GBPixelVfxComponentLocal::FallbackMaterialPath));
-		}
-		QuadMaterial = UMaterialInstanceDynamic::Create(Base, this);
-		if (QuadMaterial)
-		{
-			UGBPixelVfxSubsystem* Subsystem = nullptr;
-			if (UWorld* World = GetWorld())
-			{
-				if (UGameInstance* GameInstance = World->GetGameInstance())
-				{
-					Subsystem = GameInstance->GetSubsystem<UGBPixelVfxSubsystem>();
-				}
-			}
-			UTexture2D* Atlas = Subsystem ? Subsystem->GetAtlas(CurrentClipId) : nullptr;
-			if (Atlas)
-			{
-				QuadMaterial->SetTextureParameterValue(TEXT("Atlas"), Atlas);
-			}
-			QuadMaterial->SetVectorParameterValue(TEXT("Tint"), FLinearColor::White);
-			QuadMaterial->SetScalarParameterValue(TEXT("Glow"), CurrentClip->Glow);
-		}
-		if (QuadMaterial)
-		{
-			Quad->SetMaterial(0, QuadMaterial);
+			Subsystem = GameInstance->GetSubsystem<UGBPixelVfxSubsystem>();
 		}
 	}
-	RebuildLight();
+	UTexture2D* Atlas = Subsystem ? Subsystem->GetAtlas(CurrentClipId) : nullptr;
+	if (Atlas)
+	{
+		QuadMaterial->SetTextureParameterValue(TEXT("Atlas"), Atlas);
+	}
+	QuadMaterial->SetVectorParameterValue(TEXT("Tint"), FLinearColor::White);
+	QuadMaterial->SetScalarParameterValue(TEXT("Glow"), CurrentClip->Glow);
+	if (Quad)
+	{
+		Quad->SetMaterial(0, QuadMaterial);
+	}
 }
 
 void UGBPixelVfxComponent::RebuildLight()
@@ -246,10 +262,10 @@ void UGBPixelVfxComponent::UpdateQuadTransform()
 	{
 		return;
 	}
+	// Quad size follows the clip and SizeScale (set before RegisterComponent too).
 	const float W = CurrentClip->WorldWidthCm * SizeScale;
 	const float H = CurrentClip->WorldHeightCm * SizeScale;
 	Quad->SetRelativeScale3D(FVector(FMath::Max(0.01f, W / 100.f), FMath::Max(0.01f, H / 100.f), 1.f));
-	Quad->SetRelativeLocation(-PivotWorldOffset());
 
 	EGBPixelVfxFacing Facing = CurrentClip->Facing;
 	if (!FacingOverride.IsNone())
@@ -261,13 +277,17 @@ void UGBPixelVfxComponent::UpdateQuadTransform()
 		else if (Text.Equals(TEXT("Fixed"), ESearchCase::IgnoreCase)) Facing = EGBPixelVfxFacing::Fixed;
 	}
 
+	const FVector CompLoc = GetComponentLocation();
+	FQuat R = GetComponentQuat();
 	if (Facing == EGBPixelVfxFacing::Fixed)
 	{
-		Quad->SetRelativeRotation(FRotator::ZeroRotator);
+		R = GetComponentQuat();
 	}
 	else if (Facing == EGBPixelVfxFacing::Ground)
 	{
-		Quad->SetRelativeRotation(FRotator::ZeroRotator);
+		// The quad stays flat (normal = world +Z) while following the component's yaw.
+		const FRotator CompRot = GetComponentQuat().Rotator();
+		R = FRotator(0.f, CompRot.Yaw, 0.f).Quaternion();
 	}
 	else
 	{
@@ -285,8 +305,9 @@ void UGBPixelVfxComponent::UpdateQuadTransform()
 		}
 		if (bHasCamera)
 		{
-			const FVector QuadPos = Quad->GetComponentLocation();
-			FVector ToCam = CamPos - QuadPos;
+			// The direction uses the COMPONENT location (not the quad's): the pivot
+			// must land on the component for every facing mode.
+			FVector ToCam = CamPos - CompLoc;
 			if (Facing == EGBPixelVfxFacing::Upright)
 			{
 				ToCam.Z = 0.f;
@@ -305,19 +326,28 @@ void UGBPixelVfxComponent::UpdateQuadTransform()
 					XAxis.Normalize();
 				}
 				const FVector YAxis = FVector::CrossProduct(ZAxis, XAxis);
-				Quad->SetWorldRotation(FMatrix(XAxis, YAxis, ZAxis, FVector::ZeroVector).Rotator());
+				R = FMatrix(XAxis, YAxis, ZAxis, FVector::ZeroVector).Rotator().Quaternion();
 			}
+			else
+			{
+				R = Quad->GetComponentQuat();
+			}
+		}
+		else
+		{
+			// No player camera: keep the last rotation.
+			R = Quad->GetComponentQuat();
 		}
 	}
 
-	if (ClipLight && CurrentClip.IsValid())
+	FVector QuadLoc = CompLoc;
+	FVector LightLoc = CompLoc;
+	FGBPixelVfxClip::ComputeQuadAndLightPlacement(*CurrentClip, SizeScale, CompLoc, R, QuadLoc, LightLoc);
+	Quad->SetWorldLocationAndRotation(QuadLoc, R);
+
+	if (ClipLight)
 	{
-		const float LW = CurrentClip->WorldWidthCm * SizeScale;
-		const float LH = CurrentClip->WorldHeightCm * SizeScale;
-		ClipLight->SetRelativeLocation(FVector(
-			(CurrentClip->Light.AnchorU - CurrentClip->PivotU) * LW,
-			(CurrentClip->PivotV - CurrentClip->Light.AnchorV) * LH,
-			0.f));
+		ClipLight->SetWorldLocation(LightLoc);
 	}
 }
 
@@ -344,4 +374,16 @@ void UGBPixelVfxComponent::GetQuadWorldBounds(FVector& OutOrigin, FVector& OutEx
 		OutOrigin = Quad->GetComponentTransform().TransformPosition(MeshBounds.Origin);
 		OutExtent = Quad->GetComponentTransform().TransformVector(MeshBounds.BoxExtent);
 	}
+}
+
+void UGBPixelVfxComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Stop();
+	Super::EndPlay(EndPlayReason);
+}
+
+void UGBPixelVfxComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	Stop();
+	Super::OnComponentDestroyed(bDestroyingHierarchy);
 }

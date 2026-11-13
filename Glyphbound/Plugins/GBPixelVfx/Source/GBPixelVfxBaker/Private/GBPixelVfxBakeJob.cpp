@@ -112,14 +112,32 @@ namespace GBPixelVfxJobLocal
 		return Value;
 	}
 
+	// The FluidFire fire ramp: used when a job has no Ramps array at all.
+	TArray<FColor> DefaultFireRamp()
+	{
+		TArray<FColor> Ramp;
+		const TCHAR* Hex[] = { TEXT("#4B0F0F"), TEXT("#BC2A12"), TEXT("#F03416"),
+			TEXT("#F3610B"), TEXT("#E2DE9C"), TEXT("#F5F3CF") };
+		for (const TCHAR* H : Hex)
+		{
+			FColor Srgb;
+			if (GBPixelVfxConvert::ParseHexColor(FString(H), Srgb))
+			{
+				Ramp.Add(Srgb);
+			}
+		}
+		return Ramp;
+	}
+
 	void ReadRamps(const TSharedPtr<FJsonObject>& Pixel, TArray<TArray<FColor>>& Out)
 	{
-		Out.Reset();
 		const TArray<TSharedPtr<FJsonValue>>* Ramps = nullptr;
 		if (!Pixel.IsValid() || !Pixel->TryGetArrayField(TEXT("Ramps"), Ramps) || !Ramps)
 		{
+			// Absent: keep the caller's defaults.
 			return;
 		}
+		Out.Reset();
 		for (const TSharedPtr<FJsonValue>& Ramp : *Ramps)
 		{
 			const TArray<TSharedPtr<FJsonValue>>* Colors = nullptr;
@@ -182,6 +200,7 @@ bool FGBPixelVfxBakeJob::LoadFromFile(const FString& Path)
 		return false;
 	}
 	Fresh.Id = FName(*IdText);
+	Fresh.Ramps.Add(GBPixelVfxJobLocal::DefaultFireRamp());
 	Root->TryGetStringField(TEXT("System"), Fresh.SystemPath);
 
 	const TSharedPtr<FJsonObject>* Sub = nullptr;
@@ -232,6 +251,9 @@ bool FGBPixelVfxBakeJob::LoadFromFile(const FString& Path)
 	Fresh.Hysteresis = static_cast<float>(GBPixelVfxJobLocal::ReadNumber(Pixel, TEXT("Hysteresis"), Fresh.Hysteresis));
 	Fresh.MinIslandPixels = static_cast<int32>(GBPixelVfxJobLocal::ReadNumber(Pixel, TEXT("MinIslandPixels"), Fresh.MinIslandPixels));
 	Fresh.bFillHoles = GBPixelVfxJobLocal::ReadBool(Pixel, TEXT("FillHoles"), Fresh.bFillHoles);
+	Fresh.MinColorClusterPixels = static_cast<int32>(GBPixelVfxJobLocal::ReadNumber(Pixel, TEXT("MinColorClusterPixels"), Fresh.MinColorClusterPixels));
+	Fresh.FadeOutFrames = static_cast<int32>(GBPixelVfxJobLocal::ReadNumber(Pixel, TEXT("FadeOutFrames"), Fresh.FadeOutFrames));
+	Fresh.FadeOutMode = GBPixelVfxJobLocal::ReadString(Pixel, TEXT("FadeOutMode"), Fresh.FadeOutMode);
 	Fresh.Outline = GBPixelVfxJobLocal::ReadString(Pixel, TEXT("Outline"), Fresh.Outline);
 
 	const TSharedPtr<FJsonObject> Light = Root->GetObjectField(TEXT("Light"));
