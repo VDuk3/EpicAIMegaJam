@@ -1,0 +1,17 @@
+ Design/GDD.md                                      |   5 +-
+ Devlog/raw/CENTRAL/2026-11-13/agents.jsonl         |   1 +
+ ...aude-924f00ca-194b-43f9-be45-8618761a9e8d.jsonl |  43 +++++++++
+ .../924f00ca-194b-43f9-be45-8618761a9e8d.jsonl     |  54 +++++++++++
+ Devlog/raw/_import.log                             |   2 +
+ Glyphbound/Content/Data/QTE.json                   |   3 +-
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |  41 ++++++++-
+ .../Source/Glyphbound/QTE/GBQTEComponent.cpp       |   7 +-
+ Glyphbound/Source/Glyphbound/QTE/GBQTEComponent.h  |   9 +-
+ Glyphbound/Source/Glyphbound/QTE/GBQTELogic.cpp    |  36 +++++++-
+ Glyphbound/Source/Glyphbound/QTE/GBQTELogic.h      |  23 ++++-
+ .../Glyphbound/Spells/GBSpellbookComponent.cpp     |  29 +++++-
+ .../Glyphbound/Spells/GBSpellbookComponent.h       |   8 ++
+ Glyphbound/Source/Glyphbound/Tests/GBQTETests.cpp  |  52 +++++++++++
+ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp          | 101 ++++++++++++++++++++-
+ Glyphbound/Source/Glyphbound/UI/GBHUD.h            |   2 +
+ 16 files changed, 392 insertions(+), 24 deletions(-)

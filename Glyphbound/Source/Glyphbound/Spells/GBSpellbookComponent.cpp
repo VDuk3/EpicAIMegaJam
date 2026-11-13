@@ -317,6 +317,18 @@ bool UGBSpellbookComponent::EquipSpell(int32 Slot, FName SpellId)
 	return true;
 }
 
+EGBQTEKey UGBSpellbookComponent::GetEnchantChoiceKey(int32 Index)
+{
+	static const EGBQTEKey Keys[NumEnchantChoices] = { EGBQTEKey::Left, EGBQTEKey::Up, EGBQTEKey::Right };
+	return Keys[FMath::Clamp(Index, 0, NumEnchantChoices - 1)];
+}
+
+EGBElement UGBSpellbookComponent::GetEnchantChoiceElement(int32 Index)
+{
+	static const EGBElement Elements[NumEnchantChoices] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
+	return Elements[FMath::Clamp(Index, 0, NumEnchantChoices - 1)];
+}
+
 void UGBSpellbookComponent::SetEnchantElement(EGBElement InElement)
 {
 	if (EnchantElement != InElement)
@@ -447,8 +459,17 @@ bool UGBSpellbookComponent::BeginCast(FName SpellId)
 		return true;
 	}
 
+	// The weapon enchant's QTE opens with the element choice, on fixed keys.
+	TArray<EGBQTEKey> ChoiceKeys;
+	if (SpellId == EnchantSpellId)
+	{
+		for (int32 i = 0; i < NumEnchantChoices; ++i)
+		{
+			ChoiceKeys.Add(GetEnchantChoiceKey(i));
+		}
+	}
 	// The delegate may fire before StartQTE returns (QTE off).
-	if (!QTE->StartQTE(SpellId, FGBOnQTEFinished::CreateUObject(this, &UGBSpellbookComponent::HandleQTEFinished, SpellId)))
+	if (!QTE->StartQTE(SpellId, FGBOnQTEFinished::CreateUObject(this, &UGBSpellbookComponent::HandleQTEFinished, SpellId), ChoiceKeys))
 	{
 		PendingSpellId = NAME_None;
 		if (Equipment)
@@ -467,6 +488,12 @@ bool UGBSpellbookComponent::BeginCast(FName SpellId)
 
 void UGBSpellbookComponent::HandleQTEFinished(const FGBQTEResult& Result, FName SpellId)
 {
+	// The element picked in the enchant's QTE becomes the enchant element (also for the next casts). Nothing picked
+	// (time ran out, or the QTE is off) keeps the element the player had.
+	if (SpellId == EnchantSpellId && Result.Choice >= 0 && Result.Choice < NumEnchantChoices)
+	{
+		SetEnchantElement(GetEnchantChoiceElement(Result.Choice));
+	}
 	FinishCast(SpellId, Result);
 }
 

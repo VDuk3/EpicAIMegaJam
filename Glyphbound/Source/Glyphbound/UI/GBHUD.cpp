@@ -871,6 +871,88 @@ void AGBHUD::DrawToasts(EGBHudSkin Skin, float TopY)
 
 // ======================================================================== QTE (GDD 7)
 
+void AGBHUD::DrawQTEElementChoice(AGBPlayerCharacter* Player, const FGBQTESession& Session, EGBHudSkin Skin)
+{
+	const float S = UIScale();
+	const float P = ArtPixel();
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	const float CX = W * 0.5f;
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
+	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
+	const EGBElement Current = Spellbook ? Spellbook->GetEnchantElement() : EGBElement::Fire;
+	const int32 Count = Session.Config.ChoiceKeys.Num();
+	const float TileW = bCyber ? FMath::RoundToFloat(150.f * S) : FMath::RoundToFloat(40.f * P / P) * P;
+	const float TileH = bCyber ? FMath::RoundToFloat(120.f * S) : 32.f * P;
+	const float Gap = bCyber ? FMath::RoundToFloat(24.f * S) : 6.f * P;
+	const float RowY = FMath::RoundToFloat(H * 0.255f / P) * P;
+	const float X0 = FMath::RoundToFloat((CX - (Count * TileW + FMath::Max(0, Count - 1) * Gap) * 0.5f) / P) * P;
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const EGBElement Element = UGBSpellbookComponent::GetEnchantChoiceElement(i);
+		const FLinearColor EC = GBHudText::ElementColor(Element);
+		const bool bCurrent = Element == Current;
+		// The key that picks it sits where it is on the keyboard: W (the middle option) a little higher than A and D.
+		const float X = X0 + i * (TileW + Gap);
+		const float Y = RowY + (Session.Config.ChoiceKeys[i] == EGBQTEKey::Up ? 0.f : (bCyber ? 18.f * S : 4.f * P));
+		const FString Letter = GBHudLocal::QTEKeyLetter(Session.Config.ChoiceKeys[i]);
+		const FString Name = GBHudText::ElementName(Element).ToUpper();
+		if (bCyber)
+		{
+			DrawGlow(X + TileW * 0.5f, Y + TileH * 0.5f, TileW * 0.8f, TileH * 0.8f, GBAlpha(EC, 0.18f));
+			CyBox(X, Y, TileW, TileH, 14.f * S, GBAlpha(GBCy::Ink, 0.85f), bCurrent ? GBCy::Pale : EC, 0x5, bCurrent ? 2.f : 1.f);
+			FillRect(X + 12.f * S, Y + TileH - 8.f * S, TileW - 24.f * S, 3.f * S, EC);
+			FCyTextStyle Key;
+			Key.Face = ECyFace::Condensed;
+			Key.Px = 44.f;
+			Key.Color = EC;
+			DrawCyText(Letter, X + TileW * 0.5f, Y + 10.f * S, Key, 0.5f);
+			FCyTextStyle Label;
+			Label.Face = ECyFace::Condensed;
+			Label.Px = 20.f;
+			Label.Spacing = 140;
+			Label.bUpper = true;
+			Label.Color = GBCy::Pale;
+			DrawCyText(Name, X + TileW * 0.5f, Y + 68.f * S, Label, 0.5f);
+			if (bCurrent)
+			{
+				FCyTextStyle Tag;
+				Tag.Face = ECyFace::Mono;
+				Tag.Px = 11.f;
+				Tag.Color = GBCy::Pale;
+				DrawCyText(TEXT("CURRENT"), X + TileW * 0.5f, Y - 18.f * S, Tag, 0.5f);
+			}
+		}
+		else
+		{
+			DrawGlow(X + TileW * 0.5f, Y + TileH * 0.5f, TileW * 0.8f, TileH * 0.8f, GBAlpha(EC, 0.2f));
+			FillRect(X, Y, TileW, TileH, GBRpg::StoneDeep);
+			RpgStone(X, Y, TileW, TileH, FLinearColor(0.8f, 0.8f, 0.9f, 0.6f));
+			RpgFrame(X, Y, TileW, TileH, bCurrent ? ERpgFrame::Gold : ERpgFrame::Iron);
+			RpgGem(X + TileW * 0.5f, Y + 9.f * P, EC, true);
+			FPixelTextStyle Key;
+			Key.Scale = FMath::Max(2, FMath::RoundToInt(P));
+			Key.Ink = &GBRpg::InkBone;
+			Key.Outline = GBRpg::Outline;
+			DrawPixelText(Letter, X + TileW * 0.5f, Y + 14.f * P, Key, 0.5f);
+			FPixelTextStyle Label;
+			Label.Scale = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+			Label.Color = EC;
+			Label.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+			DrawPixelText(Name, X + TileW * 0.5f, Y + TileH - 7.f * P, Label, 0.5f);
+			if (bCurrent)
+			{
+				FPixelTextStyle Tag;
+				Tag.Scale = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+				Tag.Ink = &GBRpg::InkGold;
+				Tag.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+				DrawPixelText(TEXT("CURRENT"), X + TileW * 0.5f, Y - 6.f * P, Tag, 0.5f);
+			}
+		}
+	}
+	UiText(Skin, EGBTextSize::Body, EGBTextTone::Normal, TEXT("Choose the element"), CX, RowY + TileH + (bCyber ? 34.f * S : 9.f * P), 0.5f);
+}
+
 void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 {
 	const UGBQTEComponent* QTE = Player->GetQTE();
@@ -897,8 +979,11 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 
 	// Title and time.
 	const FString Title = GBHudText::SpellName(this, QTE->GetSpellId());
-	const float Limit = Session.Config.TimeLimit;
-	const float TimeFrac = Limit > 0.f ? FMath::Clamp(Session.GetTimeRemaining() / Limit, 0.f, 1.f) : 0.f;
+	// The element choice has its own clock: the bar shows it while choosing, then the QTE's own.
+	const bool bChoosing = Session.Phase == EGBQTEPhase::Choice;
+	const float Limit = bChoosing ? Session.Config.ChoiceTimeLimit : Session.Config.TimeLimit;
+	const float Remaining = bChoosing ? Session.GetChoiceTimeRemaining() : Session.GetTimeRemaining();
+	const float TimeFrac = Limit > 0.f ? FMath::Clamp(Remaining / Limit, 0.f, 1.f) : 0.f;
 	const float BarW = FMath::RoundToFloat(560.f * S);
 	float TimeY = 0.f;
 	if (bCyber)
@@ -922,7 +1007,7 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 		T.Face = ECyFace::Mono;
 		T.Px = 14.f;
 		T.Color = TimeFrac > 0.3f ? GBCy::Cyan : GBCy::Yellow;
-		DrawCyText(FString::Printf(TEXT("%05.2f"), Session.GetTimeRemaining()), CX + BarW * 0.5f + 12.f * S, TimeY - 4.f * S, T, 0.f);
+		DrawCyText(FString::Printf(TEXT("%05.2f"), Remaining), CX + BarW * 0.5f + 12.f * S, TimeY - 4.f * S, T, 0.f);
 	}
 	else
 	{
@@ -932,8 +1017,14 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 		RpgTube(FMath::RoundToFloat((CX - BarW * 0.5f) / P) * P, TimeY, FMath::RoundToFloat(BarW / P) * P, 6.f * P, TimeFrac, TimeFrac > 0.3f ? GBRpg::StaminaRamp : GBRpg::HealthRamp);
 	}
 
-	// Part 1: the key sequence (power).
-	const int32 NumKeys = Session.Sequence.Num();
+	// The weapon enchant's first step: pick the element, always in the same places (owner, Nov 13).
+	if (bChoosing)
+	{
+		DrawQTEElementChoice(Player, Session, Skin);
+	}
+
+	// Part 1: the key sequence (power). Hidden while the element is being chosen.
+	const int32 NumKeys = bChoosing ? 0 : Session.Sequence.Num();
 	const int32 Done = Session.SequenceResults.Num();
 	const float Box = bCyber ? FMath::RoundToFloat(60.f * S) : 18.f * P;
 	const float Gap = bCyber ? FMath::RoundToFloat(14.f * S) : 4.f * P;

@@ -99,7 +99,7 @@ FGBQTEConfig UGBQTEComponent::BuildConfig() const
 	return Config;
 }
 
-bool UGBQTEComponent::StartQTE(FName SpellId, FGBOnQTEFinished OnFinished)
+bool UGBQTEComponent::StartQTE(FName SpellId, FGBOnQTEFinished OnFinished, const TArray<EGBQTEKey>& ChoiceKeys)
 {
 	if (bActive)
 	{
@@ -123,7 +123,10 @@ bool UGBQTEComponent::StartQTE(FName SpellId, FGBOnQTEFinished OnFinished)
 	LineSubmitLengthMult = ReadStat(GBQTEStat::LineSubmitLengthMult, GBQTEComponentPrivate::DefaultLineSubmitLengthMult);
 
 	Session = FGBQTESession();
-	Session.Start(BuildConfig(), Random);
+	FGBQTEConfig Config = BuildConfig();
+	Config.ChoiceKeys = ChoiceKeys;
+	Config.ChoiceTimeLimit = FMath::Max(0.1f, ReadStat(GBQTEStat::ChoiceTimeLimit, Config.ChoiceTimeLimit));
+	Session.Start(Config, Random);
 	ActiveSpellId = SpellId;
 	FinishedDelegate = OnFinished;
 	GestureIdleTime = 0.f;

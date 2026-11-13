@@ -411,6 +411,8 @@ protected:
 	/** Y = top of the first toast (negative: the default spot near the top). */
 	void DrawToasts(EGBHudSkin Skin, float TopY = -1.f);
 	void DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin);
+	/** The weapon enchant's first QTE step: the three elements on their fixed keys, the current one marked. */
+	void DrawQTEElementChoice(AGBPlayerCharacter* Player, const struct FGBQTESession& Session, EGBHudSkin Skin);
 	void DrawGestureHint(uint8 Gesture, float CenterX, float CenterY, float Radius, const FLinearColor& Color, float Thick);
 	void DrawDamageFlash(EGBHudSkin Skin);
 	void DrawEraFade();

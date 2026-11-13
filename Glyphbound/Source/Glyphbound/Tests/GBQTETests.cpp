@@ -181,4 +181,56 @@ bool FGBQTESessionTimeoutTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// The enchant's element choice (owner, Nov 13): a first step on fixed keys, with its own clock, that never counts
+// toward Power and never eats the time of part 1.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBQTESessionChoiceTest, "Glyphbound.QTE.SessionChoice", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBQTESessionChoiceTest::RunTest(const FString& Parameters)
+{
+	FGBQTEConfig Config = GBQTETest::MakeConfig();
+	Config.ChoiceKeys = { EGBQTEKey::Left, EGBQTEKey::Up, EGBQTEKey::Right };
+	Config.ChoiceTimeLimit = 2.f;
+
+	{
+		FRandomStream Random(11);
+		FGBQTESession Session;
+		Session.Start(Config, Random);
+		TestTrue(TEXT("Starts in the Choice phase"), Session.Phase == EGBQTEPhase::Choice);
+		TestFalse(TEXT("A key that is not an option is ignored"), Session.PressKey(EGBQTEKey::Down));
+		TestTrue(TEXT("Still choosing after a non-option key"), Session.Phase == EGBQTEPhase::Choice);
+		Session.Advance(1.5f);
+		TestTrue(TEXT("Still choosing before the choice limit"), Session.Phase == EGBQTEPhase::Choice);
+		TestTrue(TEXT("The option key is taken"), Session.PressKey(EGBQTEKey::Up));
+		TestEqual(TEXT("Up is the second option"), Session.ChosenIndex, 1);
+		TestTrue(TEXT("Part 1 starts after the choice"), Session.Phase == EGBQTEPhase::Sequence);
+		TestEqual(TEXT("The choice did not consume a step of part 1"), Session.SequenceResults.Num(), 0);
+		TestEqual(TEXT("The choice did not eat the QTE's own time"), Session.GetTimeRemaining(), Config.TimeLimit, 1e-4f);
+		for (const EGBQTEKey Key : TArray<EGBQTEKey>(Session.Sequence))
+		{
+			Session.PressKey(Key);
+		}
+		const FGBQTEResult Result = Session.GetResult();
+		TestEqual(TEXT("The result carries the choice"), Result.Choice, 1);
+		TestEqual(TEXT("Power counts part 1 only: all four right"), Result.Power, 1.f, 1e-4f);
+	}
+	{
+		FRandomStream Random(11);
+		FGBQTESession Session;
+		Session.Start(Config, Random);
+		Session.Advance(2.1f);
+		TestTrue(TEXT("Choice time out: part 1 starts"), Session.Phase == EGBQTEPhase::Sequence);
+		TestEqual(TEXT("Nothing picked"), Session.ChosenIndex, -1);
+		Session.PressKey(EGBQTEKey::Left);
+		TestEqual(TEXT("A late option key is part 1's input now"), Session.SequenceResults.Num(), 1);
+		TestEqual(TEXT("and not a choice"), Session.ChosenIndex, -1);
+		TestEqual(TEXT("No choice in the result"), Session.GetResult().Choice, -1);
+	}
+	{
+		FRandomStream Random(11);
+		FGBQTESession Session;
+		Session.Start(GBQTETest::MakeConfig(), Random);
+		TestTrue(TEXT("No options: no Choice step"), Session.Phase == EGBQTEPhase::Sequence);
+	}
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

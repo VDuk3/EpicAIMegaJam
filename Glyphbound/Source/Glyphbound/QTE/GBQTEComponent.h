@@ -18,6 +18,7 @@ namespace GBQTEStat
 	inline const FName StickGestureScale(TEXT("QTE.StickGestureScale"));         // right stick: pixels per second at full tilt
 	inline const FName FailManaRefund(TEXT("QTE.FailManaRefund"));               // share of the mana cost given back when the spell fizzles (0 = no refund)
 	inline const FName FailCooldownMult(TEXT("QTE.FailCooldownMult"));           // the cooldown of a fizzled spell is multiplied by this (1 = full cooldown)
+	inline const FName ChoiceTimeLimit(TEXT("QTE.ChoiceTimeLimit"));             // real seconds for a Choice step (the enchant's element)
 }
 
 /**
@@ -37,8 +38,12 @@ class GLYPHBOUND_API UGBQTEComponent : public UActorComponent
 public:
 	UGBQTEComponent();
 
-	/** Starts a QTE for SpellId. OnFinished fires exactly once (possibly before this returns, when the QTE is off). Returns false if one is already running. */
-	bool StartQTE(FName SpellId, FGBOnQTEFinished OnFinished);
+	/**
+	 * Starts a QTE for SpellId. OnFinished fires exactly once (possibly before this returns, when the QTE is off). Returns
+	 * false if one is already running. ChoiceKeys, when given, adds a first step that picks one option per key (the
+	 * weapon enchant's element); the result's Choice says which (-1 = none, or the QTE is off).
+	 */
+	bool StartQTE(FName SpellId, FGBOnQTEFinished OnFinished, const TArray<EGBQTEKey>& ChoiceKeys = TArray<EGBQTEKey>());
 
 	/** Ends the running QTE now; unfinished steps count as missed (death, cutscene). */
 	void CancelQTE();

@@ -3027,14 +3027,47 @@ namespace GBSmokeRun
 			SetQTEEnabled(true);
 			Player->GetSpellbook()->TryCastEnchant();
 		});
-		Add(U + 18.1f, TEXT("ui: cyber QTE, one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		// The enchant's QTE opens with the element choice on fixed keys (owner, Nov 13): A fire, W lightning, D ice.
+		Add(U + 18.0f, TEXT("ui: screenshot cyber enchant element choice"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
-			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+			const bool bChoosing = Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Phase == EGBQTEPhase::Choice;
+			UE_LOG(LogGB, Display, TEXT("SMOKE enchant choice: QTE active=%d choosing=%d current=%s"), Player->GetQTE()->IsActive() ? 1 : 0, bChoosing ? 1 : 0,
+				*UEnum::GetValueAsString(Player->GetSpellbook()->GetEnchantElement()));
+			if (!bChoosing)
 			{
-				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+				UE_LOG(LogGB, Error, TEXT("SMOKE enchant choice FAILED: the enchant's QTE did not open on the element choice"));
+			}
+			Shot(TEXT("ui_12a_cyber_enchant_choice"));
+		});
+		Add(U + 18.5f, TEXT("ui: cyber QTE, D picks ice, then one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBQTEComponent* QTE = Player->GetQTE();
+			if (QTE->IsActive())
+			{
+				QTE->HandleKey(EGBQTEKey::Right);
+				if (QTE->GetSession().Phase == EGBQTEPhase::Sequence && QTE->GetSession().Sequence.Num() > 0)
+				{
+					QTE->HandleKey(QTE->GetSession().Sequence[0]);
+				}
 			}
 		});
-		Add(U + 18.4f, TEXT("ui: screenshot cyber QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_12_cyber_qte")); });
+		Add(U + 18.8f, TEXT("ui: screenshot cyber QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_12_cyber_qte")); });
+		Add(U + 22.7f, TEXT("ui: the element picked in the QTE is the enchant's element now"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			// The QTE normally ran out by now; if a hitch kept it alive, end it (the choice was made before, it still counts).
+			const bool bWasActive = Player->GetQTE()->IsActive();
+			if (bWasActive)
+			{
+				Player->GetQTE()->CancelQTE();
+			}
+			const EGBElement Element = Player->GetSpellbook()->GetEnchantElement();
+			UE_LOG(LogGB, Display, TEXT("SMOKE enchant choice: element after the QTE %s (QTE was still active=%d)"), *UEnum::GetValueAsString(Element), bWasActive ? 1 : 0);
+			if (Element != EGBElement::Ice)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE enchant choice FAILED: element %s after picking ice"), *UEnum::GetValueAsString(Element));
+			}
+			Player->GetSpellbook()->SetEnchantElement(EGBElement::Fire); // the cyberpunk HUD shots below show the fire enchant
+		});
 		Add(U + 22.8f, TEXT("ui: cyber setup, enchanted, spent rounds"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			SetQTEEnabled(false);

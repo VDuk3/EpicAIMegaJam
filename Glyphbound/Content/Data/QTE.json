@@ -11,7 +11,8 @@
 		"QTE.LineSubmitLengthMult": 2.5,
 		"QTE.StickGestureScale": 600,
 		"QTE.FailManaRefund": 0,
-		"QTE.FailCooldownMult": 1
+		"QTE.FailCooldownMult": 1,
+		"QTE.ChoiceTimeLimit": 3
 	},
 	"Gestures": [
 		"LineRight",

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Spells/GBSpellTypes.h"
+#include "QTE/GBQTELogic.h"
 #include "GBSpellbookComponent.generated.h"
 
 class AGBSpellActor;
@@ -57,6 +58,13 @@ public:
 	FName GetEnchantSpell() const { return EnchantSpellId; }
 	EGBElement GetEnchantElement() const { return EnchantElement; }
 	void SetEnchantElement(EGBElement InElement);
+	/**
+	 * The weapon enchant's QTE starts with the element choice (owner, Nov 13), always in the same places:
+	 * A / Square = fire, W / Triangle = lightning, D / Circle = ice. Index i of one goes with index i of the other.
+	 */
+	static constexpr int32 NumEnchantChoices = 3;
+	static EGBQTEKey GetEnchantChoiceKey(int32 Index);
+	static EGBElement GetEnchantChoiceElement(int32 Index);
 
 	// ---- Casting ----
 	/** Slot 0 = right click / L1, slots 1-4 = keys 1-4. If a sustained spell of that slot is running, this ends it instead. */

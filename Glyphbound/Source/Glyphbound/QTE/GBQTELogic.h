@@ -32,7 +32,8 @@ enum class EGBQTEPhase : uint8
 	Inactive,
 	Sequence,   // part 1 -> power
 	Gesture,    // part 2 -> reach
-	Finished
+	Finished,
+	Choice      // optional step before part 1: pick one of fixed options (the weapon enchant's element)
 };
 
 /** Outcome of one QTE. */
@@ -50,6 +51,8 @@ struct GLYPHBOUND_API FGBQTEResult
 	/** "The spell is cast if the player gets at least one step right" (always true when the QTE is off). */
 	UPROPERTY() bool bSuccess = false;
 	UPROPERTY() bool bTimedOut = false;
+	/** Index into FGBQTEConfig::ChoiceKeys of the option picked in the Choice step; -1 = none picked (no step, or its time ran out). */
+	UPROPERTY() int32 Choice = -1;
 };
 
 /** Numbers of one QTE run, read from QTE.json (through the player's stats, so gear can change them). */
@@ -65,6 +68,13 @@ struct GLYPHBOUND_API FGBQTEConfig
 	float GestureMinLength = 120.f;
 	/** Gestures that may be asked for. Empty = all. */
 	TArray<EGBGesture> AllowedGestures;
+	/**
+	 * Optional first step: one key per option, always the same keys in the same order (owner: the enchant's elements never
+	 * move). Empty = no Choice step. It has its own time limit, so choosing never eats the time of part 1 and part 2.
+	 */
+	TArray<EGBQTEKey> ChoiceKeys;
+	/** Real seconds for the Choice step; when it runs out nothing is picked (Choice = -1) and part 1 starts. */
+	float ChoiceTimeLimit = 3.f;
 };
 
 /**
@@ -92,7 +102,8 @@ struct GLYPHBOUND_API FGBQTESession
 {
 	void Start(const FGBQTEConfig& InConfig, FRandomStream& Random);
 
-	/** Part 1. Returns true if the key was the expected one. Ignored outside the Sequence phase. */
+	/** Choice step: a key of Config.ChoiceKeys picks that option and part 1 starts; any other key is ignored. Part 1: returns
+	 *  true if the key was the expected one. Ignored in the other phases. */
 	bool PressKey(EGBQTEKey Key);
 
 	/** Part 2. Adds a movement delta to the current stroke. Ignored outside the Gesture phase. */
@@ -121,6 +132,14 @@ struct GLYPHBOUND_API FGBQTESession
 	TArray<FVector2D> CurrentStroke;
 	float TimeElapsed = 0.f;
 	bool bTimedOut = false;
+	/** Choice step: the picked index into Config.ChoiceKeys (-1 = none yet) and the real seconds spent on it. */
+	int32 ChosenIndex = -1;
+	float ChoiceElapsed = 0.f;
+	float GetChoiceTimeRemaining() const { return FMath::Max(0.f, Config.ChoiceTimeLimit - ChoiceElapsed); }
 
 	float GetTimeRemaining() const { return FMath::Max(0.f, Config.TimeLimit - TimeElapsed); }
+
+private:
+	/** The phase part 1 starts in (or part 2, or Finished when there are no steps). */
+	EGBQTEPhase FirstStepPhase() const;
 };

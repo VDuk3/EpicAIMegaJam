@@ -136,6 +136,8 @@ void FGBQTESession::Start(const FGBQTEConfig& InConfig, FRandomStream& Random)
 	CurrentStroke.Reset();
 	TimeElapsed = 0.f;
 	bTimedOut = false;
+	ChosenIndex = -1;
+	ChoiceElapsed = 0.f;
 
 	for (int32 i = 0; i < Config.SequenceLength; ++i)
 	{
@@ -152,18 +154,31 @@ void FGBQTESession::Start(const FGBQTEConfig& InConfig, FRandomStream& Random)
 		Gestures.Add(Pool[Random.RandRange(0, Pool.Num() - 1)]);
 	}
 
+	Phase = Config.ChoiceKeys.Num() > 0 ? EGBQTEPhase::Choice : FirstStepPhase();
+}
+
+EGBQTEPhase FGBQTESession::FirstStepPhase() const
+{
 	if (Sequence.Num() > 0)
 	{
-		Phase = EGBQTEPhase::Sequence;
+		return EGBQTEPhase::Sequence;
 	}
-	else
-	{
-		Phase = Gestures.Num() > 0 ? EGBQTEPhase::Gesture : EGBQTEPhase::Finished;
-	}
+	return Gestures.Num() > 0 ? EGBQTEPhase::Gesture : EGBQTEPhase::Finished;
 }
 
 bool FGBQTESession::PressKey(EGBQTEKey Key)
 {
+	if (Phase == EGBQTEPhase::Choice)
+	{
+		const int32 Index = Config.ChoiceKeys.Find(Key);
+		if (Index == INDEX_NONE)
+		{
+			return false; // not an option: ignored, the step waits
+		}
+		ChosenIndex = Index;
+		Phase = FirstStepPhase();
+		return true;
+	}
 	if (Phase != EGBQTEPhase::Sequence || !Sequence.IsValidIndex(SequenceResults.Num()))
 	{
 		return false;
@@ -219,6 +234,16 @@ bool FGBQTESession::IsGestureReadyToJudge() const
 
 void FGBQTESession::Advance(float RealDeltaSeconds)
 {
+	if (Phase == EGBQTEPhase::Choice)
+	{
+		// The Choice step has its own clock; the QTE's own limit starts when it ends.
+		ChoiceElapsed += FMath::Max(0.f, RealDeltaSeconds);
+		if (ChoiceElapsed >= Config.ChoiceTimeLimit)
+		{
+			Phase = FirstStepPhase();
+		}
+		return;
+	}
 	if (Phase != EGBQTEPhase::Sequence && Phase != EGBQTEPhase::Gesture)
 	{
 		return;
@@ -236,6 +261,7 @@ FGBQTEResult FGBQTESession::GetResult() const
 	FGBQTEResult Result;
 	Result.bUsedQTE = true;
 	Result.bTimedOut = bTimedOut;
+	Result.Choice = ChosenIndex;
 
 	int32 RightKeys = 0;
 	for (bool bRight : SequenceResults)
