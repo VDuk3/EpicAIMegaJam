@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.30, 2026-11-12** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.31, 2026-11-12** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.31 (2026-11-12): owner picked the Entity's first model (Tripo, variant #26): a metal shell with electronic-light eyes, and hologram tentacles. Phase 1 art in §11; its size is provisional.
 - v0.30 (2026-11-12): owner: the pistol's energy bar must match the enchant's duration; the weak-point light lasts half as long.
 - v0.29 (2026-11-12): owner, after reading the balance suggestions: Long Shot goes from +0.15x to +0.2x per rank (the rifle perk now matches Point Blank); the free skill reset will not be in the final version.
 - v0.28 (2026-11-12): owner asked the architect to balance every number of the game with maths (the skill-tree percentages stay as they are) and to leave no hardcoded value. New §19 "Balance": the method, the enemy templates (swarm, soldier, elite, slow tank, sub-boss, the two Valkyries, the Entity), resistances and weaknesses, the ammo and mana economy, and a budget of 36 skill points. The numbers in §18 are updated. The last gameplay numbers that lived in code moved to the data files. A calculator, `Tools/Balance/balance_model.js`, prints every table from the data. Reviewed by a second model before the first build.
@@ -348,6 +349,7 @@ Rewards:
   - HUD: **medieval** (provisional).
 - **Final portal:** combining the two quest items opens a portal to a separate map, a dimension between space and time, where the player fights the **true final boss**.
 - **True final boss: the Entity** (story in §4). A **mix of both art styles**, which fits what it is (suggestion, not decided: the AI half in 3D, the ghost half in pixel art). Undecided how: two phases with different styles, or one character in both styles at once, or something else (**TBD**).
+  - **Phase 1 art, "the machine" (owner, 2026-11-12):** a floating metal shell with a big central eye and smaller eyes that glow like electronic lights, and about eleven tentacles made of light (holograms) that sway. The central eye is a separate mesh: the weak point. Size **about 2.9 m tall (provisional, architect)**. Assets in `/Game/Glyphbound/Enemies/Entity`; the source and how it was split are described in `SourceArt/Enemies/Entity/README.md`. The hologram tentacles already lean towards the ghost half.
 - This happens in mid/late game.
 
 ## 12. Inventory
