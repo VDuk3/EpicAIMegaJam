@@ -11,13 +11,13 @@
 #                  strip's muzzle end); a cell is lit while 1 - its centre U < ImbueRemaining, so the strip drains from
 #                  the muzzle end towards the stock, like the pistol bar. Glow off the strip (UV 1 V = 1) stays lit.
 #   Flash          (scalar) M_RifleIndicator: the two sight lenses, 0 = off, 1 = full glow (weak-point hit)
-#   DisplayTexture (texture) M_GunHolo (shared with the pistol): the ammo count
+#   DisplayTexture (texture) M_RifleHolo: the ammo display the game draws (frame, count, one pip per round)
 import os
 import re
 import unreal
 
 MESH_DIR = "/Game/Glyphbound/Weapons/Rifle"
-SHARED_DIR = "/Game/Glyphbound/Weapons/Pistol"   # M_GunSolid and M_GunHolo, built by import_pistol.py
+SHARED_DIR = "/Game/Glyphbound/Weapons/Pistol"   # M_GunSolid, built by import_pistol.py
 SOURCE_DIR = os.environ.get("GB_RIFLE_STAGE", "")
 MESHES = ["SM_Rifle_Body", "SM_Rifle_Trigger", "SM_Rifle_Magazine", "SM_Rifle_WeakPointLight", "SM_Rifle_AmmoDisplay"]
 STRIP_CELLS = 13
@@ -43,7 +43,7 @@ SLOT_MATERIALS = {
     "Rifle_WeakPoint": ("M_RifleIndicator", {}),
     # the modelled top rail: flat dark metal, the tone of the atlas's dark parts
     "Rifle_Rail": (SOLID, {"BaseColor": (0.032, 0.036, 0.041), "Metallic": 0.65, "Roughness": 0.40}),
-    "Holo_AmmoDisplay": ("M_GunHolo", {}),
+    "Holo_AmmoDisplay": ("M_RifleHolo", {}),
     "Rifle_Mag_Body": (SOLID, {"BaseColor": (0.035, 0.04, 0.045), "Metallic": 0.6, "Roughness": 0.35}),
     "Rifle_Mag_Plate": (SOLID, {"BaseColor": (0.72, 0.74, 0.77), "Metallic": 0.1, "Roughness": 0.45}),
     "Rifle_Mag_Glow": (SOLID, {"BaseColor": (0.01, 0.01, 0.01), "Metallic": 0.0, "Roughness": 0.5, "Glow": 4.0}),
@@ -306,6 +306,111 @@ def build_indicator(textures):
     return m
 
 
+# The hologram pane (owner: "more holographic"). Shares of the pane, V = 0 at its top.
+HOLO_GLOW = 5.0            # emission strength of the drawn lines, in the element colour
+HOLO_HALO = 0.6            # strength of the soft glow around them (four more taps of the display texture)
+HOLO_HALO_REACH = (0.012, 0.024)   # how far the taps sit, in U and V (the pane is 2:1)
+HOLO_PANE_TINT = 0.05      # faint light over the whole pane, so it reads as a projected image
+HOLO_SCANLINES = 72.0      # scanlines down the pane
+HOLO_SCAN_DEPTH = 0.45     # how dark the gap between two scanlines is (0 = no scanlines)
+HOLO_SWEEP_SPEED = 0.3     # a brighter band rolls up the pane this many times per second
+HOLO_SWEEP_GAIN = 0.6
+HOLO_EDGE = (14.0, 10.0)   # edge fade: full brightness is reached 1/14 of the width and 1/10 of the height inside
+HOLO_FLICKER = (7.0, 0.07)   # hertz, depth
+
+
+def black_texture():
+    for path in ["/Engine/EngineResources/Black.Black", "/Engine/EngineMaterials/BlackSquareTexture.BlackSquareTexture",
+                 "/Engine/EngineMaterials/DefaultBlackTexture.DefaultBlackTexture"]:
+        texture = unreal.load_asset(path)
+        if texture is not None:
+            return texture
+    fail("no black engine texture found for the M_RifleHolo default")
+
+
+def build_holo():
+    # The rifle's ammo hologram: additive, unlit, two-sided, nothing behind it. The game draws white on black into a
+    # render target (DisplayTexture). It glows in the element colour with a soft halo, scanlines, a band of light
+    # rolling up, a faint tint that is stronger at the foot (where the emitter is), a slow flicker, and it fades out
+    # towards its edges, so there is no hard rectangle.
+    m = get_or_create_material("M_RifleHolo")
+    m.set_editor_property("blend_mode", unreal.BlendMode.BLEND_ADDITIVE)
+    m.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    m.set_editor_property("two_sided", True)
+    g = Graph(m)
+    uv = g.node(unreal.MaterialExpressionTextureCoordinate, -2600, 0, coordinate_index=0)
+    display = g.node(unreal.MaterialExpressionTextureObjectParameter, -2600, -400, parameter_name="DisplayTexture",
+                     texture=black_texture(), sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+
+    def tap(du, dv, x, y):
+        sample = g.node(unreal.MaterialExpressionTextureSample, x, y,
+                        sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+        g.connect(display, "", sample, ["Tex", "TextureObject"])
+        if du or dv:
+            shifted = g.binary(unreal.MaterialExpressionAdd, uv,
+                               g.node(unreal.MaterialExpressionConstant2Vector, x - 400, y + 80, r=du, g=dv), x - 200, y)
+            g.connect(shifted, "", sample, ["UVs", "Coordinates"])
+        else:
+            g.connect(uv, "", sample, ["UVs", "Coordinates"])
+        return sample
+
+    ink = tap(0.0, 0.0, -2000, -600)
+    reach_u, reach_v = HOLO_HALO_REACH
+    halo, halo_out = None, "R"
+    for i, (du, dv) in enumerate(((reach_u, 0.0), (-reach_u, 0.0), (0.0, reach_v), (0.0, -reach_v))):
+        sample = tap(du, dv, -2000, -400 + 200 * i)
+        if halo is None:
+            halo = sample
+        else:
+            halo = g.binary(unreal.MaterialExpressionAdd, halo, sample, -1750, -400 + 200 * i, a_out=halo_out, b_out="R")
+            halo_out = ""
+    lines = g.binary(unreal.MaterialExpressionAdd, ink, g.mul(halo, g.const(HOLO_HALO / 4.0, -1600, 300), -1450, 200),
+                     -1250, -300, a_out="R")
+
+    u = g.node(unreal.MaterialExpressionComponentMask, -2300, 600, r=True, g=False, b=False, a=False)
+    g.connect(uv, "", u, ["", "Input"])
+    v = g.node(unreal.MaterialExpressionComponentMask, -2300, 800, r=False, g=True, b=False, a=False)
+    g.connect(uv, "", v, ["", "Input"])
+    # faint light over the pane, stronger at the foot: tint * (0.4 + 1.2 * V)
+    tint = g.mul(g.binary(unreal.MaterialExpressionAdd, g.mul(v, g.const(1.2, -2100, 950), -1950, 850),
+                          g.const(0.4, -1950, 950), -1800, 850),
+                 g.scalar("PaneTint", -1800, 950, HOLO_PANE_TINT), -1650, 850)
+    image = g.binary(unreal.MaterialExpressionAdd, lines, tint, -1050, -200)
+    # scanlines: 1 - depth / 2 + depth / 2 * sin(2 pi * count * V)
+    wave = g.node(unreal.MaterialExpressionSine, -1800, 1150, period=1.0)
+    g.connect(g.mul(v, g.const(HOLO_SCANLINES, -2100, 1250), -1950, 1150), "", wave, ["", "Input"])
+    scan = g.binary(unreal.MaterialExpressionAdd, g.mul(wave, g.const(HOLO_SCAN_DEPTH / 2.0, -1800, 1250), -1650, 1150),
+                    g.const(1.0 - HOLO_SCAN_DEPTH / 2.0, -1650, 1250), -1500, 1150)
+    # the band of light: 1 + gain * saturate(1 - |frac(V + speed * time) - 0.5| * 10); it rolls up the pane
+    time = g.node(unreal.MaterialExpressionTime, -2300, 1450)
+    rolled = g.unary(unreal.MaterialExpressionFrac,
+                     g.binary(unreal.MaterialExpressionAdd, v, g.mul(time, g.const(HOLO_SWEEP_SPEED, -2300, 1550), -2150, 1450),
+                              -2000, 1450), -1850, 1450)
+    off_centre = g.unary(unreal.MaterialExpressionAbs,
+                         g.binary(unreal.MaterialExpressionSubtract, rolled, g.const(0.5, -1850, 1550), -1700, 1450), -1550, 1450)
+    band = g.unary(unreal.MaterialExpressionSaturate,
+                   g.unary(unreal.MaterialExpressionOneMinus, g.mul(off_centre, g.const(10.0, -1550, 1550), -1400, 1450),
+                           -1250, 1450), -1100, 1450)
+    sweep = g.binary(unreal.MaterialExpressionAdd, g.mul(band, g.const(HOLO_SWEEP_GAIN, -1100, 1550), -950, 1450),
+                     g.const(1.0, -950, 1550), -800, 1450)
+    # edge fade: saturate(min(U, 1 - U) * a) * saturate(min(V, 1 - V) * b)
+    def inset(c, gain, y):
+        near = g.binary(unreal.MaterialExpressionMin, c, g.unary(unreal.MaterialExpressionOneMinus, c, -2100, y + 100), -1950, y)
+        return g.unary(unreal.MaterialExpressionSaturate, g.mul(near, g.const(gain, -1950, y + 100), -1800, y), -1650, y)
+
+    edge = g.mul(inset(u, HOLO_EDGE[0], 1750), inset(v, HOLO_EDGE[1], 1950), -1450, 1850)
+    # flicker: 1 - depth + depth * sin(2 pi * hertz * time)
+    flick_wave = g.node(unreal.MaterialExpressionSine, -1800, 2200, period=1.0)
+    g.connect(g.mul(time, g.const(HOLO_FLICKER[0], -2100, 2300), -1950, 2200), "", flick_wave, ["", "Input"])
+    flicker = g.binary(unreal.MaterialExpressionAdd, g.mul(flick_wave, g.const(HOLO_FLICKER[1], -1800, 2300), -1650, 2200),
+                       g.const(1.0 - HOLO_FLICKER[1], -1650, 2300), -1500, 2200)
+    shade = g.mul(g.mul(g.mul(image, scan, -850, 0), g.mul(sweep, flicker, -650, 1600), -500, 200), edge, -350, 300)
+    glow = g.mul(element_color(g, -900, 2500), g.scalar("Glow", -700, 2620, HOLO_GLOW), -500, 2500)
+    g.out(g.mul(shade, glow, -150, 400), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(m, "M_RifleHolo")
+    return m
+
+
 def shared(name):
     path = SHARED_DIR + "/" + name
     asset = EAL.load_asset(path) if EAL.does_asset_exist(path) else None
@@ -388,7 +493,7 @@ def main():
         fail("GB_RIFLE_STAGE is not set or missing; run Tools/Jam/Import-Rifle.ps1")
     if not EAL.does_directory_exist(MESH_DIR):
         EAL.make_directory(MESH_DIR)
-    masters = {SOLID: shared(SOLID), "M_GunHolo": shared("M_GunHolo")}
+    masters = {SOLID: shared(SOLID), "M_RifleHolo": build_holo()}
     textures = import_textures()
     meshes = import_meshes()
     masters["M_RifleAtlas"] = build_atlas(textures)

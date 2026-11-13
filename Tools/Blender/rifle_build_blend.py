@@ -20,7 +20,9 @@
 #   energy bars   one on each side, on that panel: a dark bezel with a straight glowing strip (owner: the glowing
 #                 shape "is hard to read" from the player's view). The game cuts the strip into 13 cells that drain
 #                 with the enchant
-#   ammo screen   a dark tilted housing on the rear of the sight's eyepiece, and the hologram pane in it
+#   ammo screen   a projected hologram (owner: "more holographic"): a small dark emitter with a glowing slit at the
+#                 foot of the sight's eyepiece, and above it a floating pane tilted towards the player, with nothing
+#                 behind it but the dark eyepiece
 #   magazine      the GLB has none: a curved box magazine, base plate and a glowing slit on each side
 # Objects saved (source frame: muzzle -Y, up +Z, metres): Rifle_Body (slots carabina_roja, Rifle_Rail), Rifle_Trigger,
 # Rifle_Lens, Rifle_AmmoDisplay, Rifle_Magazine. Pivots and motion are custom properties, read by rifle_export_fbx.py.
@@ -103,13 +105,17 @@ STRIP_ZMAX = 0.1
 STRIP_CELLS = 13           # as in M_RifleAtlas (Unreal); here only for the review material
 CELL_GAP = 0.12
 
-# The ammo screen: a 2:1 hologram pane tilted SCREEN_TILT deg up towards the player's eye, in a dark housing on the
-# rear face of the eyepiece.
-SCREEN_C = Vector((CX, 0.2140, 0.1275))
+# The ammo screen: a 2:1 hologram pane tilted SCREEN_TILT deg up towards the player's eye. It floats behind the
+# eyepiece (whose rear face is at y = 205 to 210 mm), over an emitter at the eyepiece's foot.
+SCREEN_C = Vector((CX, 0.2165, 0.1300))
 SCREEN_TILT = 14.0
-SCREEN_HALF = (0.0160, 0.0080)
-SCREEN_FRAME = 0.0022      # housing rim around the pane
-SCREEN_DEEP = 0.0130       # housing depth behind the pane (it sinks into the eyepiece)
+SCREEN_HALF = (0.0190, 0.0095)
+# The emitter: a low metal block, (x half width, y, z) lo and hi, and the glowing slit on its top (y lo and hi).
+EMITTER_HALF_W = 0.0170
+EMITTER_Y = (0.1990, 0.2195)
+EMITTER_Z = (0.1040, 0.1150)
+EMITTER_SLIT_HALF_W = 0.0140
+EMITTER_SLIT_Y = (0.2135, 0.2170)
 
 # The magazine.
 MAG_PIVOT = Vector((CX, 0.032, -0.028))
@@ -525,7 +531,7 @@ def finish(b, name, materials, solids, chamfer=True, smooth=True):
 
 
 def build_extras():
-    """Rail, energy bars and the ammo screen's housing: one object, joined into the body after the bakes.
+    """Rail, side panels, energy bars and the ammo hologram's emitter: one object, joined into the body after the bakes.
     Slot 0 is the atlas material (only the glowing strips use it), slot 1 the flat metal."""
     b = bmesh.new()
     layer_uv = b.loops.layers.uv.verify()
@@ -553,11 +559,14 @@ def build_extras():
                       NOTCH_FILL[0], NOTCH_FILL[1], 1)
         quad(b, origin, along, up, out, (STRIP_Y[0], -STRIP_HALF_W), (STRIP_Y[1], STRIP_HALF_W),
              BAR_PROUD + STRIP_LIFT, 0, (u - h, v - h, u + h, v + h))
-    # ammo screen housing: frame = viewer's right (-X), up the tilted pane, out of it (towards the player)
-    right, s_up, s_out = screen_frame()
-    solids += box(b, SCREEN_C, right, s_up, s_out,
-                  (-SCREEN_HALF[0] - SCREEN_FRAME, -SCREEN_HALF[1] - SCREEN_FRAME, -SCREEN_DEEP),
-                  (SCREEN_HALF[0] + SCREEN_FRAME, SCREEN_HALF[1] + SCREEN_FRAME, -0.0006), 1)
+    # ammo hologram emitter: a metal block at the eyepiece's foot, a glowing slit on its top (always lit: it is
+    # outside the energy strips' span)
+    world = (Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0)))
+    centre_line = Vector((CX, 0.0, 0.0))
+    solids += box(b, centre_line, *world, (-EMITTER_HALF_W, EMITTER_Y[0], EMITTER_Z[0]),
+                  (EMITTER_HALF_W, EMITTER_Y[1], EMITTER_Z[1]), 1)
+    quad(b, Vector((CX, 0.0, EMITTER_Z[1])), *world, (-EMITTER_SLIT_HALF_W, EMITTER_SLIT_Y[0]),
+         (EMITTER_SLIT_HALF_W, EMITTER_SLIT_Y[1]), STRIP_LIFT, 0, (u - h, v - h, u + h, v + h))
     for f in b.faces:
         if f.material_index == 1:
             for loop in f.loops:

@@ -7,7 +7,7 @@ The source file for the assault rifle ("carabina roja"). The owner handed it ove
   - One 4096 albedo with baked light, smears and soft edges, and a `neon_mask`. No roughness, metallic, normal or AO map.
   - Top rail teeth of uneven length and spacing.
 - **`Rifle.blend` is rebuilt from it** by `Tools/Blender/rifle_build_blend.py` (the first version was the plain GLB import, and the rifle read soft in the game):
-  - SHA-256 `17728E439D0085859397F16500775001DD3444596AE512F5D32DA9907AE58BD3` (Blender 5.3.0);
+  - SHA-256 `E2F459181DDB57C07CE9E0DC09FF4576E61DDBE59C95FCE168D8A4188216AE45` (Blender 5.3.0);
   - vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals;
   - `T_Rifle_BaseColor`: one flat tone per panel (white polymer, two greys, dark metal) and the small drawn details re-cut crisp; the barrel, front sight, eyepiece and the band beside the rail are forced to dark metal as whole parts, because their panels came out as patches of different tones;
   - `T_Rifle_ORM`: AO baked in Cycles, roughness and metallic by tone;
@@ -17,8 +17,8 @@ The source file for the assault rifle ("carabina roja"). The owner handed it ove
     - the top rail: the old one deleted, 23 equal teeth (10 mm, 6.4 mm gaps), chamfered;
     - a raised white panel over the whole upper sloped face of the handguard on each side (atlas slot): the face has a stair-stepped groove 5 to 8 mm deep, the channel of the GLB's neon, and a metal block fills the notch it leaves in the ledge above;
     - an energy bar on each panel: a dark bezel 238 mm long with a straight glowing strip (the strip uses the atlas slot);
-    - the ammo screen's housing on the rear of the sight's eyepiece, tilted 14° up towards the player;
-  - also modelled by the script: the hologram pane (32 × 16 mm, in the housing) and the magazine (the GLB has none: a curved box, base plate and a glowing slit on each side);
+    - the ammo hologram's emitter at the foot of the sight's eyepiece: a low block with a glowing slit (the slit uses the atlas slot);
+  - also modelled by the script: the hologram pane (38 × 19 mm, floating over the emitter, tilted 14° up towards the player) and the magazine (the GLB has none: a curved box, base plate and a glowing slit on each side);
   - objects `Rifle_Body`, `Rifle_Trigger`, `Rifle_Lens`, `Rifle_AmmoDisplay`, `Rifle_Magazine`. Pivots, the magazine's slide-out vector and the strip's span are custom properties on them, read by the export.
   - To rebuild: `blender -b --factory-startup --python Tools/Blender/rifle_build_blend.py -- <model.glb> Rifle.blend` (about 4 minutes, most of it the two bakes).
 - **One rifle, one source** (owner's rule): `Rifle.blend` is the only source and `/Game/Glyphbound/Weapons/Rifle` the only result. `Tools/Jam/Import-Rifle.ps1` (Editor closed, pistol imported first):
@@ -26,11 +26,11 @@ The source file for the assault rifle ("carabina roja"). The owner handed it ove
   - imports them with their materials (`import_rifle.py`);
   - deletes the folder.
 - The parts:
-  - body, with the modelled rail, energy bars and screen housing;
+  - body, with the modelled rail, side panels, energy bars and hologram emitter;
   - trigger, picked by the box of its panels, origin at its hinge;
   - magazine, modelled;
   - weak-point light: the two oval lenses of the sight;
-  - ammo display: a 2:1 hologram pane in the housing behind the sight's eyepiece.
+  - ammo display: a 2:1 hologram pane floating behind the sight's eyepiece, with its own material `M_RifleHolo`.
 - Energy strip: in the body's second UV map (`ImbueU`):
   - U runs from 0 at the muzzle end of the energy bars' strips to 1 at their rear end;
   - in Blender, V = 1 on the strip and 0 off it, flipped by the import;
