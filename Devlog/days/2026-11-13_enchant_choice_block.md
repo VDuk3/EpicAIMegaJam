@@ -50,3 +50,14 @@ Until now, the enchant's QTE was the same as every spell's: four random W A S D 
 ## Screenshots (`media/2026-11-13/`)
 - `enchantchoice_qte_1080.png`: the enchant's QTE opening on the element choice, fire marked current.
 - `enchantchoice_then_sequence_1080.png`: after D (ice), part 1's keys with the first one done.
+
+## Package
+Owner: "Enviame el empaquetado para probar los cambios" ("Send me the package to test the changes"). Made from `a583786` with a clean tree while holding the machine lock: `TeamTBD_Glyphbound.zip`, **299.7 MB**, BuildCookRun 94 s.
+
+**Full smoke on the packaged game:** `done=True crashed=False LogGB errors=0`, no LogGB warnings, 65 screenshots.
+- The packaged data has the 30 skill nodes.
+- The enchant's QTE opens on the element choice, and D gives ice.
+- The skill point dialog spends nothing on Esc and exactly one point on confirm.
+- The Entity's tentacle sync is 0.84 this time.
+
+The zip was sent to the owner to play.
