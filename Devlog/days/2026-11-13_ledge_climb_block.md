@@ -51,3 +51,7 @@ Claude Code (Claude Opus 5.5, architect), OpenCode with Muse Spark 1.3 Contribut
 
 ## Open for the owner
 The reach (1.6 m), the speed (0.22 s + 0.18 s per metre) and the "must face the wall" rule are provisional. Playing it is the real test: agents do not run PIE.
+
+## Package
+- `TeamTBD_Glyphbound.zip` from commit `9bf924a`: 299.7 MB, BuildCookRun 153 s. The full smoke on the packaged game is clean (142 s, no LogGB errors). Climb numbers match the Editor run: wall 202 cm, platform 602 cm, the 6 m wall is a normal jump (145 cm of rise).
+- In the full run the climb block runs in the future era with the shotgun in hand: the 3D gun drops out of view and the pixel hands grip, with the cyberpunk HUD around them (`media/2026-11-13/ledgeclimb_grip_packaged_cyber_720.png`). Sent to the owner to play.
