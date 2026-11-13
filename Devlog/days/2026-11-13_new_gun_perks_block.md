@@ -17,7 +17,7 @@ So the balance tool's perk table gained a column: the change in the damage of th
 
 - **Extended Mag:** +4.8% damage per second per point, and +50% load damage at rank 3. Per point, that is the same as Long Shot's load gain.
 - **"+2 shells":** +5.7% per point, and **+100% load damage**, twice any other perk. The +5.7% the owner saw when choosing left the ammo out.
-- **The decision:** the architect set **Extended Tube to +1 shell per rank** (6 -> 9): +3.6% per point and +50% load, like Extended Mag. GDD v0.42 marks it as provisional until the owner says otherwise.
+- **The decision:** the architect set **Extended Tube to +1 shell per rank** (6 -> 9): +3.6% per point and +50% load, like Extended Mag. The architect told the owner and asked. **Owner:** *"Dejarlo en +1 si es lo que consideras ideal"* ("Keep it at +1 if that is what you consider ideal"). It stays at +1, recorded in GDD v0.42.
 - **Encounter lengths:** they do not change (Valkyries 128 / 129 s, Entity 190 s), because the reference builds are pistol builds.
 
 ## Review: GPT Sol 6.1, two rounds (Codex CLI, medium, read-only, logged through `Invoke-LoggedAgent.ps1`)
