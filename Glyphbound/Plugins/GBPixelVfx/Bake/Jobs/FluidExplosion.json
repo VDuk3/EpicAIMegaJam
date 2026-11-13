@@ -35,8 +35,8 @@
     "AlphaMode": "Max",
     "AlphaThreshold": 0.3,
     "ColorMode": "Split",
-    "HotLuminance": 0.55,
-    "HotSaturation": 0.35,
+    "HotLuminance": 0.45,
+    "HotSaturation": 0.75,
     "Ramps": [
       [
         "#4B0F0F",
@@ -53,11 +53,11 @@
         "#555957"
       ]
     ],
-    "LevelsPercentile": 0.99,
-    "Gamma": 1,
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.6,
     "Hysteresis": 0.03,
-    "MinIslandPixels": 2,
-    "FillHoles": false,
+    "MinIslandPixels": 3,
+    "FillHoles": true,
     "Outline": "None"
   },
   "Light": {

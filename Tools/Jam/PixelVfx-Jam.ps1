@@ -30,10 +30,14 @@ param(
     [string]$Owner = 'pixelvfx',
     [int]$LockWaitMinutes = 40,
     [int]$TimeoutSeconds = 900,
-    [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
+    [string]$Project = '',
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9'
 )
 $ErrorActionPreference = 'Continue'
+# $PSScriptRoot came out empty while this script's parameters were being bound (it has [Parameter()] attributes),
+# so the default project path is resolved here instead of in the param block.
+$scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $Project) { $Project = Join-Path $scriptDir '..\..\Glyphbound\Glyphbound.uproject' }
 $Project = (Resolve-Path $Project).Path
 $projDir = Split-Path $Project -Parent
 $logDir = Join-Path $projDir 'Saved\Logs'

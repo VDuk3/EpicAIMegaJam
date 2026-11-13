@@ -1,6 +1,6 @@
 {
   "Id": "FluidSmoke",
-  "Comment": "Niagara Fluids 3D gas smoke (engine template). Loop. No light: smoke does not emit; the key light from the top left shades it.",
+  "Comment": "Niagara Fluids 3D gas smoke (engine template): a column of dark smoke over a fire at its base. Loop. Split mapping: the fire on the fire ramp, the smoke on dark iron; the fire drives the light.",
   "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_Smoke.Grid3D_Gas_Smoke",
   "UserFloats": {},
   "UserVectors": {},
@@ -32,39 +32,45 @@
     "Fps": 12,
     "Loop": true,
     "LoopBlendFrames": 6,
-    "AlphaMode": "Opacity",
+    "AlphaMode": "Max",
     "AlphaThreshold": 0.3,
-    "ColorMode": "Ramp",
-    "HotLuminance": 0.55,
-    "HotSaturation": 0.35,
+    "ColorMode": "Split",
+    "HotLuminance": 0.5,
+    "HotSaturation": 0.6,
     "Ramps": [
+      [
+        "#4B0F0F",
+        "#BC2A12",
+        "#F03416",
+        "#F3610B",
+        "#E2DE9C",
+        "#F5F3CF"
+      ],
       [
         "#262827",
         "#373837",
         "#434848",
-        "#555957",
-        "#758685",
-        "#9DAAA9"
+        "#555957"
       ]
     ],
-    "LevelsPercentile": 0.99,
-    "Gamma": 1,
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.7,
     "Hysteresis": 0.03,
-    "MinIslandPixels": 2,
-    "FillHoles": false,
+    "MinIslandPixels": 3,
+    "FillHoles": true,
     "Outline": "None"
   },
   "Light": {
-    "Enabled": false,
+    "Enabled": true,
     "Color": "#F3610B",
-    "Intensity": 12,
-    "RadiusCm": 900,
+    "Intensity": 10,
+    "RadiusCm": 800,
     "CastShadows": true,
     "TrackMode": "Baked"
   },
   "World": {
     "Facing": "Upright",
-    "Glow": 0,
-    "Lit": true
+    "Glow": 1,
+    "Lit": false
   }
 }

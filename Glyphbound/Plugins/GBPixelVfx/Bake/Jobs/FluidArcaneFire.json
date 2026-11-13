@@ -1,7 +1,7 @@
 {
   "Id": "FluidArcaneFire",
-  "Comment": "Niagara Fluids 3D colored fire (engine template) pushed to the arcane ramp: the same simulation, another element.",
-  "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_ColoredFire.Grid3D_Gas_ColoredFire",
+  "Comment": "The SAME Niagara Fluids fire simulation as FluidFire, mapped to the arcane ramp: one simulation, another element (the ColoredFire template rendered nothing in the capture).",
+  "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_Fire.Grid3D_Gas_Fire",
   "UserFloats": {},
   "UserVectors": {},
   "UserColors": {},
@@ -33,7 +33,7 @@
     "Loop": true,
     "LoopBlendFrames": 6,
     "AlphaMode": "Max",
-    "AlphaThreshold": 0.3,
+    "AlphaThreshold": 0.25,
     "ColorMode": "Ramp",
     "HotLuminance": 0.55,
     "HotSaturation": 0.35,
@@ -47,11 +47,11 @@
         "#F0F0F0"
       ]
     ],
-    "LevelsPercentile": 0.99,
-    "Gamma": 1,
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.7,
     "Hysteresis": 0.03,
-    "MinIslandPixels": 2,
-    "FillHoles": false,
+    "MinIslandPixels": 3,
+    "FillHoles": true,
     "Outline": "None"
   },
   "Light": {

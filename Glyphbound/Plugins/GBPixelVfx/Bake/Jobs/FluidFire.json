@@ -33,7 +33,7 @@
     "Loop": true,
     "LoopBlendFrames": 6,
     "AlphaMode": "Max",
-    "AlphaThreshold": 0.3,
+    "AlphaThreshold": 0.25,
     "ColorMode": "Split",
     "HotLuminance": 0.55,
     "HotSaturation": 0.35,
@@ -53,11 +53,11 @@
         "#555957"
       ]
     ],
-    "LevelsPercentile": 0.99,
-    "Gamma": 1,
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.7,
     "Hysteresis": 0.03,
-    "MinIslandPixels": 2,
-    "FillHoles": false,
+    "MinIslandPixels": 3,
+    "FillHoles": true,
     "Outline": "None"
   },
   "Light": {
