@@ -31,7 +31,9 @@
 # Objects saved: Shotgun_Body (with cables, cell, energy bar and port joined in), Shotgun_Trigger, Shotgun_Pump,
 # Shotgun_AmmoDisplay, Shotgun_WeakPointLight, Shotgun_Magazine (the shell). Pivots and motion are custom properties.
 # Usage: blender -b --factory-startup --python shotgun_build_blend.py -- <model.glb> <out.blend> [review_dir] [tex|full]
+#        [bar_receiver|bar_sight]
 #        "tex" stops after the textures are computed and dumped to review_dir (no bakes, nothing saved).
+#        The last argument chooses where the energy bar goes (see ENERGY_BAR_ON_SIGHT).
 import bpy, bmesh, sys, os, math
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
@@ -41,6 +43,11 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 glb, out_blend = argv[0], argv[1]
 review_dir = argv[2] if len(argv) > 2 else None
 stage = argv[3] if len(argv) > 3 else "full"
+# Where the energy bar goes. On the receiver block's top (the place the owner approved in the renders) the game's
+# camera sees it almost edge-on, and lowering the gun hides it behind the 2D hands: it cannot be read in play.
+# The other place is the sight's rear lower panel, which faces the player, under the weak-point lens and the ammo
+# hologram: there the bar runs across the gun and the painted strip on the receiver stays as plain glow.
+ENERGY_BAR_ON_SIGHT = (argv[4] if len(argv) > 4 else "bar_receiver") == "bar_sight"
 
 SHARP_ANGLE = 30.0
 BEVEL_RADIUS = 0.0008      # metres: rounded-edge width baked into the normal map
@@ -164,6 +171,11 @@ SCREEN_TILT = 8.0
 SCREEN_HALF = (0.0250, 0.0125)
 # The weak-point light: a lens on the sight's rear lower panel, a plane leaning LIGHT_LEAN (y per z) through LIGHT_C.
 LIGHT_C, LIGHT_LEAN = Vector((0.0085, -0.0063, 0.329)), -0.3375
+# With the energy bar on that panel: the lens moves up, and the bar lies under it, across the gun. Distances up the
+# panel from LIGHT_C, half sizes (across the gun, up the panel), in metres.
+PANEL_LENS = (0.0050, (0.0170, 0.0026))
+PANEL_BAR = (-0.0065, (0.0240, 0.0036))
+PANEL_STRIP_HALF = (0.0210, 0.0020)
 LIGHT_HALF, LIGHT_SLAB = (0.017, 0.0035), (-0.0020, 0.0026)
 
 # Found by the architect's own zone-by-zone review of the renders, before the owner saw them:
@@ -435,7 +447,7 @@ glow_raw *= box_blur(glow_raw, 2) > 0.42          # the frost has cyan specks: a
 glow_raw *= box_blur(glow_raw, 6) > 0.35          # ...and belongs to a shape of some size, not to a blob
 # The handguard's strip is on its top face; the projection spilled it onto the sides as ragged blobs.
 glow_raw[in_box(*GLOW_UP_ONLY) & ((facing != 5) | (np.abs(pos[..., 0]) > GLOW_STRIP_HALF))] = 0.0
-for lo_, hi_ in GLOW_NONE + [BAR_CLEAR]:
+for lo_, hi_ in GLOW_NONE + ([] if ENERGY_BAR_ON_SIGHT else [BAR_CLEAR]):
     glow_raw[in_box(lo_, hi_)] = 0.0
 green = (col[..., 1] > col[..., 0] * 1.12) & (col[..., 1] > col[..., 2] * 1.08) & (sat > 0.2)
 warm = (col[..., 0] > col[..., 2] * 1.10) & (sat > 0.2) & (mx > 0.12)
@@ -1214,8 +1226,18 @@ X_AXIS = Vector((1.0, 0.0, 0.0))
 ATLAS = me.materials[0]
 BAR_AX, BAR_UP = slope_frame(BAR_SLOPE)
 STRIP_S = (BAR_ALONG[0] + STRIP_INSET, BAR_ALONG[1] - STRIP_INSET)
-# y of the strip's two ends as modelled: the strip is lifted off the sloped plane, which also moves it along y
-STRIP_Y = tuple((BAR_C + BAR_AX * s_ + BAR_UP * (BAR_PROUD + STRIP_LIFT)).y for s_ in STRIP_S)
+PANEL_UP = Vector((0.0, LIGHT_LEAN, 1.0)).normalized()          # up the sight's rear lower panel
+PANEL_OUT = Vector((0.0, PANEL_UP.z, -PANEL_UP.y))                # out of it, towards the player
+PLAYER_RIGHT = Vector((-1.0, 0.0, 0.0))
+# The strip as modelled: the middle of its two ends (the game drains it from the first towards the second), the
+# direction out of its face, and its half width. The export derives the second UV map from these.
+if ENERGY_BAR_ON_SIGHT:
+    STRIP_MID = LIGHT_C + PANEL_UP * PANEL_BAR[0] + PANEL_OUT * (LIGHT_SLAB[1] + STRIP_LIFT)
+    STRIP_FROM, STRIP_TO = STRIP_MID + PLAYER_RIGHT * PANEL_STRIP_HALF[0], STRIP_MID - PLAYER_RIGHT * PANEL_STRIP_HALF[0]
+    STRIP_NORMAL, STRIP_HALF = PANEL_OUT, PANEL_STRIP_HALF[1]
+else:
+    STRIP_FROM, STRIP_TO = (BAR_C + BAR_AX * s_ + BAR_UP * (BAR_PROUD + STRIP_LIFT) for s_ in STRIP_S)
+    STRIP_NORMAL, STRIP_HALF = BAR_UP, STRIP_HALF_W
 PORT_AX, PORT_UP = slope_frame(PORT_SLOPE)
 PORT_OUT = -PORT_UP                                  # the port is on the underside: out of it is downwards
 PUMP_AX, PUMP_UP = slope_frame(PUMP_SLOPE)
@@ -1226,10 +1248,17 @@ def build_extras():
     b = bmesh.new()
     u, v = STRIP_UV
     h = 6.0 / W
-    solids = box(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-BAR_HALF_W, BAR_ALONG[0], -BAR_DEEP),
-                 (BAR_HALF_W, BAR_ALONG[1], BAR_PROUD), FLAT_UV["metal"])
-    quad(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-STRIP_HALF_W, STRIP_S[0]), (STRIP_HALF_W, STRIP_S[1]),
-         BAR_PROUD + STRIP_LIFT, (u - h, v - h, u + h, v + h))
+    if ENERGY_BAR_ON_SIGHT:
+        at = LIGHT_C + PANEL_UP * PANEL_BAR[0]
+        solids = box(b, at, PLAYER_RIGHT, PANEL_UP, PANEL_OUT, (-PANEL_BAR[1][0], -PANEL_BAR[1][1], LIGHT_SLAB[0]),
+                     (PANEL_BAR[1][0], PANEL_BAR[1][1], LIGHT_SLAB[1]), FLAT_UV["metal"])
+        quad(b, at, PLAYER_RIGHT, PANEL_UP, PANEL_OUT, (-PANEL_STRIP_HALF[0], -PANEL_STRIP_HALF[1]),
+             (PANEL_STRIP_HALF[0], PANEL_STRIP_HALF[1]), LIGHT_SLAB[1] + STRIP_LIFT, (u - h, v - h, u + h, v + h))
+    else:
+        solids = box(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-BAR_HALF_W, BAR_ALONG[0], -BAR_DEEP),
+                     (BAR_HALF_W, BAR_ALONG[1], BAR_PROUD), FLAT_UV["metal"])
+        quad(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-STRIP_HALF_W, STRIP_S[0]), (STRIP_HALF_W, STRIP_S[1]),
+             BAR_PROUD + STRIP_LIFT, (u - h, v - h, u + h, v + h))
     # the port: four bars round a dark opening
     hl, hw, bar = PORT_HALF[0], PORT_HALF[1], PORT_BAR
     for lo, hi in (((-hw, -hl), (hw, -hl + bar)), ((-hw, hl - bar), (hw, hl)),
@@ -1289,8 +1318,9 @@ def build_light():
     b = bmesh.new()
     up = Vector((0.0, LIGHT_LEAN, 1.0)).normalized()
     out = Vector((0.0, up.z, -up.y))
-    solids = box(b, LIGHT_C, Vector((-1.0, 0.0, 0.0)), up, out, (-LIGHT_HALF[0], -LIGHT_HALF[1], LIGHT_SLAB[0]),
-                 (LIGHT_HALF[0], LIGHT_HALF[1], LIGHT_SLAB[1]), (0.5, 0.5))
+    at, half = (LIGHT_C + up * PANEL_LENS[0], PANEL_LENS[1]) if ENERGY_BAR_ON_SIGHT else (LIGHT_C, LIGHT_HALF)
+    solids = box(b, at, Vector((-1.0, 0.0, 0.0)), up, out, (-half[0], -half[1], LIGHT_SLAB[0]),
+                 (half[0], half[1], LIGHT_SLAB[1]), (0.5, 0.5))
     lens = flat_material("Shotgun_Light", (0.05, 0.07, 0.08), 0.15, 0.0, glow=(GLOW[0], GLOW[1], GLOW[2], 0.0))
     return finish(b, "Shotgun_WeakPointLight", [lens], solids)
 
@@ -1470,10 +1500,25 @@ def math_node(op, a, b=None):
 coord = nt.nodes.new("ShaderNodeTexCoord")
 xyz = nt.nodes.new("ShaderNodeSeparateXYZ")
 nt.links.new(coord.outputs["Object"], xyz.inputs["Vector"])
-cell_pos = math_node("MULTIPLY", math_node("SUBTRACT", xyz.outputs["Y"], STRIP_Y[0]), STRIP_CELLS / (STRIP_Y[1] - STRIP_Y[0]))
+def along(axis):
+    """The shaded point's distance from the strip's first end along this axis."""
+    rel = nt.nodes.new("ShaderNodeVectorMath")
+    rel.operation = "SUBTRACT"
+    nt.links.new(coord.outputs["Object"], rel.inputs[0])
+    rel.inputs[1].default_value = STRIP_FROM[:]
+    dot = nt.nodes.new("ShaderNodeVectorMath")
+    dot.operation = "DOT_PRODUCT"
+    nt.links.new(rel.outputs["Vector"], dot.inputs[0])
+    dot.inputs[1].default_value = axis[:]
+    return dot.outputs["Value"]
+
+
+strip_dir = (STRIP_TO - STRIP_FROM).normalized()
+strip_len = (STRIP_TO - STRIP_FROM).length
+cell_pos = math_node("MULTIPLY", along(strip_dir), STRIP_CELLS / strip_len)
 on_strip = math_node("MULTIPLY", math_node("GREATER_THAN", cell_pos, 0.0), math_node("LESS_THAN", cell_pos, float(STRIP_CELLS)))
-on_strip = math_node("MULTIPLY", on_strip, math_node("GREATER_THAN", xyz.outputs["Z"], BAR_CLEAR[0][2]))
-on_strip = math_node("MULTIPLY", on_strip, math_node("LESS_THAN", math_node("ABSOLUTE", xyz.outputs["X"]), STRIP_HALF_W + 0.001))
+on_strip = math_node("MULTIPLY", on_strip, math_node("LESS_THAN", math_node("ABSOLUTE", along(STRIP_NORMAL)), 0.0005))
+on_strip = math_node("MULTIPLY", on_strip, math_node("LESS_THAN", math_node("ABSOLUTE", along(STRIP_NORMAL.cross(strip_dir))), STRIP_HALF + 0.001))
 lit_cell = math_node("GREATER_THAN", math_node("FRACT", cell_pos), CELL_GAP)
 cells = math_node("MAXIMUM", lit_cell, math_node("SUBTRACT", 1.0, on_strip))
 nt.links.new(math_node("MULTIPLY", cells, EMISSION), bsdf.inputs["Emission Strength"])
@@ -1501,9 +1546,11 @@ DISPLAY["pivot"] = HAND[:]
 LIGHT["pivot"] = HAND[:]
 PUMP["pivot"] = PUMP_C[:]
 PUMP["slide"] = (PUMP_AX * PUMP_TRAVEL)[:]
-scene["strip_y"] = STRIP_Y
-scene["strip_half_w"] = STRIP_HALF_W
-scene["strip_zmin"] = BAR_CLEAR[0][2]
+scene["strip_from"] = STRIP_FROM[:]
+scene["strip_to"] = STRIP_TO[:]
+scene["strip_normal"] = STRIP_NORMAL[:]
+scene["strip_half_w"] = STRIP_HALF
+scene["energy_bar_on_sight"] = ENERGY_BAR_ON_SIGHT
 for o in scene.objects:
     if o.type == "MESH":
         print("OBJECT", o.name, "tris", sum(len(p.vertices) - 2 for p in o.data.polygons), "slots",

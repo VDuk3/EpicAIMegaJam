@@ -17,7 +17,7 @@ Built by `Tools/Blender/shotgun_build_blend.py` (80 to 90 s, most of it the two 
 
 `blender -b --factory-startup --python Tools/Blender/shotgun_build_blend.py -- model.glb Shotgun.blend`
 
-SHA-256 `0C6831DB624F337EAA7CD7D07D95FB99BA2205DDE67BA10798F93B1794FC4DC8` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
+SHA-256 `2DF671ECA9F0B23197A98F2DE919C1EFD1C7A9873E6AE88072C10B586280C9D0` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
 
 - **Rebuilt on the same shape:** vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals; one navy taken from the gun's own texels, with the frost, the baked light and the cables' imprint gone; small drawn details re-cut; the carbon panels found by their texture and their weave redrawn by position; a glow mask cut from the cyan; AO and a normal map baked in Cycles.
 - **Cables:** split from the body, one colour per piece (black, copper orange, dark red, blue), smooth and subdivided once, 16,081 triangles.
@@ -46,5 +46,7 @@ SHA-256 `0C6831DB624F337EAA7CD7D07D95FB99BA2205DDE67BA10798F93B1794FC4DC8` (Blen
 - `Tools/Blender/shotgun_export_fbx.py` exports the six parts and the four textures into a temporary folder under `Saved/`, and writes `export_report.json` here: the offsets the game code uses, in centimetres (trigger hinge, pump rest and slide, shell rest and way out, muzzle tip, ammo display centre);
 - `Tools/Jam/import_shotgun.py` imports them and builds `M_ShotgunAtlas` (body, trigger, pump; the strip in 13 cells) and `M_ShotgunIndicator` (the lens), and reuses `M_GunSolid` (shell) and `M_RifleHolo` (ammo display). It checks the body has one material slot, the shell three, and that UV 1 carries the strip from 0 to 1;
 - the temporary folder is deleted.
+
+**The energy bar's place is a switch** in the build script (last argument, `bar_receiver` or `bar_sight`). In the game the bar on the receiver's top is seen almost edge-on; the architect built and rendered the other place (the sight's rear lower panel, facing the player) and asked. Owner, 2026-11-13: it stays on the receiver. `bar_receiver` is the default and what is imported.
 
 **Not written yet:** the game code for the shotgun's viewmodel, its pump and its shell-by-shell reload.

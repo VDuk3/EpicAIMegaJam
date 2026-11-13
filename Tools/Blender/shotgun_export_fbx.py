@@ -2,9 +2,9 @@
 # static-mesh FBX files for Unreal, plus its four textures. The game animates the moving parts in code.
 #   SM_Shotgun_Body            everything that does not move, one material slot (Shotgun_Atlas): the rebuilt Tripo
 #                              shell with the cables, the cell, the loading port and the energy bar joined in.
-#                              UV 1 ("ImbueU") drives the energy bar's strip: U = 0 at its muzzle end, 1 at its rear
-#                              end; V = 1 marks glow that is not part of the strip (always lit). The material splits
-#                              the strip into 13 cells, like the pistol's and the rifle's bars.
+#                              UV 1 ("ImbueU") drives the energy bar's strip: U = 0 at the end that drains first, 1 at
+#                              the other; V = 1 marks glow that is not part of the strip (always lit). The material
+#                              splits the strip into 13 cells, like the pistol's and the rifle's bars.
 #   SM_Shotgun_Trigger         the trigger, pivot at its top (hinge)
 #   SM_Shotgun_Pump            the ribbed sleeve around the forend, pivot at its rest place; it slides back along
 #                              "pump_slide_offset" and returns
@@ -39,11 +39,16 @@ PARTS = {
     "SM_Shotgun_Magazine": ("Shotgun_Magazine", False),
 }
 missing = [src for src, _ in PARTS.values() if bpy.data.objects.get(src) is None]
-if missing or "strip_y" not in scene:
-    raise SystemExit("shotgun_export_fbx: Shotgun.blend lacks %s (run shotgun_build_blend.py)" % (missing or "strip_y"))
+if missing or "strip_from" not in scene:
+    raise SystemExit("shotgun_export_fbx: Shotgun.blend lacks %s (run shotgun_build_blend.py)" % (missing or "strip_from"))
 HAND = Vector(bpy.data.objects["Shotgun_Body"]["pivot"])
-STRIP_Y0, STRIP_Y1 = scene["strip_y"]
-STRIP_HALF_W, STRIP_ZMIN = scene["strip_half_w"], scene["strip_zmin"]
+# The energy strip: its two ends (the game drains it from the first towards the second), the direction out of its
+# face and its half width, as modelled.
+STRIP_FROM, STRIP_TO = np.array(scene["strip_from"], np.float32), np.array(scene["strip_to"], np.float32)
+STRIP_NORMAL, STRIP_HALF_W = np.array(scene["strip_normal"], np.float32), scene["strip_half_w"]
+STRIP_LEN = float(np.linalg.norm(STRIP_TO - STRIP_FROM))
+STRIP_DIR = (STRIP_TO - STRIP_FROM) / STRIP_LEN
+STRIP_ACROSS = np.cross(STRIP_NORMAL, STRIP_DIR)
 TURN = Matrix.Rotation(math.pi / 2, 4, "Z")
 TURN3 = TURN.to_3x3()
 
@@ -61,9 +66,11 @@ def add_imbue_uv(me):
     loop_vert = np.empty(len(me.loops), np.int32)
     me.loops.foreach_get("vertex_index", loop_vert)
     c = co.reshape(-1, 3)[loop_vert]
-    u = (c[:, 1] - STRIP_Y0) / (STRIP_Y1 - STRIP_Y0)
-    strip = (c[:, 1] >= STRIP_Y0 - 1e-4) & (c[:, 1] <= STRIP_Y1 + 1e-4) & (c[:, 2] > STRIP_ZMIN) & \
-            (np.abs(c[:, 0]) < STRIP_HALF_W + 0.0005)
+    rel = c - STRIP_FROM
+    u = (rel @ STRIP_DIR) / STRIP_LEN
+    # on the strip: between its ends, on its face (a tenth of a millimetre) and within its width
+    strip = (u >= -1e-4 / STRIP_LEN) & (u <= 1.0 + 1e-4 / STRIP_LEN) & (np.abs(rel @ STRIP_NORMAL) < 1e-4) & \
+            (np.abs(rel @ STRIP_ACROSS) < STRIP_HALF_W + 1e-4)
     # V is flipped by the FBX import (Unreal V = 1 - Blender V): Unreal gets V = 0 on the strip, 1 off it.
     uvs = np.stack([u, np.where(strip, 1.0, 0.0)], axis=1).astype(np.float32)
     layer.uv.foreach_set("vector", uvs.ravel())
@@ -135,7 +142,8 @@ report["magazine_rest_offset_cm"] = report["parts"]["SM_Shotgun_Magazine"]["offs
 report["magazine_out_offset_cm"] = cm(bpy.data.objects["Shotgun_Magazine"]["out"])
 report["muzzle_tip_cm"] = cm(muzzle - HAND)
 report["ammo_display_centre_cm"] = cm(pane_centre - HAND)
-report["strip_y_source"] = [round(STRIP_Y0, 4), round(STRIP_Y1, 4)]
+report["strip_ends_source"] = [[round(float(v), 4) for v in STRIP_FROM], [round(float(v), 4) for v in STRIP_TO]]
+report["energy_bar_on_sight"] = bool(scene.get("energy_bar_on_sight", False))
 
 # Textures, as PNG: albedo, ORM (AO, roughness, metallic), normal (OpenGL, +Y) and the glow mask.
 for name in ("T_Shotgun_BaseColor", "T_Shotgun_ORM", "T_Shotgun_Normal", "T_Shotgun_EmissiveMask"):
