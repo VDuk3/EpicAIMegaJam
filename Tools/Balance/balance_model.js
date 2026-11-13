@@ -38,15 +38,16 @@ const ASSUME = {
 };
 
 // Reference builds: what a player who mixes both trees owns at each point of the game (skill id -> rank).
+// Since the per-gun weapon trees (GDD v0.40) the builds are pistol builds; the gun specialist adds the shotgun.
 const BUILDS = {
 	Start: { points: 2, ranks: { Weapon_Damage: 2 } },
 	Early: { points: 8, ranks: { Weapon_Damage: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 2 } },
-	Mid: { points: 16, ranks: { Weapon_Damage: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Weapon_FireRate: 1, Spell_FireballDamage: 3, Spell_LightningDamage: 3 } },
-	ValkyriePast: { points: 24, ranks: { Weapon_Damage: 3, Weapon_FireRate: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3 } },
-	ValkyrieFuture: { points: 29, ranks: { Weapon_Damage: 3, Weapon_FireRate: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 2 } },
-	Entity: { points: 34, sword: true, ranks: { Weapon_Damage: 3, Weapon_FireRate: 3, Weapon_ReloadSpeed: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 3, Spell_RuneRadius: 1 } },
+	Mid: { points: 16, ranks: { Weapon_Damage: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Weapon_Pistol_FireRate: 1, Spell_FireballDamage: 3, Spell_LightningDamage: 3 } },
+	ValkyriePast: { points: 24, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3 } },
+	ValkyrieFuture: { points: 29, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 2 } },
+	Entity: { points: 34, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 3, Spell_RuneRadius: 1 } },
 	// The two extremes at the full budget, to see how far apart specialists land.
-	GunSpecialist36: { points: 36, sword: true, ranks: { Weapon_Damage: 3, Weapon_FireRate: 3, Weapon_ReloadSpeed: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Weapon_PrecisionRecovery: 3, Weapon_EnchantBuildUp: 3, Weapon_ShotgunClose: 3, Weapon_Recoil: 3 } },
+	GunSpecialist36: { points: 36, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Weapon_PrecisionRecovery: 3, Weapon_Pistol_Recoil: 3, Weapon_ShotgunClose: 3, Weapon_Shotgun_Spread: 3 } },
 	PureMage36: { points: 36, sword: true, ranks: { Spell_FireballDamage: 3, Spell_FireballBlast: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_Cooldown: 3, Spell_FlamethrowerDamage: 3, Spell_RuneRadius: 3, Spell_OrbDuration: 3, Spell_FireWallDuration: 3, Spell_IceFloorSlow: 3 } }
 };
 // Which build an encounter is fought with (by id prefix, first match wins).

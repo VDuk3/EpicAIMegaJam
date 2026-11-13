@@ -532,9 +532,9 @@ namespace GBSmokeRun
 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
 			{
 				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
-				if (Data->GetSkillNodes().Num() != 22)
+				if (Data->GetSkillNodes().Num() != 29)
 				{
-					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 22 skill nodes, found %d"), Data->GetSkillNodes().Num());
+					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 29 skill nodes, found %d"), Data->GetSkillNodes().Num());
 				}
 				if (Data->GetSkillNodes().Num() > 0)
 				{
@@ -573,14 +573,14 @@ namespace GBSmokeRun
 				}
 			};
 			UnlockRanks(FName(TEXT("Weapon_Damage")), 1);
-			UnlockRanks(FName(TEXT("Weapon_FireRate")), 1);
-			UnlockRanks(FName(TEXT("Weapon_ReloadSpeed")), 3);
+			UnlockRanks(FName(TEXT("Weapon_Pistol_FireRate")), 1);
+			UnlockRanks(FName(TEXT("Weapon_Pistol_Reload")), 3);
+			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2); // Marksman hangs from Deadeye (per-gun trees)
 			UnlockRanks(FName(TEXT("Weapon_Headshot")), 1);
 			UnlockRanks(FName(TEXT("Weapon_PrecisionRecovery")), 1);
-			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2);
 			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reload=%d precision=%d conduit=%d deadeye=%d points=%d"),
-				Skills->GetRank(FName(TEXT("Weapon_ReloadSpeed"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
-				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
+				Skills->GetRank(FName(TEXT("Weapon_Pistol_Reload"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
+				Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
 		});
 		Add(15.8f + S, TEXT("precision recovery: weak point kill heals, second kill is on cooldown"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
@@ -678,8 +678,8 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: points=%d (expected %d)"), Points, SmokeSkillPointsBefore);
 			}
-			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_FireRate")), FName(TEXT("Weapon_ReloadSpeed")),
-				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
+			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_Pistol_FireRate")), FName(TEXT("Weapon_Pistol_Reload")),
+				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_Rifle_EnchantBuildUp")),
 				FName(TEXT("Weapon_PistolHeadshot")) })
 			{
 				if (Skills->GetRank(Node) != 0)
@@ -740,6 +740,9 @@ namespace GBSmokeRun
 			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
 			const int32 PointsBefore = Skills->GetPoints();
 			Skills->AddPoints(8);
+			// Arcane Conduit is the rifle's perk (per-gun trees): check it with the rifle in hand, then put the pistol back.
+			Equipment->GiveWeapon(TEXT("Rifle"), false, false);
+			Equipment->EquipOwnedWeapon(TEXT("Rifle"));
 			Equipment->SwitchTo(EGBHeldSlot::Gun);
 			UGBSpellbookComponent* Book = Player->GetSpellbook();
 			const FName EnchantId = Book->GetEnchantSpell();
@@ -765,14 +768,14 @@ namespace GBSmokeRun
 			if (Gun && Before > 0.f)
 			{
 				Skills->Unlock(FName(TEXT("Weapon_Damage")));
-				Skills->Unlock(FName(TEXT("Weapon_ShotgunClose")));
+				Skills->Unlock(FName(TEXT("Weapon_RifleFar")));
 				for (int32 i = 0; i < 3; ++i)
 				{
-					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
+					Skills->Unlock(FName(TEXT("Weapon_Rifle_EnchantBuildUp")));
 				}
-				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
+				if (Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))) != 3)
 				{
-					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
+					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))));
 				}
 				else
 				{
@@ -788,10 +791,11 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: enchanted build-up is 0, the enchant is not active"));
 			}
+			Equipment->EquipOwnedWeapon(TEXT("Pistol"));
 			Equipment->SwitchTo(EGBHeldSlot::Staff);
 			Skills->ResetAll();
 			Skills->AddPoints(-8); // take back the test points added for this step
-			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
+			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))) != 0)
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit reset FAILED: points=%d (expected %d)"), Skills->GetPoints(), PointsBefore);
 			}
@@ -2920,7 +2924,7 @@ namespace GBSmokeRun
 		Add(U + 5.3f, TEXT("ui: rpg skill trees, a weapon node"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			Menu(Player, EGBMenu::SkillTrees);
-			Cursor(World, 0, 0, TEXT("Weapon_FireRate"), false);
+			Cursor(World, 0, 0, TEXT("Weapon_Rifle_FireRate"), false);
 		});
 		Add(U + 5.7f, TEXT("ui: screenshot rpg skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09_rpg_skilltrees")); });
 		Add(U + 5.75f, TEXT("ui: rpg skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });

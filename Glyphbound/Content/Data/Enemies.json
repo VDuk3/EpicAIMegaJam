@@ -486,7 +486,7 @@
 			"bPixelArt": false,
 			"ActorClass": "/Script/Glyphbound.GBEntity",
 			"Stats": {
-				"MaxHealth": 8000,
+				"MaxHealth": 7300,
 				"MoveSpeed": 420,
 				"AttackDamage": 20,
 				"AttackRange": 2600,
@@ -531,7 +531,7 @@
 			"Element": "Physical",
 			"bPixelArt": true,
 			"Stats": {
-				"MaxHealth": 8000,
+				"MaxHealth": 7300,
 				"MoveSpeed": 520,
 				"AttackDamage": 26,
 				"AttackRange": 240,
