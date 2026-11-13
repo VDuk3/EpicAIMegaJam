@@ -8,6 +8,7 @@
 #if !UE_BUILD_SHIPPING
 
 #include "Containers/Ticker.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "HAL/IConsoleManager.h"
@@ -2698,7 +2699,43 @@ namespace GBSmokeRun
 			SmokeEntity.Reset();
 			Player->GetAttributes()->SetInvulnerable(false);
 		});
-		Add(68.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// GBPixelVfx plugin: one baked Niagara Fluids clip in the game's own level and lighting. The game module does not depend
+		// on the plugin: it goes through the plugin's console command, and both steps do nothing when the plugin is off.
+		Add(68.3f + S, TEXT("pixelvfx: spawn the baked fire on the ground in front of the player"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			MarkSim(World);
+			if (!IConsoleManager::Get().FindConsoleObject(TEXT("pvfx.Spawn")))
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx skipped: the GBPixelVfx plugin is not enabled"));
+				return;
+			}
+			if (GEngine)
+			{
+				GEngine->Exec(World, TEXT("pvfx.Spawn FluidFire 0.6 700"));
+			}
+		});
+		Add(68.9f + S, TEXT("pixelvfx: screenshot of the baked fire lighting the room"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			if (!IConsoleManager::Get().FindConsoleObject(TEXT("pvfx.Spawn")))
+			{
+				return;
+			}
+			int32 Clips = 0;
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				if (It->GetClass()->GetName() == TEXT("GBPixelVfxActor"))
+				{
+					++Clips;
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx clips=%d"), Clips);
+			if (Clips != 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx FAILED: %d baked clips in the world (expected 1: is Content/Data/Vfx/FluidFire there?)"), Clips);
+			}
+			Shot(TEXT("16_pixelvfx_fire"));
+		}, 0.5f);
+		Add(69.4f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

@@ -202,19 +202,27 @@ bool FGBPixelVfxSplitSortTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("hot pixel uses ramp 0"), Map.Pixels[2].Ramp == 0);
 	TestFalse(TEXT("dim grey pixel is not hot"), Map.Pixels[3].bHot);
 	TestTrue(TEXT("cold pixel uses ramp 1"), Map.Pixels[3].Ramp == 1);
-	// Hot and cold levels are normalized independently: the hot peak (brightest hot
-	// pixel) differs from the cold peak, and each pixel's value uses its own peak.
-	TestTrue(TEXT("hot and cold peaks differ"), !FMath::IsNearlyEqual(Hot, Cold, 0.01f));
-	const float HotLum0 = PixelLuminance(FLinearColor(0.8f, 0.8f, 0.8f));
-	TestTrue(TEXT("luminance-only value uses the hot peak"),
-		FMath::IsNearlyEqual(Map.Pixels[0].Value, FMath::Clamp(HotLum0 / Hot, 0.f, 1.f), 0.01f));
-	const float ColdLum = PixelLuminance(FLinearColor(0.2f, 0.2f, 0.2f));
-	TestTrue(TEXT("cold value uses the cold peak"),
-		FMath::IsNearlyEqual(Map.Pixels[3].Value, FMath::Clamp(ColdLum / Cold, 0.f, 1.f), 0.01f));
+	// Peaks calculated by hand (percentile 1 = the maximum of each group). Hot group: luminances
+	// 0.8, 0.100788 (0.4*0.2126 + 0.02*0.7152 + 0.02*0.0722) and 1.2887 (3*0.2126 + 0.9*0.7152 + 0.1*0.0722).
+	// Cold group: 0.2. A peak routine that returned any other pair would be caught here.
+	TestTrue(TEXT("the hot peak is the brightest hot luminance (1.2887)"), FMath::IsNearlyEqual(Hot, 1.2887f, 0.001f));
+	TestTrue(TEXT("the cold peak is the brightest cold luminance (0.2)"), FMath::IsNearlyEqual(Cold, 0.2f, 0.001f));
+	TestTrue(TEXT("the overall peak is the brightest luminance"), FMath::IsNearlyEqual(Peak, 1.2887f, 0.001f));
+	// Levels: each pixel is normalized by its own group's peak.
+	TestTrue(TEXT("luminance-only hot value is 0.8 / 1.2887"), FMath::IsNearlyEqual(Map.Pixels[0].Value, 0.6208f, 0.002f));
+	TestTrue(TEXT("saturation-only hot value is 0.100788 / 1.2887"), FMath::IsNearlyEqual(Map.Pixels[1].Value, 0.0782f, 0.002f));
+	TestTrue(TEXT("the brightest hot pixel is at full value"), FMath::IsNearlyEqual(Map.Pixels[2].Value, 1.f, 0.002f));
+	TestTrue(TEXT("the cold pixel is at full value of the cold peak"), FMath::IsNearlyEqual(Map.Pixels[3].Value, 1.f, 0.002f));
+	// Resulting ramp indices (4 hot bands, 2 cold bands): 0.62 -> 2, 0.078 -> 0, 1 -> 3, cold 1 -> 1.
+	// A cold pixel normalized by the hot peak (0.155) would land in cold band 0.
+	TestEqual(TEXT("hot pixel 0 lands in hot band 2"), static_cast<int32>(Map.Pixels[0].Index), 2);
+	TestEqual(TEXT("hot pixel 1 lands in hot band 0"), static_cast<int32>(Map.Pixels[1].Index), 0);
+	TestEqual(TEXT("hot pixel 2 lands in hot band 3"), static_cast<int32>(Map.Pixels[2].Index), 3);
+	TestEqual(TEXT("cold pixel lands in cold band 1"), static_cast<int32>(Map.Pixels[3].Index), 1);
 	TArray<TArray<FColor>> Pixels;
 	ResolveFrames({ Map }, Settings, Pixels);
-	TestEqual(TEXT("hot pixel resolves to a ramp 0 color"), Pixels[0][2], Settings.Ramps[0][Map.Pixels[2].Index]);
-	TestEqual(TEXT("cold pixel resolves to a ramp 1 color"), Pixels[0][3], Settings.Ramps[1][Map.Pixels[3].Index]);
+	TestEqual(TEXT("hot pixel resolves to its ramp 0 color"), Pixels[0][2], Settings.Ramps[0][3]);
+	TestEqual(TEXT("cold pixel resolves to its ramp 1 color"), Pixels[0][3], Settings.Ramps[1][1]);
 	return true;
 }
 
@@ -272,6 +280,38 @@ bool FGBPixelVfxHysteresisHoldTest::RunTest(const FString& Parameters)
 		bChanged = bChanged || Index != Moved[0];
 	}
 	TestTrue(TEXT("a wobble far past the margin changes the color"), bChanged);
+	// Pixels that disappear stay gone, and pixels that stay keep the held color only inside the
+	// widened band. Previous frame: 10 solid pixels holding band 2 (band [0.5, 0.75) +/- 0.05).
+	auto MakeStrip = [](int32 SolidCount, int32 Index, float Value) -> FFrameMap
+	{
+		FFrameMap Map;
+		Map.Width = 10;
+		Map.Height = 1;
+		Map.Pixels.SetNum(10);
+		for (int32 i = 0; i < SolidCount; ++i)
+		{
+			Map.Pixels[i].bSolid = true;
+			Map.Pixels[i].Ramp = 0;
+			Map.Pixels[i].Index = static_cast<uint8>(Index);
+			Map.Pixels[i].Value = Value;
+		}
+		return Map;
+	};
+	const FFrameMap PrevStrip = MakeStrip(10, 2, 0.6f);
+	// 8 of 10 remain (a 20% change: damping applies). Pixel 7 sits far below the band.
+	FFrameMap Shrunk = MakeStrip(8, 1, 0.49f);
+	Shrunk.Pixels[7].Value = 0.3f;
+	ApplyHysteresis(Shrunk, PrevStrip, Settings);
+	TestEqual(TEXT("pixels that disappeared stay transparent"), Shrunk.SolidCount(), 8);
+	TestFalse(TEXT("a vanished pixel is not restored (8)"), Shrunk.Pixels[8].bSolid);
+	TestFalse(TEXT("a vanished pixel is not restored (9)"), Shrunk.Pixels[9].bSolid);
+	TestEqual(TEXT("a value just under the lower edge is held inside the margin"), static_cast<int32>(Shrunk.Pixels[0].Index), 2);
+	TestEqual(TEXT("a value far under the band changes color"), static_cast<int32>(Shrunk.Pixels[7].Index), 1);
+	// 5 of 10 remain (a 50% change): damping is skipped, so the near-boundary color changes.
+	FFrameMap Burst = MakeStrip(5, 1, 0.49f);
+	ApplyHysteresis(Burst, PrevStrip, Settings);
+	TestEqual(TEXT("a rapid coverage change bypasses the hold"), static_cast<int32>(Burst.Pixels[0].Index), 1);
+	TestEqual(TEXT("a rapid coverage change leaves the solid count alone"), Burst.SolidCount(), 5);
 	return true;
 }
 
@@ -457,15 +497,29 @@ bool FGBPixelVfxLoopBlendFlowTest::RunTest(const FString& Parameters)
 	// Frame 3 is past the blend window: the last frame of the clip is unchanged.
 	const float Frame3 = Frames[3].Color[0].R;
 	TestTrue(TEXT("the last frame is unchanged"), FMath::Abs(Frame3 - 1.f) < 0.01f);
-	// Non-loop clips never blend: extras are dropped and kept frames are untouched.
+	// Non-loop clips never blend: with enough frames for a blend (KeepCount + BlendFrames = 4)
+	// the extras are dropped and every kept RGB and opacity value is untouched.
 	TArray<FWorkFrame> Flat;
 	Flat.Add(SolidFrame(1.f, 1.f));
 	Flat.Add(SolidFrame(2.f, 0.5f));
 	Flat.Add(SolidFrame(9.f, 0.2f));
+	Flat.Add(SolidFrame(5.f, 0.8f));
 	ApplyLoopBlend(Flat, 2, 2, false);
 	TestEqual(TEXT("non-loop drops the extras"), Flat.Num(), 2);
-	TestTrue(TEXT("non-loop leaves frame 0 alone"), FMath::Abs(Flat[0].Color[0].R - 1.f) < 0.01f);
-	TestTrue(TEXT("non-loop leaves frame 1 opacity alone"), FMath::Abs(Flat[1].Opacity[0] - 0.5f) < 0.01f);
+	if (Flat.Num() == 2)
+	{
+		const float Bright[2] = { 1.f, 2.f };
+		const float Opacity[2] = { 1.f, 0.5f };
+		for (int32 f = 0; f < 2; ++f)
+		{
+			for (int32 p = 0; p < 4; ++p)
+			{
+				TestTrue(TEXT("non-loop keeps every RGB channel"),
+					Flat[f].Color[p].Equals(FLinearColor(Bright[f], Bright[f], Bright[f], 1.f), 0.001f));
+				TestTrue(TEXT("non-loop keeps every opacity"), FMath::IsNearlyEqual(Flat[f].Opacity[p], Opacity[f], 0.001f));
+			}
+		}
+	}
 	return true;
 }
 
@@ -530,6 +584,21 @@ bool FGBPixelVfxClipPlaybackTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+namespace GBPixelVfxTestLocal
+{
+	// Upright quad: local X = world -Y, local Y = world +Z (up), normal (local Z) = world -X.
+	FQuat UprightRotation()
+	{
+		return FQuat(FMatrix(FVector(0.f, -1.f, 0.f), FVector(0.f, 0.f, 1.f), FVector(-1.f, 0.f, 0.f),
+			FVector::ZeroVector).Rotator());
+	}
+
+	bool NearlyEqualVector(const FVector& A, const FVector& B)
+	{
+		return A.Equals(B, 0.01);
+	}
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPixelVfxQuadPivotTest, "GBPixelVfx.Clip.QuadPivotPlacement",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FGBPixelVfxQuadPivotTest::RunTest(const FString& Parameters)
@@ -537,23 +606,23 @@ bool FGBPixelVfxQuadPivotTest::RunTest(const FString& Parameters)
 	FGBPixelVfxClip Clip;
 	Clip.WorldWidthCm = 200.f;
 	Clip.WorldHeightCm = 400.f;
-	Clip.PivotU = 0.5f;
+	Clip.PivotU = 0.25f; // asymmetric: the pivot is a quarter of the width from the left edge
 	Clip.PivotV = 1.f;
-	Clip.Light.AnchorU = 0.5f;
-	Clip.Light.AnchorV = 0.5f;
-	// Upright quad: local X = world X, local Y = world Z (up), normal faces -X.
-	const FQuat R(FMatrix(FVector(0.f, -1.f, 0.f), FVector(0.f, 0.f, 1.f), FVector(-1.f, 0.f, 0.f),
-		FVector::ZeroVector).Rotator());
+	const FQuat R = GBPixelVfxTestLocal::UprightRotation();
+	TestTrue(TEXT("the test rotation maps local X to world -Y"),
+		GBPixelVfxTestLocal::NearlyEqualVector(R.RotateVector(FVector(1.f, 0.f, 0.f)), FVector(0.f, -1.f, 0.f)));
 	const FVector Comp(100.f, 200.f, 0.f);
 	FVector QuadLoc;
 	FVector LightLoc;
+	// SizeScale 1.5 makes the sprite 300 x 600 cm. The quad center is (0.5 - 0.25) * 300 = 75 cm to the
+	// right of the pivot in quad space (world -Y) and (1 - 0.5) * 600 = 300 cm above it.
+	FGBPixelVfxClip::ComputeQuadAndLightPlacement(Clip, 1.5f, Comp, R, QuadLoc, LightLoc);
+	TestTrue(TEXT("the quad center follows pivot U/V and SizeScale"),
+		GBPixelVfxTestLocal::NearlyEqualVector(QuadLoc, FVector(100.f, 125.f, 300.f)));
+	// At scale 1 the same pivot gives 50 cm and 200 cm: the offsets scale with SizeScale.
 	FGBPixelVfxClip::ComputeQuadAndLightPlacement(Clip, 1.f, Comp, R, QuadLoc, LightLoc);
-	// PivotV = 1 (bottom of the frame): the quad center is H/2 above the component.
-	TestTrue(TEXT("pivot bottom puts the quad center H/2 up"),
-		FMath::IsNearlyEqual(QuadLoc.Z, 200.f, 0.01f));
-	TestTrue(TEXT("pivot bottom does not shift sideways"),
-		FMath::IsNearlyEqual(QuadLoc.X, Comp.X, 0.01f)
-		&& FMath::IsNearlyEqual(QuadLoc.Y, Comp.Y, 0.01f));
+	TestTrue(TEXT("at scale 1 the quad center is (100, 150, 200)"),
+		GBPixelVfxTestLocal::NearlyEqualVector(QuadLoc, FVector(100.f, 150.f, 200.f)));
 	return true;
 }
 
@@ -564,24 +633,22 @@ bool FGBPixelVfxLightAnchorTest::RunTest(const FString& Parameters)
 	FGBPixelVfxClip Clip;
 	Clip.WorldWidthCm = 200.f;
 	Clip.WorldHeightCm = 400.f;
-	Clip.PivotU = 0.5f;
+	Clip.PivotU = 0.25f;
 	Clip.PivotV = 1.f;
-	Clip.Light.AnchorU = 0.5f;
-	Clip.Light.AnchorV = 0.5f;
-	// Same upright frame as the pivot test.
-	const FQuat R(FMatrix(FVector(0.f, -1.f, 0.f), FVector(0.f, 0.f, 1.f), FVector(-1.f, 0.f, 0.f),
-		FVector::ZeroVector).Rotator());
+	Clip.Light.AnchorU = 0.75f;
+	Clip.Light.AnchorV = 0.25f;
+	const FQuat R = GBPixelVfxTestLocal::UprightRotation();
 	const FVector Comp(100.f, 200.f, 0.f);
 	FVector QuadLoc;
 	FVector LightLoc;
+	// SizeScale 1.5: sprite 300 x 600 cm. The anchor is (0.75 - 0.25) * 300 = 150 cm right of the pivot
+	// (world -Y) and (1 - 0.25) * 600 = 450 cm above it, then 10 cm toward the camera (world -X).
+	FGBPixelVfxClip::ComputeQuadAndLightPlacement(Clip, 1.5f, Comp, R, QuadLoc, LightLoc);
+	TestTrue(TEXT("the light follows anchor U/V relative to the pivot, SizeScale and the 10 cm lift"),
+		GBPixelVfxTestLocal::NearlyEqualVector(LightLoc, FVector(90.f, 50.f, 450.f)));
 	FGBPixelVfxClip::ComputeQuadAndLightPlacement(Clip, 1.f, Comp, R, QuadLoc, LightLoc);
-	// AnchorV = 0.5 is H/2 above the pivot: the light sits H/2 above the component,
-	// pushed 10 cm toward the camera (quad normal = -X here).
-	TestTrue(TEXT("mid-frame anchor puts the light H/2 above the pivot"),
-		FMath::IsNearlyEqual(LightLoc.Z, 200.f, 0.01f));
-	TestTrue(TEXT("the light keeps the component Y"), FMath::IsNearlyEqual(LightLoc.Y, Comp.Y, 0.01f));
-	TestTrue(TEXT("the light is pushed 10 cm toward the camera"),
-		FMath::IsNearlyEqual(LightLoc.X, Comp.X - 10.f, 0.01f));
+	TestTrue(TEXT("at scale 1 the light is at (90, 100, 300)"),
+		GBPixelVfxTestLocal::NearlyEqualVector(LightLoc, FVector(90.f, 100.f, 300.f)));
 	return true;
 }
 
@@ -591,33 +658,140 @@ bool FGBPixelVfxColorClusterTest::RunTest(const FString& Parameters)
 {
 	using namespace GBPixelVfxConvert;
 	FSettings Settings = GBPixelVfxTestLocal::MakeRampSettings();
-	// Two colors in ramp 0; the frame is all color 1 with a 2-pixel color-2 speck.
-	FFrameMap Map;
-	Map.Width = 6;
-	Map.Height = 4;
-	Map.Pixels.SetNum(24);
-	for (int32 i = 0; i < 24; ++i)
+	// Ramp 0 has four colors, index 0 the darkest and index 3 the brightest.
+	auto MakeField = [](int32 W, int32 H, int32 Index) -> FFrameMap
 	{
-		Map.Pixels[i].bSolid = true;
-		Map.Pixels[i].Ramp = 0;
-		Map.Pixels[i].Index = 1;
-		Map.Pixels[i].Value = 0.5f;
-	}
-	Map.Pixels[7].Index = 2;
-	Map.Pixels[8].Index = 2;
+		FFrameMap Map;
+		Map.Width = W;
+		Map.Height = H;
+		Map.Pixels.SetNum(W * H);
+		for (FMappedPixel& Pixel : Map.Pixels)
+		{
+			Pixel.bSolid = true;
+			Pixel.Ramp = 0;
+			Pixel.Index = static_cast<uint8>(Index);
+			Pixel.Value = 0.5f;
+		}
+		return Map;
+	};
+	auto SetIndex = [](FFrameMap& Map, int32 X, int32 Y, int32 Index)
+	{
+		Map.Pixels[Y * Map.Width + X].Index = static_cast<uint8>(Index);
+	};
+	auto IndexAt = [](const FFrameMap& Map, int32 X, int32 Y) -> int32
+	{
+		return Map.Pixels[Y * Map.Width + X].Index;
+	};
+
+	// A 2-pixel color-2 speck in a color-1 field: both members take the surrounding color.
+	FFrameMap Map = MakeField(6, 4, 1);
+	SetIndex(Map, 1, 1, 2);
+	SetIndex(Map, 2, 1, 2);
 	FFrameMap Cleaned = Map;
 	RecolorSmallColorClusters(Cleaned, Settings, 3);
 	TestEqual(TEXT("a 2-pixel speck is recolored when the minimum is 3"), Cleaned.SolidCount(), 24);
-	TestEqual(TEXT("the speck takes the surrounding color"), Cleaned.Pixels[7].Index, 1);
-	TestEqual(TEXT("the speck keeps its ramp"), Cleaned.Pixels[7].Ramp, 0);
+	TestEqual(TEXT("the first speck pixel takes the surrounding color"), IndexAt(Cleaned, 1, 1), 1);
+	TestEqual(TEXT("the second speck pixel takes the surrounding color"), IndexAt(Cleaned, 2, 1), 1);
+	TestEqual(TEXT("the speck keeps its ramp"), static_cast<int32>(Cleaned.Pixels[7].Ramp), 0);
 	FFrameMap Kept = Map;
 	RecolorSmallColorClusters(Kept, Settings, 2);
-	TestEqual(TEXT("a 2-pixel region is kept when the minimum is 2"), Kept.Pixels[7].Index, 2);
-	// Off: nothing changes.
+	TestEqual(TEXT("a 2-pixel region is kept when the minimum is 2"), IndexAt(Kept, 1, 1), 2);
 	FFrameMap Off = Map;
 	RecolorSmallColorClusters(Off, Settings, 0);
-	TestEqual(TEXT("clusters off leaves the speck alone"), Off.Pixels[7].Index, 2);
+	TestEqual(TEXT("clusters off leaves the speck alone"), IndexAt(Off, 1, 1), 2);
+
+	// Competing neighbors: a 3-pixel color-2 bar in a color-3 field. The start pixel's neighbors on
+	// the left, above and below are color 0 (3 votes); the other five neighbors are color 3 (5 votes).
+	// The majority (3) wins; "first neighbor" and "darkest neighbor" would pick 0.
+	FFrameMap Bar = MakeField(9, 5, 3);
+	for (int32 X = 3; X <= 5; ++X)
+	{
+		SetIndex(Bar, X, 2, 2);
+	}
+	SetIndex(Bar, 2, 2, 0);
+	SetIndex(Bar, 3, 1, 0);
+	SetIndex(Bar, 3, 3, 0);
+	RecolorSmallColorClusters(Bar, Settings, 4);
+	for (int32 X = 3; X <= 5; ++X)
+	{
+		TestEqual(TEXT("every bar pixel takes the majority neighbor color"), IndexAt(Bar, X, 2), 3);
+	}
+
+	// Vote tie: the start pixel's neighbors are bright (3), the other member's neighbors are dark (1),
+	// three votes each. The darker color wins; "first neighbor" or "brighter" would pick 3.
+	FFrameMap Tie = MakeField(9, 5, 3);
+	SetIndex(Tie, 3, 2, 2);
+	SetIndex(Tie, 4, 2, 2);
+	SetIndex(Tie, 5, 2, 1);
+	SetIndex(Tie, 4, 1, 1);
+	SetIndex(Tie, 4, 3, 1);
+	RecolorSmallColorClusters(Tie, Settings, 3);
+	TestEqual(TEXT("a tie goes to the darker color (first member)"), IndexAt(Tie, 3, 2), 1);
+	TestEqual(TEXT("a tie goes to the darker color (second member)"), IndexAt(Tie, 4, 2), 1);
+
+	// Adjacent small regions are decided on the state before the pass: a 2x2 frame of two 2-pixel
+	// rows swaps their colors. A pass that reads already-recolored pixels would leave the second row alone.
+	FFrameMap Pair = MakeField(2, 2, 1);
+	SetIndex(Pair, 0, 1, 2);
+	SetIndex(Pair, 1, 1, 2);
+	RecolorSmallColorClusters(Pair, Settings, 3);
+	TestEqual(TEXT("the top row takes the bottom row's original color"), IndexAt(Pair, 0, 0), 2);
+	TestEqual(TEXT("the top row's second pixel too"), IndexAt(Pair, 1, 0), 2);
+	TestEqual(TEXT("the bottom row takes the top row's original color"), IndexAt(Pair, 0, 1), 1);
+	TestEqual(TEXT("the bottom row's second pixel too"), IndexAt(Pair, 1, 1), 1);
+
+	// L-shaped region: a boundary pixel touching two members is one voter, not two. The corner pixel
+	// (1,0) is dark (0) and touches (0,0) and (1,1); (0,2) and (2,1) are two distinct bright (3)
+	// pixels; (1,2) is a third color (1). Counting the corner twice ties 0 against 3 and the darker 0
+	// wins; counting each pixel once gives 3 two votes against 1 and the bright color wins.
+	FFrameMap Ell = MakeField(3, 3, 3);
+	SetIndex(Ell, 0, 0, 2);
+	SetIndex(Ell, 0, 1, 2);
+	SetIndex(Ell, 1, 1, 2);
+	SetIndex(Ell, 1, 0, 0);
+	SetIndex(Ell, 1, 2, 1);
+	RecolorSmallColorClusters(Ell, Settings, 4);
+	TestEqual(TEXT("an L region counts a shared boundary pixel once (corner member)"), IndexAt(Ell, 0, 0), 3);
+	TestEqual(TEXT("an L region counts a shared boundary pixel once (middle member)"), IndexAt(Ell, 0, 1), 3);
+	TestEqual(TEXT("an L region counts a shared boundary pixel once (last member)"), IndexAt(Ell, 1, 1), 3);
 	return true;
+}
+
+namespace GBPixelVfxTestLocal
+{
+	FFrameMap SolidMap(int32 Size)
+	{
+		FFrameMap Map;
+		Map.Width = Size;
+		Map.Height = Size;
+		Map.Pixels.SetNum(Size * Size);
+		for (FMappedPixel& Pixel : Map.Pixels)
+		{
+			Pixel.bSolid = true;
+			Pixel.Ramp = 0;
+			Pixel.Index = 1;
+			Pixel.Value = 1.f;
+		}
+		return Map;
+	}
+
+	// One text row per frame row: 'X' solid, '.' transparent. Rows are joined with '/'.
+	FString MaskOf(const FFrameMap& Map)
+	{
+		FString Text;
+		for (int32 y = 0; y < Map.Height; ++y)
+		{
+			if (y > 0)
+			{
+				Text += TEXT("/");
+			}
+			for (int32 x = 0; x < Map.Width; ++x)
+			{
+				Text += Map.Pixels[y * Map.Width + x].bSolid ? TEXT("X") : TEXT(".");
+			}
+		}
+		return Text;
+	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPixelVfxFadeOutTest, "GBPixelVfx.Temporal.FadeOut",
@@ -625,63 +799,81 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPixelVfxFadeOutTest, "GBPixelVfx.Temporal.Fa
 bool FGBPixelVfxFadeOutTest::RunTest(const FString& Parameters)
 {
 	using namespace GBPixelVfxConvert;
-	auto SolidMap = []() -> FFrameMap
-	{
-		FFrameMap Map;
-		Map.Width = 8;
-		Map.Height = 8;
-		Map.Pixels.SetNum(64);
-		for (int32 i = 0; i < 64; ++i)
-		{
-			Map.Pixels[i].bSolid = true;
-			Map.Pixels[i].Ramp = 0;
-			Map.Pixels[i].Index = 1;
-			Map.Pixels[i].Value = 1.f;
-		}
-		return Map;
-	};
-	// Dissolve: removals are monotonic (frame-space pattern) and grow with t.
+	using GBPixelVfxTestLocal::SolidMap;
+	using GBPixelVfxTestLocal::MaskOf;
+
+	// Dissolve over 3 faded frames of a 4x4 frame. Progress is 1/3, 2/3, 1. A pixel goes when its
+	// Bayer 4x4 value / 16 is below the progress. Bayer rows are (0 8 2 10) (12 4 14 6) (3 11 1 9) (15 7 13 5),
+	// so the first faded frame loses values 0..5, the second 0..10 and the last everything.
+	// Pixel (1,0) is transparent from the start and must stay so.
 	FSettings Dissolve;
 	Dissolve.bLoop = false;
-	Dissolve.FadeOutFrames = 2;
+	Dissolve.FadeOutFrames = 3;
 	Dissolve.FadeOutMode = TEXT("Dissolve");
 	TArray<FFrameMap> DissolveMaps;
-	DissolveMaps.Add(SolidMap());
-	DissolveMaps.Add(SolidMap());
-	DissolveMaps.Add(SolidMap());
-	ApplyFadeOut(DissolveMaps, Dissolve);
-	const int32 First = DissolveMaps[1].SolidCount();
-	const int32 Last = DissolveMaps[2].SolidCount();
-	TestTrue(TEXT("dissolve removes pixels over the fade"), First < 64 && Last < First);
-	TestEqual(TEXT("dissolve leaves pre-fade frames alone"), DissolveMaps[0].SolidCount(), 64);
-	// Removed pixels never come back: every solid pixel of the last frame is solid in the first faded frame.
-	for (int32 i = 0; i < 64; ++i)
+	for (int32 i = 0; i < 4; ++i)
 	{
-		if (DissolveMaps[2].Pixels[i].bSolid)
-		{
-			TestTrue(TEXT("dissolve removals never return"), DissolveMaps[1].Pixels[i].bSolid);
-		}
+		FFrameMap Map = SolidMap(4);
+		Map.Pixels[1].bSolid = false;
+		DissolveMaps.Add(Map);
 	}
-	// Erode: a solid block shrinks from the transparent border inward.
+	ApplyFadeOut(DissolveMaps, Dissolve);
+	TestEqual(TEXT("dissolve leaves the pre-fade frame alone"), MaskOf(DissolveMaps[0]), FString(TEXT("X.XX/XXXX/XXXX/XXXX")));
+	TestEqual(TEXT("dissolve first faded frame"), MaskOf(DissolveMaps[1]), FString(TEXT("...X/X.XX/.X.X/XXX.")));
+	TestEqual(TEXT("dissolve second faded frame"), MaskOf(DissolveMaps[2]), FString(TEXT("..../X.X./.X../X.X.")));
+	TestEqual(TEXT("dissolve last frame is completely empty"), DissolveMaps[3].SolidCount(), 0);
+	TestEqual(TEXT("a surviving pixel keeps its color"), static_cast<int32>(DissolveMaps[1].Pixels[4].Index), 1);
+
+	// A one-frame fade of a one-frame clip is empty too (progress is already 1).
+	FSettings Single = Dissolve;
+	Single.FadeOutFrames = 1;
+	TArray<FFrameMap> SingleMaps;
+	SingleMaps.Add(SolidMap(8));
+	ApplyFadeOut(SingleMaps, Single);
+	TestEqual(TEXT("a single faded frame is empty"), SingleMaps[0].SolidCount(), 0);
+
+	// Erode over 2 faded frames of a 7x7 frame: the frame edge counts as transparent, so a pixel's
+	// depth is its distance to the edge plus one (1 at the border, 4 in the center). Progress 0.5 of the
+	// maximum depth 4 removes depth <= 2: the two outer rings. The last frame is empty.
 	FSettings Erode;
 	Erode.bLoop = false;
-	Erode.FadeOutFrames = 1;
+	Erode.FadeOutFrames = 2;
 	Erode.FadeOutMode = TEXT("Erode");
 	TArray<FFrameMap> ErodeMaps;
-	FFrameMap Block = SolidMap();
-	Block.Pixels[0].bSolid = false; // one transparent corner seeds the erosion
-	ErodeMaps.Add(Block);
+	for (int32 i = 0; i < 3; ++i)
+	{
+		ErodeMaps.Add(SolidMap(7));
+	}
 	ApplyFadeOut(ErodeMaps, Erode);
-	TestTrue(TEXT("erode removes the border first"), !ErodeMaps[0].Pixels[1].bSolid || !ErodeMaps[0].Pixels[8].bSolid);
-	TestTrue(TEXT("erode keeps the deep interior"), ErodeMaps[0].Pixels[27].bSolid);
+	TestEqual(TEXT("erode leaves the pre-fade frame alone"), ErodeMaps[0].SolidCount(), 49);
+	TestEqual(TEXT("erode first faded frame keeps the 3x3 center"),
+		MaskOf(ErodeMaps[1]), FString(TEXT("......./......./..XXX../..XXX../..XXX../......./.......")));
+	TestEqual(TEXT("erode last frame is completely empty"), ErodeMaps[2].SolidCount(), 0);
+
+	// The same frame with a transparent hole in the center: depth is the distance to the hole or the
+	// edge, whichever is closer. The deepest pixel is at depth 2, so progress 0.5 removes depth <= 1:
+	// the outer ring and the four pixels beside the hole.
+	TArray<FFrameMap> HoleMaps;
+	for (int32 i = 0; i < 3; ++i)
+	{
+		FFrameMap Map = SolidMap(7);
+		Map.Pixels[3 * 7 + 3].bSolid = false;
+		HoleMaps.Add(Map);
+	}
+	ApplyFadeOut(HoleMaps, Erode);
+	TestEqual(TEXT("erode pre-fade frame keeps its hole"), HoleMaps[0].SolidCount(), 48);
+	TestEqual(TEXT("erode first faded frame erodes from the hole too"),
+		MaskOf(HoleMaps[1]), FString(TEXT("......./.XXXXX./.XX.XX./.X...X./.XX.XX./.XXXXX./.......")));
+	TestEqual(TEXT("erode with a hole ends empty"), HoleMaps[2].SolidCount(), 0);
+
 	// Looping clips never fade.
 	FSettings Looped;
 	Looped.bLoop = true;
 	Looped.FadeOutFrames = 2;
 	Looped.FadeOutMode = TEXT("Dissolve");
 	TArray<FFrameMap> LoopedMaps;
-	LoopedMaps.Add(SolidMap());
-	LoopedMaps.Add(SolidMap());
+	LoopedMaps.Add(SolidMap(8));
+	LoopedMaps.Add(SolidMap(8));
 	ApplyFadeOut(LoopedMaps, Looped);
 	TestEqual(TEXT("looping clips do not fade"), LoopedMaps[0].SolidCount(), 64);
 	TestEqual(TEXT("looping clips do not fade (last)"), LoopedMaps[1].SolidCount(), 64);
@@ -724,48 +916,58 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPixelVfxLightTrackTest, "GBPixelVfx.Light.Tr
 bool FGBPixelVfxLightTrackTest::RunTest(const FString& Parameters)
 {
 	using namespace GBPixelVfxConvert;
-	// Two 2x1 frames: frame 0 has one hot pixel (v = 1) at U = 0.25, frame 1 has two
-	// hot pixels (v = 1 each) at U = 0.25 and 0.75. Energies are 1 and 2, so the
-	// normalized track is [0.5, 1]; the anchor averages the per-frame centroids.
+	// Three 2x2 frames (pixel order: (0,0) (1,0) (0,1) (1,1); U = 0.25 / 0.75, V = 0.25 / 0.75).
+	// Energy is the sum of v over solid HOT pixels, so unequal values, a solid cold pixel and a
+	// transparent hot pixel all matter.
 	FSettings Settings = GBPixelVfxTestLocal::MakeRampSettings();
 	Settings.bLightEnabled = true;
-	FFrameMap F0;
-	F0.Width = 2;
-	F0.Height = 1;
-	F0.Pixels.SetNum(2);
-	F0.Pixels[0].bSolid = true;
-	F0.Pixels[0].bHot = true;
-	F0.Pixels[0].Ramp = 0;
-	F0.Pixels[0].Index = 1;
-	F0.Pixels[0].Value = 1.f;
-	FFrameMap F1;
-	F1.Width = 2;
-	F1.Height = 1;
-	F1.Pixels.SetNum(2);
-	F1.Pixels[0].bSolid = true;
-	F1.Pixels[0].bHot = true;
-	F1.Pixels[0].Ramp = 0;
-	F1.Pixels[0].Index = 1;
-	F1.Pixels[0].Value = 1.f;
-	F1.Pixels[1].bSolid = true;
-	F1.Pixels[1].bHot = true;
-	F1.Pixels[1].Ramp = 0;
-	F1.Pixels[1].Index = 1;
-	F1.Pixels[1].Value = 1.f;
+	auto Put = [](FFrameMap& Map, int32 At, bool bSolid, bool bHot, float Value)
+	{
+		Map.Pixels[At].bSolid = bSolid;
+		Map.Pixels[At].bHot = bHot;
+		Map.Pixels[At].Value = Value;
+	};
+	auto Blank = []() -> FFrameMap
+	{
+		FFrameMap Map;
+		Map.Width = 2;
+		Map.Height = 2;
+		Map.Pixels.SetNum(4);
+		return Map;
+	};
+	// Frame 0: hot 0.5 at (0,0), hot 0.25 at (1,0), a solid COLD pixel of 1.0 at (0,1) and a
+	// TRANSPARENT hot pixel of 1.0 at (1,1). E = 0.75, centroid U = (0.25*0.5 + 0.75*0.25) / 0.75 = 0.41667,
+	// V = 0.25.
+	FFrameMap F0 = Blank();
+	Put(F0, 0, true, true, 0.5f);
+	Put(F0, 1, true, true, 0.25f);
+	Put(F0, 2, true, false, 1.f);
+	Put(F0, 3, false, true, 1.f);
+	// Frame 1: hot 0.25 at (0,0), 1.0 at (0,1), 0.75 at (1,1). E = 2.0,
+	// U = (0.25*0.25 + 0.25*1.0 + 0.75*0.75) / 2 = 0.4375, V = (0.25*0.25 + 0.75*1.0 + 0.75*0.75) / 2 = 0.6875.
+	FFrameMap F1 = Blank();
+	Put(F1, 0, true, true, 0.25f);
+	Put(F1, 2, true, true, 1.f);
+	Put(F1, 3, true, true, 0.75f);
+	// Frame 2: only a solid cold pixel: no energy and no centroid, so it must not pull the anchor.
+	FFrameMap F2 = Blank();
+	Put(F2, 0, true, false, 1.f);
 	TArray<float> Track;
 	float AnchorU = 0.f;
 	float AnchorV = 0.f;
-	ComputeLightTrack({ F0, F1 }, Settings, Track, AnchorU, AnchorV);
-	TestEqual(TEXT("two frames produce two track values"), Track.Num(), 2);
-	if (Track.Num() == 2)
+	ComputeLightTrack({ F0, F1, F2 }, Settings, Track, AnchorU, AnchorV);
+	TestEqual(TEXT("three frames produce three track values"), Track.Num(), 3);
+	if (Track.Num() == 3)
 	{
-		// A constant-lighting implementation returning 1 for both fails here.
-		TestTrue(TEXT("dimmer frame has lower energy"), FMath::IsNearlyEqual(Track[0], 0.5f, 0.01f));
-		TestTrue(TEXT("brightest frame normalizes to 1"), FMath::IsNearlyEqual(Track[1], 1.f, 0.01f));
+		// Counting hot pixels instead of summing their values would give 2/3 and 1.
+		TestTrue(TEXT("frame 0 energy is 0.75 / 2.0"), FMath::IsNearlyEqual(Track[0], 0.375f, 0.002f));
+		TestTrue(TEXT("the brightest frame normalizes to 1"), FMath::IsNearlyEqual(Track[1], 1.f, 0.002f));
+		TestTrue(TEXT("a frame without hot pixels has no energy"), FMath::IsNearlyEqual(Track[2], 0.f, 0.002f));
 	}
-	// Frame centroids: 0.25 and 0.5; the anchor averages them to 0.375.
-	TestTrue(TEXT("the anchor U averages the frame centroids"), FMath::IsNearlyEqual(AnchorU, 0.375f, 0.01f));
-	TestTrue(TEXT("the anchor V is the row middle"), FMath::IsNearlyEqual(AnchorV, 0.5f, 0.01f));
+	// Average of the two frame centroids (the empty frame is skipped): U = (0.41667 + 0.4375) / 2 = 0.42708,
+	// V = (0.25 + 0.6875) / 2 = 0.46875. Weighting frames by energy would give U = 0.4318.
+	TestTrue(TEXT("the anchor U averages the value-weighted frame centroids"), FMath::IsNearlyEqual(AnchorU, 0.42708f, 0.001f));
+	TestTrue(TEXT("the anchor V averages the value-weighted frame centroids"), FMath::IsNearlyEqual(AnchorV, 0.46875f, 0.001f));
 	return true;
 }
 

@@ -58,12 +58,16 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
    Lesson for the log: the implementer had a wrong theory after ten runs and spent forty more defending it. Three facts from the engine (render time, bounds, a list of primitives) settled it.
 7. **Second review, Sol 6.1** (run `112310-codex-7cf33d`, prompt `Prompts/pixelvfx_review_sol_2.md`): 12 findings, 2 major (the quad inherits its actor's scale but the pivot math does not; the fade-out's last frame is not empty, a visible pop) and 10 minor, 7 of them tests that wrong code would pass. Packaging was checked against the engine source: the always-cook directory and the loose `Data` staging are enough, `pvfx.Spawn` is compiled out of Shipping. All accepted and given to **Claude Sonnet 5.5 (a Claude Code subagent)**: exception to the default implementer, allowed by the owner after Muse's second stall.
 
+8. **Sonnet's batch** (11:30 to 11:38, 34 tool calls): the 12 findings fixed, none disputed. The quad ignores inherited scale, the fade-out's last frame is empty in both modes (checked on the baked explosion: 0 opaque pixels in frame 35, 9 and 47 in the two before it), the cluster vote counts each boundary pixel once, a job with `Fps` above `SimFps` is rejected, a missing `Ramps` array warns. Seven tests rewritten with hand-calculated expectations; the implementer really reverted one fix to see its test go red. The architect ran build, tests, the bake of all four clips and the showcase again before accepting.
+9. **Into the game** (11:39 to 11:45, architect). The plugin is enabled in `Glyphbound.uproject`. A smoke step (`gb.Smoke pixelvfx`) spawns the baked fire on the ground 7 m in front of the player through the plugin's console command (the game module has no dependency on the plugin) and takes screenshot `16_pixelvfx_fire`: the sprite stands on the floor of the test arena and its light warms the floor and the two pillars beside it. `pvfx.Spawn` got an optional distance for this.
+
 ## Results
 - **15 tests** of the conversion (pure logic), 15 s.
 - **Bake:** four Niagara Fluids clips in 51 s on CENTRAL (RTX 4080 Laptop). Each clip is a PNG of a few kilobytes plus a JSON file; the four PNGs together are 56 KB.
 - **Compare** (`-Action Compare -Id FluidFire`, 180 frames each, 1280 x 720, offscreen): 8 source simulations **50.1 ms per frame** (GPU 49.3), 8 baked clips with their lights **4.5 ms** (GPU 4.1), the empty stage 4.1 ms. The baked clip costs about a hundredth of the simulation.
 - **Lighting:** each clip's point light follows the baked track, lights the wall and the obstacles, throws their shadows and shows in the floor's Lumen reflections. The same stage runs with **hardware ray tracing** (`-HardwareRT`: `r.RayTracing=1`, `r.Lumen.HardwareRayTracing=1` and, as the engine demands, `r.SkinCache.CompileShaders=1`, all three as a command-line ini override; the project's settings are untouched).
 - Two things the script got wrong on the way: `$PSScriptRoot` is empty in a `param` default when the script has `[Parameter()]` attributes (resolved in the body now), and an `-ini:` override needs the `[Section]` prefix on **every** key, or only the first key is applied.
+- **Final checks with the plugin enabled in the game (11:41 to 11:45, once):** `Build-Jam.ps1 -Target Glyphbound` succeeded in 47 s, the game's 43 tests and the plugin's 15 are green, the full smoke run is clean with 140 steps (138 before, plus the two `pixelvfx` steps) in 108 s. Not packaged in this block.
 - One GPU "device removed" crash in a showcase run started right after a bake; the same run passed when repeated. Not reproduced.
 
 ## Media (`Devlog/media/2026-11-13/`)
@@ -71,6 +75,8 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
 - `pixelvfx_<Id>_source.png` and `pixelvfx_<Id>_sheet.png`: what the capture saw (the realistic simulation) and the pixel-art frames made from it.
 - `pixelvfx_showcase_wide.png`: the four clips on the test stage, each lighting the wall with its own color; obstacle shadows on the wall; reflections on the floor.
 - `pixelvfx_showcase_FluidFire.png` and the other three close-ups; `pixelvfx_showcase_moved_camera.png`: the same stage from another place (the sprites turn to face the camera).
+- `pixelvfx_in_game_fire.png`: the baked fire in the game's own test arena, from the smoke run.
+- `pixelvfx_showcase_wide_hardware_rt.png`, `pixelvfx_showcase_FluidArcaneFire_hardware_rt.png`: the stage and the arcane fire close-up from the run with hardware ray tracing on.
 - `pixelvfx_compare_FluidFire.png`: the live simulation (left, inside its red debug bounds) and the baked clip (right) side by side.
 
 ## Third-party material
@@ -82,4 +88,4 @@ Claude Code (Claude Fable 5.2 as architect, Claude Sonnet 5.5 as a subagent), Op
 ## Open, for the owner
 - Is the reading of "ray tracing behaviors" the right one?
 - No spell uses a baked clip yet. Which spells should, and at what size and light strength?
-- The plugin is still off by default in the game's `.uproject`.
+- The plugin is enabled in the game, but nothing in the gameplay calls it: in a development build, `pvfx.Spawn FluidFire` (or `FluidSmoke`, `FluidExplosion`, `FluidArcaneFire`) in the console shows a clip in front of the player.

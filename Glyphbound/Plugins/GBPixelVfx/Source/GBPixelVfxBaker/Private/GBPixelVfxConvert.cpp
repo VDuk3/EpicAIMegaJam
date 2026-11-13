@@ -614,7 +614,8 @@ void RecolorSmallColorClusters(FFrameMap& Map, const FSettings& Settings, int32 
 				{
 					continue;
 				}
-				Border.Add(NAt);
+				// A boundary pixel touching several region members still casts one vote.
+				Border.AddUnique(NAt);
 			}
 		}
 		if (Border.Num() == 0)
@@ -689,7 +690,16 @@ void ApplyFadeOut(TArray<FFrameMap>& Maps, const FSettings& Settings)
 		{
 			continue;
 		}
-		const float T = (static_cast<float>(k) + 1.f) / (static_cast<float>(N) + 1.f);
+		// Progress reaches 1 on the last frame, which is therefore always empty (no pop when a one-shot stops).
+		const float T = (static_cast<float>(k) + 1.f) / static_cast<float>(N);
+		if (k == N - 1)
+		{
+			for (FMappedPixel& Pixel : Map.Pixels)
+			{
+				Pixel.bSolid = false;
+			}
+			continue;
+		}
 		if (!bErode)
 		{
 			for (int32 y = 0; y < Map.Height; ++y)

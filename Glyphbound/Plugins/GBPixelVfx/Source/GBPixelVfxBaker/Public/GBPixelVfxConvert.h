@@ -114,7 +114,7 @@ GBPIXELVFXBAKER_API void FillOnePixelHoles(FFrameMap& Map);
 GBPIXELVFXBAKER_API void RecolorSmallColorClusters(FFrameMap& Map, const FSettings& Settings, int32 MinPixels);
 
 // Fade-out for one-shot clips (no-op when bLoop or FadeOutFrames <= 0). Over the last
-// FadeOutFrames frames progress t goes from 1/(N+1) to N/(N+1). Dissolve removes a solid
+// FadeOutFrames frames progress t goes from 1/N to 1; the last frame is always completely empty. Dissolve removes a solid
 // pixel when Bayer4x4(x,y) < t; Erode removes solid pixels within ceil(t*MaxDepth)
 // 4-connected steps of a transparent pixel or the frame edge.
 GBPIXELVFXBAKER_API void ApplyFadeOut(TArray<FFrameMap>& Maps, const FSettings& Settings);

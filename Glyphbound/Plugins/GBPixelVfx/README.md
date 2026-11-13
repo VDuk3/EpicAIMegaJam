@@ -16,7 +16,7 @@ Made during the Epic AI MegaJam 2026 for Glyphbound. Nothing here comes from an 
 
 | Module | Type | What it does |
 |---|---|---|
-| `GBPixelVfx` | Runtime | Loads `Content/Data/Vfx/<Id>.json` + `.png`, builds a transient nearest-filtered texture, plays the clip (`UGBPixelVfxComponent`, `AGBPixelVfxActor::SpawnPixelVfx`, console command `pvfx.Spawn <Id> [SizeScale]`). No dependency on Niagara. |
+| `GBPixelVfx` | Runtime | Loads `Content/Data/Vfx/<Id>.json` + `.png`, builds a transient nearest-filtered texture, plays the clip (`UGBPixelVfxComponent`, `AGBPixelVfxActor::SpawnPixelVfx`, console command `pvfx.Spawn <Id> [SizeScale] [DistanceCm]`, not in Shipping builds). No dependency on Niagara. |
 | `GBPixelVfxBaker` | UncookedOnly | The bake: a game mode that runs the source system in an offscreen `-game` process, captures it, converts it on the CPU (`GBPixelVfxConvert`, pure and unit-tested) and writes the clip. Also the showcase and compare stages. Inert unless a `-Pvfx...` switch is on the command line. |
 
 ## How to use it

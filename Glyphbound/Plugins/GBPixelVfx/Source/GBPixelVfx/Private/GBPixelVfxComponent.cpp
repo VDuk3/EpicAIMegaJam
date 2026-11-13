@@ -104,6 +104,9 @@ void UGBPixelVfxComponent::EnsureBuilt()
 		Quad = NewObject<UStaticMeshComponent>(GetOwner() ? static_cast<UObject*>(GetOwner()) : static_cast<UObject*>(this), NAME_None, RF_Transient);
 		Quad->SetMobility(EComponentMobility::Movable);
 		Quad->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		// The sprite size is clip size x SizeScale and nothing else: ignore the scale inherited from the
+		// owner (the pivot and light math assume it). The light is placed by world location, so it is fine.
+		Quad->SetUsingAbsoluteScale(true);
 		Quad->SetStaticMesh(PlaneMesh);
 		Quad->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Quad->SetCastShadow(false);

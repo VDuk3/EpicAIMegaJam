@@ -9,6 +9,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "GBPixelVfxConvert.h"
+#include "GBPixelVfxLog.h"
 
 namespace GBPixelVfxJobLocal
 {
@@ -134,7 +135,8 @@ namespace GBPixelVfxJobLocal
 		const TArray<TSharedPtr<FJsonValue>>* Ramps = nullptr;
 		if (!Pixel.IsValid() || !Pixel->TryGetArrayField(TEXT("Ramps"), Ramps) || !Ramps)
 		{
-			// Absent: keep the caller's defaults.
+			// Absent: keep the caller's defaults, but say so.
+			UE_LOG(LogGBPixelVfx, Warning, TEXT("PVFX job has no Ramps array: using the default fire ramp."));
 			return;
 		}
 		Out.Reset();
@@ -274,6 +276,13 @@ bool FGBPixelVfxBakeJob::LoadFromFile(const FString& Path)
 	Fresh.Facing = GBPixelVfxJobLocal::ReadString(World, TEXT("Facing"), Fresh.Facing);
 	Fresh.Glow = static_cast<float>(GBPixelVfxJobLocal::ReadNumber(World, TEXT("Glow"), Fresh.Glow));
 	Fresh.bLit = GBPixelVfxJobLocal::ReadBool(World, TEXT("Lit"), Fresh.bLit);
+
+	if (Fresh.Fps > Fresh.SimFps)
+	{
+		UE_LOG(LogGBPixelVfx, Error, TEXT("PVFX job %s: Pixel.Fps (%d) exceeds Capture.SimFps (%d); the capture cannot take more frames than the simulation ticks."),
+			*Fresh.Id.ToString(), Fresh.Fps, Fresh.SimFps);
+		return false;
+	}
 
 	*this = Fresh;
 	return true;

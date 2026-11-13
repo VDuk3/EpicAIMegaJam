@@ -551,6 +551,10 @@
 		{
 			"Name": "XGEController",
 			"Enabled": false
+		},
+		{
+			"Name": "GBPixelVfx",
+			"Enabled": true
 		}
 	]
 }

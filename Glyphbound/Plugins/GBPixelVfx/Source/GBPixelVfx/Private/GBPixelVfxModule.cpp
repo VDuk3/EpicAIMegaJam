@@ -25,7 +25,7 @@ static void PixelVfxSpawnCommand(const TArray<FString>& Args, UWorld* World)
 	}
 	if (Args.Num() < 1)
 	{
-		UE_LOG(LogGBPixelVfx, Warning, TEXT("pvfx.Spawn usage: pvfx.Spawn <ClipId> [SizeScale]"));
+		UE_LOG(LogGBPixelVfx, Warning, TEXT("pvfx.Spawn usage: pvfx.Spawn <ClipId> [SizeScale] [DistanceCm]"));
 		return;
 	}
 	const FName ClipId(*Args[0]);
@@ -33,6 +33,11 @@ static void PixelVfxSpawnCommand(const TArray<FString>& Args, UWorld* World)
 	if (Args.Num() > 1)
 	{
 		SizeScale = FCString::Atof(*Args[1]);
+	}
+	float DistanceCm = 300.f;
+	if (Args.Num() > 2)
+	{
+		DistanceCm = FMath::Clamp(FCString::Atof(*Args[2]), 50.f, 5000.f);
 	}
 	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(World, 0);
 	if (!Manager)
@@ -42,7 +47,7 @@ static void PixelVfxSpawnCommand(const TArray<FString>& Args, UWorld* World)
 	}
 	const FVector ViewPos = Manager->GetCameraLocation();
 	const FVector ViewDir = Manager->GetCameraRotation().Vector();
-	const FVector Point = ViewPos + ViewDir * 300.f;
+	const FVector Point = ViewPos + ViewDir * DistanceCm;
 	FVector SpawnAt = Point;
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBPixelVfxSpawn), false);
@@ -58,6 +63,6 @@ static void PixelVfxSpawnCommand(const TArray<FString>& Args, UWorld* World)
 
 static FAutoConsoleCommandWithWorldAndArgs GBPixelVfxSpawnCmd(
 	TEXT("pvfx.Spawn"),
-	TEXT("Spawns a baked pixel VFX clip 300 cm in front of the view: pvfx.Spawn <ClipId> [SizeScale]"),
+	TEXT("Spawns a baked pixel VFX clip on the ground in front of the view (300 cm by default): pvfx.Spawn <ClipId> [SizeScale] [DistanceCm]"),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&PixelVfxSpawnCommand));
 #endif
