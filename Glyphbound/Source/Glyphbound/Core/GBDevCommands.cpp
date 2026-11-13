@@ -2740,8 +2740,11 @@ namespace GBSmokeRun
 		// Strings FlightVfx / ImpactVfx). Aimed at the floor a few metres ahead so it lands inside this block.
 		// Earlier steps change the loadout: the block equips the Fireball in slot 0 and puts the previous spell back at the end.
 		static FName PixelVfxPreviousSlot0;
+		// Set by the Fireball itself when it lands: the impact screenshot is taken on that frame, not on a guessed time.
+		static bool bPixelVfxImpactSeen = false;
 		Add(68.72f + S, TEXT("pixelvfx: aim at the floor a few metres ahead"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
+			bPixelVfxImpactSeen = false;
 			PixelVfxPreviousSlot0 = Player->GetSpellbook()->GetSlotSpell(0);
 			Player->GetSpellbook()->EquipSpell(0, FName(TEXT("Fireball")));
 			// The ground fire has had its screenshot: remove it, or it stands right behind the Fireball in the next two.
@@ -2774,6 +2777,12 @@ namespace GBSmokeRun
 			{
 				++Projectiles;
 				WithClip += It->HasFlightVfx() ? 1 : 0;
+				// The shockwave and its flash are at their strongest on the frame the Fireball lands.
+				It->OnImpact.AddLambda([](AGBProjectile*, AActor*, const FVector&)
+				{
+					bPixelVfxImpactSeen = true;
+					Shot(TEXT("18_pixelvfx_fireball_impact"));
+				});
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball flight projectiles=%d with_clip=%d"), Projectiles, WithClip);
 			if (WithClip < 1)
@@ -2782,20 +2791,30 @@ namespace GBSmokeRun
 			}
 			Shot(TEXT("17_pixelvfx_fireball_flight"));
 		}, 0.07f);
-		Add(69.2f + S, TEXT("pixelvfx: screenshot of the Fireball's baked explosion"), [](UWorld* World, AGBPlayerCharacter*)
+		// Owner (2026-11-13): no baked explosion on the Fireball's impact, the shockwave alone. The screenshot was taken by
+		// the Fireball when it landed (see the flight step); this step checks what is left afterwards.
+		Add(69.2f + S, TEXT("pixelvfx: after the Fireball's impact, shockwave only"), [](UWorld* World, AGBPlayerCharacter*)
 		{
 			int32 Clips = 0;
+			int32 Projectiles = 0;
 			for (TActorIterator<AActor> It(World); It; ++It)
 			{
 				Clips += It->GetClass()->GetName() == TEXT("GBPixelVfxActor") ? 1 : 0;
 			}
-			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball impact clips=%d"), Clips);
-			if (Clips != 1)
+			for (TActorIterator<AGBProjectile> It(World); It; ++It)
 			{
-				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: %d baked clips in the world (expected 1: the explosion)"), Clips);
+				++Projectiles;
 			}
-			Shot(TEXT("18_pixelvfx_fireball_impact"));
-		}, 0.6f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball impact clips=%d projectiles=%d"), Clips, Projectiles);
+			if (Clips != 0 || Projectiles != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: after the impact there are %d baked clips (expected 0: no baked explosion) and %d projectiles (expected 0: it landed, and its flame went with it)"), Clips, Projectiles);
+			}
+			if (!bPixelVfxImpactSeen)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: the Fireball never reported its impact, so there is no impact screenshot"));
+			}
+		}, 0.5f);
 		Add(69.3f + S, TEXT("pixelvfx: remove the clips and look ahead again, so the steps after this block are not affected"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			for (TActorIterator<AActor> It(World); It; ++It)

@@ -63,7 +63,8 @@ base, an explosion) and a fourth clip, arcane fire, from the same fire simulatio
 - A projectile spell names its clips in `Content/Data/Spells.json`: Strings `FlightVfx` (shown instead of the sprite
   while it flies) and `ImpactVfx` (a one-shot where it explodes), with Params `FlightVfxHeight` (cm),
   `ImpactVfxSize` (frame width as a multiple of the blast diameter) and `ImpactVfxRate` (playback speed).
-  The Fireball uses `FluidFire` and `FluidExplosion`. Without the strings a spell looks as it did before.
+  The Fireball uses `FluidFire` in flight and no impact clip (the owner tried `FluidExplosion` there and removed it).
+  Without the strings a spell looks as it did before.
 - `UGBPixelVfxComponent::bPivotAtLightAnchor` puts the component at the clip's bright centre instead of its baked
   pivot (the base): use it for anything that travels or bursts around a point.
 - `Glow` (job key `World.Glow`) brightens only fire-like pixels: saturated ones, or ones as bright as the bone-white

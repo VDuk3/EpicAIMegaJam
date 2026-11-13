@@ -68,6 +68,10 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
     - Smoke: the `pixelvfx` block now casts the Fireball at the floor, checks that the projectile in flight carries the clip and that the explosion clip exists, takes `17_pixelvfx_fireball_flight` and `18_pixelvfx_fireball_impact`, and removes its clips so the UI block after it is not affected.
     - Working next to another chat: `Glyphbound.Build.cs` and `Core/GBDevCommands.cpp` had that chat's unfinished changes. The commit carries "HEAD plus the architect's lines" for those two files, written straight into the git index (`git hash-object -w` + `git update-index --cacheinfo`), so none of the other chat's work in progress was committed and its working files were not touched.
 
+11. **The owner cuts the explosion** (12:42 to 12:55). Asked whether to keep the baked explosion on the Fireball's impact, the owner looked at the screenshots and answered *"Quítala"* ("Remove it"). It was the architect's own addition, so this is the theme of the jam at small scale: the director sees the take and it does not make the cut. The Fireball keeps the baked fire in flight; on impact it shows the shockwave alone, as before. Done in data (one string and two parameters out of `Spells.json`); the code that can play an impact clip stays for any spell that names one.
+    - The smoke step for the impact now expects **no** baked clip and no projectile left after the Fireball lands, so putting the explosion back by accident turns the run red.
+    - Its screenshot came out empty on the first try: taken 0.4 s after the cast, the shockwave (0.35 s) was already gone. Guessing times was the mistake; the screenshot is now requested by the Fireball's own impact event, on the frame it lands.
+
 ## Results
 - **15 tests** of the conversion (pure logic), 15 s.
 - **Bake:** four Niagara Fluids clips in 51 s on CENTRAL (RTX 4080 Laptop). Each clip is a PNG of a few kilobytes plus a JSON file; the four PNGs together are 56 KB.
@@ -84,7 +88,8 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
 - `pixelvfx_showcase_FluidFire.png` and the other three close-ups; `pixelvfx_showcase_moved_camera.png`: the same stage from another place (the sprites turn to face the camera).
 - `pixelvfx_in_game_fire.png`: the baked fire in the game's own test arena, from the smoke run.
 - `pixelvfx_showcase_wide_hardware_rt.png`, `pixelvfx_showcase_FluidArcaneFire_hardware_rt.png`: the stage and the arcane fire close-up from the run with hardware ray tracing on.
-- `pixelvfx_fireball_flight.png`, `pixelvfx_fireball_impact.png`: the Fireball in the arena, in flight with the baked fire and at its explosion with the baked explosion (from the smoke run; the HUD in them is the UI chat's work in progress).
+- `pixelvfx_fireball_flight.png`, `pixelvfx_fireball_impact.png`: the Fireball in the arena as it is now, in flight with the baked fire and on the frame it lands, with the shockwave alone (from the smoke run).
+- `pixelvfx_fireball_impact_cut.png`: the baked explosion on impact that the owner removed, kept here as the take that did not make the cut.
 - `pixelvfx_compare_FluidFire.png`: the live simulation (left, inside its red debug bounds) and the baked clip (right) side by side.
 
 ## Third-party material
@@ -95,5 +100,5 @@ Claude Code (Claude Fable 5.2 as architect, Claude Sonnet 5.5 as a subagent), Op
 
 ## Open, for the owner
 - Is the reading of "ray tracing behaviors" the right one?
-- The Fireball uses the fire clip (owner) and the explosion clip (architect, provisional): keep the explosion? Sizes and speeds are in `Spells.json`. Which other spells should use a clip?
+- The Fireball uses the fire clip in flight (owner) and no explosion clip (owner). Which other spells should use a clip?
 - The plugin is enabled in the game, but nothing in the gameplay calls it: in a development build, `pvfx.Spawn FluidFire` (or `FluidSmoke`, `FluidExplosion`, `FluidArcaneFire`) in the console shows a clip in front of the player.
