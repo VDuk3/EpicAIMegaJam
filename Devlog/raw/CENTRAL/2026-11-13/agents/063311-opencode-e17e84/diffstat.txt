@@ -1,0 +1,15 @@
+ ...aude-5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl |  56 +++
+ ...aude-7c83ebdc-db9f-4d2a-a6cf-83322c35b386.jsonl |  48 +++
+ ...aude-fde1c38e-1c6f-4ad5-96b6-037c9bc40ad4.jsonl |  10 +
+ .../5a7f6688-72a4-4aae-94a2-77b4fb4b681c.jsonl     | 340 ++++++++++++++++++
+ .../fde1c38e-1c6f-4ad5-96b6-037c9bc40ad4.jsonl     |  75 ++++
+ .../CENTRAL/unreal/Glyphbound__Glyphbound.jsonl    | 396 +++++++++++----------
+ ...rsor-10074b32-dce0-44b5-a385-c22baf51c71d.jsonl |  15 +
+ ...c71d-10074b32-dce0-44b5-a385-c22baf51c71d.jsonl |   9 +
+ Devlog/raw/_import.log                             | 113 ++++++
+ .../GBPixelVfx/Bake/Jobs/FluidArcaneFire.json      |  14 +-
+ .../GBPixelVfx/Bake/Jobs/FluidExplosion.json       |  12 +-
+ .../Plugins/GBPixelVfx/Bake/Jobs/FluidFire.json    |  10 +-
+ .../Plugins/GBPixelVfx/Bake/Jobs/FluidSmoke.json   |  40 ++-
+ Tools/Jam/PixelVfx-Jam.ps1                         |   6 +-
+ 14 files changed, 920 insertions(+), 224 deletions(-)

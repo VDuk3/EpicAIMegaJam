@@ -1,0 +1,18 @@
+# Code review: the GBPixelVfx plugin (first implementation by Muse Spark)
+
+You are the reviewer. Read-only: do not edit, build or run anything. Project `C:\GameJam`, Unreal Engine 5.9.0 at `C:\Program Files\Epic Games\UE_5.9` (check engine APIs in its source when a finding depends on them).
+
+## What the plugin is
+`Glyphbound/Plugins/GBPixelVfx/`: bakes a Niagara / Niagara Fluids effect into a pixel-art flipbook in the game's palette (`Content/Data/Vfx/<Id>.png` + `.json`), and plays it at runtime on a camera-facing quad with a point light driven by a baked light track. The specification is `Prompts/pixelvfx_implement.md` plus `Prompts/pixelvfx_astra_notes.md` (the notes win where they differ). Bake jobs: `Glyphbound/Plugins/GBPixelVfx/Bake/Jobs/*.json`. Machine script: `Tools/Jam/PixelVfx-Jam.ps1`.
+
+## What to review (in this order of importance)
+1. `Source/GBPixelVfx/**` (the Runtime module: it ships in the packaged game). Crashes, GC safety of the transient texture / dynamic material / spawned components, behavior when a clip or the material is missing, packaged-build behavior (paths under `FPaths::ProjectContentDir()`, no Editor-only API, no dependency on the baker module or on Niagara), one-shot clean-up, the facing math and the pivot rule (the point `PivotU/V` of the frame must land on the component's location for every facing mode; the light must sit at `AnchorU/V`), frame selection, mirrored or upside-down sprites.
+   The architect already suspects one bug: `UGBPixelVfxComponent::UpdateQuadTransform` applies the pivot offset (which is in the quad's own XY) through `SetRelativeLocation` in the parent's space before the quad is rotated, so for `Upright` / `Billboard` the offset goes sideways instead of up. Confirm or refute, and give the correct math.
+2. `Source/GBPixelVfxBaker/Private/GBPixelVfxConvert.cpp` + `Public/GBPixelVfxConvert.h` (pure conversion): does each step do what the spec says (order: exposure, loop blend, downsample, alpha, levels, hard alpha, color mapping Ramp / Split / Nearest, hysteresis, islands / holes, outline, light track)? Premultiplied-color mistakes, percentile errors, off-by-one on ramp indices, hysteresis that can leave trails, loop blend direction, division by zero, out-of-range indices on odd sizes.
+3. `Private/Tests/GBPixelVfxConvertTests.cpp`: for each test, name a wrong implementation that would still pass it (project rule: every test must be able to fail). Report only tests that are really too weak, and missing tests only for logic that is easy to break.
+4. `Private/GBPixelVfxBakeJob.cpp`, `Private/GBPixelVfxBakeGameMode_Bake.cpp`: job parsing defaults vs the job files, capture set-up (fixed step, show-only list, alpha = 1 - A, auto-frame, frame counting, readback), hangs (every wait must have a frame budget), work done when no `-Pvfx...` switch is present (the cook's Editor process can load this module: it must be inert), file output paths.
+5. `GBPixelVfx.uplugin`, both `Build.cs`, `Tools/make_pixelvfx_material.py`.
+Do NOT review `Private/GBPixelVfxBakeGameMode_Stage.cpp` in depth (showcase / compare stage: still being changed by the implementer); only flag something there if it can crash the bake path or leak into the packaged game.
+
+## Output (English, at most 90 lines)
+A numbered list of findings, most severe first. For each: severity (BLOCKER / MAJOR / MINOR), file:line, what is wrong, a concrete failing scenario, and the fix in one or two sentences. No praise, no style nits, no restating the spec. If a suspected problem turns out fine after you check it, leave it out. End with one line: which three findings you would fix first tonight.

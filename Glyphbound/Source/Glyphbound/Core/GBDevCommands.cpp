@@ -45,6 +45,7 @@
 #include "World/GBEraSubsystem.h"
 #include "World/GBProgressSubsystem.h"
 #include "World/GBTestArena.h"
+#include "UI/GBHUD.h"
 
 namespace GBSmokeRun
 {
@@ -2813,7 +2814,184 @@ namespace GBSmokeRun
 				Player->GetSpellbook()->EquipSpell(0, PixelVfxPreviousSlot0);
 			}
 		}, 0.7f);
-		Add(69.4f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// ---- UI block (gb.Smoke ui): every HUD state and menu in both skins, one screenshot each. No checks: these are
+		// for people (and the architect) to look at. The RPG skin in the past with the staff, then the cyberpunk skin in
+		// the future with the pistol.
+		const float U = 69.4f + S;
+		auto Menu = [](AGBPlayerCharacter* Player, EGBMenu Which)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(Which);
+			}
+		};
+		auto Cursor = [](UWorld* World, int32 Page, int32 Row, FName Node, bool bChoosing)
+		{
+			if (AGBHUD* Hud = AGBHUD::Get(World))
+			{
+				Hud->DebugSetMenuCursor(Page, Row, Node, bChoosing);
+			}
+		};
+		Add(U + 0.0f, TEXT("ui: setup, past, staff, bag, skill points, one cooldown"), [Menu](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::None);
+			SetQTEEnabled(false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			UGBInventoryComponent* Inventory = Player->GetInventory();
+			for (const TCHAR* Item : { TEXT("HealthPotion"), TEXT("ManaPotion"), TEXT("Gem_Fire"), TEXT("SwordHilt"), TEXT("Armor_Chronoweave"), TEXT("ElectricGrenade") })
+			{
+				Inventory->AddItem(Item, 2);
+			}
+			for (const TCHAR* Spell : { TEXT("Flamethrower"), TEXT("LightningRune"), TEXT("IceFloor"), TEXT("IceWall") })
+			{
+				if (!Player->GetSpellbook()->KnowsSpell(Spell))
+				{
+					Player->GetSpellbook()->LearnSpell(Spell);
+				}
+			}
+			Player->GetSkillTree()->AddPoints(6);
+			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+			{
+				int32 Unlocked = 0;
+				for (const FGBSkillNodeDefinition& Node : Data->GetSkillNodes())
+				{
+					if (Node.Row == 0 && Unlocked < 3)
+					{
+						Unlocked += Player->GetSkillTree()->Unlock(Node.Id) == EGBSkillUnlockResult::Ok ? 1 : 0;
+					}
+				}
+			}
+			Player->GetSpellbook()->TryCastSlot(0);
+			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.72f, Player->GetAttributes()->GetMaxMana() * 0.45f);
+			if (AGBHUD* Hud = AGBHUD::Get(World))
+			{
+				Hud->ShowMessage(TEXT("Checkpoint reached"), 4.f);
+			}
+		});
+		Add(U + 0.7f, TEXT("ui: screenshot rpg hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_01_rpg_hud")); });
+		Add(U + 0.9f, TEXT("ui: rpg low health, shield and effects"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetSpellbook()->LearnSpell(TEXT("IceShield"));
+			Player->GetSpellbook()->EquipSpell(4, TEXT("IceShield"));
+			Player->GetAttributes()->RestoreAll();
+			Player->GetSpellbook()->TryCastSlot(4);
+			Player->GetStatusEffects()->ApplyEffect(TEXT("Slow"), Player);
+			Player->GetStatusEffects()->ApplyEffect(TEXT("Ignite"), Player);
+			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.2f, Player->GetAttributes()->GetMaxMana() * 0.08f);
+		});
+		Add(U + 1.5f, TEXT("ui: screenshot rpg low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_02_rpg_low")); });
+		Add(U + 1.7f, TEXT("ui: rpg pause"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Player->GetAttributes()->RestoreAll(); Menu(Player, EGBMenu::Pause); });
+		Add(U + 2.1f, TEXT("ui: screenshot rpg pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_03_rpg_pause")); });
+		Add(U + 2.3f, TEXT("ui: rpg inventory items"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::Inventory); Cursor(World, 0, 1, NAME_None, false); });
+		Add(U + 2.7f, TEXT("ui: screenshot rpg items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_04_rpg_items")); });
+		Add(U + 2.9f, TEXT("ui: rpg inventory weapons"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 1, 0, NAME_None, false); });
+		Add(U + 3.3f, TEXT("ui: screenshot rpg weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_05_rpg_weapons")); });
+		Add(U + 3.5f, TEXT("ui: rpg inventory spells"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 0, NAME_None, false); });
+		Add(U + 3.9f, TEXT("ui: screenshot rpg spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_06_rpg_spells")); });
+		Add(U + 4.1f, TEXT("ui: rpg spell chooser"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 1, NAME_None, true); });
+		Add(U + 4.5f, TEXT("ui: screenshot rpg spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_07_rpg_spell_choose")); });
+		Add(U + 4.7f, TEXT("ui: rpg inventory skills"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, NAME_None, false); });
+		Add(U + 5.1f, TEXT("ui: screenshot rpg skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_08_rpg_skills_page")); });
+		Add(U + 5.3f, TEXT("ui: rpg skill trees, a weapon node"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::SkillTrees);
+			Cursor(World, 0, 0, TEXT("Weapon_FireRate"), false);
+		});
+		Add(U + 5.7f, TEXT("ui: screenshot rpg skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09_rpg_skilltrees")); });
+		Add(U + 5.9f, TEXT("ui: rpg QTE"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::None);
+			Player->GetAttributes()->RestoreAll();
+			SetQTEEnabled(true);
+			Player->GetSpellbook()->TryCastSlot(1);
+		});
+		Add(U + 6.2f, TEXT("ui: rpg QTE, one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+			{
+				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+			}
+		});
+		Add(U + 6.5f, TEXT("ui: screenshot rpg QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_10_rpg_qte")); });
+		Add(U + 10.8f, TEXT("ui: rpg death"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			SetQTEEnabled(false);
+			FGBDamageInfo Info;
+			Info.Amount = 10000000.f;
+			UGBCombatLibrary::DealDamage(Player, Info, true);
+		});
+		Add(U + 11.6f, TEXT("ui: screenshot rpg death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_11_rpg_death")); });
+		Add(U + 14.8f, TEXT("ui: travel to the future, pistol in hand"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			UGBEraSubsystem::Get(World)->RequestTravel(EGBEra::Future, Player);
+		});
+		Add(U + 17.8f, TEXT("ui: cyber QTE (enchant), pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->GiveWeapon(TEXT("Pistol"), true, false);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+			Player->GetAttributes()->RestoreAll();
+			SetQTEEnabled(true);
+			Player->GetSpellbook()->TryCastEnchant();
+		});
+		Add(U + 18.1f, TEXT("ui: cyber QTE, one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+			{
+				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+			}
+		});
+		Add(U + 18.4f, TEXT("ui: screenshot cyber QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_12_cyber_qte")); });
+		Add(U + 22.8f, TEXT("ui: cyber setup, enchanted, spent rounds"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			SetQTEEnabled(false);
+			Player->GetStatusEffects()->ApplyEffect(TEXT("Enchant_Fire"), Player);
+			if (AGBHeldItem* Gun = Player->GetEquipment()->GetActiveItem())
+			{
+				FGBAmmoState Ammo = Gun->GetAmmo();
+				Ammo.InMagazine = FMath::Max(0, Ammo.InMagazine - 4);
+				Gun->SetAmmo(Ammo);
+			}
+			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.72f, Player->GetAttributes()->GetMaxMana() * 0.45f);
+			if (AGBHUD* Hud = AGBHUD::Get(World))
+			{
+				Hud->ShowMessage(TEXT("Picked up Pistol"), 4.f);
+			}
+		});
+		Add(U + 23.5f, TEXT("ui: screenshot cyber hud"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_13_cyber_hud")); });
+		Add(U + 23.7f, TEXT("ui: cyber low health, reloading"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetStatusEffects()->ApplyEffect(TEXT("Slow"), Player);
+			Player->GetAttributes()->SetHealthAndMana(Player->GetAttributes()->GetMaxHealth() * 0.2f, Player->GetAttributes()->GetMaxMana() * 0.1f);
+			if (AGBHeldItem* Gun = Player->GetEquipment()->GetActiveItem())
+			{
+				Gun->Reload();
+			}
+		});
+		Add(U + 24.2f, TEXT("ui: screenshot cyber low"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_14_cyber_low")); });
+		Add(U + 24.4f, TEXT("ui: cyber pause"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Player->GetAttributes()->RestoreAll(); Menu(Player, EGBMenu::Pause); });
+		Add(U + 24.8f, TEXT("ui: screenshot cyber pause"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_15_cyber_pause")); });
+		Add(U + 25.0f, TEXT("ui: cyber inventory items"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::Inventory); Cursor(World, 0, 1, NAME_None, false); });
+		Add(U + 25.4f, TEXT("ui: screenshot cyber items"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_16_cyber_items")); });
+		Add(U + 25.6f, TEXT("ui: cyber inventory weapons"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 1, 1, NAME_None, false); });
+		Add(U + 26.0f, TEXT("ui: screenshot cyber weapons"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_17_cyber_weapons")); });
+		Add(U + 26.2f, TEXT("ui: cyber inventory spells"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 5, NAME_None, false); });
+		Add(U + 26.6f, TEXT("ui: screenshot cyber spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_18_cyber_spells")); });
+		Add(U + 26.8f, TEXT("ui: cyber spell chooser"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 2, NAME_None, true); });
+		Add(U + 27.2f, TEXT("ui: screenshot cyber spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_19_cyber_spell_choose")); });
+		Add(U + 27.4f, TEXT("ui: cyber inventory skills"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, TEXT("Weapon_Damage"), false); });
+		Add(U + 27.8f, TEXT("ui: screenshot cyber skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_20_cyber_skills_page")); });
+		Add(U + 28.0f, TEXT("ui: cyber skill trees"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::SkillTrees); });
+		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
+		Add(U + 28.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Menu(Player, EGBMenu::None);
+			FGBDamageInfo Info;
+			Info.Amount = 10000000.f;
+			UGBCombatLibrary::DealDamage(Player, Info, true);
+		});
+		Add(U + 29.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
+		Add(U + 30.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

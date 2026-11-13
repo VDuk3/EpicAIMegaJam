@@ -17,13 +17,15 @@ param(
     [switch]$Offscreen,        # adds -RenderOffscreen: no window pops up
     [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
-    [int]$TimeoutSeconds = 180
+    [int]$TimeoutSeconds = 180,
+    [int]$ResX = 1280,        # screenshot size (for example 1920 x 1080 to judge the HUD)
+    [int]$ResY = 720
 )
 $Project = (Resolve-Path $Project).Path
 $projDir = Split-Path $Project -Parent
 $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
 $smokeCmd = if ($Only) { "gb.Smoke $Only" } else { 'gb.Smoke' }
-$common = @('-windowed', '-ResX=1280', '-ResY=720', '-unattended', '-nosplash', '-nosound', "-ExecCmds=`"$smokeCmd`"")
+$common = @('-windowed', "-ResX=$ResX", "-ResY=$ResY", '-unattended', '-nosplash', '-nosound', "-ExecCmds=`"$smokeCmd`"")
 if ($Offscreen) { $common += '-RenderOffscreen' }
 if ($Packaged) {
     $exe = Join-Path $projDir 'Build\Windows\Glyphbound.exe'

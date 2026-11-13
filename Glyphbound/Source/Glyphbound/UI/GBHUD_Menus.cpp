@@ -148,6 +148,7 @@ EGBMenu AGBHUD::GetOpenMenu() const
 void AGBHUD::OnMenuOpened(EGBMenu Menu)
 {
 	MenuState = FMenuState();
+	MenuOpenTime = GetRealTime();
 	ResetMenuMouse();
 	if (Menu == EGBMenu::SkillTrees)
 	{
@@ -843,40 +844,313 @@ void AGBHUD::MenuReset()
 	ResetSkills(GetPlayer());
 }
 
-// ======================================================================== drawing
+// ======================================================================== drawing: shared widgets
 
-float AGBHUD::DrawWrapped(const FString& Text, const FLinearColor& Color, float X, float Y, float MaxWidth, float SizePx, bool bShadow)
+namespace GBHudMenuDraw
 {
-	TArray<FString> Words;
-	Text.ParseIntoArrayWS(Words);
-	const float LineH = FMath::Max(MeasureLabel(TEXT("Ag"), SizePx).Y, 1.f);
-	float CurY = Y;
-	FString Line;
-	for (const FString& Word : Words)
+	/** Spell tree columns, in the order of GDD 18 "Spell tree" (fire, lightning, ice, casting): presentation only. */
+	const TCHAR* SpellColumnName(int32 Column)
 	{
-		const FString Candidate = Line.IsEmpty() ? Word : Line + TEXT(" ") + Word;
-		if (!Line.IsEmpty() && MeasureLabel(Candidate, SizePx).X > MaxWidth)
+		static const TCHAR* Names[] = { TEXT("Fire"), TEXT("Lightning"), TEXT("Ice"), TEXT("Casting") };
+		return (Column >= 0 && Column < 4) ? Names[Column] : TEXT("");
+	}
+	EGBElement SpellColumnElement(int32 Column)
+	{
+		static const EGBElement Elements[] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice, EGBElement::Arcane };
+		return (Column >= 0 && Column < 4) ? Elements[Column] : EGBElement::Arcane;
+	}
+	/** Splits a name in two lines at the space nearest the middle (or keeps one line). */
+	void SplitName(const FString& Name, FString& A, FString& B)
+	{
+		int32 Best = INDEX_NONE;
+		for (int32 i = 0; i < Name.Len(); ++i)
 		{
-			DrawLabel(Line, Color, X, CurY, SizePx, 0.f, bShadow);
-			CurY += LineH;
-			Line = Word;
+			if (Name[i] == TEXT(' ') && (Best == INDEX_NONE || FMath::Abs(i - Name.Len() / 2) < FMath::Abs(Best - Name.Len() / 2)))
+			{
+				Best = i;
+			}
+		}
+		if (Best == INDEX_NONE)
+		{
+			A = Name;
+			B.Reset();
+			return;
+		}
+		A = Name.Left(Best);
+		B = Name.Mid(Best + 1);
+	}
+}
+
+bool AGBHUD::IsMouseOver(float X, float Y, float W, float H) const
+{
+	return bHasMenuMouse && LastMenuMouse.X >= X && LastMenuMouse.X <= X + W && LastMenuMouse.Y >= Y && LastMenuMouse.Y <= Y + H;
+}
+
+void AGBHUD::DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode, bool bChoosingSpell)
+{
+	MenuState.Page = GBHudMenuLocal::Wrap(Page, PageCount);
+	MenuState.Cursor = FMath::Max(0, Cursor);
+	MenuState.bChoosingSpell = bChoosingSpell;
+	MenuState.SubCursor = bChoosingSpell ? 1 : 0;
+	if (SkillNode != NAME_None)
+	{
+		MenuState.SkillCursor = SkillNode;
+	}
+}
+
+void AGBHUD::MenuBackdrop(EGBHudSkin Skin)
+{
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		const float S = UIScale();
+		FillRect(0.f, 0.f, W, H, GBAlpha(GBCy::Ink, 0.9f));
+		DrawGlow(W * 0.12f, H * 0.05f, W * 0.55f, H * 0.6f, GBAlpha(GBCy::Red, 0.10f));
+		DrawGlow(W * 0.95f, H * 1.0f, W * 0.45f, H * 0.5f, GBAlpha(GBCy::Cyan, 0.05f));
+		// Faint layout grid.
+		const float Step = 120.f * S;
+		for (float GX = Step; GX < W; GX += Step)
+		{
+			FillRect(GX, 0.f, 1.f, H, GBAlpha(GBCy::Red, 0.035f));
+		}
+		CyScanlines(0.f, 0.f, W, H, 0.22f);
+		return;
+	}
+	FillRect(0.f, 0.f, W, H, FLinearColor(0.01f, 0.008f, 0.012f, 0.72f));
+	DrawGlow(W * 0.5f, H * 0.45f, W * 0.6f, H * 0.65f, FLinearColor(0.25f, 0.12f, 0.05f, 0.18f));
+}
+
+namespace GBHudMenuDraw
+{
+	struct FScreen
+	{
+		float X = 0.f;
+		float Y = 0.f;
+		float W = 0.f;
+		float H = 0.f;
+		float FooterY = 0.f;
+	};
+}
+
+float AGBHUD::MenuRow(EGBHudSkin Skin, float X, float Y, float W, float H, bool bSelected, bool bMarked)
+{
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		const float S = UIScale();
+		if (bSelected)
+		{
+			CyBox(X, Y, W, H, 8.f * S, GBAlpha(GBCy::Red, 0.16f), GBAlpha(GBCy::Red, 0.95f), 0x4);
+			FillRect(X, Y, 4.f * S, H, GBCy::Red);
+			DrawFade(X + 4.f * S, Y, W * 0.5f, H, GBAlpha(GBCy::Red, 0.14f), true);
 		}
 		else
 		{
-			Line = Candidate;
+			FillRect(X, Y + H - 1.f, W, 1.f, GBAlpha(GBCy::RedDeep, 0.9f));
+		}
+		if (bMarked)
+		{
+			CyBox(X - 3.f * S, Y - 3.f * S, W + 6.f * S, H + 6.f * S, 8.f * S, FLinearColor::Transparent, GBCy::Cyan, 0x4);
+		}
+		return 16.f * S;
+	}
+	const float P = ArtPixel();
+	if (bSelected)
+	{
+		FillRect(X, Y, W, H, GBAlpha(GBRpg::Ember, 0.10f));
+		DrawFade(X, Y, W * 0.7f, H, GBAlpha(GBRpg::Gold2, 0.14f), true);
+		DrawOutline(X, Y, W, H, GBRpg::Gold2, P);
+		FillRect(X + P, Y + P, W - 2.f * P, P, GBAlpha(GBRpg::Gold4, 0.35f));
+		RpgCursor(X - 7.f * P, Y + H * 0.5f);
+	}
+	else
+	{
+		FillRect(X + 2.f * P, Y + H - P, W - 4.f * P, P, GBAlpha(GBRpg::Stone2, 0.8f));
+	}
+	if (bMarked)
+	{
+		DrawOutline(X - P, Y - P, W + 2.f * P, H + 2.f * P, GBRpg::ArcaneLight, P);
+	}
+	return 4.f * P;
+}
+
+void AGBHUD::MenuButton(EGBHudSkin Skin, float X, float Y, float W, float H, const FString& Label, bool bEnabled, bool bHot)
+{
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		const float S = UIScale();
+		const FLinearColor Line = !bEnabled ? GBCy::Grey : (bHot ? GBCy::Cyan : GBCy::Red);
+		CyBox(X, Y, W, H, 8.f * S, bHot && bEnabled ? GBAlpha(GBCy::Cyan, 0.18f) : GBAlpha(GBCy::Ink, 0.7f), Line, 0x4);
+		FCyTextStyle Style;
+		Style.Face = ECyFace::Condensed;
+		Style.Px = 17.f;
+		Style.Spacing = 100;
+		Style.bUpper = true;
+		Style.Color = !bEnabled ? GBCy::Grey : (bHot ? GBCy::Pale : GBCy::RedBright);
+		const FVector2D Size = MeasureCyText(Label, Style);
+		DrawCyText(Label, X + W * 0.5f, Y + (H - Size.Y) * 0.5f, Style, 0.5f);
+		return;
+	}
+	const float P = ArtPixel();
+	FillRect(X, Y, W, H, GBRpg::Stone1);
+	RpgStone(X, Y, W, H, bHot && bEnabled ? FLinearColor(1.2f, 1.1f, 1.f, 1.f) : FLinearColor::White);
+	RpgFrame(X, Y, W, H, bEnabled ? (bHot ? ERpgFrame::Gold : ERpgFrame::Iron) : ERpgFrame::Inset);
+	FPixelTextStyle Style;
+	Style.Scale = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+	Style.Ink = bEnabled ? (bHot ? &GBRpg::InkGold : &GBRpg::InkBone) : nullptr;
+	Style.Color = bEnabled ? FLinearColor::White : GBRpg::BoneDark;
+	Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+	const FVector2D Size = MeasurePixelText(Label, Style.Scale);
+	DrawPixelText(Label, X + W * 0.5f, Y + FMath::RoundToFloat((H - Size.Y) * 0.5f), Style, 0.5f);
+}
+
+void AGBHUD::MenuHints(EGBHudSkin Skin, const TArray<TPair<FString, FString>>& Hints, float X, float Y, float AlignX)
+{
+	// Measure first, then draw from the left.
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
+	const float S = UIScale();
+	const float P = ArtPixel();
+	const float KeyGap = bCyber ? 8.f * S : 2.f * P;
+	const float PairGap = bCyber ? 28.f * S : 8.f * P;
+	FCyTextStyle CyStyle;
+	CyStyle.Face = ECyFace::Condensed;
+	CyStyle.Px = 16.f;
+	CyStyle.Spacing = 100;
+	CyStyle.bUpper = true;
+	CyStyle.Color = GBCy::RedBright;
+	const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+	auto KeyWidth = [&](const FString& Key)
+	{
+		if (bCyber)
+		{
+			FCyTextStyle K;
+			K.Face = ECyFace::Condensed;
+			K.Px = 22.f * 0.72f;
+			K.bUpper = true;
+			return FMath::Max(FMath::RoundToFloat(22.f * S), FMath::RoundToFloat(MeasureCyText(Key, K).X + 10.f * S));
+		}
+		const FVector2D Size = MeasurePixelText(Key, Small);
+		return FMath::Max(FMath::CeilToFloat((Size.X + 6 * P) / P) * P, 9 * P);
+	};
+	auto TextWidth = [&](const FString& Text) { return bCyber ? MeasureCyText(Text, CyStyle).X : MeasurePixelText(Text, Small).X; };
+	float Total = 0.f;
+	for (int32 i = 0; i < Hints.Num(); ++i)
+	{
+		TArray<FString> Keys;
+		Hints[i].Key.ParseIntoArray(Keys, TEXT(" "));
+		for (const FString& Key : Keys)
+		{
+			Total += KeyWidth(Key) + KeyGap * 0.5f;
+		}
+		Total += KeyGap + TextWidth(Hints[i].Value) + (i + 1 < Hints.Num() ? PairGap : 0.f);
+	}
+	float PX = FMath::RoundToFloat(X - Total * AlignX);
+	for (const TPair<FString, FString>& Hint : Hints)
+	{
+		TArray<FString> Keys;
+		Hint.Key.ParseIntoArray(Keys, TEXT(" "));
+		for (const FString& Key : Keys)
+		{
+			if (bCyber)
+			{
+				PX += CyKey(PX, Y, Key, GBCy::Cyan, 22.f) + KeyGap * 0.5f;
+			}
+			else
+			{
+				float KW = 0.f;
+				RpgKeyCap(PX, Y, Key, &KW);
+				PX += KW + KeyGap * 0.5f;
+			}
+		}
+		PX += KeyGap * 0.5f;
+		if (bCyber)
+		{
+			const FVector2D Size = DrawCyText(Hint.Value, PX, Y + 1.f * S, CyStyle, 0.f);
+			PX += Size.X + PairGap;
+		}
+		else
+		{
+			FPixelTextStyle Style;
+			Style.Scale = Small;
+			Style.Ink = &GBRpg::InkBone;
+			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+			const FVector2D Size = DrawPixelText(Hint.Value, PX, Y + 2.f * P + FMath::RoundToFloat(0.5f * Small), Style, 0.f);
+			PX += Size.X + PairGap;
 		}
 	}
-	if (!Line.IsEmpty())
+}
+
+float AGBHUD::MenuDetailPanel(EGBHudSkin Skin, float X, float Y, float W, float H, const FString& Title, const FString& Subtitle, const FLinearColor* SubtitleColor)
+{
+	if (Skin == EGBHudSkin::Cyberpunk)
 	{
-		DrawLabel(Line, Color, X, CurY, SizePx, 0.f, bShadow);
-		CurY += LineH;
+		const float S = UIScale();
+		CyBox(X, Y, W, H, 18.f * S, GBAlpha(GBCy::RedBlack, 0.55f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
+		CyBrackets(X - 5.f * S, Y - 5.f * S, W + 10.f * S, H + 10.f * S, 14.f * S, GBCy::Red, 2.f * S);
+		float CY = Y + 22.f * S;
+		const FVector2D TS = UiText(Skin, EGBTextSize::Heading, EGBTextTone::Accent, Title, X + 24.f * S, CY);
+		CY += TS.Y + 10.f * S;
+		CyRuler(X + 24.f * S, CY, W - 48.f * S, GBAlpha(GBCy::RedDim, 0.8f));
+		CY += 14.f * S;
+		if (!Subtitle.IsEmpty())
+		{
+			FCyTextStyle Sub;
+			Sub.Face = ECyFace::Condensed;
+			Sub.Px = 18.f;
+			Sub.Spacing = 120;
+			Sub.bUpper = true;
+			Sub.Color = SubtitleColor ? *SubtitleColor : GBCy::Cyan;
+			CY += DrawCyText(Subtitle, X + 24.f * S, CY, Sub, 0.f).Y + 12.f * S;
+		}
+		return CY;
 	}
-	return CurY - Y;
+	const float P = ArtPixel();
+	RpgWell(X, Y, W, H);
+	float CY = Y + 6.f * P;
+	const FVector2D TS = UiText(Skin, EGBTextSize::Heading, EGBTextTone::Accent, Title, X + 7.f * P, CY);
+	CY += TS.Y + 4.f * P;
+	RpgDivider(X + 6.f * P, CY, W - 12.f * P);
+	CY += 6.f * P;
+	if (!Subtitle.IsEmpty())
+	{
+		CY += UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, Subtitle, X + 7.f * P, CY, 0.f, SubtitleColor).Y + 5.f * P;
+	}
+	return CY;
+}
+
+// ======================================================================== drawing: screens
+
+namespace GBHudMenuDraw
+{
+	FScreen Layout(EGBHudSkin Skin, float W, float H, float S, float P)
+	{
+		FScreen Screen;
+		if (Skin == EGBHudSkin::Cyberpunk)
+		{
+			const float M = 64.f * S;
+			Screen.X = M;
+			Screen.Y = 158.f * S;
+			Screen.W = W - 2.f * M;
+			Screen.FooterY = H - 62.f * S;
+			Screen.H = Screen.FooterY - 22.f * S - Screen.Y;
+			return Screen;
+		}
+		const float WinX = FMath::RoundToFloat(W * 0.05f / P) * P;
+		const float WinY = FMath::RoundToFloat(H * 0.085f / P) * P;
+		const float WinW = FMath::RoundToFloat((W - 2.f * WinX) / P) * P;
+		const float WinH = FMath::RoundToFloat((H - WinY - 4.f * P) / P) * P;
+		Screen.X = WinX;
+		Screen.Y = WinY;
+		Screen.W = WinW;
+		Screen.H = WinH;
+		Screen.FooterY = WinY + WinH - 15.f * P;
+		return Screen;
+	}
 }
 
 void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 {
-	const FGBHudSkinStyle& Style = GetSkinStyle(GetCurrentSkin());
+	const EGBHudSkin Skin = GetCurrentSkin();
 	// Clickables are rebuilt while drawing, for the screen as it is now.
 	MenuHits.Reset();
 	MenuHitsMenu = GetOpenMenu();
@@ -885,25 +1159,58 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 	switch (GetOpenMenu())
 	{
 	case EGBMenu::Pause:
-		DrawPauseMenu(Style);
+		DrawPauseMenu(Skin);
 		break;
 	case EGBMenu::Death:
-		DrawDeathScreen();
+		DrawDeathScreen(Skin);
 		break;
 	case EGBMenu::Inventory:
-		DrawInventory(Player, Style);
+		DrawInventory(Player, Skin);
 		break;
 	case EGBMenu::SkillTrees:
 	{
 		const float S = UIScale();
-		DrawRect(GBHudMenuLocal::MenuDim, 0.f, 0.f, Canvas->ClipX, Canvas->ClipY);
-		DrawLabel(TEXT("SKILL TREES"), GBHudMenuLocal::MenuWhite, Canvas->ClipX * 0.5f, Canvas->ClipY * 0.04f, 34.f, 0.5f, true, true);
+		const float P = ArtPixel();
+		const float W = Canvas->ClipX;
+		const float H = Canvas->ClipY;
+		MenuBackdrop(Skin);
+		const GBHudMenuDraw::FScreen Screen = GBHudMenuDraw::Layout(Skin, W, H, S, P);
+		float ContentY = Screen.Y;
+		float ContentX = Screen.X;
+		float ContentW = Screen.W;
+		if (Skin == EGBHudSkin::Cyberpunk)
+		{
+			FCyTextStyle Title;
+			Title.Face = ECyFace::Condensed;
+			Title.Px = 58.f;
+			Title.Spacing = 80;
+			Title.bUpper = true;
+			Title.Color = GBCy::Red;
+			Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 6.f * S;
+			DrawCyText(TEXT("Skill trees"), Screen.X, 50.f * S, Title, 0.f);
+			CyRuler(Screen.X, 134.f * S, Screen.W, GBAlpha(GBCy::RedDim, 0.8f));
+			FillRect(Screen.X, Screen.FooterY - 14.f * S, Screen.W, 1.f, GBAlpha(GBCy::RedDim, 0.6f));
+		}
+		else
+		{
+			RpgWindow(Screen.X, Screen.Y, Screen.W, Screen.H);
+			const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(6.f * S));
+			const FBox2D Plaque = RpgPlaque(TEXT("SKILL TREES"), Screen.X + Screen.W * 0.5f, Screen.Y - 7.f * P, TitleScale);
+			ContentY = Plaque.Max.Y + 4.f * P;
+			ContentX = Screen.X + 9.f * P;
+			ContentW = Screen.W - 18.f * P;
+		}
 		if (Player)
 		{
-			DrawSkillTrees(Player, Canvas->ClipY * 0.1f);
+			DrawSkillTrees(Player, Skin, ContentX, ContentY, ContentW, Screen.FooterY - 4.f * P - ContentY);
 		}
-		DrawLabel(TEXT("Arrows or mouse: move   Click or Enter: unlock   Q / E: other tree   R: reset skills   Esc: close"), GBHudMenuLocal::MenuWhite,
-			Canvas->ClipX * 0.5f, Canvas->ClipY - 40.f * S, 16.f, 0.5f);
+		TArray<TPair<FString, FString>> Hints;
+		Hints.Add(TPair<FString, FString>(TEXT("Arrows"), TEXT("Move")));
+		Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Unlock")));
+		Hints.Add(TPair<FString, FString>(TEXT("Q E"), TEXT("Other tree")));
+		Hints.Add(TPair<FString, FString>(TEXT("R"), TEXT("Reset skills")));
+		Hints.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Close")));
+		MenuHints(Skin, Hints, Skin == EGBHudSkin::Cyberpunk ? Screen.X : W * 0.5f, Screen.FooterY, Skin == EGBHudSkin::Cyberpunk ? 0.f : 0.5f);
 		break;
 	}
 	default:
@@ -911,200 +1218,427 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 	}
 }
 
-void AGBHUD::DrawPauseMenu(const FGBHudSkinStyle& Style)
+void AGBHUD::DrawPauseMenu(EGBHudSkin Skin)
 {
 	const float S = UIScale();
+	const float P = ArtPixel();
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
-	DrawRect(GBHudMenuLocal::MenuDim, 0.f, 0.f, W, H);
-
-	const float PW = 440.f * S;
-	const float PH = 260.f * S;
-	const float PX = (W - PW) * 0.5f;
-	const float PY = (H - PH) * 0.5f;
-	const bool bShadow = !Style.bChunky;
-	DrawPanel(Style, PX, PY, PW, PH);
-	DrawLabel(TEXT("PAUSED"), Style.Text, W * 0.5f, PY + 24.f * S, 34.f, 0.5f, bShadow, true);
-
+	MenuBackdrop(Skin);
 	static const TCHAR* Entries[] = { TEXT("Resume"), TEXT("Quit to desktop") };
+
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		// Left-aligned like a system screen: big title, two big entries, the selected one filled.
+		const float X = 140.f * S;
+		FCyTextStyle Sub;
+		Sub.Face = ECyFace::Mono;
+		Sub.Px = 15.f;
+		Sub.Color = GBCy::RedDim;
+		DrawCyText(TEXT("// SESSION SUSPENDED"), X, H * 0.30f, Sub, 0.f);
+		FCyTextStyle Title;
+		Title.Face = ECyFace::Condensed;
+		Title.Px = 96.f;
+		Title.Spacing = 60;
+		Title.bUpper = true;
+		Title.Color = GBCy::Red;
+		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 8.f * S;
+		const FVector2D TS = DrawCyText(TEXT("Paused"), X, H * 0.30f + 18.f * S, Title, 0.f);
+		CyRuler(X, H * 0.30f + 18.f * S + TS.Y + 8.f * S, 520.f * S, GBAlpha(GBCy::RedDim, 0.8f));
+		for (int32 i = 0; i < 2; ++i)
+		{
+			const float RowY = H * 0.30f + TS.Y + 52.f * S + i * 66.f * S;
+			const float RowW = 460.f * S;
+			const float RowH = 54.f * S;
+			const bool bSelected = MenuState.Cursor == i;
+			if (bSelected)
+			{
+				CyBox(X, RowY, RowW, RowH, 12.f * S, GBCy::Red, FLinearColor::Transparent, 0x4);
+				DrawGlow(X + RowW * 0.3f, RowY + RowH * 0.5f, RowW * 0.6f, RowH, GBAlpha(GBCy::Red, 0.25f));
+			}
+			else
+			{
+				CyBox(X, RowY, RowW, RowH, 12.f * S, GBAlpha(GBCy::Ink, 0.4f), GBAlpha(GBCy::RedDim, 0.7f), 0x4);
+			}
+			AddMenuHit(EMenuHitKind::PauseEntry, X, RowY, RowW, RowH, i);
+			FCyTextStyle Entry;
+			Entry.Face = ECyFace::Condensed;
+			Entry.Px = 30.f;
+			Entry.Spacing = 120;
+			Entry.bUpper = true;
+			Entry.Color = bSelected ? GBCy::Ink : GBCy::RedBright;
+			const FVector2D ES = MeasureCyText(Entries[i], Entry);
+			DrawCyText(Entries[i], X + 26.f * S, RowY + (RowH - ES.Y) * 0.5f, Entry, 0.f);
+		}
+		TArray<TPair<FString, FString>> Hints;
+		Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Select")));
+		Hints.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Resume")));
+		MenuHints(Skin, Hints, X, H - 62.f * S, 0.f);
+		return;
+	}
+
+	// RPG: a small iron-framed window with a plaque, two carved entries and the gold arrow.
+	const float PW = FMath::RoundToFloat(150.f * P / P) * P;
+	const float PH = 84.f * P;
+	const float PX = FMath::RoundToFloat((W - PW) * 0.5f / P) * P;
+	const float PY = FMath::RoundToFloat((H - PH) * 0.5f / P) * P;
+	RpgWindow(PX, PY, PW, PH);
+	const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(6.f * S));
+	RpgPlaque(TEXT("PAUSED"), PX + PW * 0.5f, PY - 7.f * P, TitleScale);
 	for (int32 i = 0; i < 2; ++i)
 	{
-		const float Y = PY + 100.f * S + i * 54.f * S;
+		const float RowX = PX + 20.f * P;
+		const float RowW = PW - 40.f * P;
+		const float RowH = 16.f * P;
+		const float RowY = PY + 22.f * P + i * 20.f * P;
 		const bool bSelected = MenuState.Cursor == i;
-		if (bSelected)
-		{
-			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), PX + 30.f * S, Y - 6.f * S, PW - 60.f * S, 42.f * S);
-		}
-		AddMenuHit(EMenuHitKind::PauseEntry, PX + 30.f * S, Y - 6.f * S, PW - 60.f * S, 42.f * S, i);
-		DrawLabel(bSelected ? FString::Printf(TEXT("> %s <"), Entries[i]) : FString(Entries[i]), Style.Text, W * 0.5f, Y, 26.f, 0.5f, bShadow);
+		MenuRow(Skin, RowX, RowY, RowW, RowH, bSelected);
+		AddMenuHit(EMenuHitKind::PauseEntry, RowX, RowY, RowW, RowH, i);
+		const float LH = UiMeasure(Skin, EGBTextSize::Heading, Entries[i]).Y;
+		UiText(Skin, EGBTextSize::Heading, bSelected ? EGBTextTone::Selected : EGBTextTone::Muted, Entries[i], RowX + RowW * 0.5f, RowY + FMath::RoundToFloat((RowH - LH) * 0.5f), 0.5f,
+			bSelected ? nullptr : &GBRpg::BoneDim);
 	}
-	DrawLabel(TEXT("Click or Enter: select   Esc: resume"), Style.Text, W * 0.5f, PY + PH - 36.f * S, 15.f, 0.5f, bShadow);
+	TArray<TPair<FString, FString>> Hints;
+	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Select")));
+	Hints.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Resume")));
+	MenuHints(Skin, Hints, PX + PW * 0.5f, PY + PH - 16.f * P, 0.5f);
 }
 
-void AGBHUD::DrawDeathScreen()
-{
-	const float W = Canvas->ClipX;
-	const float H = Canvas->ClipY;
-	DrawRect(FLinearColor(0.25f, 0.f, 0.f, 0.65f), 0.f, 0.f, W, H);
-	DrawLabel(TEXT("YOU DIED"), FLinearColor(1.f, 0.25f, 0.2f, 1.f), W * 0.5f, H * 0.38f, 72.f, 0.5f, true, true);
-	DrawLabel(TEXT("Click, or press Enter / A, to respawn"), GBHudMenuLocal::MenuWhite, W * 0.5f, H * 0.52f, 26.f, 0.5f);
-	AddMenuHit(EMenuHitKind::DeathScreen, 0.f, 0.f, W, H);
-}
-
-void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
+void AGBHUD::DrawDeathScreen(EGBHudSkin Skin)
 {
 	const float S = UIScale();
+	const float P = ArtPixel();
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
-	const bool bShadow = !Style.bChunky;
-	DrawRect(GBHudMenuLocal::MenuDim, 0.f, 0.f, W, H);
+	const float Since = (float)(GetRealTime() - MenuOpenTime);
+	AddMenuHit(EMenuHitKind::DeathScreen, 0.f, 0.f, W, H);
+	TArray<TPair<FString, FString>> Hints;
+	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Respawn at the last checkpoint")));
 
-	const float PX = W * 0.07f;
-	const float PY = H * 0.06f;
-	const float PW = W * 0.86f;
-	const float PH = H * 0.88f;
-	DrawPanel(Style, PX, PY, PW, PH);
-
-	// Tabs.
-	static const TCHAR* Tabs[] = { TEXT("Items"), TEXT("Weapons"), TEXT("Spells"), TEXT("Skills") };
-	static_assert((int32)UE_ARRAY_COUNT(Tabs) == PageCount,"One tab name per inventory page");
-	float TabX = PX + 24.f * S;
-	for (int32 i = 0; i < PageCount; ++i)
+	if (Skin == EGBHudSkin::Cyberpunk)
 	{
-		const FVector2D Size = MeasureLabel(Tabs[i], 24.f);
-		const bool bSelected = MenuState.Page == i;
-		if (bSelected)
+		FillRect(0.f, 0.f, W, H, GBAlpha(GBCy::RedBlack, 0.82f));
+		DrawGlow(W * 0.5f, H * 0.45f, W * 0.6f, H * 0.4f, GBAlpha(GBCy::Red, 0.18f));
+		CyScanlines(0.f, 0.f, W, H, 0.3f);
+		// A flat line across the screen with one heartbeat that dies out.
+		const float LineY = H * 0.62f;
+		FillRect(0.f, LineY, W, 2.f * S, GBAlpha(GBCy::Red, 0.75f));
+		const float BX = W * 0.30f;
+		TArray<FVector2D> Beat = { FVector2D(BX, LineY), FVector2D(BX + 14.f * S, LineY - 30.f * S), FVector2D(BX + 26.f * S, LineY + 22.f * S), FVector2D(BX + 38.f * S, LineY - 8.f * S), FVector2D(BX + 48.f * S, LineY) };
+		for (int32 i = 1; i < Beat.Num(); ++i)
 		{
-			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.45f), TabX - 10.f * S, PY + 14.f * S, Size.X + 20.f * S, Size.Y + 8.f * S);
+			DrawLine(Beat[i - 1].X, Beat[i - 1].Y, Beat[i].X, Beat[i].Y, GBAlpha(GBCy::Red, 0.9f), 2.f * S);
 		}
-		AddMenuHit(EMenuHitKind::Tab, TabX - 10.f * S, PY + 14.f * S, Size.X + 20.f * S, Size.Y + 8.f * S, i);
-		DrawLabel(Tabs[i], Style.Text, TabX, PY + 18.f * S, 24.f, 0.f, bShadow);
-		TabX += Size.X + 44.f * S;
+		FCyTextStyle Sub;
+		Sub.Face = ECyFace::Mono;
+		Sub.Px = 16.f;
+		Sub.Color = GBCy::RedDim;
+		DrawCyText(TEXT("VITAL SIGNS LOST // RESTORE POINT FOUND"), W * 0.5f, H * 0.33f, Sub, 0.5f);
+		FCyTextStyle Title;
+		Title.Face = ECyFace::Condensed;
+		Title.Px = 150.f;
+		Title.Spacing = 80;
+		Title.bUpper = true;
+		Title.Color = GBCy::Red;
+		Title.Split = (Since < 0.5f ? (1.f - Since / 0.5f) * 14.f : 2.f + 2.f * FMath::Abs(FMath::Sin(Since * 9.f))) * S;
+		DrawCyText(TEXT("Flatlined"), W * 0.5f, H * 0.36f, Title, 0.5f);
+		MenuHints(Skin, Hints, W * 0.5f, H * 0.70f, 0.5f);
+		return;
 	}
-	DrawLabel(TEXT("Q / E or click a tab: switch page   Esc: close"), Style.Text, PX + PW - 24.f * S, PY + 22.f * S, 16.f, 1.f, bShadow);
+	// RPG: the world sinks into a stepped blood vignette, a gold-and-blood epitaph, a divider.
+	FillRect(0.f, 0.f, W, H, FLinearColor(0.08f, 0.f, 0.f, 0.62f));
+	for (int32 k = 0; k < 8; ++k)
+	{
+		const float T = 4.f * P;
+		const float In = k * T;
+		const FLinearColor C = GBAlpha(GBRpg::HealthRamp[0], 0.5f * (1.f - k / 8.f));
+		FillRect(In, In, W - 2.f * In, T, C);
+		FillRect(In, H - In - T, W - 2.f * In, T, C);
+		FillRect(In, In + T, T, H - 2.f * (In + T), C);
+		FillRect(W - In - T, In + T, T, H - 2.f * (In + T), C);
+	}
+	const int32 Scale = FMath::Max(4, FMath::RoundToInt(11.f * S));
+	FPixelTextStyle Title;
+	Title.Scale = Scale;
+	Title.Ink = &GBRpg::InkBlood;
+	Title.Outline = GBRpg::Outline;
+	Title.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
+	Title.Color = FLinearColor(1.f, 1.f, 1.f, FMath::Clamp(Since / 0.6f, 0.f, 1.f));
+	const float TitleY = FMath::RoundToFloat(H * 0.36f);
+	DrawPixelText(TEXT("YOU HAVE FALLEN"), W * 0.5f, TitleY, Title, 0.5f);
+	const float DW = FMath::RoundToFloat(W * 0.36f / P) * P;
+	RpgDivider(FMath::RoundToFloat((W - DW) * 0.5f / P) * P, TitleY + 7.f * Scale + 8.f * P, DW);
+	MenuHints(Skin, Hints, W * 0.5f, TitleY + 7.f * Scale + 18.f * P, 0.5f);
+}
+
+void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, EGBHudSkin Skin)
+{
+	const float S = UIScale();
+	const float P = ArtPixel();
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+	MenuBackdrop(Skin);
+	const GBHudMenuDraw::FScreen Screen = GBHudMenuDraw::Layout(Skin, W, H, S, P);
+	static const TCHAR* Tabs[] = { TEXT("Items"), TEXT("Weapons"), TEXT("Spells"), TEXT("Skills") };
+	static_assert((int32)UE_ARRAY_COUNT(Tabs) == PageCount, "One tab name per inventory page");
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
+
+	float CX = Screen.X;
+	float CY = Screen.Y;
+	float CW = Screen.W;
+	if (bCyber)
+	{
+		// Title, tabs to its right, ruler under both.
+		FCyTextStyle Title;
+		Title.Face = ECyFace::Condensed;
+		Title.Px = 58.f;
+		Title.Spacing = 80;
+		Title.bUpper = true;
+		Title.Color = GBCy::Red;
+		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 6.f * S;
+		const FVector2D TS = DrawCyText(TEXT("Inventory"), Screen.X, 50.f * S, Title, 0.f);
+		float TabX = Screen.X + TS.X + 56.f * S;
+		const float TabY = 74.f * S;
+		const float TabH = 40.f * S;
+		CyKey(TabX - 36.f * S, TabY + 9.f * S, TEXT("Q"), GBCy::Cyan, 22.f);
+		for (int32 i = 0; i < PageCount; ++i)
+		{
+			FCyTextStyle Tab;
+			Tab.Face = ECyFace::Condensed;
+			Tab.Px = 22.f;
+			Tab.Spacing = 140;
+			Tab.bUpper = true;
+			const FVector2D Size = MeasureCyText(Tabs[i], Tab);
+			const float TabW = Size.X + 36.f * S;
+			const bool bSelected = MenuState.Page == i;
+			const bool bHover = IsMouseOver(TabX, TabY, TabW, TabH);
+			if (bSelected)
+			{
+				CyBox(TabX, TabY, TabW, TabH, 10.f * S, GBCy::Red, FLinearColor::Transparent, 0x4);
+			}
+			else
+			{
+				CyBox(TabX, TabY, TabW, TabH, 10.f * S, FLinearColor::Transparent, GBAlpha(bHover ? GBCy::RedBright : GBCy::RedDeep, 1.f), 0x4);
+			}
+			Tab.Color = bSelected ? GBCy::Ink : (bHover ? GBCy::Pale : GBCy::RedDim);
+			DrawCyText(Tabs[i], TabX + TabW * 0.5f, TabY + (TabH - Size.Y) * 0.5f, Tab, 0.5f);
+			AddMenuHit(EMenuHitKind::Tab, TabX, TabY, TabW, TabH, i);
+			TabX += TabW + 8.f * S;
+		}
+		CyKey(TabX + 4.f * S, TabY + 9.f * S, TEXT("E"), GBCy::Cyan, 22.f);
+		CyRuler(Screen.X, 134.f * S, Screen.W, GBAlpha(GBCy::RedDim, 0.8f));
+		FillRect(Screen.X, Screen.FooterY - 14.f * S, Screen.W, 1.f, GBAlpha(GBCy::RedDim, 0.6f));
+	}
+	else
+	{
+		RpgWindow(Screen.X, Screen.Y, Screen.W, Screen.H);
+		const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(6.f * S));
+		const FBox2D Plaque = RpgPlaque(TEXT("INVENTORY"), Screen.X + Screen.W * 0.5f, Screen.Y - 7.f * P, TitleScale);
+		// Stone tabs hanging under the plaque.
+		const int32 TabScale = FMath::Max(2, FMath::RoundToInt(3.f * S));
+		float TotalW = 0.f;
+		TArray<float> Widths;
+		for (int32 i = 0; i < PageCount; ++i)
+		{
+			Widths.Add(FMath::CeilToFloat((MeasurePixelText(FString(Tabs[i]).ToUpper(), TabScale).X + 16.f * P) / P) * P);
+			TotalW += Widths.Last() + 3.f * P;
+		}
+		float TabX = FMath::RoundToFloat((Screen.X + Screen.W * 0.5f - TotalW * 0.5f) / P) * P;
+		const float TabY = Plaque.Max.Y + 3.f * P;
+		const float TabH = 7.f * TabScale + 8.f * P;
+		for (int32 i = 0; i < PageCount; ++i)
+		{
+			const bool bSelected = MenuState.Page == i;
+			const bool bHover = IsMouseOver(TabX, TabY, Widths[i], TabH);
+			FillRect(TabX, TabY, Widths[i], TabH, GBRpg::Stone1);
+			RpgStone(TabX, TabY, Widths[i], TabH, bSelected ? FLinearColor(1.3f, 1.15f, 1.f, 1.f) : FLinearColor(0.8f, 0.8f, 0.85f, 1.f));
+			RpgFrame(TabX, TabY, Widths[i], TabH, bSelected ? ERpgFrame::Gold : ERpgFrame::Iron);
+			if (bSelected)
+			{
+				DrawGlow(TabX + Widths[i] * 0.5f, TabY + TabH, Widths[i] * 0.7f, TabH, GBAlpha(GBRpg::EmberLight, 0.18f));
+			}
+			FPixelTextStyle Style;
+			Style.Scale = TabScale;
+			Style.Ink = bSelected ? &GBRpg::InkGold : (bHover ? &GBRpg::InkBone : nullptr);
+			Style.Color = bSelected || bHover ? FLinearColor::White : GBRpg::BoneDim;
+			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+			DrawPixelText(FString(Tabs[i]).ToUpper(), TabX + Widths[i] * 0.5f, TabY + 4.f * P, Style, 0.5f);
+			AddMenuHit(EMenuHitKind::Tab, TabX, TabY, Widths[i], TabH, i);
+			TabX += Widths[i] + 3.f * P;
+		}
+		float KW = 0.f;
+		RpgKeyCap(FMath::RoundToFloat((Screen.X + Screen.W * 0.5f - TotalW * 0.5f) / P) * P - 13.f * P, TabY + 3.f * P, TEXT("Q"), &KW);
+		RpgKeyCap(TabX + 2.f * P, TabY + 3.f * P, TEXT("E"));
+		CX = Screen.X + 16.f * P;
+		CY = TabY + TabH + 8.f * P;
+		CW = Screen.W - 32.f * P;
+	}
+
+	TArray<TPair<FString, FString>> Hints;
+	Hints.Add(TPair<FString, FString>(TEXT("Q E"), TEXT("Page")));
+	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Select")));
+	Hints.Add(TPair<FString, FString>(TEXT("Esc"), MenuState.bChoosingSpell || MenuState.PendingCombine != NAME_None ? TEXT("Back") : TEXT("Close")));
+	if (MenuState.Page == PageSkills)
+	{
+		Hints.Add(TPair<FString, FString>(TEXT("R"), TEXT("Reset skills")));
+	}
+	MenuHints(Skin, Hints, bCyber ? Screen.X : W * 0.5f, Screen.FooterY, bCyber ? 0.f : 0.5f);
 
 	if (!Player)
 	{
 		return;
 	}
-	const float CX = PX + 24.f * S;
-	const float CY = PY + 70.f * S;
-	const float CW = PW - 48.f * S;
-	const float CH = PH - 100.f * S;
+	const float CH = Screen.FooterY - (bCyber ? 26.f * S : 5.f * P) - CY;
 	if (MenuState.Page == PageItems)
 	{
-		DrawItemsPage(Player, Style, CX, CY, CW, CH);
+		DrawItemsPage(Player, Skin, CX, CY, CW, CH);
 	}
 	else if (MenuState.Page == PageWeapons)
 	{
-		DrawWeaponsPage(Player, Style, CX, CY, CW, CH);
+		DrawWeaponsPage(Player, Skin, CX, CY, CW, CH);
 	}
 	else if (MenuState.Page == PageSpells)
 	{
-		DrawSpellsPage(Player, Style, CX, CY, CW, CH);
+		DrawSpellsPage(Player, Skin, CX, CY, CW, CH);
 	}
 	else
 	{
-		DrawSkillTrees(Player, CY);
+		DrawSkillTrees(Player, Skin, CX, CY, CW, CH);
 	}
 }
 
-void AGBHUD::DrawItemsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, float W, float H)
+// ======================================================================== drawing: pages
+
+void AGBHUD::DrawItemsPage(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X, float Y, float W, float H)
 {
 	using namespace GBHudMenuLocal;
 	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
+	const float P = ArtPixel();
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
 	const UGBInventoryComponent* Inventory = Player->GetInventory();
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const TArray<FName> List = GetInventoryList(Player);
 	if (!Inventory || List.Num() == 0)
 	{
-		DrawLabel(TEXT("Your bag is empty."), Style.Text, X, Y, 22.f, 0.f, bShadow);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, TEXT("Your bag is empty."), X, Y);
 		return;
 	}
 	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
 
-	const float ListW = W * 0.5f;
-	const float RowH = 34.f * S;
-	const int32 Visible = FMath::Max(1, FMath::FloorToInt(H / RowH));
+	const float ListW = FMath::RoundToFloat(W * 0.46f);
+	const float RowH = bCyber ? 48.f * S : 16.f * P;
+	const float RowGap = bCyber ? 6.f * S : 2.f * P;
+	const float ListX = X + (bCyber ? 0.f : 8.f * P);
+	const int32 Visible = FMath::Max(1, FMath::FloorToInt(H / (RowH + RowGap)));
 	const int32 First = FMath::Clamp(MenuState.Cursor - Visible + 1, 0, FMath::Max(0, List.Num() - Visible));
+	if (!bCyber)
+	{
+		RpgWell(X - 2.f * P, Y - 3.f * P, ListW + 12.f * P, H + 3.f * P);
+	}
 	for (int32 i = First; i < List.Num() && i < First + Visible; ++i)
 	{
 		const FName ItemId = List[i];
-		const float RowY = Y + (i - First) * RowH;
-		if (i == MenuState.Cursor)
-		{
-			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S);
-		}
-		AddMenuHit(EMenuHitKind::ItemRow, X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S, i);
-		FString Text = FString::Printf(TEXT("%s  x%d"), *ItemName(Data, ItemId), Inventory->GetCount(ItemId));
+		const FGBItemDefinition* Def = Data ? Data->FindItem(ItemId) : nullptr;
+		const float RowY = Y + (i - First) * (RowH + RowGap);
+		const bool bSelected = i == MenuState.Cursor;
+		const float Pad = MenuRow(Skin, ListX, RowY, ListW - (bCyber ? 0.f : 8.f * P), RowH, bSelected, MenuState.PendingCombine == ItemId);
+		AddMenuHit(EMenuHitKind::ItemRow, ListX, RowY, ListW, RowH, i);
+		const float IconS = RowH - (bCyber ? 12.f * S : 4.f * P);
+		const FString* Sprite = Def ? Def->Strings.Find(GBString::Sprite) : nullptr;
+		DrawSpriteFit(Sprite ? FName(**Sprite) : NAME_None, ListX + Pad - (bCyber ? 4.f * S : 2.f * P), RowY + (RowH - IconS) * 0.5f, IconS, IconS,
+			bCyber ? FLinearColor(0.9f, 1.f, 1.f, 1.f) : FLinearColor::White, bCyber);
+		const float TextX = ListX + Pad + IconS + (bCyber ? 10.f * S : 3.f * P);
+		const float LH = UiMeasure(Skin, EGBTextSize::Body, TEXT("Ag")).Y;
+		UiText(Skin, EGBTextSize::Body, bSelected ? EGBTextTone::Selected : EGBTextTone::Normal, ItemName(Data, ItemId), TextX, RowY + FMath::RoundToFloat((RowH - LH) * 0.5f));
+		// Count and tags at the right of the row.
+		FString TagText;
 		if (Inventory->GetEquippedArmor() == ItemId)
 		{
-			Text += TEXT("  [Equipped]");
+			TagText += TEXT("EQUIPPED  ");
 		}
 		if (Inventory->GetQuickUseItem() == ItemId)
 		{
-			Text += TEXT("  [F]");
+			TagText += TEXT("[F]  ");
 		}
-		if (MenuState.PendingCombine == ItemId)
+		const float RightX = ListX + ListW - (bCyber ? 16.f * S : 14.f * P);
+		const FVector2D CountSize = UiText(Skin, EGBTextSize::Body, EGBTextTone::Value, FString::Printf(TEXT("x%d"), Inventory->GetCount(ItemId)), RightX, RowY + FMath::RoundToFloat((RowH - LH) * 0.5f), 1.f);
+		if (!TagText.IsEmpty())
 		{
-			Text = TEXT("* ") + Text;
+			const float SH = UiMeasure(Skin, EGBTextSize::Small, TEXT("A")).Y;
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Warn, TagText.TrimEnd(), RightX - CountSize.X - (bCyber ? 14.f * S : 4.f * P), RowY + FMath::RoundToFloat((RowH - SH) * 0.5f), 1.f);
 		}
-		DrawLabel(Text, Style.Text, X, RowY, 20.f, 0.f, bShadow);
 	}
 
 	// Details of the selected item.
 	const FName Selected = List[MenuState.Cursor];
 	const FGBItemDefinition* Def = Data ? Data->FindItem(Selected) : nullptr;
-	const float DX = X + ListW + 30.f * S;
-	const float DW = W - ListW - 30.f * S;
-	float DY = Y;
-	DrawLabel(ItemName(Data, Selected), Style.Text, DX, DY, 28.f, 0.f, bShadow, true);
-	DY += 44.f * S;
-	if (Def)
+	const float DX = X + ListW + (bCyber ? 40.f * S : 14.f * P);
+	const float DW = X + W - DX;
+	const FLinearColor TypeColor = ToneColor(Skin, EGBTextTone::Value);
+	float DY = MenuDetailPanel(Skin, DX, Y - (bCyber ? 0.f : 3.f * P), DW, H + (bCyber ? 0.f : 3.f * P), ItemName(Data, Selected), Def ? ItemTypeName(Def->Type) : FString(), &TypeColor);
+	const float Inner = bCyber ? 24.f * S : 7.f * P;
+	if (!Def)
 	{
-		DrawLabel(ItemTypeName(Def->Type), Style.Text, DX, DY, 18.f, 0.f, bShadow);
-		DY += 32.f * S;
-		DY += DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 18.f, bShadow) + 20.f * S;
-
-		FString Hint;
-		switch (Def->Type)
-		{
-		case EGBItemType::Consumable: Hint = TEXT("Click or Enter: use"); break;
-		case EGBItemType::Throwable: Hint = TEXT("Throw it with [F] (quick-use, Shift cycles)"); break;
-		case EGBItemType::Armor: Hint = Inventory->GetEquippedArmor() == Selected ? TEXT("Click or Enter: unequip") : TEXT("Click or Enter: equip"); break;
-		case EGBItemType::Material:
-		case EGBItemType::KeyItem:
-			if (MenuState.PendingCombine == NAME_None)
-			{
-				Hint = TEXT("Click or Enter: combine with another item");
-			}
-			else if (MenuState.PendingCombine == Selected)
-			{
-				Hint = TEXT("Choose the second item (Esc: cancel)");
-			}
-			else
-			{
-				Hint = FString::Printf(TEXT("Click or Enter: combine with %s"), *ItemName(Data, MenuState.PendingCombine));
-			}
-			break;
-		default: break;
-		}
-		DrawLabel(Hint, Style.Accent, DX, DY, 18.f, 0.f, true);
+		return;
 	}
+	// Large icon on the right of the panel.
+	const float Big = bCyber ? 168.f * S : 40.f * P;
+	const FString* Sprite = Def->Strings.Find(GBString::Sprite);
+	if (bCyber)
+	{
+		CyBox(DX + DW - Inner - Big, DY, Big, Big, 14.f * S, GBAlpha(GBCy::CyanDeep, 0.35f), GBAlpha(GBCy::CyanDim, 0.9f), 0x5);
+	}
+	else
+	{
+		RpgFrame(DX + DW - Inner - Big, DY, Big, Big, ERpgFrame::Gold);
+		FillRect(DX + DW - Inner - Big + 3.f * P, DY + 3.f * P, Big - 6.f * P, Big - 6.f * P, GBRpg::StoneDeep);
+		DrawGlow(DX + DW - Inner - Big * 0.5f, DY + Big * 0.5f, Big * 0.45f, Big * 0.45f, GBAlpha(GBRpg::EmberLight, 0.15f));
+	}
+	DrawSpriteFit(Sprite ? FName(**Sprite) : NAME_None, DX + DW - Inner - Big + Big * 0.15f, DY + Big * 0.15f, Big * 0.7f, Big * 0.7f,
+		bCyber ? FLinearColor(0.9f, 1.f, 1.f, 1.f) : FLinearColor::White, bCyber);
+	const float TextW = DW - 3.f * Inner - Big;
+	DY += UiWrapped(Skin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, DX + Inner, DY, TextW) + (bCyber ? 20.f * S : 6.f * P);
+	DY = FMath::Max(DY, DY);
+
+	TArray<TPair<FString, FString>> Actions;
+	switch (Def->Type)
+	{
+	case EGBItemType::Consumable: Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Use"))); break;
+	case EGBItemType::Throwable: Actions.Add(TPair<FString, FString>(TEXT("F"), TEXT("Throw (quick-use)"))); Actions.Add(TPair<FString, FString>(TEXT("Shift"), TEXT("Cycle"))); break;
+	case EGBItemType::Armor: Actions.Add(TPair<FString, FString>(TEXT("Enter"), FString(Inventory->GetEquippedArmor() == Selected ? TEXT("Unequip") : TEXT("Equip")))); break;
+	case EGBItemType::Material:
+	case EGBItemType::KeyItem:
+		if (MenuState.PendingCombine == NAME_None)
+		{
+			Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Combine with another item")));
+		}
+		else if (MenuState.PendingCombine == Selected)
+		{
+			Actions.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Cancel (choose a second item to combine)")));
+		}
+		else
+		{
+			Actions.Add(TPair<FString, FString>(TEXT("Enter"), FString::Printf(TEXT("Combine with %s"), *ItemName(Data, MenuState.PendingCombine))));
+		}
+		break;
+	default: break;
+	}
+	const float HintY = FMath::Max(DY, Y + Big + (bCyber ? 60.f * S : 18.f * P));
+	MenuHints(Skin, Actions, DX + Inner, HintY, 0.f);
 }
 
-void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, float W, float H)
+void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X, float Y, float W, float H)
 {
 	using namespace GBHudMenuLocal;
 	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
+	const float P = ArtPixel();
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
 	const UGBEquipmentComponent* Equipment = Player->GetEquipment();
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const TArray<FName> List = GetWeaponList(Player);
 	if (!Equipment || List.Num() == 0)
 	{
-		DrawLabel(TEXT("You carry no weapons."), Style.Text, X, Y, 22.f, 0.f, bShadow);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, TEXT("You carry no weapons."), X, Y);
 		return;
 	}
 	MenuState.Cursor = FMath::Clamp(MenuState.Cursor, 0, List.Num() - 1);
@@ -1134,76 +1668,134 @@ void AGBHUD::DrawWeaponsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& 
 		Rows.Add(FRow{ WeaponName(Data, List[i]), i });
 	}
 
-	const float ListW = W * 0.5f;
-	const float RowH = 34.f * S;
+	const float ListW = FMath::RoundToFloat(W * 0.46f);
+	const float ListX = X + (bCyber ? 0.f : 8.f * P);
+	const float RowH = bCyber ? 44.f * S : 14.f * P;
+	const float HeaderH = bCyber ? 40.f * S : 13.f * P;
+	if (!bCyber)
+	{
+		RpgWell(X - 2.f * P, Y - 3.f * P, ListW + 12.f * P, H + 3.f * P);
+	}
+	float RowY = Y;
 	const int32 Visible = FMath::Max(1, FMath::FloorToInt(H / RowH));
 	const int32 First = FMath::Clamp(CursorRow - Visible + 1, 0, FMath::Max(0, Rows.Num() - Visible));
-	for (int32 r = First; r < Rows.Num() && r < First + Visible; ++r)
+	for (int32 r = First; r < Rows.Num() && RowY + RowH <= Y + H + 1.f; ++r)
 	{
 		const FRow& Row = Rows[r];
-		const float RowY = Y + (r - First) * RowH;
 		if (Row.WeaponIndex < 0)
 		{
-			DrawLabel(Row.Text.ToUpper(), Style.Text, X, RowY + 6.f * S, 16.f, 0.f, bShadow, true);
+			const float HY = RowY + (bCyber ? 10.f * S : 4.f * P);
+			if (bCyber)
+			{
+				FCyTextStyle Head;
+				Head.Face = ECyFace::Mono;
+				Head.Px = 14.f;
+				Head.Color = GBCy::RedDim;
+				const FVector2D HS = DrawCyText(FString::Printf(TEXT("// %s"), *Row.Text.ToUpper()), ListX, HY, Head, 0.f);
+				FillRect(ListX + HS.X + 10.f * S, HY + HS.Y * 0.5f, ListW - HS.X - 10.f * S, 1.f, GBAlpha(GBCy::RedDeep, 1.f));
+			}
+			else
+			{
+				const FVector2D HS = UiText(Skin, EGBTextSize::Small, EGBTextTone::Accent, Row.Text.ToUpper(), ListX + 2.f * P, HY);
+				FillRect(ListX + HS.X + 6.f * P, HY + 3.f * P, ListW - HS.X - 18.f * P, P, GBRpg::Gold1);
+			}
+			RowY += HeaderH;
 			continue;
 		}
 		const FName WeaponId = List[Row.WeaponIndex];
-		if (Row.WeaponIndex == MenuState.Cursor)
-		{
-			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.35f), X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S);
-		}
-		AddMenuHit(EMenuHitKind::WeaponRow, X - 6.f * S, RowY - 3.f * S, ListW, RowH - 2.f * S, Row.WeaponIndex);
+		const bool bSelected = Row.WeaponIndex == MenuState.Cursor;
+		const float RowWidth = ListW - (bCyber ? 0.f : 8.f * P);
+		const float Pad = MenuRow(Skin, ListX, RowY, RowWidth, RowH - (bCyber ? 4.f * S : P), bSelected);
+		AddMenuHit(EMenuHitKind::WeaponRow, ListX, RowY, RowWidth, RowH, Row.WeaponIndex);
 		const bool bEquipped = Equipment->IsWeaponEquipped(WeaponId);
-		DrawLabel(bEquipped ? FString::Printf(TEXT("   %s  [equipped]"), *Row.Text) : TEXT("   ") + Row.Text, Style.Text, X, RowY, 20.f, 0.f, bShadow);
-		if (const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr)
+		const float LH = UiMeasure(Skin, EGBTextSize::Body, TEXT("Ag")).Y;
+		const float TY = RowY + FMath::RoundToFloat((RowH - (bCyber ? 4.f * S : P) - LH) * 0.5f);
+		const FVector2D NS = UiText(Skin, EGBTextSize::Body, bSelected ? EGBTextTone::Selected : EGBTextTone::Normal, Row.Text, ListX + Pad, TY);
+		if (bEquipped)
 		{
-			(void)Def;
-			const EGBElement Element = Equipment->GetWeaponElement(WeaponId);
-			DrawLabel(GBHudText::ElementName(Element), GBHudText::ElementColor(Element), X + ListW - 18.f * S, RowY + 2.f * S, 16.f, 1.f, true);
+			const float SH = UiMeasure(Skin, EGBTextSize::Small, TEXT("A")).Y;
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Value, TEXT("EQUIPPED"), ListX + Pad + NS.X + (bCyber ? 14.f * S : 4.f * P), RowY + FMath::RoundToFloat((RowH - SH) * 0.5f));
 		}
+		const EGBElement Element = Equipment->GetWeaponElement(WeaponId);
+		const FLinearColor EC = GBHudText::ElementColor(Element);
+		const float RightX = ListX + RowWidth - (bCyber ? 16.f * S : 6.f * P);
+		if (bCyber)
+		{
+			FillRect(RightX - 6.f * S, RowY + 12.f * S, 6.f * S, RowH - 28.f * S, EC);
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Normal, GBHudText::ElementName(Element).ToUpper(), RightX - 14.f * S, TY + 3.f * S, 1.f, &EC);
+		}
+		else
+		{
+			RpgGem(RightX - 2.f * P, RowY + (RowH - P) * 0.5f, EC, true);
+			const float SH = UiMeasure(Skin, EGBTextSize::Small, TEXT("A")).Y;
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Normal, GBHudText::ElementName(Element), RightX - 8.f * P, RowY + FMath::RoundToFloat((RowH - P - SH) * 0.5f), 1.f, &EC);
+		}
+		RowY += RowH;
 	}
 
 	// Details of the selected weapon.
 	const FName Selected = List[MenuState.Cursor];
 	const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(Selected) : nullptr;
-	const float DX = X + ListW + 30.f * S;
-	const float DW = W - ListW - 30.f * S;
-	float DY = Y;
-	DrawLabel(WeaponName(Data, Selected), Style.Text, DX, DY, 28.f, 0.f, bShadow, true);
-	DY += 44.f * S;
+	const float DX = X + ListW + (bCyber ? 40.f * S : 14.f * P);
+	const float DW = X + W - DX;
+	const float Inner = bCyber ? 24.f * S : 7.f * P;
+	const EGBElement Element = Equipment->GetWeaponElement(Selected);
+	const FLinearColor EC = GBHudText::ElementColor(Element);
+	const FString Subtitle = Def ? FString::Printf(TEXT("%s  -  %s"), *SlotName(Def->Slot, false), *GBHudText::ElementName(Element)) : FString();
+	float DY = MenuDetailPanel(Skin, DX, Y - (bCyber ? 0.f : 3.f * P), DW, H + (bCyber ? 0.f : 3.f * P), WeaponName(Data, Selected), Subtitle, &EC);
 	if (!Def)
 	{
-		DrawLabel(TEXT("Unknown weapon"), Style.Text, DX, DY, 18.f, 0.f, bShadow);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, TEXT("Unknown weapon"), DX + Inner, DY);
 		return;
 	}
-	DrawLabel(FString::Printf(TEXT("%s   %s"), *SlotName(Def->Slot, false), *GBHudText::ElementName(Equipment->GetWeaponElement(Selected))),
-		GBHudText::ElementColor(Equipment->GetWeaponElement(Selected)), DX, DY, 18.f, 0.f, true);
-	DY += 32.f * S;
+	// Stats as label / value lines.
+	const float LineH = UiLineHeight(Skin, EGBTextSize::Body) + (bCyber ? 4.f * S : P);
 	for (const FString& Line : WeaponStatLines(*Def))
 	{
-		DrawLabel(Line, Style.Text, DX, DY, 18.f, 0.f, bShadow);
-		DY += 28.f * S;
+		// "Damage 10 x8" -> label "Damage", value "10 x8": split at the first digit.
+		int32 Split = INDEX_NONE;
+		for (int32 c = 0; c < Line.Len(); ++c)
+		{
+			if (FChar::IsDigit(Line[c]))
+			{
+				Split = c;
+				break;
+			}
+		}
+		const FString Label = Split == INDEX_NONE ? Line : Line.Left(Split).TrimEnd();
+		const FString Value = Split == INDEX_NONE ? FString() : Line.Mid(Split);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, Label, DX + Inner, DY);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Value, Value, DX + DW - Inner, DY, 1.f);
+		if (bCyber)
+		{
+			FillRect(DX + Inner, DY + LineH - 6.f * S, DW - 2.f * Inner, 1.f, GBAlpha(GBCy::RedDeep, 1.f));
+		}
+		else
+		{
+			FillRect(DX + Inner, DY + LineH - 3.f * P, DW - 2.f * Inner, P, GBAlpha(GBRpg::Stone2, 0.9f));
+		}
+		DY += LineH;
 	}
-	DY += 16.f * S;
-
+	DY += bCyber ? 18.f * S : 5.f * P;
 	if (Equipment->IsWeaponEquipped(Selected))
 	{
-		DrawLabel(FString::Printf(TEXT("Equipped in the %s slot"), *SlotName(Def->Slot, false).ToLower()), Style.Accent, DX, DY, 18.f, 0.f, true);
+		UiText(Skin, EGBTextSize::Small, EGBTextTone::Value, FString::Printf(TEXT("Equipped in the %s slot"), *SlotName(Def->Slot, false).ToLower()), DX + Inner, DY);
 	}
 	else
 	{
 		const AGBHeldItem* Current = Equipment->GetItemInSlot(Def->Slot);
-		const FString Hint = Current ? FString::Printf(TEXT("Click or Enter: equip (replaces %s)"), *Current->GetDisplayName())
-			: FString(TEXT("Click or Enter: equip"));
-		DrawWrapped(Hint, Style.Accent, DX, DY, DW, 18.f, true);
+		TArray<TPair<FString, FString>> Actions;
+		Actions.Add(TPair<FString, FString>(TEXT("Enter"), Current ? FString::Printf(TEXT("Equip (replaces %s)"), *Current->GetDisplayName()) : FString(TEXT("Equip"))));
+		MenuHints(Skin, Actions, DX + Inner, DY, 0.f);
 	}
 }
 
-void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, float W, float H)
+void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X, float Y, float W, float H)
 {
 	using namespace GBHudMenuLocal;
 	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
+	const float P = ArtPixel();
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
 	UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	if (!Spellbook)
@@ -1211,32 +1803,68 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 		return;
 	}
 	const int32 NumSlots = UGBSpellbookComponent::NumSlots;
-	const float ListW = W * 0.45f;
-	const float RowH = 42.f * S;
-
-	DrawLabel(TEXT("Loadout"), Style.Text, X, Y, 22.f, 0.f, bShadow, true);
-	const float ListY = Y + 44.f * S;
+	const float ListW = FMath::RoundToFloat(W * 0.46f);
+	const float ListX = X + (bCyber ? 0.f : 8.f * P);
+	const float RowH = bCyber ? 52.f * S : 17.f * P;
+	const float RowGap = bCyber ? 6.f * S : 2.f * P;
+	if (!bCyber)
+	{
+		RpgWell(X - 2.f * P, Y - 3.f * P, ListW + 12.f * P, H + 3.f * P);
+	}
+	const FVector2D HeadSize = UiText(Skin, EGBTextSize::Small, EGBTextTone::Accent, TEXT("LOADOUT"), ListX + (bCyber ? 0.f : 2.f * P), Y + (bCyber ? 0.f : 2.f * P));
+	const float ListY = Y + HeadSize.Y + (bCyber ? 14.f * S : 6.f * P);
 	for (int32 i = 0; i <= NumSlots; ++i)
 	{
-		const float RowY = ListY + i * RowH;
-		if (i == MenuState.Cursor)
+		const float RowY = ListY + i * (RowH + RowGap);
+		const float RowWidth = ListW - (bCyber ? 0.f : 8.f * P);
+		const bool bSelected = i == MenuState.Cursor;
+		const float Pad = MenuRow(Skin, ListX, RowY, RowWidth, RowH, bSelected && !MenuState.bChoosingSpell, bSelected && MenuState.bChoosingSpell);
+		AddMenuHit(EMenuHitKind::SpellSlot, ListX, RowY, RowWidth, RowH, i);
+		const FName SpellId = i < NumSlots ? Spellbook->GetSlotSpell(i) : Spellbook->GetEnchantSpell();
+		const FString Key = i < NumSlots ? FString(SlotKey(i)) : FString(TEXT("T"));
+		// Key, icon, name.
+		float KX = ListX + Pad;
+		if (bCyber)
 		{
-			DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, MenuState.bChoosingSpell ? 0.2f : 0.4f), X - 6.f * S, RowY - 4.f * S, ListW, RowH - 4.f * S);
-		}
-		AddMenuHit(EMenuHitKind::SpellSlot, X - 6.f * S, RowY - 4.f * S, ListW, RowH - 4.f * S, i);
-		FString Text;
-		if (i < NumSlots)
-		{
-			const FName SpellId = Spellbook->GetSlotSpell(i);
-			Text = FString::Printf(TEXT("[%s]  %s"), SlotKey(i), SpellId == NAME_None ? TEXT("(empty)") : *GBHudText::SpellName(this, SpellId));
+			KX += CyKey(KX, RowY + (RowH - 24.f * S) * 0.5f, Key, GBCy::Cyan, 24.f) + 12.f * S;
 		}
 		else
 		{
-			const EGBElement Element = Spellbook->GetEnchantElement();
-			Text = FString::Printf(TEXT("[T]  Weapon enchant: %s"), *GBHudText::ElementName(Element));
-			DrawRect(GBHudText::ElementColor(Element), X - 6.f * S, RowY - 4.f * S, 4.f * S, RowH - 4.f * S);
+			float KW = 0.f;
+			RpgKeyCap(KX, RowY + FMath::RoundToFloat((RowH - 11.f * P) * 0.5f / P) * P, Key, &KW);
+			KX += KW + 3.f * P;
 		}
-		DrawLabel(Text, Style.Text, X, RowY, 20.f, 0.f, bShadow);
+		const float IconS = RowH - (bCyber ? 14.f * S : 5.f * P);
+		if (SpellId != NAME_None)
+		{
+			if (bCyber)
+			{
+				CyBox(KX, RowY + (RowH - IconS) * 0.5f, IconS, IconS, 6.f * S, GBAlpha(GBCy::Ink, 0.8f), GBAlpha(GBCy::RedDim, 1.f), 0x4);
+			}
+			else
+			{
+				FillRect(KX, RowY + (RowH - IconS) * 0.5f, IconS, IconS, GBRpg::StoneDeep);
+				DrawOutline(KX, RowY + (RowH - IconS) * 0.5f, IconS, IconS, GBRpg::Gold1, P);
+			}
+			DrawSpriteFit(GBHudText::SpellIconId(SpellId), KX + 2.f, RowY + (RowH - IconS) * 0.5f + 2.f, IconS - 4.f, IconS - 4.f);
+		}
+		KX += IconS + (bCyber ? 12.f * S : 3.f * P);
+		const float LH = UiMeasure(Skin, EGBTextSize::Body, TEXT("Ag")).Y;
+		FString Name;
+		if (i < NumSlots)
+		{
+			Name = SpellId == NAME_None ? FString(TEXT("(empty)")) : GBHudText::SpellName(this, SpellId);
+		}
+		else
+		{
+			Name = FString::Printf(TEXT("Enchant: %s"), *GBHudText::ElementName(Spellbook->GetEnchantElement()));
+		}
+		UiText(Skin, EGBTextSize::Body, SpellId == NAME_None && i < NumSlots ? EGBTextTone::Disabled : (bSelected ? EGBTextTone::Selected : EGBTextTone::Normal), Name, KX, RowY + FMath::RoundToFloat((RowH - LH) * 0.5f));
+		if (i == NumSlots)
+		{
+			const FLinearColor EC = GBHudText::ElementColor(Spellbook->GetEnchantElement());
+			FillRect(ListX + RowWidth - (bCyber ? 10.f * S : 4.f * P), RowY + (bCyber ? 8.f * S : 3.f * P), bCyber ? 4.f * S : P, RowH - (bCyber ? 16.f * S : 6.f * P), EC);
+		}
 	}
 
 	// Known passives (always active, never equipped).
@@ -1252,50 +1880,53 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 			}
 		}
 	}
-	const float PassY = ListY + (NumSlots + 1) * RowH + 20.f * S;
-	DrawLabel(TEXT("Passives (always active)"), Style.Text, X, PassY, 18.f, 0.f, bShadow);
-	DrawWrapped(Passives.IsEmpty() ? FString(TEXT("None yet")) : Passives, Style.Text, X, PassY + 28.f * S, ListW, 16.f, bShadow);
+	float PassY = ListY + (NumSlots + 1) * (RowH + RowGap) + (bCyber ? 18.f * S : 5.f * P);
+	PassY += UiText(Skin, EGBTextSize::Small, EGBTextTone::Accent, TEXT("PASSIVES (ALWAYS ACTIVE)"), ListX + (bCyber ? 0.f : 2.f * P), PassY).Y + (bCyber ? 10.f * S : 4.f * P);
+	UiWrapped(Skin, EGBTextSize::Small, EGBTextTone::Normal, Passives.IsEmpty() ? FString(TEXT("None yet")) : Passives, ListX + (bCyber ? 0.f : 2.f * P), PassY, ListW - 12.f * P);
 
 	// Right side: the spell chooser, or details of the selected slot.
-	const float DX = X + ListW + 30.f * S;
-	const float DW = W - ListW - 30.f * S;
-	float DY = Y;
+	const float DX = X + ListW + (bCyber ? 40.f * S : 14.f * P);
+	const float DW = X + W - DX;
+	const float Inner = bCyber ? 24.f * S : 7.f * P;
+	const float PanelY = Y - (bCyber ? 0.f : 3.f * P);
+	const float PanelH = H + (bCyber ? 0.f : 3.f * P);
 	if (MenuState.bChoosingSpell)
 	{
 		const TArray<FName> Options = GetAssignableSpells(Player);
 		MenuState.SubCursor = FMath::Clamp(MenuState.SubCursor, 0, FMath::Max(0, Options.Num() - 1));
-		DrawLabel(FString::Printf(TEXT("Spell for slot [%s]"), SlotKey(MenuState.Cursor)), Style.Text, DX, DY, 22.f, 0.f, bShadow, true);
-		DY += 44.f * S;
-		const float OptH = 32.f * S;
-		const int32 Visible = FMath::Max(1, FMath::FloorToInt((H - 140.f * S) / OptH));
+		float DY = MenuDetailPanel(Skin, DX, PanelY, DW, PanelH, FString::Printf(TEXT("Spell for slot %s"), SlotKey(MenuState.Cursor)), TEXT("Choose a spell"), nullptr);
+		const float OptH = bCyber ? 46.f * S : 13.f * P;
+		const float DescReserve = bCyber ? 110.f * S : 34.f * P;
+		const int32 Visible = FMath::Max(1, FMath::FloorToInt((PanelY + PanelH - DY - DescReserve) / OptH));
 		const int32 First = FMath::Clamp(MenuState.SubCursor - Visible + 1, 0, FMath::Max(0, Options.Num() - Visible));
 		for (int32 i = First; i < Options.Num() && i < First + Visible; ++i)
 		{
 			const FName SpellId = Options[i];
-			if (i == MenuState.SubCursor)
-			{
-				DrawRect(Style.Accent * FLinearColor(1.f, 1.f, 1.f, 0.4f), DX - 6.f * S, DY - 3.f * S, DW * 0.8f, OptH - 2.f * S);
-			}
-			AddMenuHit(EMenuHitKind::SpellChoice, DX - 6.f * S, DY - 3.f * S, DW * 0.8f, OptH - 2.f * S, i);
+			const bool bSel = i == MenuState.SubCursor;
+			const float RX = DX + Inner + (bCyber ? 0.f : 6.f * P);
+			const float RW = DW - 2.f * Inner - (bCyber ? 0.f : 6.f * P);
+			const float Pad = MenuRow(Skin, RX, DY, RW, OptH - (bCyber ? 4.f * S : P), bSel);
+			AddMenuHit(EMenuHitKind::SpellChoice, RX, DY, RW, OptH, i);
 			FString Text = SpellId == NAME_None ? FString(TEXT("(empty the slot)")) : GBHudText::SpellName(this, SpellId);
 			for (int32 Slot = 0; Slot < NumSlots; ++Slot)
 			{
 				if (SpellId != NAME_None && Spellbook->GetSlotSpell(Slot) == SpellId)
 				{
-					Text += FString::Printf(TEXT("  (in [%s])"), SlotKey(Slot));
+					Text += FString::Printf(TEXT("  (in %s)"), SlotKey(Slot));
 				}
 			}
-			DrawLabel(Text, Style.Text, DX, DY, 19.f, 0.f, bShadow);
+			const float IconS = bCyber ? 34.f * S : OptH - 5.f * P;
+			DrawSpriteFit(GBHudText::SpellIconId(SpellId), RX + Pad, DY + (OptH - IconS) * 0.5f - (bCyber ? 2.f * S : 0.f), IconS, IconS);
+			const float LH = UiMeasure(Skin, EGBTextSize::Body, TEXT("Ag")).Y;
+			UiText(Skin, EGBTextSize::Body, bSel ? EGBTextTone::Selected : EGBTextTone::Normal, Text, RX + Pad + IconS + (bCyber ? 10.f * S : 3.f * P), DY + FMath::RoundToFloat((OptH - (bCyber ? 4.f * S : P) - LH) * 0.5f));
 			DY += OptH;
 		}
 		const FName Hovered = Options.IsValidIndex(MenuState.SubCursor) ? Options[MenuState.SubCursor] : NAME_None;
 		const FGBSpellDefinition* Def = (Data && Hovered != NAME_None) ? Data->FindSpell(Hovered) : nullptr;
 		if (Def)
 		{
-			DY += 12.f * S;
-			DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 16.f, bShadow);
+			UiWrapped(Skin, EGBTextSize::Small, EGBTextTone::Normal, Def->Description, DX + Inner, PanelY + PanelH - DescReserve + (bCyber ? 10.f * S : 3.f * P), DW - 2.f * Inner);
 		}
-		DrawLabel(TEXT("Click or Enter: equip   Esc: back"), Style.Accent, DX, Y + H - 30.f * S, 16.f, 0.f, true);
 		return;
 	}
 
@@ -1305,41 +1936,236 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, const FGBHudSkinStyle& S
 		const FGBSpellDefinition* Def = (Data && SpellId != NAME_None) ? Data->FindSpell(SpellId) : nullptr;
 		if (Def)
 		{
-			DrawLabel(GBHudText::SpellName(this, SpellId), Style.Text, DX, DY, 28.f, 0.f, bShadow, true);
-			DY += 44.f * S;
-			DrawLabel(FString::Printf(TEXT("%s   Mana %d"), *GBHudText::ElementName(Def->Element), FMath::RoundToInt(Spellbook->GetManaCost(SpellId))),
-				GBHudText::ElementColor(Def->Element), DX, DY, 18.f, 0.f, true);
-			DY += 32.f * S;
-			DY += DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 18.f, bShadow) + 16.f * S;
+			const FLinearColor EC = GBHudText::ElementColor(Def->Element);
+			float DY = MenuDetailPanel(Skin, DX, PanelY, DW, PanelH, GBHudText::SpellName(this, SpellId),
+				FString::Printf(TEXT("%s  -  %d mana"), *GBHudText::ElementName(Def->Element), FMath::RoundToInt(Spellbook->GetManaCost(SpellId))), &EC);
+			const float Big = bCyber ? 112.f * S : 30.f * P;
+			if (bCyber)
+			{
+				CyBox(DX + DW - Inner - Big, DY, Big, Big, 12.f * S, GBAlpha(GBCy::Ink, 0.7f), GBAlpha(EC, 0.9f), 0x5);
+			}
+			else
+			{
+				RpgFrame(DX + DW - Inner - Big, DY, Big, Big, ERpgFrame::Gold);
+				FillRect(DX + DW - Inner - Big + 3.f * P, DY + 3.f * P, Big - 6.f * P, Big - 6.f * P, GBRpg::StoneDeep);
+			}
+			DrawGlow(DX + DW - Inner - Big * 0.5f, DY + Big * 0.5f, Big * 0.5f, Big * 0.5f, GBAlpha(EC, 0.25f));
+			DrawSpriteFit(GBHudText::SpellIconId(SpellId), DX + DW - Inner - Big + Big * 0.15f, DY + Big * 0.15f, Big * 0.7f, Big * 0.7f);
+			DY += UiWrapped(Skin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, DX + Inner, DY, DW - 3.f * Inner - Big);
+			TArray<TPair<FString, FString>> Actions;
+			Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Choose a spell")));
+			MenuHints(Skin, Actions, DX + Inner, FMath::Max(DY + (bCyber ? 20.f * S : 6.f * P), PanelY + Big + (bCyber ? 150.f * S : 40.f * P)), 0.f);
 		}
 		else
 		{
-			DrawLabel(TEXT("Empty slot"), Style.Text, DX, DY, 24.f, 0.f, bShadow);
-			DY += 44.f * S;
+			const float DY = MenuDetailPanel(Skin, DX, PanelY, DW, PanelH, TEXT("Empty slot"), FString(), nullptr);
+			TArray<TPair<FString, FString>> Actions;
+			Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Choose a spell")));
+			MenuHints(Skin, Actions, DX + Inner, DY, 0.f);
 		}
-		DrawLabel(TEXT("Click or Enter: choose a spell"), Style.Accent, DX, DY, 18.f, 0.f, true);
+		return;
+	}
+	const FName EnchantId = Spellbook->GetEnchantSpell();
+	const EGBElement Element = Spellbook->GetEnchantElement();
+	const FLinearColor EC = GBHudText::ElementColor(Element);
+	float DY = MenuDetailPanel(Skin, DX, PanelY, DW, PanelH, EnchantId != NAME_None ? GBHudText::SpellName(this, EnchantId) : FString(TEXT("Weapon enchant")),
+		FString::Printf(TEXT("Element: %s"), *GBHudText::ElementName(Element)), &EC);
+	if (const FGBSpellDefinition* Def = (Data && EnchantId != NAME_None) ? Data->FindSpell(EnchantId) : nullptr)
+	{
+		DY += UiWrapped(Skin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, DX + Inner, DY, DW - 2.f * Inner) + (bCyber ? 12.f * S : 4.f * P);
+	}
+	DY += UiWrapped(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("Only with a gun in hand (T). Enchants the gun with the chosen element."), DX + Inner, DY, DW - 2.f * Inner) + (bCyber ? 16.f * S : 5.f * P);
+	// The three elements as swatches, the chosen one lit.
+	const EGBElement Choices[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
+	float SX = DX + Inner;
+	for (const EGBElement Choice : Choices)
+	{
+		const bool bOn = Choice == Element;
+		const FLinearColor C = GBHudText::ElementColor(Choice);
+		const FString Name = GBHudText::ElementName(Choice);
+		if (bCyber)
+		{
+			const float SW = 140.f * S;
+			CyBox(SX, DY, SW, 40.f * S, 8.f * S, bOn ? GBAlpha(C, 0.25f) : GBAlpha(GBCy::Ink, 0.6f), bOn ? C : GBAlpha(C, 0.35f), 0x4);
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Normal, Name.ToUpper(), SX + SW * 0.5f, DY + 12.f * S, 0.5f, bOn ? &C : &GBCy::Grey);
+			SX += SW + 10.f * S;
+		}
+		else
+		{
+			RpgGem(SX + 4.f * P, DY + 4.f * P, C, bOn);
+			const FLinearColor TextColor = bOn ? C : GBRpg::BoneDark;
+			const FVector2D NS = UiText(Skin, EGBTextSize::Small, EGBTextTone::Normal, Name, SX + 10.f * P, DY + 2.f * P, 0.f, &TextColor);
+			SX += NS.X + 18.f * P;
+		}
+	}
+	DY += bCyber ? 60.f * S : 14.f * P;
+	TArray<TPair<FString, FString>> Actions;
+	Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Change element")));
+	MenuHints(Skin, Actions, DX + Inner, DY, 0.f);
+}
+
+// ======================================================================== drawing: skill trees
+
+void AGBHUD::DrawSkillNode(AGBPlayerCharacter* Player, int32 Tree, FName NodeId, float X, float Y, float W, float H)
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree();
+	const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(NodeId) : nullptr;
+	const int32 Rank = SkillTree ? SkillTree->GetRank(NodeId) : 0;
+	const int32 MaxRank = Def ? FMath::Max(1, Def->MaxRank) : 1;
+	const bool bCan = SkillTree && SkillTree->CanUnlock(NodeId) == EGBSkillUnlockResult::Ok;
+	const bool bSelected = NodeId == MenuState.SkillCursor;
+	const bool bMax = Rank >= MaxRank;
+	const FString Name = GBHudMenuLocal::SkillName(Data, NodeId);
+	FString LineA;
+	FString LineB;
+	const float S = UIScale();
+	const float P = ArtPixel();
+
+	if (Tree == 1)
+	{
+		// Cyberpunk node: cut-corner box, condensed caps, rank segments, cost tag.
+		const FLinearColor Line = bSelected ? GBCy::Cyan : (bMax ? GBCy::Red : (Rank > 0 ? GBCy::Red : (bCan ? GBAlpha(GBCy::Cyan, 0.75f) : GBAlpha(GBCy::Grey, 0.6f))));
+		const FLinearColor Fill = bMax ? GBAlpha(GBCy::Red, 0.28f) : (Rank > 0 ? GBAlpha(GBCy::RedDeep, 0.85f) : GBAlpha(GBCy::Ink, 0.85f));
+		if (bSelected)
+		{
+			DrawGlow(X + W * 0.5f, Y + H * 0.5f, W * 0.75f, H, GBAlpha(GBCy::Cyan, 0.16f));
+		}
+		CyBox(X, Y, W, H, 10.f * S, Fill, Line, 0x5, bSelected ? 2.f : 1.f);
+		if (bSelected)
+		{
+			CyBrackets(X - 5.f * S, Y - 5.f * S, W + 10.f * S, H + 10.f * S, 9.f * S, GBCy::Cyan, 2.f * S);
+		}
+		FCyTextStyle NameStyle;
+		NameStyle.Face = ECyFace::Condensed;
+		NameStyle.Px = 15.f;
+		NameStyle.Spacing = 60;
+		NameStyle.bUpper = true;
+		NameStyle.Color = bSelected ? GBCy::Pale : (Rank > 0 || bCan ? GBCy::RedBright : GBCy::Grey);
+		const float TextW = W - 16.f * S;
+		if (MeasureCyText(Name, NameStyle).X > TextW)
+		{
+			GBHudMenuDraw::SplitName(Name, LineA, LineB);
+		}
+		else
+		{
+			LineA = Name;
+		}
+		const float LH = MeasureCyText(TEXT("A"), NameStyle).Y;
+		const float TextY = Y + (LineB.IsEmpty() ? H * 0.5f - LH * 0.85f : H * 0.5f - LH * 1.3f);
+		DrawCyText(LineA, X + W * 0.5f, TextY, NameStyle, 0.5f);
+		if (!LineB.IsEmpty())
+		{
+			DrawCyText(LineB, X + W * 0.5f, TextY + LH * 0.92f, NameStyle, 0.5f);
+		}
+		// Rank segments.
+		const float SegW = 14.f * S;
+		const float SegGap = 4.f * S;
+		const float SegsW = MaxRank * SegW + (MaxRank - 1) * SegGap;
+		const float SegY = Y + H - 12.f * S;
+		for (int32 i = 0; i < MaxRank; ++i)
+		{
+			FillRect(X + (W - SegsW) * 0.5f + i * (SegW + SegGap), SegY, SegW, 3.f * S, i < Rank ? GBCy::Red : GBAlpha(GBCy::Grey, 0.35f));
+		}
+		if (Def && Def->Cost > 1)
+		{
+			FCyTextStyle Cost;
+			Cost.Face = ECyFace::Mono;
+			Cost.Px = 11.f;
+			Cost.Color = GBCy::Yellow;
+			DrawCyText(FString::Printf(TEXT("%dPT"), Def->Cost), X + W - 8.f * S, Y + 3.f * S, Cost, 1.f);
+		}
+		return;
+	}
+
+	// RPG node: a stone tablet in a gold (or iron) frame, pixel name, gems for ranks.
+	const float NX = FMath::RoundToFloat(X / P) * P;
+	const float NY = FMath::RoundToFloat(Y / P) * P;
+	const float NW = FMath::RoundToFloat(W / P) * P;
+	const float NH = FMath::RoundToFloat(H / P) * P;
+	if (bSelected)
+	{
+		DrawGlow(NX + NW * 0.5f, NY + NH * 0.5f, NW * 0.8f, NH * 1.1f, GBAlpha(GBRpg::EmberLight, 0.30f));
+	}
+	FillRect(NX, NY, NW, NH, GBRpg::Stone1);
+	RpgStone(NX, NY, NW, NH, bMax ? FLinearColor(1.25f, 1.1f, 0.9f, 1.f) : (Rank > 0 || bCan ? FLinearColor::White : FLinearColor(0.6f, 0.6f, 0.65f, 1.f)));
+	if (Rank > 0)
+	{
+		FillRect(NX, NY, NW, NH, GBAlpha(GBRpg::Gold1, bMax ? 0.35f : 0.18f));
+	}
+	RpgFrame(NX, NY, NW, NH, (Rank > 0 || bCan || bSelected) ? ERpgFrame::Gold : ERpgFrame::Inset);
+	if (bSelected)
+	{
+		DrawOutline(NX - P, NY - P, NW + 2.f * P, NH + 2.f * P, GBRpg::Gold4, P);
+	}
+	const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+	FPixelTextStyle NameStyle;
+	NameStyle.Scale = Small;
+	NameStyle.Ink = bSelected || Rank > 0 ? &GBRpg::InkGold : (bCan ? &GBRpg::InkBone : nullptr);
+	NameStyle.Color = (bSelected || Rank > 0 || bCan) ? FLinearColor::White : GBRpg::BoneDark;
+	NameStyle.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+	// Text area: between the top frame (4 art pixels) and the pip row (6 from the bottom).
+	const float LineH = 8.f * Small;
+	const float AreaTop = NY + 4.f * P;
+	const float AreaH = NH - 10.f * P;
+	const float TextMaxW = NW - 6.f * P;
+	if (MeasurePixelText(Name, Small).X <= TextMaxW)
+	{
+		LineA = Name;
+	}
+	else if (AreaH >= LineH + 7.f * Small)
+	{
+		GBHudMenuDraw::SplitName(Name, LineA, LineB);
 	}
 	else
 	{
-		const FName EnchantId = Spellbook->GetEnchantSpell();
-		DrawLabel(EnchantId != NAME_None ? GBHudText::SpellName(this, EnchantId) : FString(TEXT("Weapon enchant")), Style.Text, DX, DY, 28.f, 0.f, bShadow, true);
-		DY += 44.f * S;
-		const FGBSpellDefinition* Def = (Data && EnchantId != NAME_None) ? Data->FindSpell(EnchantId) : nullptr;
-		if (Def)
-		{
-			DY += DrawWrapped(Def->Description, Style.Text, DX, DY, DW, 18.f, bShadow) + 16.f * S;
-		}
-		DY += DrawWrapped(TEXT("Only with a gun in hand (T). Enchants the gun with the chosen element."), Style.Text, DX, DY, DW, 16.f, bShadow) + 16.f * S;
-		DrawLabel(TEXT("Click or Enter: change element (Fire, Lightning, Ice)"), Style.Accent, DX, DY, 18.f, 0.f, true);
+		// Too short for two lines (small screens): one abbreviated line; the detail panel shows the full name.
+		const int32 MaxChars = FMath::Max(4, FMath::FloorToInt(TextMaxW / (6.f * Small)));
+		LineA = GBHudText::Abbreviate(Name, MaxChars);
+	}
+	const float BlockH = LineB.IsEmpty() ? 7.f * Small : LineH + 7.f * Small;
+	const float TextY = FMath::RoundToFloat((AreaTop + (AreaH - BlockH) * 0.5f) / Small) * Small;
+	DrawPixelText(LineA, NX + NW * 0.5f, TextY, NameStyle, 0.5f);
+	if (!LineB.IsEmpty())
+	{
+		DrawPixelText(LineB, NX + NW * 0.5f, TextY + LineH, NameStyle, 0.5f);
+	}
+	// Rank pips: tiny gems along the bottom.
+	const float PipW = 4.f * P;
+	const float PipGap = 2.f * P;
+	const float PipsW = MaxRank * PipW + (MaxRank - 1) * PipGap;
+	const float PipY = NY + NH - 5.f * P;
+	for (int32 i = 0; i < MaxRank; ++i)
+	{
+		const float PX = FMath::RoundToFloat((NX + (NW - PipsW) * 0.5f) / P) * P + i * (PipW + PipGap);
+		FillRect(PX, PipY, PipW, 2.f * P, GBRpg::Outline);
+		FillRect(PX + P, PipY, PipW - 2.f * P, P, i < Rank ? GBRpg::Gold4 : GBRpg::Iron1);
+	}
+	if (Def && Def->Cost > 1)
+	{
+		FPixelTextStyle Cost;
+		Cost.Scale = Small;
+		Cost.Ink = &GBRpg::InkEmber;
+		Cost.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+		// A small cost badge hanging on the bottom-right corner of the tablet (only for nodes that cost more than 1).
+		const FString CostText = FString::Printf(TEXT("%dpt"), Def->Cost);
+		const FVector2D CS = MeasurePixelText(CostText, Small);
+		const float BW = FMath::CeilToFloat((CS.X + 4.f * P) / P) * P;
+		const float BH = FMath::CeilToFloat((CS.Y + 4.f * P) / P) * P;
+		const float BX = NX + NW - BW + 2.f * P;
+		const float BY = NY + NH - FMath::RoundToFloat(BH * 0.6f / P) * P;
+		FillRect(BX, BY, BW, BH, GBRpg::Outline);
+		FillRect(BX + P, BY + P, BW - 2.f * P, BH - 2.f * P, GBRpg::Gold0);
+		FillRect(BX + P, BY + P, BW - 2.f * P, P, GBRpg::Gold1);
+		DrawPixelText(CostText, BX + BW * 0.5f, BY + 2.f * P, Cost, 0.5f);
 	}
 }
 
-void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
+void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X, float Y, float W, float H)
 {
 	using namespace GBHudMenuLocal;
 	const float S = UIScale();
-	const float W = Canvas->ClipX;
-	const float H = Canvas->ClipY;
+	const float P = ArtPixel();
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree();
 	if (!SkillTree)
@@ -1347,39 +2173,38 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 		return;
 	}
 	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
 
-	DrawLabel(FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints()), MenuWhite, W * 0.5f, Top, 22.f, 0.5f, true, true);
-	// Skill reset button, just right of the Skill points label (same row, above the tree panels).
+	// Top row: points in the middle, "+1 skill point" (test) on the left, reset on the right.
 	{
+		const int32 Points = SkillTree->GetPoints();
+		const FString PointsText = FString::Printf(TEXT("%d"), Points);
+		const float RowY = Y;
+		const float BtnH = bCyber ? 36.f * S : 13.f * P;
+		const float CX = X + W * 0.5f;
+		const FVector2D LabelSize = UiMeasure(Skin, EGBTextSize::Small, TEXT("SKILL POINTS"));
+		const FVector2D NumSize = UiMeasure(Skin, EGBTextSize::Heading, PointsText);
+		const float GroupW = LabelSize.X + (bCyber ? 14.f * S : 4.f * P) + NumSize.X;
+		UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("SKILL POINTS"), CX - GroupW * 0.5f, RowY + (BtnH - LabelSize.Y) * 0.5f);
+		UiText(Skin, EGBTextSize::Heading, Points > 0 ? EGBTextTone::Warn : EGBTextTone::Accent, PointsText, CX + GroupW * 0.5f - NumSize.X, RowY + (BtnH - NumSize.Y) * 0.5f);
 		const int32 Spent = SkillTree->GetPointsSpent();
-		const FString PointsText = FString::Printf(TEXT("Skill points: %d"), SkillTree->GetPoints());
-		const FVector2D PointsSize = MeasureLabel(PointsText, 22.f, true);
-		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d pt)"), Spent);
-		const FVector2D ResetSize = MeasureLabel(ResetText, 16.f);
-		const float BtnX = W * 0.5f + PointsSize.X * 0.5f + 24.f * S;
-		const float BtnY = Top;
-		const float BtnW = ResetSize.X + 20.f * S;
-		const float BtnH = ResetSize.Y + 10.f * S;
-		const bool bActive = Spent > 0;
-		const FLinearColor BtnColor = bActive ? MenuWhite : MenuGrey;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), BtnX, BtnY, BtnW, BtnH);
-		DrawOutline(BtnX, BtnY, BtnW, BtnH, BtnColor, 1.f * S);
-		AddMenuHit(EMenuHitKind::SkillReset, BtnX, BtnY, BtnW, BtnH);
-		DrawLabel(ResetText, BtnColor, BtnX + BtnW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
-
-		// Test option (GDD 18, provisional): "+1 skill point", mirrored on the left of the label.
+		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d)"), Spent);
 		const FString AddText(TEXT("+1 skill point"));
-		const FVector2D AddSize = MeasureLabel(AddText, 16.f);
-		const float AddW = AddSize.X + 20.f * S;
-		const float AddX = W * 0.5f - PointsSize.X * 0.5f - 24.f * S - AddW;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), AddX, BtnY, AddW, BtnH);
-		DrawOutline(AddX, BtnY, AddW, BtnH, MenuWhite, 1.f * S);
-		AddMenuHit(EMenuHitKind::SkillAddPoint, AddX, BtnY, AddW, BtnH);
-		DrawLabel(AddText, MenuWhite, AddX + AddW * 0.5f, BtnY + 5.f * S, 16.f, 0.5f, true);
+		const float ResetW = UiMeasure(Skin, EGBTextSize::Small, ResetText).X + (bCyber ? 40.f * S : 14.f * P);
+		const float AddW = UiMeasure(Skin, EGBTextSize::Small, AddText).X + (bCyber ? 40.f * S : 14.f * P);
+		const float Margin = bCyber ? 40.f * S : 12.f * P;
+		const float ResetX = CX + GroupW * 0.5f + Margin;
+		const float AddX = CX - GroupW * 0.5f - Margin - AddW;
+		MenuButton(Skin, ResetX, RowY, ResetW, BtnH, ResetText, Spent > 0, IsMouseOver(ResetX, RowY, ResetW, BtnH));
+		AddMenuHit(EMenuHitKind::SkillReset, ResetX, RowY, ResetW, BtnH);
+		MenuButton(Skin, AddX, RowY, AddW, BtnH, AddText, true, IsMouseOver(AddX, RowY, AddW, BtnH));
+		AddMenuHit(EMenuHitKind::SkillAddPoint, AddX, RowY, AddW, BtnH);
+		Y += BtnH + (bCyber ? 18.f * S : 6.f * P);
+		H -= BtnH + (bCyber ? 18.f * S : 6.f * P);
 	}
 	if (Nodes.Num() == 0)
 	{
-		DrawLabel(TEXT("No skills defined (Skills.json)."), MenuWhite, W * 0.5f, Top + 50.f * S, 20.f, 0.5f);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Muted, TEXT("No skills defined (Skills.json)."), X + W * 0.5f, Y + 20.f * S, 0.5f);
 		return;
 	}
 	const FSkillNodeRef* Selected = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
@@ -1389,22 +2214,60 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 		Selected = &Nodes[0];
 	}
 
-	// GDD 13: the spell tree has the 90s RPG look, the weapon tree the cyberpunk look.
-	const float DetailH = 120.f * S;
-	const float AreaX0 = W * 0.09f;
-	const float Gap = W * 0.02f;
-	const float AreaW = (W * 0.82f - Gap) * 0.5f;
-	const float AreaY = Top + 40.f * S;
-	const float Bottom = H * 0.93f - DetailH - 10.f * S;
-	const float AreaH = FMath::Max(100.f * S, Bottom - AreaY);
+	// GDD 13: the spell tree has the 90s RPG look, the weapon tree the cyberpunk look, whatever the held item.
+	const float DetailH = FMath::RoundToFloat(FMath::Max(110.f * S, 26.f * P));
+	const float Gap = FMath::RoundToFloat(W * 0.02f);
+	const float AreaW = FMath::RoundToFloat((W - Gap) * 0.5f);
+	const float AreaY = Y;
+	const float AreaH = FMath::Max(100.f * S, H - DetailH - 12.f * S);
 	static const TCHAR* Titles[] = { TEXT("SPELLS"), TEXT("WEAPONS") };
 
 	for (int32 Tree = 0; Tree < 2; ++Tree)
 	{
-		const FGBHudSkinStyle& Style = GetSkinStyle(Tree == 0 ? EGBHudSkin::Rpg90s : EGBHudSkin::Cyberpunk);
-		const float AX = AreaX0 + Tree * (AreaW + Gap);
-		DrawPanel(Style, AX, AreaY, AreaW, AreaH);
-		DrawLabel(Titles[Tree], Style.Text, AX + AreaW * 0.5f, AreaY + 10.f * S, 22.f, 0.5f, !Style.bChunky, true);
+		const float AX = X + Tree * (AreaW + Gap);
+		const bool bTreeCyber = Tree == 1;
+		const EGBHudSkin TreeSkin = bTreeCyber ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+		float GridTop = AreaY;
+		if (bTreeCyber)
+		{
+			CyBox(AX, AreaY, AreaW, AreaH, 22.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
+			CyScanlines(AX, AreaY, AreaW, AreaH, 0.25f);
+			DrawGlow(AX + AreaW * 0.5f, AreaY, AreaW * 0.6f, AreaH * 0.4f, GBAlpha(GBCy::Red, 0.08f));
+			FCyTextStyle TitleStyle;
+			TitleStyle.Face = ECyFace::Condensed;
+			TitleStyle.Px = 26.f;
+			TitleStyle.Spacing = 200;
+			TitleStyle.bUpper = true;
+			TitleStyle.Color = GBCy::Red;
+			const FVector2D TS = DrawCyText(Titles[Tree], AX + 26.f * S, AreaY + 16.f * S, TitleStyle, 0.f);
+			FCyTextStyle Sub;
+			Sub.Face = ECyFace::Mono;
+			Sub.Px = 12.f;
+			Sub.Color = GBCy::RedDim;
+			DrawCyText(TEXT("// FIREARMS PERKS"), AX + 26.f * S + TS.X + 14.f * S, AreaY + 26.f * S, Sub, 0.f);
+			CyRuler(AX + 26.f * S, AreaY + 16.f * S + TS.Y + 8.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
+			GridTop = AreaY + 16.f * S + TS.Y + 30.f * S;
+		}
+		else
+		{
+			const float PX = FMath::RoundToFloat(AX / P) * P;
+			const float PY = FMath::RoundToFloat(AreaY / P) * P;
+			const float PW = FMath::RoundToFloat(AreaW / P) * P;
+			const float PH = FMath::RoundToFloat(AreaH / P) * P;
+			FillRect(PX, PY, PW, PH, GBRpg::Stone1);
+			RpgStone(PX, PY, PW, PH);
+			DrawGlow(PX + PW * 0.5f, PY + PH * 0.35f, PW * 0.6f, PH * 0.6f, FLinearColor(0.35f, 0.2f, 0.1f, 0.12f));
+			RpgFrame(PX, PY, PW, PH, ERpgFrame::Iron);
+			DrawOutline(PX + 4.f * P, PY + 4.f * P, PW - 8.f * P, PH - 8.f * P, GBRpg::Gold1, P);
+			const int32 HeadScale = FMath::Max(2, FMath::RoundToInt(4.f * S));
+			FPixelTextStyle Head;
+			Head.Scale = HeadScale;
+			Head.Ink = &GBRpg::InkGold;
+			Head.Outline = GBRpg::Outline;
+			Head.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.7f);
+			DrawPixelText(Titles[Tree], PX + PW * 0.5f, PY + 8.f * P, Head, 0.5f);
+			GridTop = PY + 8.f * P + 7.f * HeadScale + 6.f * P;
+		}
 
 		int32 MaxColumn = 0;
 		int32 MaxRow = 0;
@@ -1416,18 +2279,37 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 				MaxRow = FMath::Max(MaxRow, Node.Row);
 			}
 		}
-		const float Pad = 14.f * S;
-		const float GridY = AreaY + 50.f * S;
+		const float Pad = bTreeCyber ? 22.f * S : 9.f * P;
+		// The spell tree names its four element columns above the nodes.
+		const float ColumnHeadH = bTreeCyber ? 0.f : 8.f * P;
+		const float GridY = GridTop + ColumnHeadH;
 		const float CellW = (AreaW - 2.f * Pad) / (MaxColumn + 1);
-		const float CellH = FMath::Min(96.f * S, (AreaH - 60.f * S) / (MaxRow + 1));
-		const float BoxW = FMath::Max(20.f * S, CellW - 12.f * S);
-		const float BoxH = FMath::Max(20.f * S, CellH - 14.f * S);
+		const float CellH = FMath::Min(bTreeCyber ? 104.f * S : 29.f * P, (AreaY + AreaH - Pad - GridY) / (MaxRow + 1));
+		const float BoxW = FMath::Max(20.f * S, CellW - (bTreeCyber ? 18.f * S : 5.f * P));
+		const float BoxH = FMath::Max(20.f * S, CellH - (bTreeCyber ? 22.f * S : 4.f * P));
 		auto BoxPos = [&](const FSkillNodeRef& Node)
 		{
 			return FVector2D(AX + Pad + Node.Column * CellW + (CellW - BoxW) * 0.5f, GridY + Node.Row * CellH);
 		};
+		if (!bTreeCyber)
+		{
+			for (int32 Column = 0; Column <= MaxColumn; ++Column)
+			{
+				const float ColX = AX + Pad + Column * CellW + CellW * 0.5f;
+				const FLinearColor EC = GBHudText::ElementColor(GBHudMenuDraw::SpellColumnElement(Column));
+				const FString Label = FString(GBHudMenuDraw::SpellColumnName(Column)).ToUpper();
+				const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+				const float LW = MeasurePixelText(Label, Small).X;
+				RpgGem(ColX - LW * 0.5f - 5.f * P, GridTop + 2.5f * P, EC, true);
+				FPixelTextStyle Lab;
+				Lab.Scale = Small;
+				Lab.Color = EC;
+				Lab.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+				DrawPixelText(Label, ColX + 2.f * P, GridTop, Lab, 0.5f);
+			}
+		}
 
-		// Requirement links first, under the boxes.
+		// Requirement links first, under the boxes: down from the parent, across in the gap above the child, down.
 		for (const FSkillNodeRef& Node : Nodes)
 		{
 			const FGBSkillNodeDefinition* Def = (Node.Tree == Tree && Data) ? Data->FindSkillNode(Node.Id) : nullptr;
@@ -1438,81 +2320,125 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, float Top)
 			for (const FName& Req : Def->Requires)
 			{
 				const FSkillNodeRef* ReqNode = Nodes.FindByPredicate([&Req](const FSkillNodeRef& Other) { return Other.Id == Req; });
-				if (ReqNode && ReqNode->Tree == Tree)
+				if (!ReqNode || ReqNode->Tree != Tree)
 				{
-					const FVector2D A = BoxPos(*ReqNode) + FVector2D(BoxW * 0.5f, BoxH);
-					const FVector2D B = BoxPos(Node) + FVector2D(BoxW * 0.5f, 0.f);
-					const bool bOwned = SkillTree->GetRank(Req) > 0;
-					const FLinearColor LinkColor = bOwned ? Style.Accent : MenuGrey;
-					if (Node.Row - ReqNode->Row > 1)
+					continue;
+				}
+				const FVector2D A = BoxPos(*ReqNode) + FVector2D(BoxW * 0.5f, BoxH);
+				const FVector2D B = BoxPos(Node) + FVector2D(BoxW * 0.5f, 0.f);
+				const bool bOwned = SkillTree->GetRank(Req) > 0;
+				const float ElbowY = FMath::RoundToFloat(B.Y - (CellH - BoxH) * 0.5f);
+				if (bTreeCyber)
+				{
+					const FLinearColor LinkColor = bOwned ? GBCy::Red : GBAlpha(GBCy::Grey, 0.45f);
+					const float T = FMath::Max(1.f, FMath::RoundToFloat((bOwned ? 2.f : 1.f) * S));
+					FillRect(A.X - T * 0.5f, A.Y, T, ElbowY - A.Y, LinkColor);
+					FillRect(FMath::Min(A.X, B.X) - T * 0.5f, ElbowY - T * 0.5f, FMath::Abs(B.X - A.X) + T, T, LinkColor);
+					FillRect(B.X - T * 0.5f, ElbowY, T, B.Y - ElbowY, LinkColor);
+					FillRect(B.X - 3.f * S, B.Y - 6.f * S, 6.f * S, 6.f * S, LinkColor);
+					if (bOwned)
 					{
-						// Skips rows: go down the parent's column, then across in the gap just above the child,
-						// so the link never runs diagonally through the (translucent) boxes in between.
-						const float ElbowY = B.Y - (CellH - BoxH) * 0.5f;
-						DrawLine(A.X, A.Y, A.X, ElbowY, LinkColor, 2.f * S);
-						DrawLine(A.X, ElbowY, B.X, ElbowY, LinkColor, 2.f * S);
-						DrawLine(B.X, ElbowY, B.X, B.Y, LinkColor, 2.f * S);
+						// A data pulse running down the owned link.
+						const float Len = (ElbowY - A.Y) + FMath::Abs(B.X - A.X) + (B.Y - ElbowY);
+						const float D = FMath::Frac((float)GetRealTime() * 0.6f + A.X * 0.001f) * Len;
+						FVector2D Dot;
+						if (D < ElbowY - A.Y) { Dot = FVector2D(A.X, A.Y + D); }
+						else if (D < ElbowY - A.Y + FMath::Abs(B.X - A.X)) { Dot = FVector2D(A.X + FMath::Sign(B.X - A.X) * (D - (ElbowY - A.Y)), ElbowY); }
+						else { Dot = FVector2D(B.X, ElbowY + (D - (ElbowY - A.Y) - FMath::Abs(B.X - A.X))); }
+						DrawGlow(Dot.X, Dot.Y, 8.f * S, 8.f * S, GBAlpha(GBCy::RedBright, 0.9f));
 					}
-					else
+				}
+				else
+				{
+					// A gilt chain two art pixels wide with a dark keyline.
+					const float T = 2.f * P;
+					const float AX2 = FMath::RoundToFloat((A.X - P) / P) * P;
+					const float BX2 = FMath::RoundToFloat((B.X - P) / P) * P;
+					const float EY = FMath::RoundToFloat(ElbowY / P) * P;
+					const FLinearColor Core = bOwned ? GBRpg::Gold3 : GBRpg::Iron1;
+					auto Seg = [&](float SX, float SY, float SW, float SH)
 					{
-						DrawLine(A.X, A.Y, B.X, B.Y, LinkColor, 2.f * S);
-					}
+						FillRect(SX - P, SY - P, SW + 2.f * P, SH + 2.f * P, GBRpg::Outline);
+					};
+					auto SegCore = [&](float SX, float SY, float SW, float SH) { FillRect(SX, SY, SW, SH, Core); };
+					Seg(AX2, A.Y, T, EY - A.Y);
+					Seg(FMath::Min(AX2, BX2), EY, FMath::Abs(BX2 - AX2) + T, T);
+					Seg(BX2, EY, T, B.Y - EY);
+					SegCore(AX2, A.Y, T, EY - A.Y);
+					SegCore(FMath::Min(AX2, BX2), EY, FMath::Abs(BX2 - AX2) + T, T);
+					SegCore(BX2, EY, T, B.Y - EY);
 				}
 			}
 		}
-
 		for (const FSkillNodeRef& Node : Nodes)
 		{
 			if (Node.Tree != Tree)
 			{
 				continue;
 			}
-			const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr;
-			const int32 Rank = SkillTree->GetRank(Node.Id);
-			const int32 MaxRank = Def ? Def->MaxRank : 1;
-			const bool bCan = SkillTree->CanUnlock(Node.Id) == EGBSkillUnlockResult::Ok;
-			const bool bSelected = Node.Id == MenuState.SkillCursor;
 			const FVector2D Pos = BoxPos(Node);
-
-			FLinearColor Fill(0.f, 0.f, 0.f, 0.7f);
-			if (Rank >= MaxRank)
-			{
-				Fill = Style.Accent * FLinearColor(0.45f, 0.45f, 0.45f, 0.9f);
-			}
-			else if (Rank > 0)
-			{
-				Fill = Style.Mana * FLinearColor(0.5f, 0.5f, 0.5f, 0.85f);
-			}
-			DrawRect(Fill, Pos.X, Pos.Y, BoxW, BoxH);
+			DrawSkillNode(Player, Tree, Node.Id, Pos.X, Pos.Y, BoxW, BoxH);
 			AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, BoxH, 0, Node.Id);
-			const FLinearColor Edge = bSelected ? Style.Accent : (bCan ? (Style.bChunky ? FLinearColor(1.f, 0.85f, 0.5f, 1.f) : Style.Border) : MenuGrey);
-			DrawOutline(Pos.X, Pos.Y, BoxW, BoxH, Edge, (bSelected ? 4.f : (bCan ? 2.f : 1.f)) * S);
-
-			const int32 MaxChars = FMath::Max(4, FMath::FloorToInt(BoxW / (9.f * S)));
-			DrawLabel(GBHudText::Abbreviate(SkillName(Data, Node.Id), MaxChars), MenuWhite, Pos.X + BoxW * 0.5f, Pos.Y + 6.f * S, 15.f, 0.5f);
-			DrawLabel(FString::Printf(TEXT("%d/%d   %d pt"), Rank, MaxRank, Def ? Def->Cost : 0), bCan ? MenuWhite : MenuGrey,
-				Pos.X + BoxW * 0.5f, Pos.Y + BoxH - 22.f * S, 13.f, 0.5f);
 		}
+		(void)TreeSkin;
 	}
 
-	// Details of the selected node, in its tree's style.
+	// Details of the selected node, in its tree's skin.
 	if (Selected)
 	{
-		const FGBHudSkinStyle& Style = GetSkinStyle(Selected->Tree == 0 ? EGBHudSkin::Rpg90s : EGBHudSkin::Cyberpunk);
-		const bool bShadow = !Style.bChunky;
-		const float DY = AreaY + AreaH + 10.f * S;
-		const float DW = 2.f * AreaW + Gap;
-		DrawPanel(Style, AreaX0, DY, DW, DetailH);
+		const EGBHudSkin DetailSkin = Selected->Tree == 0 ? EGBHudSkin::Rpg90s : EGBHudSkin::Cyberpunk;
+		const float DY = AreaY + AreaH + 12.f * S;
 		const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Selected->Id) : nullptr;
 		const int32 Rank = SkillTree->GetRank(Selected->Id);
-		const FString Header = FString::Printf(TEXT("%s   Rank %d/%d   Cost %d"), *SkillName(Data, Selected->Id), Rank, Def ? Def->MaxRank : 1, Def ? Def->Cost : 0);
-		DrawLabel(Header, Style.Text, AreaX0 + 16.f * S, DY + 12.f * S, 20.f, 0.f, bShadow);
-		if (Def)
-		{
-			DrawWrapped(Def->Description, Style.Text, AreaX0 + 16.f * S, DY + 42.f * S, DW * 0.65f, 16.f, bShadow);
-		}
 		const EGBSkillUnlockResult Can = SkillTree->CanUnlock(Selected->Id);
-		const FString Status = Can == EGBSkillUnlockResult::Ok ? FString(TEXT("Click or Enter: unlock")) : SkillResultText(Data, Selected->Id, Can);
-		DrawLabel(Status, Style.Accent, AreaX0 + DW - 16.f * S, DY + 42.f * S, 18.f, 1.f, true);
+		const FString Status = Can == EGBSkillUnlockResult::Ok ? FString() : SkillResultText(Data, Selected->Id, Can);
+		const FString Meta = FString::Printf(TEXT("Rank %d / %d    Cost %d"), Rank, Def ? Def->MaxRank : 1, Def ? Def->Cost : 0);
+		if (DetailSkin == EGBHudSkin::Cyberpunk)
+		{
+			CyBox(X, DY, W, DetailH, 16.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::Red, 0.9f), 0x5);
+			FillRect(X, DY + 14.f * S, 4.f * S, DetailH - 28.f * S, GBCy::Red);
+			const FVector2D NS = UiText(DetailSkin, EGBTextSize::Heading, EGBTextTone::Accent, SkillName(Data, Selected->Id), X + 26.f * S, DY + 14.f * S);
+			UiText(DetailSkin, EGBTextSize::Small, EGBTextTone::Value, Meta, X + 26.f * S + NS.X + 20.f * S, DY + 24.f * S);
+			if (Def)
+			{
+				UiWrapped(DetailSkin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, X + 26.f * S, DY + 22.f * S + NS.Y, W * 0.62f);
+			}
+			if (Can == EGBSkillUnlockResult::Ok)
+			{
+				TArray<TPair<FString, FString>> Actions;
+				Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Unlock")));
+				MenuHints(DetailSkin, Actions, X + W - 26.f * S, DY + DetailH - 40.f * S, 1.f);
+			}
+			else
+			{
+				UiText(DetailSkin, EGBTextSize::Small, EGBTextTone::Warn, Status.ToUpper(), X + W - 26.f * S, DY + DetailH - 38.f * S, 1.f);
+			}
+		}
+		else
+		{
+			const float PX = FMath::RoundToFloat(X / P) * P;
+			const float PY = FMath::RoundToFloat(DY / P) * P;
+			const float PW = FMath::RoundToFloat(W / P) * P;
+			const float PH = FMath::RoundToFloat(DetailH / P) * P;
+			FillRect(PX, PY, PW, PH, GBRpg::Stone1);
+			RpgStone(PX, PY, PW, PH);
+			RpgFrame(PX, PY, PW, PH, ERpgFrame::Gold);
+			const FVector2D NS = UiText(DetailSkin, EGBTextSize::Heading, EGBTextTone::Accent, SkillName(Data, Selected->Id), PX + 7.f * P, PY + 6.f * P);
+			UiText(DetailSkin, EGBTextSize::Small, EGBTextTone::Muted, Meta, PX + 7.f * P + NS.X + 8.f * P, PY + 6.f * P + NS.Y - 7.f * FMath::Max(2, FMath::RoundToInt(P * 0.5f)));
+			if (Def)
+			{
+				UiWrapped(DetailSkin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, PX + 7.f * P, PY + 10.f * P + NS.Y, PW * 0.62f);
+			}
+			if (Can == EGBSkillUnlockResult::Ok)
+			{
+				TArray<TPair<FString, FString>> Actions;
+				Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Unlock")));
+				MenuHints(DetailSkin, Actions, PX + PW - 7.f * P, PY + PH - 15.f * P, 1.f);
+			}
+			else
+			{
+				UiText(DetailSkin, EGBTextSize::Small, EGBTextTone::Warn, Status, PX + PW - 7.f * P, PY + PH - 10.f * P, 1.f);
+			}
+		}
 	}
 }

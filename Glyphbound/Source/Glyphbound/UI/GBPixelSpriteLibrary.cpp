@@ -131,6 +131,11 @@ bool UGBPixelSpriteLibrary::BuildPixels(const FGBSpriteDefinition& Definition, T
 
 UTexture2D* UGBPixelSpriteLibrary::CreateTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName, bool bWrap)
 {
+	return CreatePixelTexture(Pixels, Width, Height, DebugName, bWrap);
+}
+
+UTexture2D* UGBPixelSpriteLibrary::CreatePixelTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName, bool bWrap)
+{
 	if (Width <= 0 || Height <= 0 || Pixels.Num() != Width * Height)
 	{
 		return nullptr;

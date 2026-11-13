@@ -1,6 +1,7 @@
 #include "UI/GBHUD.h"
 
 #include "UI/GBHUDShared.h"
+#include "UI/GBPixelFont.h"
 #include "UI/GBPixelSpriteLibrary.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Weapons/GBEquipmentComponent.h"
@@ -25,6 +26,7 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -49,6 +51,7 @@ namespace GBHudLayout
 	constexpr float CastHandTime = 0.45f;
 	constexpr float AttackKickTime = 0.15f;
 	constexpr float ToastFadeTime = 0.5f;
+	constexpr float ToastInTime = 0.18f;
 	constexpr int32 MaxToasts = 5;
 	/** Canvas height / this = size of one sprite pixel for the hands (9 at 1080p, 6 at 720p). */
 	constexpr float HandPixelDivisor = 120.f;
@@ -58,6 +61,10 @@ namespace GBHudLayout
 	constexpr float ShieldSlideTime = 0.12f;
 	/** Both hands jump up this many sprite pixels with the seat bump. */
 	constexpr float ReloadSeatPush = 2.f;
+	/** The pale "health lost" trail behind the health bar drains at this fraction per second. */
+	constexpr float TrailDrainPerSecond = 0.45f;
+	/** ...after holding still for this long. */
+	constexpr float TrailHoldTime = 0.35f;
 }
 
 namespace GBHudText
@@ -108,36 +115,15 @@ namespace GBHudText
 		const FGBSpellDefinition* Def = Data ? Data->FindSpell(SpellId) : nullptr;
 		return (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : SpellId.ToString();
 	}
+
+	FName SpellIconId(FName SpellId)
+	{
+		return SpellId == NAME_None ? NAME_None : FName(*(FString(TEXT("icon_")) + SpellId.ToString().ToLower()));
+	}
 }
 
 namespace GBHudLocal
 {
-	FGBHudSkinStyle MakeRpgStyle()
-	{
-		FGBHudSkinStyle Style;
-		Style.Panel = FLinearColor(0.60f, 0.45f, 0.26f, 0.95f);
-		Style.Border = FLinearColor(0.06f, 0.03f, 0.01f, 1.f);
-		Style.Text = FLinearColor(0.04f, 0.02f, 0.01f, 1.f);
-		Style.Health = FLinearColor(0.75f, 0.06f, 0.04f, 1.f);
-		Style.Mana = FLinearColor(0.10f, 0.22f, 0.85f, 1.f);
-		Style.Accent = FLinearColor(1.f, 0.72f, 0.18f, 1.f);
-		Style.bChunky = true;
-		return Style;
-	}
-
-	FGBHudSkinStyle MakeCyberStyle()
-	{
-		FGBHudSkinStyle Style;
-		Style.Panel = FLinearColor(0.f, 0.01f, 0.03f, 0.6f);
-		Style.Border = FLinearColor(0.f, 0.85f, 1.f, 1.f);
-		Style.Text = FLinearColor(0.75f, 1.f, 1.f, 1.f);
-		Style.Health = FLinearColor(1.f, 0.05f, 0.4f, 1.f);
-		Style.Mana = FLinearColor(0.05f, 0.75f, 1.f, 1.f);
-		Style.Accent = FLinearColor(1.f, 0.1f, 0.75f, 1.f);
-		Style.bChunky = false;
-		return Style;
-	}
-
 	FString QTEKeyLetter(EGBQTEKey Key)
 	{
 		switch (Key)
@@ -165,15 +151,15 @@ namespace GBHudLocal
 	}
 
 	const FLinearColor White(1.f, 1.f, 1.f, 1.f);
-	const FLinearColor Dark(0.f, 0.f, 0.f, 0.6f);
-	const FLinearColor Good(0.1f, 0.75f, 0.2f, 0.9f);
-	const FLinearColor Bad(0.85f, 0.08f, 0.06f, 0.9f);
 }
 
 // ======================================================================== basics
 
 AGBHUD::AGBHUD()
 {
+	// A hard reference so the engine font is always cooked with the game.
+	static ConstructorHelpers::FObjectFinder<UFont> RobotoFinder(TEXT("/Engine/EngineFonts/Roboto"));
+	RuntimeFont = RobotoFinder.Object;
 }
 
 AGBHUD* AGBHUD::Get(const UObject* WorldContextObject)
@@ -186,6 +172,7 @@ AGBHUD* AGBHUD::Get(const UObject* WorldContextObject)
 void AGBHUD::BeginPlay()
 {
 	Super::BeginPlay();
+	EnsureArt();
 	BindToPlayer(GetPlayer());
 	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBHUD::HandleDamageDealt);
 }
@@ -211,31 +198,14 @@ EGBHudSkin AGBHUD::GetCurrentSkin() const
 	return Equipment ? Equipment->GetHudSkin() : EGBHudSkin::Rpg90s;
 }
 
-const FGBHudSkinStyle& AGBHUD::GetSkinStyle(EGBHudSkin Skin)
-{
-	static const FGBHudSkinStyle Rpg = GBHudLocal::MakeRpgStyle();
-	static const FGBHudSkinStyle Cyber = GBHudLocal::MakeCyberStyle();
-	return Skin == EGBHudSkin::Cyberpunk ? Cyber : Rpg;
-}
-
-double AGBHUD::GetRealTime() const
-{
-	const UWorld* World = GetWorld();
-	return World ? World->GetRealTimeSeconds() : 0.0;
-}
-
-float AGBHUD::UIScale() const
-{
-	return Canvas ? FMath::Max(0.1f, Canvas->ClipY / 1080.f) : 1.f;
-}
-
 void AGBHUD::ShowMessage(const FString& Text, float Duration)
 {
 	if (Text.IsEmpty())
 	{
 		return;
 	}
-	const double EndTime = GetRealTime() + FMath::Max(0.1f, Duration);
+	const double Now = GetRealTime();
+	const double EndTime = Now + FMath::Max(0.1f, Duration);
 	for (FToast& Toast : Toasts)
 	{
 		if (Toast.Text == Text)
@@ -246,11 +216,33 @@ void AGBHUD::ShowMessage(const FString& Text, float Duration)
 	}
 	FToast Toast;
 	Toast.Text = Text;
+	Toast.StartTime = Now;
 	Toast.EndTime = EndTime;
 	Toasts.Add(Toast);
 	while (Toasts.Num() > GBHudLayout::MaxToasts)
 	{
 		Toasts.RemoveAt(0);
+	}
+}
+
+void AGBHUD::UpdateTrails(AGBPlayerCharacter* Player)
+{
+	const double Now = GetRealTime();
+	const float Dt = LastTrailUpdateTime < 0.0 ? 0.f : FMath::Clamp((float)(Now - LastTrailUpdateTime), 0.f, 0.1f);
+	LastTrailUpdateTime = Now;
+	const UGBAttributeComponent* Attributes = Player ? Player->GetAttributes() : nullptr;
+	if (!Attributes || Attributes->GetMaxHealth() <= 0.f)
+	{
+		return;
+	}
+	HealthShown01 = FMath::Clamp(Attributes->GetHealth() / Attributes->GetMaxHealth(), 0.f, 1.f);
+	if (HealthShown01 >= HealthTrail01)
+	{
+		HealthTrail01 = HealthShown01;
+	}
+	else if (Now - LastDamageTime > GBHudLayout::TrailHoldTime)
+	{
+		HealthTrail01 = FMath::Max(HealthShown01, HealthTrail01 - GBHudLayout::TrailDrainPerSecond * Dt);
 	}
 }
 
@@ -329,115 +321,6 @@ void AGBHUD::HandleCastFailed(FName SpellId, EGBCastFailReason Reason)
 	ShowMessage(Text, 1.2f);
 }
 
-// ======================================================================== draw helpers
-
-void AGBHUD::DrawLabel(const FString& Text, const FLinearColor& Color, float X, float Y, float SizePx, float AlignX, bool bShadow, bool bLarge)
-{
-	if (!Canvas || !GEngine || Text.IsEmpty())
-	{
-		return;
-	}
-	UFont* Font = bLarge ? GEngine->GetLargeFont() : GEngine->GetMediumFont();
-	if (!Font)
-	{
-		return;
-	}
-	const float Scale = SizePx * UIScale() / FMath::Max(1.f, Font->GetMaxCharHeight());
-	float W = 0.f;
-	float H = 0.f;
-	GetTextSize(Text, W, H, Font, Scale);
-	const float DrawX = FMath::RoundToFloat(X - W * AlignX);
-	const float DrawY = FMath::RoundToFloat(Y);
-	if (bShadow)
-	{
-		const float Off = FMath::Max(1.f, 2.f * UIScale());
-		DrawText(Text, FLinearColor(0.f, 0.f, 0.f, 0.8f * Color.A), DrawX + Off, DrawY + Off, Font, Scale);
-	}
-	DrawText(Text, Color, DrawX, DrawY, Font, Scale);
-}
-
-FVector2D AGBHUD::MeasureLabel(const FString& Text, float SizePx, bool bLarge) const
-{
-	if (!Canvas || !GEngine || Text.IsEmpty())
-	{
-		return FVector2D::ZeroVector;
-	}
-	UFont* Font = bLarge ? GEngine->GetLargeFont() : GEngine->GetMediumFont();
-	if (!Font)
-	{
-		return FVector2D::ZeroVector;
-	}
-	const float Scale = SizePx * UIScale() / FMath::Max(1.f, Font->GetMaxCharHeight());
-	float W = 0.f;
-	float H = 0.f;
-	GetTextSize(Text, W, H, Font, Scale);
-	return FVector2D(W, H);
-}
-
-void AGBHUD::DrawOutline(float X, float Y, float W, float H, const FLinearColor& Color, float Thickness)
-{
-	const float T = FMath::Max(1.f, Thickness);
-	DrawRect(Color, X, Y, W, T);
-	DrawRect(Color, X, Y + H - T, W, T);
-	DrawRect(Color, X, Y + T, T, H - 2.f * T);
-	DrawRect(Color, X + W - T, Y + T, T, H - 2.f * T);
-}
-
-void AGBHUD::DrawPanel(const FGBHudSkinStyle& Style, float X, float Y, float W, float H)
-{
-	const float S = UIScale();
-	if (Style.bChunky)
-	{
-		// 90s RPG: thick dark frame, parchment fill, a light bevel line on top.
-		const float B = FMath::Max(2.f, 4.f * S);
-		DrawRect(Style.Border, X, Y, W, H);
-		DrawRect(Style.Panel, X + B, Y + B, W - 2.f * B, H - 2.f * B);
-		DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.2f), X + B, Y + B, W - 2.f * B, FMath::Max(1.f, 2.f * S));
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.25f), X + B, Y + H - B - FMath::Max(1.f, 2.f * S), W - 2.f * B, FMath::Max(1.f, 2.f * S));
-	}
-	else
-	{
-		// Cyberpunk: translucent fill, thin neon top line, a short side tick and a magenta corner.
-		const float T = FMath::Max(1.f, 1.5f * S);
-		DrawRect(Style.Panel, X, Y, W, H);
-		DrawRect(Style.Border, X, Y, W, T);
-		DrawRect(Style.Border, X, Y, T, H * 0.4f);
-		DrawRect(Style.Accent, X + W - 24.f * S, Y + H - 2.f * T, 24.f * S, 2.f * T);
-	}
-}
-
-void AGBHUD::DrawBar(const FGBHudSkinStyle& Style, float X, float Y, float W, float H, float Fraction, const FLinearColor& Fill, const FString& Label)
-{
-	const float S = UIScale();
-	DrawRect(GBHudLocal::Dark, X, Y, W, H);
-	DrawRect(Fill, X, Y, W * FMath::Clamp(Fraction, 0.f, 1.f), H);
-	if (Style.bChunky)
-	{
-		DrawOutline(X, Y, W, H, Style.Border, 2.f * S);
-	}
-	else
-	{
-		DrawRect(Style.Border, X, Y + H - FMath::Max(1.f, S), W, FMath::Max(1.f, S));
-	}
-	if (!Label.IsEmpty())
-	{
-		const float SizePx = FMath::Clamp(H / S * 0.8f, 10.f, 22.f);
-		const FVector2D Size = MeasureLabel(Label, SizePx);
-		DrawLabel(Label, GBHudLocal::White, X + W * 0.5f, Y + (H - Size.Y) * 0.5f, SizePx, 0.5f);
-	}
-}
-
-void AGBHUD::DrawSprite(UTexture2D* Texture, float X, float Y, float PixelScale, const FLinearColor& Tint)
-{
-	if (!Texture)
-	{
-		return;
-	}
-	const float W = Texture->GetSizeX() * PixelScale;
-	const float H = Texture->GetSizeY() * PixelScale;
-	DrawTexture(Texture, FMath::RoundToFloat(X), FMath::RoundToFloat(Y), W, H, 0.f, 0.f, 1.f, 1.f, Tint, BLEND_Translucent);
-}
-
 // ======================================================================== frame
 
 void AGBHUD::DrawHUD()
@@ -447,6 +330,7 @@ void AGBHUD::DrawHUD()
 	{
 		return;
 	}
+	EnsureArt();
 
 	// Drop expired toasts here, once per frame.
 	const double Now = GetRealTime();
@@ -454,13 +338,22 @@ void AGBHUD::DrawHUD()
 
 	AGBPlayerCharacter* Player = GetPlayer();
 	BindToPlayer(Player);
-	const FGBHudSkinStyle& Style = GetSkinStyle(GetCurrentSkin());
-	const bool bMenuOpen = GetOpenMenu() != EGBMenu::None;
+	const EGBHudSkin Skin = GetCurrentSkin();
+	if (!bHasLastSkin || Skin != LastSkin)
+	{
+		// The first frame does not play the intro (nothing was switched).
+		SkinChangeTime = bHasLastSkin ? Now : -1000.0;
+		LastSkin = Skin;
+		bHasLastSkin = true;
+	}
+	UpdateTrails(Player);
+	const EGBMenu OpenMenu = GetOpenMenu();
+	const bool bMenuOpen = OpenMenu != EGBMenu::None;
 	// The canvas is the viewport divided by the DPI scale; the mouse comes in viewport pixels.
 	MouseToCanvas = Canvas->SizeX > 0 ? Canvas->ClipX / (float)Canvas->SizeX : 1.f;
 
 	// World-space numbers first: hands and HUD panels stay on top of them.
-	DrawDamageNumbers();
+	DrawDamageNumbers(Skin);
 	if (CVarShowElemental.GetValueOnGameThread() == 1 && Player)
 	{
 		UWorld* HudWorld = GetWorld();
@@ -551,29 +444,37 @@ void AGBHUD::DrawHUD()
 	if (Player)
 	{
 		DrawHands(Player);
-		DrawStatusHud(Player, Style);
-		if (!bMenuOpen)
+		// Menus cover the game: the status HUD only shows while playing (and under the QTE).
+		if (!bMenuOpen && !Player->IsDead())
 		{
-			DrawCrosshair(Player, Style);
-			DrawInteractPrompt(Player);
+			if (Skin == EGBHudSkin::Cyberpunk)
+			{
+				DrawCyberHud(Player);
+			}
+			else
+			{
+				DrawRpgHud(Player);
+			}
+			DrawCrosshair(Player, Skin);
+			DrawInteractPrompt(Player, Skin);
 		}
 	}
 	if (!bMenuOpen)
 	{
-		DrawToasts();
+		DrawToasts(Skin);
 	}
 	if (Player && Player->GetQTE() && Player->GetQTE()->IsActive())
 	{
-		DrawQTE(Player, Style);
+		DrawQTE(Player, Skin);
 	}
-	DrawDamageFlash();
+	DrawDamageFlash(Skin);
 	DrawEraFade();
 	if (bMenuOpen)
 	{
 		UpdateMenuMouse();
 		DrawMenus(Player);
-		// Menu actions answer with toasts (skill unlocks, combines): keep them readable above the menu.
-		DrawToasts();
+		// Menu actions answer with toasts (skill unlocks, combines): above the menu, low, clear of titles and tabs.
+		DrawToasts(Skin, Canvas->ClipY * 0.80f);
 	}
 }
 
@@ -592,8 +493,10 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	}
 
 	const float W = Canvas->ClipX;
-	const float H = Canvas->ClipY;
-	const float P = FMath::Max(1.f, (float)FMath::RoundToInt(H / GBHudLayout::HandPixelDivisor));
+	// The RPG status bar covers the bottom of the view: the hands stand on it (as in the 90s games). Menus hide the bar.
+	const bool bOverBar = GetCurrentSkin() == EGBHudSkin::Rpg90s && GetOpenMenu() == EGBMenu::None;
+	const float H = Canvas->ClipY - (bOverBar ? 22.f * ArtPixel() : 0.f);
+	const float P = FMath::Max(1.f, (float)FMath::RoundToInt(Canvas->ClipY / GBHudLayout::HandPixelDivisor));
 
 	// Walk bob from the horizontal speed (world time, so it slows down with the QTE).
 	const UWorld* World = GetWorld();
@@ -767,405 +670,191 @@ float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, cons
 	return ShieldRaise01;
 }
 
-// ======================================================================== status HUD
-
-void AGBHUD::DrawStatusHud(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
-{
-	const float W = Canvas->ClipX;
-	const float H = Canvas->ClipY;
-	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
-
-	UGBEquipmentComponent* Equipment = Player->GetEquipment();
-	AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
-	const bool bStaff = Item && Item->GetSlot() == EGBHeldSlot::Staff;
-	const bool bGun = Item && Item->GetSlot() == EGBHeldSlot::Gun;
-
-	// Right-side info lines (quick-use item, skill points), anchored by their right edge.
-	TArray<FString> InfoLines;
-	if (const UGBInventoryComponent* Inventory = Player->GetInventory())
-	{
-		const FName QuickId = Inventory->GetQuickUseItem();
-		if (QuickId != NAME_None)
-		{
-			const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
-			const FGBItemDefinition* ItemDef = Data ? Data->FindItem(QuickId) : nullptr;
-			const FString Name = (ItemDef && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : QuickId.ToString();
-			InfoLines.Add(FString::Printf(TEXT("[F] %s x%d"), *Name, Inventory->GetCount(QuickId)));
-		}
-		else
-		{
-			InfoLines.Add(TEXT("[F] -"));
-		}
-	}
-	if (const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree())
-	{
-		if (SkillTree->GetPoints() > 0)
-		{
-			InfoLines.Add(FString::Printf(TEXT("Skill points: %d [K]"), SkillTree->GetPoints()));
-		}
-	}
-
-	float InfoX = 0.f;
-	float InfoY = 0.f;
-	if (Style.bChunky)
-	{
-		// 90s RPG: one chunky status bar along the bottom.
-		const float BarH = 112.f * S;
-		const float Top = H - BarH;
-		DrawPanel(Style, 0.f, Top, W, BarH);
-		DrawVitals(Player, Style, 20.f * S, Top + 14.f * S, 340.f * S);
-		if (bStaff)
-		{
-			DrawSpellSlots(Player, Style, W * 0.5f, Top + 14.f * S);
-		}
-		else if (bGun)
-		{
-			DrawGunPanel(Player, Item, Style, W * 0.5f - 230.f * S, Top + 12.f * S, 460.f * S);
-		}
-		else if (Item)
-		{
-			DrawLabel(Item->GetDisplayName(), Style.Text, W * 0.5f, Top + 30.f * S, 26.f, 0.5f, bShadow);
-			DrawLabel(GBHudText::ElementName(Item->GetElement()), GBHudText::ElementColor(Item->GetElement()), W * 0.5f, Top + 62.f * S, 18.f, 0.5f, true);
-		}
-		DrawStatusEffects(Player, Style, 20.f * S, Top - 40.f * S, false);
-		DrawShieldIndicator(Player, Style, 20.f * S, Top - 90.f * S);
-		InfoX = W - 24.f * S;
-		InfoY = Top + 18.f * S;
-	}
-	else
-	{
-		// Cyberpunk: thin panels in the corners.
-		DrawPanel(Style, 24.f * S, H - 124.f * S, 380.f * S, 100.f * S);
-		DrawVitals(Player, Style, 40.f * S, H - 110.f * S, 348.f * S);
-		if (bStaff)
-		{
-			DrawSpellSlots(Player, Style, W * 0.5f, H - 100.f * S);
-		}
-		else if (bGun)
-		{
-			DrawPanel(Style, W - 404.f * S, H - 154.f * S, 380.f * S, 130.f * S);
-			DrawGunPanel(Player, Item, Style, W - 392.f * S, H - 144.f * S, 356.f * S);
-		}
-		else if (Item)
-		{
-			DrawLabel(Item->GetDisplayName(), Style.Text, W - 32.f * S, H - 70.f * S, 24.f, 1.f, bShadow);
-		}
-		DrawStatusEffects(Player, Style, 24.f * S, 24.f * S, true);
-		DrawShieldIndicator(Player, Style, 24.f * S, H - 172.f * S);
-		InfoX = W - 24.f * S;
-		InfoY = 24.f * S;
-	}
-
-	for (const FString& Line : InfoLines)
-	{
-		DrawLabel(Line, Style.Text, InfoX, InfoY, 18.f, 1.f, bShadow);
-		InfoY += 26.f * S;
-	}
-}
-
-void AGBHUD::DrawVitals(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, float W)
-{
-	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
-	const float BarH = (Style.bChunky ? 24.f : 16.f) * S;
-	const float Gap = 8.f * S;
-	const float LabelW = 44.f * S;
-	const float BarW = W - LabelW;
-
-	if (const UGBAttributeComponent* Attributes = Player->GetAttributes())
-	{
-		const float MaxHealth = Attributes->GetMaxHealth();
-		const float MaxMana = Attributes->GetMaxMana();
-		const float HealthFrac = MaxHealth > 0.f ? Attributes->GetHealth() / MaxHealth : 0.f;
-		const float ManaFrac = MaxMana > 0.f ? Attributes->GetMana() / MaxMana : 0.f;
-		DrawLabel(TEXT("HP"), Style.Text, X, Y + BarH * 0.5f - 9.f * S, 18.f, 0.f, bShadow);
-		DrawBar(Style, X + LabelW, Y, BarW, BarH, HealthFrac, Style.Health,
-			FString::Printf(TEXT("%d / %d"), FMath::CeilToInt(Attributes->GetHealth()), FMath::RoundToInt(MaxHealth)));
-		const float ManaY = Y + BarH + Gap;
-		DrawLabel(TEXT("MP"), Style.Text, X, ManaY + BarH * 0.5f - 9.f * S, 18.f, 0.f, bShadow);
-		DrawBar(Style, X + LabelW, ManaY, BarW, BarH, ManaFrac, Style.Mana,
-			FString::Printf(TEXT("%d / %d"), FMath::FloorToInt(Attributes->GetMana()), FMath::RoundToInt(MaxMana)));
-	}
-
-	// Dash cooldown: a small bar that fills up; "READY" when full.
-	const float DashY = Y + 2.f * (BarH + Gap);
-	const float Remaining = Player->GetDashCooldownRemaining();
-	const UGBStatsComponent* Stats = Player->GetStats();
-	const float Total = Stats ? Stats->GetStat(GBStat::DashCooldown, 0.f) : 0.f;
-	const float DashFrac = (Remaining <= 0.f || Total <= 0.f) ? 1.f : 1.f - Remaining / Total;
-	DrawLabel(TEXT("DASH"), Style.Text, X, DashY - 3.f * S, 14.f, 0.f, bShadow);
-	DrawBar(Style, X + LabelW, DashY, BarW * 0.5f, 8.f * S, DashFrac, DashFrac >= 1.f ? Style.Accent : FLinearColor(0.4f, 0.4f, 0.4f, 1.f), FString());
-}
-
-void AGBHUD::DrawShieldIndicator(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y)
-{
-	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
-	if (!Spellbook || !Spellbook->HasShield())
-	{
-		return;
-	}
-	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
-	const float PW = 340.f * S;
-	const float PH = 40.f * S;
-	const FLinearColor Ice = GBHudText::ElementColor(EGBElement::Ice);
-	const bool bRaised = Spellbook->IsBlockRaised();
-	DrawPanel(Style, X, Y, PW, PH);
-	DrawLabel(TEXT("SHIELD"), bRaised ? Ice : Style.Text, X + 10.f * S, Y + 11.f * S, 16.f, 0.f, bShadow);
-	const float BarX = X + 86.f * S;
-	const float BarW = 140.f * S;
-	DrawBar(Style, BarX, Y + 11.f * S, BarW, 18.f * S, Spellbook->GetShieldHealthFraction(), Ice,
-		FString::Printf(TEXT("%.1fs"), FMath::Max(0.f, Spellbook->GetShieldTimeRemaining())));
-	DrawLabel(bRaised ? TEXT("BLOCKING") : TEXT("[Q] Block"), bRaised ? Ice : Style.Accent, X + PW - 10.f * S, Y + 11.f * S, 16.f, 1.f, true);
-}
-
-void AGBHUD::DrawSpellSlots(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float CenterX, float Y)
-{
-	UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
-	if (!Spellbook)
-	{
-		return;
-	}
-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
-	const float S = UIScale();
-	const float Box = (Style.bChunky ? 84.f : 66.f) * S;
-	const float Gap = 10.f * S;
-	const int32 Num = UGBSpellbookComponent::NumSlots;
-	const float X0 = CenterX - (Num * Box + (Num - 1) * Gap) * 0.5f;
-	static const TCHAR* Keys[] = { TEXT("RMB"), TEXT("1"), TEXT("2"), TEXT("3"), TEXT("4") };
-
-	for (int32 Slot = 0; Slot < Num; ++Slot)
-	{
-		const float X = X0 + Slot * (Box + Gap);
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f), X, Y, Box, Box);
-		DrawOutline(X, Y, Box, Box, Style.bChunky ? Style.Border : Style.Border * FLinearColor(1.f, 1.f, 1.f, 0.7f), 2.f * S);
-
-		const FName SpellId = Spellbook->GetSlotSpell(Slot);
-		const FGBSpellDefinition* Def = (Data && SpellId != NAME_None) ? Data->FindSpell(SpellId) : nullptr;
-		if (Def)
-		{
-			DrawRect(GBHudText::ElementColor(Def->Element), X + 2.f * S, Y + 2.f * S, Box - 4.f * S, 5.f * S);
-			const FString Name = GBHudText::Abbreviate(Def->DisplayName.IsEmpty() ? SpellId.ToString() : Def->DisplayName, 8);
-			DrawLabel(Name, GBHudLocal::White, X + Box * 0.5f, Y + Box * 0.36f, 15.f, 0.5f);
-			DrawLabel(FString::Printf(TEXT("%d"), FMath::RoundToInt(Spellbook->GetManaCost(SpellId))), Style.Mana + FLinearColor(0.3f, 0.3f, 0.3f, 0.f),
-				X + Box - 5.f * S, Y + Box - 20.f * S, 14.f, 1.f);
-
-			const EGBCastFailReason Reason = Spellbook->CanCast(SpellId);
-			const float Remaining = Spellbook->GetCooldownRemaining(SpellId);
-			if (Remaining > 0.f)
-			{
-				const float Duration = Spellbook->GetCooldownDuration(SpellId);
-				const float Frac = Duration > 0.f ? FMath::Clamp(Remaining / Duration, 0.f, 1.f) : 1.f;
-				DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f), X, Y + Box * (1.f - Frac), Box, Box * Frac);
-				DrawLabel(FString::Printf(TEXT("%.1f"), Remaining), GBHudLocal::White, X + Box * 0.5f, Y + Box * 0.5f - 12.f * S, 22.f, 0.5f);
-			}
-			else if (Reason != EGBCastFailReason::None && Reason != EGBCastFailReason::OnCooldown)
-			{
-				DrawRect(FLinearColor(0.25f, 0.25f, 0.25f, 0.6f), X, Y, Box, Box);
-			}
-		}
-		else
-		{
-			DrawLabel(TEXT("-"), FLinearColor(1.f, 1.f, 1.f, 0.4f), X + Box * 0.5f, Y + Box * 0.35f, 18.f, 0.5f);
-		}
-		DrawLabel(Keys[Slot], Style.Accent, X + 5.f * S, Y + 8.f * S, 13.f, 0.f);
-	}
-}
-
-void AGBHUD::DrawGunPanel(AGBPlayerCharacter* Player, AGBHeldItem* Gun, const FGBHudSkinStyle& Style, float X, float Y, float W)
-{
-	const float S = UIScale();
-	const bool bShadow = !Style.bChunky;
-
-	DrawLabel(Gun->GetDisplayName(), Style.Text, X, Y, 18.f, 0.f, bShadow);
-	const FGBAmmoState Ammo = Gun->GetAmmo();
-	const int32 MagSize = FMath::RoundToInt(Gun->GetStat(GBStat::MagazineSize, 0.f));
-	const FString AmmoText = MagSize > 0 ? FString::Printf(TEXT("%d / %d"), Ammo.InMagazine, MagSize) : FString::Printf(TEXT("%d"), Ammo.InMagazine);
-	const FLinearColor AmmoColor = Ammo.InMagazine > 0 ? Style.Text : GBHudLocal::Bad;
-	DrawLabel(AmmoText, AmmoColor, X, Y + 22.f * S, 32.f, 0.f, bShadow);
-	const FVector2D AmmoSize = MeasureLabel(AmmoText, 32.f);
-	const FString ReserveText = Gun->ReloadsPerRound() ? FString::Printf(TEXT("x%d shells"), Ammo.SpareMagazines) : FString::Printf(TEXT("x%d mags"), Ammo.SpareMagazines);
-	DrawLabel(ReserveText, Style.Text, X + AmmoSize.X + 12.f * S, Y + 34.f * S, 16.f, 0.f, bShadow);
-
-	if (Gun->IsReloading())
-	{
-		DrawBar(Style, X, Y + 64.f * S, W * 0.5f, 10.f * S, Gun->GetReloadProgress(), Style.Accent, FString());
-		DrawLabel(TEXT("RELOADING"), Style.Text, X + W * 0.5f + 8.f * S, Y + 60.f * S, 14.f, 0.f, bShadow);
-	}
-	else if (Gun->UsesAmmo() && Ammo.InMagazine <= 0)
-	{
-		DrawLabel(Ammo.SpareMagazines > 0 ? TEXT("[R] Reload") : TEXT("No ammo"), GBHudLocal::Bad, X, Y + 60.f * S, 16.f, 0.f, true);
-	}
-
-	// Enchant slot (T): element, cost, cooldown; greyed when it cannot be cast.
-	UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
-	if (!Spellbook)
-	{
-		return;
-	}
-	const FName EnchantId = Spellbook->GetEnchantSpell();
-	const EGBElement Element = Spellbook->GetEnchantElement();
-	const FLinearColor ElementColor = GBHudText::ElementColor(Element);
-	const float Box = 64.f * S;
-	const float BX = X + W - Box;
-	const float BY = Y;
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f), BX, BY, Box, Box);
-	DrawOutline(BX, BY, Box, Box, ElementColor, 2.f * S);
-	DrawLabel(GBHudText::Abbreviate(GBHudText::ElementName(Element), 6), ElementColor, BX + Box * 0.5f, BY + Box * 0.38f, 15.f, 0.5f);
-	if (EnchantId != NAME_None)
-	{
-		DrawLabel(FString::Printf(TEXT("%d"), FMath::RoundToInt(Spellbook->GetManaCost(EnchantId))), Style.Mana + FLinearColor(0.3f, 0.3f, 0.3f, 0.f),
-			BX + Box - 5.f * S, BY + Box - 20.f * S, 14.f, 1.f);
-		const float Remaining = Spellbook->GetCooldownRemaining(EnchantId);
-		const EGBCastFailReason Reason = Spellbook->CanCast(EnchantId);
-		if (Remaining > 0.f)
-		{
-			const float Duration = Spellbook->GetCooldownDuration(EnchantId);
-			const float Frac = Duration > 0.f ? FMath::Clamp(Remaining / Duration, 0.f, 1.f) : 1.f;
-			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f), BX, BY + Box * (1.f - Frac), Box, Box * Frac);
-			DrawLabel(FString::Printf(TEXT("%.1f"), Remaining), GBHudLocal::White, BX + Box * 0.5f, BY + Box * 0.5f - 12.f * S, 22.f, 0.5f);
-		}
-		else if (Reason != EGBCastFailReason::None && Reason != EGBCastFailReason::OnCooldown)
-		{
-			DrawRect(FLinearColor(0.25f, 0.25f, 0.25f, 0.6f), BX, BY, Box, Box);
-		}
-	}
-	DrawLabel(TEXT("T"), Style.Accent, BX + 5.f * S, BY + 6.f * S, 14.f, 0.f);
-
-	// "ENCHANTED" while an Enchant_* status effect runs.
-	if (const UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
-	{
-		for (const FGBActiveStatusEffect& Effect : Effects->GetActiveEffects())
-		{
-			if (Effect.EffectId.ToString().StartsWith(TEXT("Enchant_")))
-			{
-				DrawLabel(FString::Printf(TEXT("ENCHANTED %.1fs"), Effect.TimeRemaining), ElementColor, BX + Box, BY + Box + 6.f * S, 16.f, 1.f, true);
-				break;
-			}
-		}
-	}
-}
-
-void AGBHUD::DrawStatusEffects(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style, float X, float Y, bool bVertical)
-{
-	const UGBStatusEffectComponent* Effects = Player->GetStatusEffects();
-	if (!Effects)
-	{
-		return;
-	}
-	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
-	const float S = UIScale();
-	const float EntryW = 170.f * S;
-	const float EntryH = 28.f * S;
-	for (const FGBActiveStatusEffect& Effect : Effects->GetActiveEffects())
-	{
-		const FGBStatusEffectDefinition* Def = Data ? Data->FindStatusEffect(Effect.EffectId) : nullptr;
-		FString Name = (Def && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : Effect.EffectId.ToString();
-		if (Effect.Stacks > 1)
-		{
-			Name += FString::Printf(TEXT(" x%d"), Effect.Stacks);
-		}
-		const FString Text = Effect.TotalDuration > 0.f ? FString::Printf(TEXT("%s %.1fs"), *Name, Effect.TimeRemaining) : Name;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), X, Y, EntryW, EntryH);
-		if (Effect.TotalDuration > 0.f)
-		{
-			DrawRect(Style.Accent, X, Y + EntryH - 3.f * S, EntryW * FMath::Clamp(Effect.TimeRemaining / Effect.TotalDuration, 0.f, 1.f), 3.f * S);
-		}
-		DrawLabel(GBHudText::Abbreviate(Text, 20), GBHudLocal::White, X + 6.f * S, Y + 4.f * S, 15.f, 0.f);
-		if (bVertical)
-		{
-			Y += EntryH + 6.f * S;
-		}
-		else
-		{
-			X += EntryW + 8.f * S;
-		}
-	}
-}
-
 // ======================================================================== crosshair, prompt, toasts
 
-void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
+void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 {
 	if (!Player->IsControlEnabled() || Player->IsDead())
 	{
 		return;
 	}
 	const float S = UIScale();
-	const float CX = Canvas->ClipX * 0.5f;
-	const float CY = Canvas->ClipY * 0.5f;
-	const FLinearColor Color = Style.bChunky ? Style.Accent : Style.Border;
-	const float T = FMath::Max(1.f, 2.f * S);
-
+	const float CX = FMath::RoundToFloat(Canvas->ClipX * 0.5f);
+	const float CY = FMath::RoundToFloat(Canvas->ClipY * 0.5f);
 	const UGBEquipmentComponent* Equipment = Player->GetEquipment();
 	AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
-	if (Item && Item->GetSlot() == EGBHeldSlot::Gun)
+	const bool bGun = Item && Item->GetSlot() == EGBHeldSlot::Gun;
+
+	if (Skin == EGBHudSkin::Cyberpunk || bGun)
 	{
-		// Dot + four ticks at the current spread cone (degrees -> pixels with the camera FOV).
-		DrawRect(Color, CX - T, CY - T, 2.f * T, 2.f * T);
-		const AGBGun* Gun = Cast<AGBGun>(Item);
-		const float SpreadDeg = Gun ? Gun->GetCurrentSpread() : Item->GetStat(Item->IsAiming() ? GBStat::AimSpread : GBStat::Spread, 0.f);
-		const float FOV = (PlayerOwner && PlayerOwner->PlayerCameraManager) ? PlayerOwner->PlayerCameraManager->GetFOVAngle() : 90.f;
-		const float HalfFOVTan = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(FOV, 5.f, 170.f) * 0.5f));
-		float Offset = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(SpreadDeg, 0.f, 80.f))) / HalfFOVTan * Canvas->ClipX * 0.5f;
-		Offset = FMath::Max(Offset, 6.f * S);
-		const float L = 8.f * S;
-		DrawRect(Color, CX - Offset - L, CY - T * 0.5f, L, T);
-		DrawRect(Color, CX + Offset, CY - T * 0.5f, L, T);
-		DrawRect(Color, CX - T * 0.5f, CY - Offset - L, T, L);
-		DrawRect(Color, CX - T * 0.5f, CY + Offset, T, L);
+		// Center dot and four ticks at the current spread cone (degrees -> pixels with the camera FOV), with a dark keyline.
+		const float T = FMath::Max(1.f, FMath::RoundToFloat(2.f * S));
+		const FLinearColor Ink = GBCy::Pale;
+		const FLinearColor Key(0.f, 0.f, 0.f, 0.55f);
+		float Offset = 6.f * S;
+		if (bGun)
+		{
+			const AGBGun* Gun = Cast<AGBGun>(Item);
+			const float SpreadDeg = Gun ? Gun->GetCurrentSpread() : Item->GetStat(Item->IsAiming() ? GBStat::AimSpread : GBStat::Spread, 0.f);
+			const float FOV = (PlayerOwner && PlayerOwner->PlayerCameraManager) ? PlayerOwner->PlayerCameraManager->GetFOVAngle() : 90.f;
+			const float HalfFOVTan = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(FOV, 5.f, 170.f) * 0.5f));
+			Offset = FMath::Max(FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(SpreadDeg, 0.f, 80.f))) / HalfFOVTan * Canvas->ClipX * 0.5f, 6.f * S);
+		}
+		Offset = FMath::RoundToFloat(Offset);
+		const float L = FMath::RoundToFloat(9.f * S);
+		auto Tick = [this, &Key, &Ink](float X, float Y, float W, float H)
+		{
+			FillRect(X - 1.f, Y - 1.f, W + 2.f, H + 2.f, Key);
+			FillRect(X, Y, W, H, Ink);
+		};
+		Tick(CX - T * 0.5f, CY - T * 0.5f, T, T);
+		Tick(CX - Offset - L, CY - T * 0.5f, L, T);
+		Tick(CX + Offset, CY - T * 0.5f, L, T);
+		Tick(CX - T * 0.5f, CY + Offset, T, L);
+		// The top tick is a small chevron: the one distinctive mark of the gun reticle.
+		Tick(CX - T * 0.5f, CY - Offset - L, T, L * 0.55f);
+		FillRect(CX - 3.f * T, CY - Offset - L - T, 6.f * T, T, GBAlpha(GBCy::Red, 0.9f));
+		return;
 	}
-	else if (Item && Item->GetSlot() == EGBHeldSlot::Sword)
+
+	// RPG: a small pixel rune, gold with a dark outline, on a whole-pixel grid.
+	const float Px = FMath::Max(2.f, FMath::RoundToFloat(ArtPixel() * 0.5f));
+	const bool bSword = Item && Item->GetSlot() == EGBHeldSlot::Sword;
+	auto Dot = [this, Px, CX, CY](int32 GX, int32 GY, const FLinearColor& C)
 	{
-		DrawRect(Color, CX - T, CY - T, 2.f * T, 2.f * T);
-	}
-	else
+		FillRect(CX + (GX - 0.5f) * Px, CY + (GY - 0.5f) * Px, Px, Px, C);
+	};
+	const FLinearColor Gold = GBRpg::Gold3;
+	const FLinearColor Out = GBAlpha(GBRpg::Outline, 0.85f);
+	if (bSword)
 	{
-		const float Gap = 3.f * S;
-		const float L = 8.f * S;
-		DrawRect(Color, CX - Gap - L, CY - T * 0.5f, L, T);
-		DrawRect(Color, CX + Gap, CY - T * 0.5f, L, T);
-		DrawRect(Color, CX - T * 0.5f, CY - Gap - L, T, L);
-		DrawRect(Color, CX - T * 0.5f, CY + Gap, T, L);
+		// A diamond.
+		const int32 Pts[][2] = { {0,-2}, {-1,-1}, {1,-1}, {-2,0}, {2,0}, {-1,1}, {1,1}, {0,2} };
+		for (const auto& Pt : Pts) { for (int32 DY = -1; DY <= 1; ++DY) for (int32 DX = -1; DX <= 1; ++DX) Dot(Pt[0] + DX, Pt[1] + DY, Out); }
+		for (const auto& Pt : Pts) { Dot(Pt[0], Pt[1], Gold); }
+		return;
 	}
+	// Four arms of two pixels around a gap, plus the center pixel.
+	const int32 Arms[][2] = { {0,-3}, {0,-4}, {0,3}, {0,4}, {-3,0}, {-4,0}, {3,0}, {4,0}, {0,0} };
+	for (const auto& Pt : Arms) { for (int32 DY = -1; DY <= 1; ++DY) for (int32 DX = -1; DX <= 1; ++DX) Dot(Pt[0] + DX, Pt[1] + DY, Out); }
+	for (const auto& Pt : Arms) { Dot(Pt[0], Pt[1], (Pt[0] == 0 && Pt[1] == 0) ? GBRpg::Gold4 : Gold); }
 }
 
-void AGBHUD::DrawInteractPrompt(AGBPlayerCharacter* Player)
+void AGBHUD::DrawInteractPrompt(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 {
 	IGBInteractable* Interactable = Player->GetFocusedInteractable();
 	if (!Interactable)
 	{
 		return;
 	}
-	const FString Text = FString::Printf(TEXT("[G] %s"), *Interactable->GetInteractPrompt(Player));
-	const float S = UIScale();
-	const FVector2D Size = MeasureLabel(Text, 22.f);
-	const float X = Canvas->ClipX * 0.5f;
-	const float Y = Canvas->ClipY * 0.6f;
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.5f), X - Size.X * 0.5f - 10.f * S, Y - 4.f * S, Size.X + 20.f * S, Size.Y + 8.f * S);
-	DrawLabel(Text, GBHudLocal::White, X, Y, 22.f, 0.5f);
+	const FString Text = Interactable->GetInteractPrompt(Player);
+	const float CX = Canvas->ClipX * 0.5f;
+	const float Y = FMath::RoundToFloat(Canvas->ClipY * 0.6f);
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		const float S = UIScale();
+		FCyTextStyle Style;
+		Style.Face = ECyFace::Condensed;
+		Style.Px = 22.f;
+		Style.Spacing = 100;
+		Style.bUpper = true;
+		Style.Color = GBCy::Pale;
+		const FVector2D Size = MeasureCyText(Text, Style);
+		const float KeyW = 30.f * S;
+		const float Total = KeyW + 12.f * S + Size.X;
+		const float X = CX - Total * 0.5f;
+		DrawFade(X - 40.f * S, Y - 8.f * S, Total + 80.f * S, 46.f * S, FLinearColor(0.f, 0.f, 0.f, 0.45f), false);
+		CyKey(X, Y, TEXT("G"), GBCy::Cyan, 30.f);
+		DrawCyText(Text, X + KeyW + 12.f * S, Y + 1.f * S, Style, 0.f);
+		FillRect(X + KeyW + 12.f * S, Y + 32.f * S, Size.X, 1.f, GBAlpha(GBCy::Red, 0.7f));
+		return;
+	}
+	const float P = ArtPixel();
+	const int32 Scale = FMath::Max(2, FMath::RoundToInt(P * 0.75f));
+	const FVector2D Size = MeasurePixelText(Text, Scale);
+	float KeyW = 0.f;
+	const float PW = FMath::CeilToFloat((Size.X + 22.f * P) / P) * P;
+	const float PH = 14.f * P;
+	const float X = FMath::RoundToFloat((CX - PW * 0.5f) / P) * P;
+	FillRect(X, Y, PW, PH, GBAlpha(GBRpg::StoneDeep, 0.9f));
+	RpgFrame(X, Y, PW, PH, ERpgFrame::Bone);
+	RpgKeyCap(X + 3.f * P, Y + 2.f * P, TEXT("G"), &KeyW);
+	FPixelTextStyle Style;
+	Style.Scale = Scale;
+	Style.Ink = &GBRpg::InkBone;
+	Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+	DrawPixelText(Text, X + 3.f * P + KeyW + 4.f * P, Y + FMath::RoundToFloat((PH - Size.Y) * 0.5f), Style, 0.f);
 }
 
-void AGBHUD::DrawToasts()
+void AGBHUD::DrawToasts(EGBHudSkin Skin, float TopY)
 {
 	const double Now = GetRealTime();
-	const float S = UIScale();
-	const float X = Canvas->ClipX * 0.5f;
-	float Y = Canvas->ClipY * 0.14f;
+	const float CX = Canvas->ClipX * 0.5f;
+	float Y = FMath::RoundToFloat(TopY >= 0.f ? TopY : Canvas->ClipY * 0.13f);
+	if (TopY >= 0.f && Toasts.Num() > 0)
+	{
+		// A stack anchored low (menus) moves up as it grows, so the newest toast never leaves the screen.
+		const float Step = Skin == EGBHudSkin::Cyberpunk ? 46.f * UIScale() : 16.f * ArtPixel();
+		const float Margin = Canvas->ClipY * 0.04f;
+		Y = FMath::RoundToFloat(FMath::Min(Y, Canvas->ClipY - Margin - Toasts.Num() * Step));
+	}
 	for (const FToast& Toast : Toasts)
 	{
 		const float Alpha = FMath::Clamp((float)(Toast.EndTime - Now) / GBHudLayout::ToastFadeTime, 0.f, 1.f);
-		const FVector2D Size = MeasureLabel(Toast.Text, 22.f);
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.5f * Alpha), X - Size.X * 0.5f - 12.f * S, Y - 4.f * S, Size.X + 24.f * S, Size.Y + 8.f * S);
-		DrawLabel(Toast.Text, FLinearColor(1.f, 1.f, 1.f, Alpha), X, Y, 22.f, 0.5f);
-		Y += Size.Y + 14.f * S;
+		const float In = FMath::Clamp((float)(Now - Toast.StartTime) / GBHudLayout::ToastInTime, 0.f, 1.f);
+		if (Skin == EGBHudSkin::Cyberpunk)
+		{
+			const float S = UIScale();
+			FCyTextStyle Style;
+			Style.Face = ECyFace::Condensed;
+			Style.Px = 21.f;
+			Style.Spacing = 90;
+			Style.bUpper = true;
+			Style.Color = GBAlpha(GBCy::Pale, Alpha);
+			const FVector2D Size = MeasureCyText(Toast.Text, Style);
+			const float W = Size.X + 44.f * S;
+			const float H = 38.f * S;
+			const float X = CX - W * 0.5f;
+			CyBox(X, Y, W, H, 10.f * S, GBAlpha(GBCy::Ink, 0.8f * Alpha), GBAlpha(GBCy::RedDim, Alpha), 0x2);
+			FillRect(X, Y, 4.f * S, H, GBAlpha(GBCy::Red, Alpha));
+			// Typed on: the letters appear left to right while the box opens.
+			const int32 Shown = FMath::Clamp(FMath::CeilToInt(Toast.Text.Len() * FMath::Clamp((float)(Now - Toast.StartTime) / 0.3f, 0.f, 1.f)), 0, Toast.Text.Len());
+			Style.Split = (1.f - In) * 4.f * S;
+			DrawCyText(Toast.Text.Left(Shown), X + 24.f * S, Y + (H - Size.Y) * 0.5f, Style, 0.f);
+			Y += H + 8.f * S;
+			continue;
+		}
+		const float P = ArtPixel();
+		const int32 Scale = FMath::Max(2, FMath::RoundToInt(P * 0.75f));
+		const FVector2D Size = MeasurePixelText(Toast.Text, Scale);
+		const float W = FMath::CeilToFloat((Size.X + 16.f * P) / P) * P;
+		const float H = 13.f * P;
+		const float X = FMath::RoundToFloat((CX - W * 0.5f) / P) * P;
+		const float Slide = FMath::RoundToFloat((1.f - In) * 6.f) * P;
+		const float TY = Y - Slide;
+		FillRect(X, TY, W, H, GBAlpha(GBRpg::StoneDeep, 0.92f * Alpha));
+		RpgStone(X + P, TY + P, W - 2.f * P, H - 2.f * P, FLinearColor(1.f, 1.f, 1.f, Alpha));
+		if (Alpha >= 1.f)
+		{
+			RpgFrame(X, TY, W, H, ERpgFrame::Gold);
+		}
+		else
+		{
+			DrawOutline(X, TY, W, H, GBAlpha(GBRpg::Gold2, Alpha), P);
+		}
+		FPixelTextStyle Style;
+		Style.Scale = Scale;
+		Style.Ink = &GBRpg::InkBone;
+		Style.Color = FLinearColor(1.f, 1.f, 1.f, Alpha);
+		Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+		DrawPixelText(Toast.Text, CX, TY + FMath::RoundToFloat((H - Size.Y) * 0.5f), Style, 0.5f);
+		Y += H + 3.f * P;
 	}
 }
 
 // ======================================================================== QTE (GDD 7)
 
-void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
+void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 {
 	const UGBQTEComponent* QTE = Player->GetQTE();
 	const FGBQTESession& Session = QTE->GetSession();
@@ -1173,44 +862,115 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
 	const float CX = W * 0.5f;
+	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
+	const float P = ArtPixel();
 
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.3f), 0.f, 0.f, W, H);
-	DrawLabel(GBHudText::SpellName(this, QTE->GetSpellId()), GBHudLocal::White, CX, H * 0.1f, 34.f, 0.5f, true, true);
+	// Backdrop.
+	FillRect(0.f, 0.f, W, H, FLinearColor(0.f, 0.f, 0.f, bCyber ? 0.5f : 0.38f));
+	if (bCyber)
+	{
+		DrawGlow(CX, H * 0.4f, W * 0.42f, H * 0.5f, FLinearColor(0.f, 0.f, 0.f, 0.55f));
+		CyScanlines(0.f, 0.f, W, H, 0.12f);
+		CyBrackets(W * 0.22f, H * 0.06f, W * 0.56f, H * 0.74f, 26.f * S, GBAlpha(GBCy::Red, 0.7f), 2.f * S);
+	}
+	else
+	{
+		DrawGlow(CX, H * 0.48f, W * 0.42f, H * 0.5f, GBAlpha(GBRpg::Arcane, 0.18f));
+	}
 
-	// Time bar for the whole QTE.
+	// Title and time.
+	const FString Title = GBHudText::SpellName(this, QTE->GetSpellId());
 	const float Limit = Session.Config.TimeLimit;
-	const float TimeFrac = Limit > 0.f ? Session.GetTimeRemaining() / Limit : 0.f;
-	const float BarW = 600.f * S;
-	DrawBar(Style, CX - BarW * 0.5f, H * 0.17f, BarW, 12.f * S, TimeFrac, TimeFrac > 0.3f ? Style.Accent : GBHudLocal::Bad, FString());
+	const float TimeFrac = Limit > 0.f ? FMath::Clamp(Session.GetTimeRemaining() / Limit, 0.f, 1.f) : 0.f;
+	const float BarW = FMath::RoundToFloat(560.f * S);
+	float TimeY = 0.f;
+	if (bCyber)
+	{
+		FCyTextStyle Sub;
+		Sub.Face = ECyFace::Mono;
+		Sub.Px = 16.f;
+		Sub.Color = GBCy::RedBright;
+		DrawCyText(TEXT("// SYNC SEQUENCE"), CX, H * 0.08f, Sub, 0.5f);
+		FCyTextStyle Big;
+		Big.Face = ECyFace::Condensed;
+		Big.Px = 50.f;
+		Big.Spacing = 120;
+		Big.bUpper = true;
+		Big.Color = GBCy::Red;
+		Big.Split = 2.f * S;
+		DrawCyText(Title, CX, H * 0.105f, Big, 0.5f);
+		TimeY = H * 0.19f;
+		CySlantBar(CX - BarW * 0.5f, TimeY, BarW, 10.f * S, 5.f * S, TimeFrac, 30, TimeFrac > 0.3f ? GBCy::Cyan : GBCy::Yellow, GBAlpha(GBCy::CyanDeep, 0.8f));
+		FCyTextStyle T;
+		T.Face = ECyFace::Mono;
+		T.Px = 14.f;
+		T.Color = TimeFrac > 0.3f ? GBCy::Cyan : GBCy::Yellow;
+		DrawCyText(FString::Printf(TEXT("%05.2f"), Session.GetTimeRemaining()), CX + BarW * 0.5f + 12.f * S, TimeY - 4.f * S, T, 0.f);
+	}
+	else
+	{
+		const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(5.f * S));
+		const FBox2D Plaque = RpgPlaque(Title.ToUpper(), CX, FMath::RoundToFloat(H * 0.08f), TitleScale);
+		TimeY = FMath::RoundToFloat(Plaque.Max.Y + 5.f * P);
+		RpgTube(FMath::RoundToFloat((CX - BarW * 0.5f) / P) * P, TimeY, FMath::RoundToFloat(BarW / P) * P, 6.f * P, TimeFrac, TimeFrac > 0.3f ? GBRpg::StaminaRamp : GBRpg::HealthRamp);
+	}
 
 	// Part 1: the key sequence (power).
 	const int32 NumKeys = Session.Sequence.Num();
 	const int32 Done = Session.SequenceResults.Num();
-	const float Box = 56.f * S;
-	const float Gap = 12.f * S;
-	const float RowY = H * 0.24f;
-	const float X0 = CX - (NumKeys * Box + FMath::Max(0, NumKeys - 1) * Gap) * 0.5f;
+	const float Box = bCyber ? FMath::RoundToFloat(60.f * S) : 18.f * P;
+	const float Gap = bCyber ? FMath::RoundToFloat(14.f * S) : 4.f * P;
+	const float RowY = FMath::RoundToFloat(H * 0.255f);
+	const float X0 = FMath::RoundToFloat(CX - (NumKeys * Box + FMath::Max(0, NumKeys - 1) * Gap) * 0.5f);
 	int32 RightKeys = 0;
 	for (int32 i = 0; i < NumKeys; ++i)
 	{
 		const bool bConsumed = i < Done;
 		const bool bCurrent = Session.Phase == EGBQTEPhase::Sequence && i == Done;
-		if (bConsumed && Session.SequenceResults[i])
+		const bool bRight = bConsumed && Session.SequenceResults[i];
+		if (bRight)
 		{
 			++RightKeys;
 		}
-		const float Grow = bCurrent ? 6.f * S : 0.f;
-		const float X = X0 + i * (Box + Gap) - Grow;
-		const float Y = RowY - Grow;
-		const float Size = Box + 2.f * Grow;
-		const FLinearColor Fill = bConsumed ? (Session.SequenceResults[i] ? GBHudLocal::Good : GBHudLocal::Bad) : FLinearColor(0.f, 0.f, 0.f, 0.65f);
-		DrawRect(Fill, X, Y, Size, Size);
-		DrawOutline(X, Y, Size, Size, bCurrent ? Style.Accent : FLinearColor(1.f, 1.f, 1.f, 0.5f), (bCurrent ? 3.f : 1.5f) * S);
-		DrawLabel(GBHudLocal::QTEKeyLetter(Session.Sequence[i]), GBHudLocal::White, X + Size * 0.5f, Y + Size * 0.5f - 15.f * S, 28.f, 0.5f);
+		const float X = X0 + i * (Box + Gap);
+		const FString Letter = GBHudLocal::QTEKeyLetter(Session.Sequence[i]);
+		if (bCyber)
+		{
+			const FLinearColor Fill = bConsumed ? (bRight ? GBAlpha(GBCy::Green, 0.25f) : GBAlpha(GBCy::Red, 0.35f)) : GBAlpha(GBCy::Ink, 0.75f);
+			const FLinearColor Line = bConsumed ? (bRight ? GBCy::Green : GBCy::Red) : (bCurrent ? GBCy::Cyan : GBCy::RedDim);
+			CyBox(X, RowY, Box, Box, 10.f * S, Fill, Line, 0x5, bCurrent ? 2.f : 1.f);
+			if (bCurrent)
+			{
+				CyBrackets(X - 6.f * S, RowY - 6.f * S, Box + 12.f * S, Box + 12.f * S, 10.f * S, GBCy::Cyan, 2.f * S);
+				DrawGlow(X + Box * 0.5f, RowY + Box * 0.5f, Box, Box, GBAlpha(GBCy::Cyan, 0.18f));
+			}
+			FCyTextStyle KeyStyle;
+			KeyStyle.Face = ECyFace::Condensed;
+			KeyStyle.Px = 34.f;
+			KeyStyle.Color = bConsumed ? (bRight ? GBCy::Green : GBCy::Red) : (bCurrent ? GBCy::Pale : GBCy::RedBright);
+			const FVector2D KS = MeasureCyText(Letter, KeyStyle);
+			DrawCyText(Letter, X + Box * 0.5f, RowY + (Box - KS.Y) * 0.5f, KeyStyle, 0.5f);
+		}
+		else
+		{
+			if (bCurrent)
+			{
+				DrawGlow(X + Box * 0.5f, RowY + Box * 0.5f, Box * 1.1f, Box * 1.1f, GBAlpha(GBRpg::EmberLight, 0.35f));
+			}
+			RpgFrame(X, RowY, Box, Box, bCurrent ? ERpgFrame::Gold : ERpgFrame::Iron);
+			const float In = bCurrent ? 3.f * P : 4.f * P;
+			RpgStone(X + In, RowY + In, Box - 2.f * In, Box - 2.f * In, bConsumed ? (bRight ? FLinearColor(0.5f, 1.f, 0.5f, 1.f) : FLinearColor(1.f, 0.4f, 0.35f, 1.f)) : FLinearColor::White);
+			FPixelTextStyle KeyStyle;
+			KeyStyle.Scale = FMath::Max(2, FMath::RoundToInt(P));
+			KeyStyle.Ink = bConsumed ? (bRight ? &GBRpg::InkIce : &GBRpg::InkBlood) : (bCurrent ? &GBRpg::InkGold : &GBRpg::InkBone);
+			KeyStyle.Outline = GBRpg::Outline;
+			DrawPixelText(Letter, X + Box * 0.5f, RowY + FMath::RoundToFloat((Box - 7.f * KeyStyle.Scale) * 0.5f), KeyStyle, 0.5f);
+		}
 	}
+	const float BelowKeys = RowY + Box + (bCyber ? 18.f * S : 5.f * P);
 	if (Session.Phase == EGBQTEPhase::Sequence)
 	{
-		DrawLabel(TEXT("Press the keys in order"), GBHudLocal::White, CX, RowY + Box + 14.f * S, 18.f, 0.5f);
+		UiText(Skin, EGBTextSize::Body, EGBTextTone::Normal, TEXT("Press the keys in order"), CX, BelowKeys, 0.5f);
 	}
 
 	// Part 2: the gesture (reach).
@@ -1224,14 +984,15 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
 	if (Session.Phase == EGBQTEPhase::Gesture && Judged < NumGestures)
 	{
 		const EGBGesture Gesture = Session.Gestures[Judged];
-		FString Title = GBHudLocal::GestureText(Gesture);
+		FString GestureTitle = GBHudLocal::GestureText(Gesture);
 		if (NumGestures > 1)
 		{
-			Title += FString::Printf(TEXT(" (%d/%d)"), Judged + 1, NumGestures);
+			GestureTitle += FString::Printf(TEXT(" (%d/%d)"), Judged + 1, NumGestures);
 		}
-		DrawLabel(Title, GBHudLocal::White, CX, H * 0.34f, 24.f, 0.5f);
+		UiText(Skin, EGBTextSize::Heading, EGBTextTone::Accent, GestureTitle, CX, H * 0.34f, 0.5f);
 		const float CY = H * 0.52f;
-		DrawGestureHint((uint8)Gesture, CX, CY, 110.f * S, FLinearColor(1.f, 1.f, 1.f, 0.35f));
+		const FLinearColor HintColor = bCyber ? GBAlpha(GBCy::Cyan, 0.35f) : GBAlpha(GBRpg::Gold3, 0.4f);
+		DrawGestureHint((uint8)Gesture, CX, CY, 110.f * S, HintColor, (bCyber ? 2.f : 5.f) * S);
 
 		// The stroke is in accumulated screen units from (0,0): draw it centered on screen, shrunk if it is too big.
 		const TArray<FVector2D>& Stroke = Session.CurrentStroke;
@@ -1247,27 +1008,68 @@ void AGBHUD::DrawQTE(AGBPlayerCharacter* Player, const FGBHudSkinStyle& Style)
 			const FVector2D Center = (Min + Max) * 0.5f;
 			const float Extent = FMath::Max3((float)(Max.X - Min.X), (float)(Max.Y - Min.Y), 1.f);
 			const float Fit = FMath::Min(1.f, 320.f * S / Extent);
+			const FLinearColor Glow = bCyber ? GBAlpha(GBCy::Cyan, 0.3f) : GBAlpha(GBRpg::ArcaneLight, 0.3f);
+			const FLinearColor Core = bCyber ? GBCy::Pale : GBRpg::Gold4;
 			for (int32 i = 1; i < Stroke.Num(); ++i)
 			{
 				const FVector2D A = (Stroke[i - 1] - Center) * Fit;
 				const FVector2D B = (Stroke[i] - Center) * Fit;
-				DrawLine(CX + A.X, CY + A.Y, CX + B.X, CY + B.Y, Style.Accent, 3.f * S);
+				DrawLine(CX + A.X, CY + A.Y, CX + B.X, CY + B.Y, Glow, 10.f * S);
 			}
+			for (int32 i = 1; i < Stroke.Num(); ++i)
+			{
+				const FVector2D A = (Stroke[i - 1] - Center) * Fit;
+				const FVector2D B = (Stroke[i] - Center) * Fit;
+				DrawLine(CX + A.X, CY + A.Y, CX + B.X, CY + B.Y, Core, 3.f * S);
+			}
+			const FVector2D Tip = (Stroke.Last() - Center) * Fit;
+			DrawGlow(CX + Tip.X, CY + Tip.Y, 22.f * S, 22.f * S, bCyber ? GBAlpha(GBCy::Cyan, 0.6f) : GBAlpha(GBRpg::EmberLight, 0.6f));
 		}
 	}
 
 	// Running scores.
 	const float Power = NumKeys > 0 ? (float)RightKeys / NumKeys : 0.f;
 	const float Reach = NumGestures > 0 ? ScoreSum / NumGestures : 0.f;
-	DrawLabel(FString::Printf(TEXT("POWER %d%%"), FMath::RoundToInt(Power * 100.f)), GBHudLocal::White, CX - 220.f * S, H * 0.72f, 24.f, 0.5f, true, true);
-	DrawLabel(FString::Printf(TEXT("REACH %d%%"), FMath::RoundToInt(Reach * 100.f)), GBHudLocal::White, CX + 220.f * S, H * 0.72f, 24.f, 0.5f, true, true);
+	const float ScoreY = H * 0.72f;
+	for (int32 i = 0; i < 2; ++i)
+	{
+		const float SX = CX + (i == 0 ? -220.f : 220.f) * S;
+		const FString Label = i == 0 ? TEXT("POWER") : TEXT("REACH");
+		const FString Value = FString::Printf(TEXT("%d%%"), FMath::RoundToInt((i == 0 ? Power : Reach) * 100.f));
+		if (bCyber)
+		{
+			FCyTextStyle L;
+			L.Face = ECyFace::Mono;
+			L.Px = 16.f;
+			L.Color = GBCy::RedBright;
+			CyBox(SX - 90.f * S, ScoreY - 10.f * S, 180.f * S, 96.f * S, 12.f * S, GBAlpha(GBCy::Ink, 0.7f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
+			DrawCyText(Label, SX, ScoreY, L, 0.5f);
+			FCyTextStyle V;
+			V.Face = ECyFace::Condensed;
+			V.Px = 44.f;
+			V.Color = GBCy::Cyan;
+			DrawCyText(Value, SX, ScoreY + 18.f * S, V, 0.5f);
+			FillRect(SX - 60.f * S, ScoreY + 74.f * S, 120.f * S, 1.f, GBCy::RedDim);
+		}
+		else
+		{
+			const float PW = 44.f * P;
+			const float PH = 26.f * P;
+			const float PX = FMath::RoundToFloat((SX - PW * 0.5f) / P) * P;
+			const float PY = FMath::RoundToFloat((ScoreY - 4.f * P) / P) * P;
+			FillRect(PX, PY, PW, PH, GBRpg::Stone1);
+			RpgStone(PX, PY, PW, PH);
+			RpgFrame(PX, PY, PW, PH, ERpgFrame::Gold);
+			UiText(Skin, EGBTextSize::Small, EGBTextTone::Normal, Label, SX, PY + 5.f * P, 0.5f);
+			UiText(Skin, EGBTextSize::Number, EGBTextTone::Accent, Value, SX, PY + 11.f * P, 0.5f);
+		}
+	}
 }
 
-void AGBHUD::DrawGestureHint(uint8 GestureByte, float CenterX, float CenterY, float Radius, const FLinearColor& Color)
+void AGBHUD::DrawGestureHint(uint8 GestureByte, float CenterX, float CenterY, float Radius, const FLinearColor& Color, float Thick)
 {
 	const EGBGesture Gesture = (EGBGesture)GestureByte;
 	const float S = UIScale();
-	const float Thick = 4.f * S;
 	const FVector2D C(CenterX, CenterY);
 	auto Line = [this, &Color, Thick](const FVector2D& A, const FVector2D& B)
 	{
@@ -1317,7 +1119,7 @@ void AGBHUD::DrawGestureHint(uint8 GestureByte, float CenterX, float CenterY, fl
 
 // ======================================================================== full-screen effects
 
-void AGBHUD::DrawDamageFlash()
+void AGBHUD::DrawDamageFlash(EGBHudSkin Skin)
 {
 	const float Elapsed = (float)(GetRealTime() - LastDamageTime);
 	if (Elapsed < 0.f || Elapsed >= GBHudLayout::DamageFlashTime)
@@ -1327,16 +1129,36 @@ void AGBHUD::DrawDamageFlash()
 	const float Strength = 1.f - Elapsed / GBHudLayout::DamageFlashTime;
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
-	const float T = 18.f * UIScale();
-	constexpr int32 DamageLayers = 5;
-	for (int32 k = 0; k < DamageLayers; ++k)
+	if (Skin == EGBHudSkin::Cyberpunk)
 	{
+		const float S = UIScale();
+		const FLinearColor Edge = GBAlpha(GBCy::Red, 0.45f * Strength);
+		DrawFade(0.f, 0.f, W * 0.2f, H, Edge, true);
+		DrawFade(W * 0.8f, 0.f, W * 0.2f, H, Edge, false);
+		// A few torn scan bands: the "signal hit" look.
+		const int32 Seed = FMath::FloorToInt((float)GetRealTime() * 30.f);
+		for (int32 i = 0; i < 4; ++i)
+		{
+			const float R1 = FMath::Frac(FMath::Sin((Seed + i * 17) * 12.9898f) * 43758.5453f);
+			const float R2 = FMath::Frac(FMath::Sin((Seed + i * 31) * 78.233f) * 43758.5453f);
+			const float BY = R1 * H;
+			const float BH = (2.f + R2 * 8.f) * S;
+			FillRect(0.f, BY, W, BH, GBAlpha(i % 2 ? GBCy::Cyan : GBCy::Red, 0.12f * Strength));
+		}
+		return;
+	}
+	// RPG: a stepped blood vignette in whole art pixels.
+	const float P = ArtPixel();
+	constexpr int32 FlashLayers = 5;
+	for (int32 k = 0; k < FlashLayers; ++k)
+	{
+		const float T = 3.f * P;
 		const float Inset = k * T;
-		const FLinearColor Color(0.8f, 0.f, 0.f, 0.4f * Strength * (1.f - (float)k / DamageLayers));
-		DrawRect(Color, Inset, Inset, W - 2.f * Inset, T);
-		DrawRect(Color, Inset, H - Inset - T, W - 2.f * Inset, T);
-		DrawRect(Color, Inset, Inset + T, T, H - 2.f * (Inset + T));
-		DrawRect(Color, W - Inset - T, Inset + T, T, H - 2.f * (Inset + T));
+		const FLinearColor Color = GBAlpha(GBRpg::Blood, 0.42f * Strength * (1.f - (float)k / FlashLayers));
+		FillRect(Inset, Inset, W - 2.f * Inset, T, Color);
+		FillRect(Inset, H - Inset - T, W - 2.f * Inset, T, Color);
+		FillRect(Inset, Inset + T, T, H - 2.f * (Inset + T), Color);
+		FillRect(W - Inset - T, Inset + T, T, H - 2.f * (Inset + T), Color);
 	}
 }
 
@@ -1348,5 +1170,5 @@ void AGBHUD::DrawEraFade()
 	{
 		return;
 	}
-	DrawRect(FLinearColor(0.82f, 0.9f, 1.f, Alpha), 0.f, 0.f, Canvas->ClipX, Canvas->ClipY);
+	FillRect(0.f, 0.f, Canvas->ClipX, Canvas->ClipY, FLinearColor(0.82f, 0.9f, 1.f, Alpha));
 }

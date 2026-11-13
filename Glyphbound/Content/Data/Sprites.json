@@ -1261,6 +1261,296 @@
 				"wwwwddwkwwwwwwdw",
 				"kkkkkkkkkkkkkkkk"
 			]
+		},
+		{
+			"Id": "icon_fireball",
+			"Palette": {
+				"o": "#000000",
+				"d": "#4B0F0F",
+				"r": "#BC2A12",
+				"f": "#F03416",
+				"a": "#F3610B",
+				"y": "#FFD25A",
+				"w": "#FFF6C8"
+			},
+			"Rows": [
+				"................",
+				"..........oooo..",
+				"........ooyyyyo.",
+				".......oyywwwyyo",
+				"....o.oayywwwwyo",
+				"...oaoaayywwwyyo",
+				"..oafaaaayywyyao",
+				".oaffraaaayyyaao",
+				".ofrrffaaaaaaao.",
+				"ofrdorffaaaaao..",
+				"odo.ofrffaaoo...",
+				"oo..ofrrffo.....",
+				"...ofrdoo.......",
+				"..ofdo..........",
+				"..oo............",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_firewall",
+			"Palette": {
+				"o": "#000000",
+				"d": "#4B0F0F",
+				"r": "#BC2A12",
+				"f": "#F03416",
+				"a": "#F3610B",
+				"y": "#FFD25A",
+				"w": "#FFF6C8"
+			},
+			"Rows": [
+				"................",
+				"....o.......o...",
+				"...oyo..o..oyo..",
+				"...oyo.oyo.oyo..",
+				"..oayaooyooayao.",
+				"..oayyaoyaoayao.",
+				".oaayyaoayaayaao",
+				".oaywyaayywyyaao",
+				".ofaywyaywwyyafo",
+				".ofaaywaywwyaafo",
+				".ofaaayayyyaaafo",
+				"ofrffaaaaaaaffro",
+				"ordrrfffffffrrdo",
+				"oddddrrrrrrrdddo",
+				".oooooooooooooo.",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_flamethrower",
+			"Palette": {
+				"o": "#000000",
+				"d": "#4B0F0F",
+				"r": "#BC2A12",
+				"f": "#F03416",
+				"a": "#F3610B",
+				"y": "#FFD25A",
+				"w": "#FFF6C8"
+			},
+			"Rows": [
+				"................",
+				".............o..",
+				".........o..oyo.",
+				"......o.oyooyyo.",
+				"....ooaoayyayywo",
+				"..ooffaaayywwwyo",
+				"ooffrfaaayywwwyo",
+				"odrrffaaayyywwyo",
+				"ooffrfaaayywwyyo",
+				"..ooffaaaayyyyao",
+				"....ooaoaayaayo.",
+				"......o.oaoayo..",
+				".........o..oo..",
+				"................",
+				"................",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_lightningbolt",
+			"Palette": {
+				"o": "#000000",
+				"y": "#FFE45A",
+				"w": "#FFFFF0"
+			},
+			"Rows": [
+				"................",
+				".........oooooo.",
+				"........oyyyyyo.",
+				".......oywwyyo..",
+				"......oywwyyo...",
+				".....oywwyyo....",
+				"....oyywwyyooo..",
+				"...oyywwwwwwyyo.",
+				"..oooooywwyyoo..",
+				"......oywwyo....",
+				".....oywyyo.....",
+				"....oywyyo......",
+				"...oywyoo.......",
+				"..oyyoo.........",
+				"..ooo...........",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_lightningrune",
+			"Palette": {
+				"o": "#000000",
+				"g": "#C88A08",
+				"y": "#FFE45A",
+				"w": "#FFFFF0"
+			},
+			"Rows": [
+				"................",
+				"....oooggooo....",
+				"...oggggggggo...",
+				"..oggo....ogyo..",
+				".oggo.....yyggo.",
+				".ogo.....yw.ogo.",
+				".og.....yw...go.",
+				".gg....ywwyy.gg.",
+				".gg.....wy...gg.",
+				".og....yw....go.",
+				".ogo..yw....ogo.",
+				".oggoy.....oggo.",
+				"..oygo....oggo..",
+				"...oggggggggo...",
+				"....oooggooo....",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_staticorb",
+			"Palette": {
+				"o": "#000000",
+				"d": "#441974",
+				"m": "#8548C0",
+				"l": "#C0A2E1",
+				"y": "#FFE45A",
+				"w": "#FFFFFF"
+			},
+			"Rows": [
+				"................",
+				".....oooooo.....",
+				"...oommmmmmoo...",
+				"..ommllllmmmmo..",
+				".omllwwllmmmmmo.",
+				".omlwwlmmyymmmo.",
+				"omllwlmmyommmmdo",
+				"omllmmyyommmmmdo",
+				"ommmmyyyyymmmddo",
+				"ommmmmmoyymmmddo",
+				"ommmmmoyymmmdddo",
+				".ommmmyymmmmddo.",
+				".ommmmmmmmmdddo.",
+				"..oddmmmmmdddo..",
+				"...oodddddoo....",
+				".....oooooo....."
+			]
+		},
+		{
+			"Id": "icon_icewall",
+			"Palette": {
+				"o": "#000000",
+				"d": "#0E4A55",
+				"c": "#1C8B9B",
+				"t": "#14AFB4",
+				"i": "#00F6FF",
+				"w": "#D8FFFF"
+			},
+			"Rows": [
+				"................",
+				"oooooooooooooooo",
+				"owiiittcowiittco",
+				"oiitttccoitttcco",
+				"ottcccddotcccddo",
+				"oooooooooooooooo",
+				"owiiowiiittcowio",
+				"oiitoiitttccoito",
+				"otccottcccddotco",
+				"oooooooooooooooo",
+				"owiiittcowiittco",
+				"oiitttccoitttcco",
+				"ottcccddotcccddo",
+				"oooooooooooooooo",
+				"................",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_iceshield",
+			"Palette": {
+				"o": "#000000",
+				"d": "#0E4A55",
+				"c": "#1C8B9B",
+				"t": "#14AFB4",
+				"i": "#00F6FF",
+				"w": "#D8FFFF"
+			},
+			"Rows": [
+				"................",
+				"..oooooooooooo..",
+				".owwwiiiiiittco.",
+				".owiiiiiiitttco.",
+				".owiiiwiiitttco.",
+				".oiiiwwwiitttco.",
+				".oiiiiwiitttcco.",
+				".oiiiiiitttccco.",
+				".otiiiitttccddo.",
+				"..otiitttccddo..",
+				"..ottttccccddo..",
+				"...ottcccddo....",
+				"....otccddo.....",
+				".....otddo......",
+				"......oo........",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_icefloor",
+			"Palette": {
+				"o": "#000000",
+				"d": "#0E4A55",
+				"c": "#1C8B9B",
+				"t": "#14AFB4",
+				"i": "#00F6FF",
+				"w": "#D8FFFF"
+			},
+			"Rows": [
+				"................",
+				"................",
+				"..........w.....",
+				".........www....",
+				"..........w.....",
+				".....oooooooooo.",
+				"....owwiiiiitco.",
+				"...owiiwiiitcco.",
+				"..oiiiiiitttcdo.",
+				".otiiiwiitttcdo.",
+				"otttttttcccccdo.",
+				"occccccccdddddo.",
+				"oddddddddddddo..",
+				".ooooooooooooo..",
+				"................",
+				"................"
+			]
+		},
+		{
+			"Id": "icon_weaponenchant",
+			"Palette": {
+				"o": "#000000",
+				"d": "#441974",
+				"m": "#8548C0",
+				"l": "#C0A2E1",
+				"w": "#FFFFFF",
+				"y": "#FFE45A",
+				"b": "#C88A08",
+				"n": "#5A3A08"
+			},
+			"Rows": [
+				"................",
+				"......oo........",
+				".....omlo...l...",
+				"....omlwlo.lwl..",
+				"....ommllo..l...",
+				"....odmmmo......",
+				"...oooooooo.....",
+				"...oywyyybo.....",
+				"...oywyyybo.....",
+				"...oywyybno..l..",
+				"...oywyybno.lwl.",
+				"...oyyybbno..l..",
+				"...oonnnnoo.....",
+				"...obbbbbbo.....",
+				"....oooooo......",
+				"................"
+			]
 		}
 	]
 }

@@ -123,7 +123,7 @@ void AGBHUD::HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float 
 	}
 }
 
-void AGBHUD::DrawDamageNumbers()
+void AGBHUD::DrawDamageNumbers(EGBHudSkin Skin)
 {
 	using namespace GBDamageNumberLocal;
 	if (DamageNumbers.Num() == 0 || !Canvas)
@@ -138,7 +138,6 @@ void AGBHUD::DrawDamageNumbers()
 	const APlayerCameraManager* Camera = PlayerOwner ? PlayerOwner->PlayerCameraManager.Get() : nullptr;
 	const FVector CameraLocation = Camera ? Camera->GetCameraLocation() : FVector::ZeroVector;
 	const FVector CameraForward = Camera ? Camera->GetCameraRotation().Vector() : FVector::ForwardVector;
-	const float Outline = FMath::Max(1.f, 2.f * S);
 
 	for (const FDamageNumber& Number : DamageNumbers)
 	{
@@ -169,15 +168,34 @@ void AGBHUD::DrawDamageNumbers()
 
 		const float X = Screen.X + Number.Drift * Tuning.DriftSpeed * S * Age;
 		const FString Text = FString::Printf(TEXT("%d"), FMath::Max(1, FMath::RoundToInt(Number.Amount)));
-		const FVector2D Size = MeasureLabel(Text, SizePx, true);
-		const float Y = Screen.Y - Tuning.RiseSpeed * S * Age - Size.Y * 0.5f;
-
-		// Dark outline so the number reads on any background.
-		const FLinearColor Dark(0.f, 0.f, 0.f, 0.85f * Alpha);
-		DrawLabel(Text, Dark, X - Outline, Y, SizePx, 0.5f, false, true);
-		DrawLabel(Text, Dark, X + Outline, Y, SizePx, 0.5f, false, true);
-		DrawLabel(Text, Dark, X, Y - Outline, SizePx, 0.5f, false, true);
-		DrawLabel(Text, Dark, X, Y + Outline, SizePx, 0.5f, false, true);
-		DrawLabel(Text, Color, X, Y, SizePx, 0.5f, false, true);
+		const float Rise = Tuning.RiseSpeed * S * Age;
+		if (Skin == EGBHudSkin::Cyberpunk)
+		{
+			// Condensed numerals with a dark keyline; big hits in yellow with a chromatic split.
+			FCyTextStyle Style;
+			Style.Face = ECyFace::Condensed;
+			Style.Px = SizePx * 1.25f;
+			Style.Color = Number.bBig ? GBAlpha(GBCy::Yellow, Alpha) : Color;
+			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.85f);
+			Style.Split = Number.bBig ? 2.f * S : 0.f;
+			const FVector2D Size = MeasureCyText(Text, Style);
+			DrawCyText(Text, X, Screen.Y - Rise - Size.Y * 0.5f, Style, 0.5f);
+		}
+		else
+		{
+			// Whole pixels of the game's pixel font: the size steps between integer scales.
+			FPixelTextStyle Style;
+			Style.Scale = FMath::Max(2, FMath::RoundToInt(SizePx * S / 7.f));
+			Style.Color = Color;
+			Style.Ink = Number.bBig ? &GBRpg::InkEmber : nullptr;
+			if (Number.bBig)
+			{
+				Style.Color = FLinearColor(1.f, 1.f, 1.f, Alpha);
+			}
+			Style.Outline = GBRpg::Outline;
+			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.6f);
+			const float Y = Screen.Y - Rise - 3.5f * Style.Scale;
+			DrawPixelText(Number.bBig ? Text + TEXT("!") : Text, X, Y, Style, 0.5f);
+		}
 	}
 }

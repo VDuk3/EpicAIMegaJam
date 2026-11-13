@@ -50,6 +50,12 @@ public:
 	/** Drops the cache (after a data reload). */
 	void ClearCache();
 
+	/** True if the data has a sprite with this id (GetSprite never returns null, so callers that want a fallback ask first). */
+	bool HasSprite(FName SpriteId) const { return GetSpriteSize(SpriteId) != FIntPoint::ZeroValue; }
+
+	/** A transient pixel texture (nearest filtering, no mips, no compression) from BGRA pixels, rows top to bottom. Null on bad input. */
+	static UTexture2D* CreatePixelTexture(const TArray<FColor>& Pixels, int32 Width, int32 Height, FName DebugName, bool bWrap = false);
+
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
