@@ -78,6 +78,8 @@ public:
 	void ShowMessage(const FString& Text, float Duration = 2.5f);
 
 	EGBHudSkin GetCurrentSkin() const;
+	/** Skin of the menus both eras share: the current era's look (past = RPG, future = cyberpunk). */
+	EGBHudSkin GetMenuSkin() const;
 
 	// ---- Menu input, forwarded by AGBPlayerController while a menu is open ----
 	void OnMenuOpened(EGBMenu Menu);
@@ -185,6 +187,8 @@ protected:
 		SkillNode,
 		SkillReset,
 		SkillAddPoint,
+		/** Skill trees: the tab of one tree (Index 0 = spells, 1 = weapons). */
+		SkillTreeTab,
 		DeathScreen
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */
@@ -235,6 +239,8 @@ protected:
 		FName PendingCombine = NAME_None;
 		/** Skill trees: the selected node (kept by id, data can be reloaded). */
 		FName SkillCursor = NAME_None;
+		/** Skill trees: the node last selected in each tree, so switching back returns to it. */
+		FName TreeCursor[2] = { NAME_None, NAME_None };
 	};
 	FMenuState MenuState;
 
@@ -424,6 +430,10 @@ protected:
 	TArray<FName> GetAssignableSpells(AGBPlayerCharacter* Player) const;
 	TArray<FSkillNodeRef> GetSkillNodes() const;
 	void NavigateSkills(FIntPoint Direction);
+	/** Shows one skill tree (0 = spells, 1 = weapons): the cursor goes back to that tree's last node, or its first. */
+	void SelectSkillTree(int32 Tree);
+	/** The tree shown on the skill pages: the selected node's tree. */
+	int32 GetShownSkillTree() const;
 	void ConfirmItem(AGBPlayerCharacter* Player);
 	void ConfirmWeapon(AGBPlayerCharacter* Player);
 	void ConfirmSpellSlot(AGBPlayerCharacter* Player);

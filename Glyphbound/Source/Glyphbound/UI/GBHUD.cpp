@@ -198,6 +198,17 @@ EGBHudSkin AGBHUD::GetCurrentSkin() const
 	return Equipment ? Equipment->GetHudSkin() : EGBHudSkin::Rpg90s;
 }
 
+EGBHudSkin AGBHUD::GetMenuSkin() const
+{
+	// Menus both eras share (inventory, pause, skill trees, death) take the look of the era the player is in
+	// (owner, Nov 13): the past is the 90s RPG, the future is cyberpunk. The in-game HUD keeps following the held item.
+	if (const UGBEraSubsystem* Era = UGBEraSubsystem::Get(this))
+	{
+		return Era->GetCurrentEra() == EGBEra::Future ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+	}
+	return GetCurrentSkin();
+}
+
 void AGBHUD::ShowMessage(const FString& Text, float Duration)
 {
 	if (Text.IsEmpty())
@@ -474,7 +485,7 @@ void AGBHUD::DrawHUD()
 		UpdateMenuMouse();
 		DrawMenus(Player);
 		// Menu actions answer with toasts (skill unlocks, combines): above the menu, low, clear of titles and tabs.
-		DrawToasts(Skin, Canvas->ClipY * 0.80f);
+		DrawToasts(GetMenuSkin(), Canvas->ClipY * 0.80f);
 	}
 }
 
@@ -711,9 +722,8 @@ void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 		Tick(CX - Offset - L, CY - T * 0.5f, L, T);
 		Tick(CX + Offset, CY - T * 0.5f, L, T);
 		Tick(CX - T * 0.5f, CY + Offset, T, L);
-		// The top tick is a small chevron: the one distinctive mark of the gun reticle.
-		Tick(CX - T * 0.5f, CY - Offset - L, T, L * 0.55f);
-		FillRect(CX - 3.f * T, CY - Offset - L - T, 6.f * T, T, GBAlpha(GBCy::Red, 0.9f));
+		// Four equal ticks (owner, Nov 13: the red bar that capped the top tick read as a stray line).
+		Tick(CX - T * 0.5f, CY - Offset - L, T, L);
 		return;
 	}
 

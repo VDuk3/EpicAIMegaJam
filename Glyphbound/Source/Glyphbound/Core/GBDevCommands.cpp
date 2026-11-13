@@ -656,6 +656,11 @@ namespace GBSmokeRun
 			{
 				PC->SetMenu(EGBMenu::SkillTrees);
 			}
+			// The trees are two pages: show the weapon one.
+			if (AGBHUD* Hud = AGBHUD::Get(Player->GetWorld()))
+			{
+				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_FireRate"), false);
+			}
 			Shot(TEXT("12_weapon_tree"));
 		});
 		Add(16.6f + S, TEXT("weapon perks: reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
@@ -2910,7 +2915,7 @@ namespace GBSmokeRun
 		Add(U + 3.9f, TEXT("ui: screenshot rpg spells"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_06_rpg_spells")); });
 		Add(U + 4.1f, TEXT("ui: rpg spell chooser"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 2, 1, NAME_None, true); });
 		Add(U + 4.5f, TEXT("ui: screenshot rpg spell chooser"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_07_rpg_spell_choose")); });
-		Add(U + 4.7f, TEXT("ui: rpg inventory skills"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, NAME_None, false); });
+		Add(U + 4.7f, TEXT("ui: rpg inventory skills, spell tree"), [Cursor](UWorld* World, AGBPlayerCharacter*) { Cursor(World, 3, 0, TEXT("Spell_FireballDamage"), false); });
 		Add(U + 5.1f, TEXT("ui: screenshot rpg skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_08_rpg_skills_page")); });
 		Add(U + 5.3f, TEXT("ui: rpg skill trees, a weapon node"), [Menu, Cursor](UWorld* World, AGBPlayerCharacter* Player)
 		{
@@ -2918,6 +2923,8 @@ namespace GBSmokeRun
 			Cursor(World, 0, 0, TEXT("Weapon_FireRate"), false);
 		});
 		Add(U + 5.7f, TEXT("ui: screenshot rpg skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09_rpg_skilltrees")); });
+		Add(U + 5.75f, TEXT("ui: rpg skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(1); } });
+		Add(U + 5.85f, TEXT("ui: screenshot rpg skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_09b_rpg_skilltrees_other")); });
 		Add(U + 5.9f, TEXT("ui: rpg QTE"), [Menu](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Menu(Player, EGBMenu::None);
@@ -3002,6 +3009,8 @@ namespace GBSmokeRun
 		Add(U + 27.8f, TEXT("ui: screenshot cyber skills page"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_20_cyber_skills_page")); });
 		Add(U + 28.0f, TEXT("ui: cyber skill trees"), [Menu](UWorld*, AGBPlayerCharacter* Player) { Menu(Player, EGBMenu::SkillTrees); });
 		Add(U + 28.4f, TEXT("ui: screenshot cyber skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21_cyber_skilltrees")); });
+		Add(U + 28.45f, TEXT("ui: cyber skill trees, tab to the other tree"), [](UWorld* World, AGBPlayerCharacter*) { if (AGBHUD* Hud = AGBHUD::Get(World)) { Hud->MenuTab(-1); } });
+		Add(U + 28.55f, TEXT("ui: screenshot cyber skill trees, other tree"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_21b_cyber_skilltrees_other")); });
 		Add(U + 28.6f, TEXT("ui: cyber death"), [Menu](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Menu(Player, EGBMenu::None);

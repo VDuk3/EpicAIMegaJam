@@ -152,8 +152,50 @@ void AGBHUD::OnMenuOpened(EGBMenu Menu)
 	ResetMenuMouse();
 	if (Menu == EGBMenu::SkillTrees)
 	{
-		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
-		MenuState.SkillCursor = Nodes.Num() > 0 ? Nodes[0].Id : NAME_None;
+		// The trees are two pages: open on the one of the held item (gun = weapons, anything else = spells).
+		const AGBPlayerCharacter* Player = GetPlayer();
+		const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+		const AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
+		SelectSkillTree(Item && Item->GetSlot() == EGBHeldSlot::Gun ? 1 : 0);
+	}
+}
+
+int32 AGBHUD::GetShownSkillTree() const
+{
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+	return Current ? Current->Tree : 0;
+}
+
+void AGBHUD::SelectSkillTree(int32 Tree)
+{
+	Tree = FMath::Clamp(Tree, 0, 1);
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+	if (Current)
+	{
+		if (Current->Tree == Tree)
+		{
+			return;
+		}
+		MenuState.TreeCursor[Current->Tree] = Current->Id;
+		// The clickables of the tree being left are stale until the next draw: a hover or a click on them must not
+		// pull the cursor back to (or unlock) a node that is no longer shown (Sol 6.1 review).
+		MenuHits.Reset();
+	}
+	const FName Remembered = MenuState.TreeCursor[Tree];
+	const FSkillNodeRef* Target = Nodes.FindByPredicate([Remembered, Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree && Node.Id == Remembered; });
+	if (!Target)
+	{
+		Target = Nodes.FindByPredicate([Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree; });
+	}
+	if (Target)
+	{
+		MenuState.SkillCursor = Target->Id;
+	}
+	else if (!Current && Nodes.Num() > 0)
+	{
+		MenuState.SkillCursor = Nodes[0].Id;
 	}
 }
 
@@ -166,9 +208,13 @@ void AGBHUD::OnMenuClosed(EGBMenu Menu)
 void AGBHUD::SetInventoryPage(int32 NewPage)
 {
 	const FName KeepSkill = MenuState.SkillCursor;
+	const FName KeepTree0 = MenuState.TreeCursor[0];
+	const FName KeepTree1 = MenuState.TreeCursor[1];
 	MenuState = FMenuState();
 	MenuState.Page = GBHudMenuLocal::Wrap(NewPage, PageCount);
 	MenuState.SkillCursor = KeepSkill;
+	MenuState.TreeCursor[0] = KeepTree0;
+	MenuState.TreeCursor[1] = KeepTree1;
 }
 
 // ======================================================================== mouse
@@ -303,6 +349,9 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 		break;
 	case EMenuHitKind::SkillAddPoint:
 		AddTestSkillPoint(Player);
+		break;
+	case EMenuHitKind::SkillTreeTab:
+		SelectSkillTree(Hit.Index);
 		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
@@ -465,14 +514,8 @@ void AGBHUD::MenuTab(int32 Direction)
 	}
 	else if (Menu == EGBMenu::SkillTrees)
 	{
-		// Jump to the first node of the other tree.
-		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
-		const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
-		const int32 OtherTree = Current ? 1 - Current->Tree : 0;
-		if (const FSkillNodeRef* Other = Nodes.FindByPredicate([OtherTree](const FSkillNodeRef& Node) { return Node.Tree == OtherTree; }))
-		{
-			MenuState.SkillCursor = Other->Id;
-		}
+		// Two pages: either tab key (Q / E, L1 / L2 / R1) turns to the other tree.
+		SelectSkillTree(1 - GetShownSkillTree());
 	}
 }
 
@@ -592,18 +635,10 @@ void AGBHUD::NavigateSkills(FIntPoint Direction)
 		return;
 	}
 
-	// Both trees on one grid (the weapon tree to the right of the spell tree); pick the nearest node in the pressed direction.
-	int32 MaxSpellColumn = 0;
-	for (const FSkillNodeRef& Node : Nodes)
+	// One tree per page: pick the nearest node of the shown tree in the pressed direction.
+	auto GridPos = [](const FSkillNodeRef& Node)
 	{
-		if (Node.Tree == 0)
-		{
-			MaxSpellColumn = FMath::Max(MaxSpellColumn, Node.Column);
-		}
-	}
-	auto GridPos = [MaxSpellColumn](const FSkillNodeRef& Node)
-	{
-		return FVector2D(Node.Tree * (MaxSpellColumn + 2) + Node.Column, Node.Row);
+		return FVector2D(Node.Column, Node.Row);
 	};
 	const FVector2D Dir(Direction.X, Direction.Y);
 	const FVector2D From = GridPos(*Current);
@@ -611,7 +646,7 @@ void AGBHUD::NavigateSkills(FIntPoint Direction)
 	FName Best = NAME_None;
 	for (const FSkillNodeRef& Node : Nodes)
 	{
-		if (Node.Id == Current->Id)
+		if (Node.Id == Current->Id || Node.Tree != Current->Tree)
 		{
 			continue;
 		}
@@ -632,6 +667,16 @@ void AGBHUD::NavigateSkills(FIntPoint Direction)
 	if (Best != NAME_None)
 	{
 		MenuState.SkillCursor = Best;
+	}
+	else if (Direction.X != 0 && GetOpenMenu() == EGBMenu::Inventory)
+	{
+		// The inventory's Q / E switch its pages, so there left / right past the tree's edge turns to the other tree
+		// (spells on the left, weapons on the right).
+		const int32 Other = Direction.X > 0 ? 1 : 0;
+		if (Other != Current->Tree)
+		{
+			SelectSkillTree(Other);
+		}
 	}
 }
 
@@ -1150,7 +1195,7 @@ namespace GBHudMenuDraw
 
 void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 {
-	const EGBHudSkin Skin = GetCurrentSkin();
+	const EGBHudSkin Skin = GetMenuSkin();
 	// Clickables are rebuilt while drawing, for the screen as it is now.
 	MenuHits.Reset();
 	MenuHitsMenu = GetOpenMenu();
@@ -2215,16 +2260,86 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 	}
 
 	// GDD 13: the spell tree has the 90s RPG look, the weapon tree the cyberpunk look, whatever the held item.
+	// One tree per page (owner, Nov 13): two tabs, each in its own tree's look, then the shown tree at full width.
+	static const TCHAR* Titles[] = { TEXT("SPELLS"), TEXT("WEAPONS") };
+	const int32 ShownTree = Selected->Tree == 1 ? 1 : 0;
+	{
+		const int32 TabScale = FMath::Max(2, FMath::RoundToInt(3.f * S));
+		FCyTextStyle CyTab;
+		CyTab.Face = ECyFace::Condensed;
+		CyTab.Px = 22.f;
+		CyTab.Spacing = 140;
+		CyTab.bUpper = true;
+		const float TabH = FMath::RoundToFloat(FMath::Max(40.f * S, 7.f * TabScale + 8.f * P) / P) * P;
+		const float SpellW = FMath::CeilToFloat((MeasurePixelText(Titles[0], TabScale).X + 20.f * P) / P) * P;
+		const float WeaponW = FMath::CeilToFloat(MeasureCyText(Titles[1], CyTab).X + 48.f * S);
+		const float TabGap = FMath::RoundToFloat(10.f * S);
+		const float TabX0 = FMath::RoundToFloat((X + W * 0.5f - (SpellW + TabGap + WeaponW) * 0.5f) / P) * P;
+		const float TabY = FMath::RoundToFloat(Y / P) * P;
+		// Spells: a stone tab with a gold frame when shown.
+		{
+			const bool bShown = ShownTree == 0;
+			const bool bHover = IsMouseOver(TabX0, TabY, SpellW, TabH);
+			FillRect(TabX0, TabY, SpellW, TabH, GBRpg::Stone1);
+			RpgStone(TabX0, TabY, SpellW, TabH, bShown ? FLinearColor(1.3f, 1.15f, 1.f, 1.f) : FLinearColor(0.7f, 0.7f, 0.75f, 1.f));
+			RpgFrame(TabX0, TabY, SpellW, TabH, bShown ? ERpgFrame::Gold : ERpgFrame::Iron);
+			if (bShown)
+			{
+				DrawGlow(TabX0 + SpellW * 0.5f, TabY + TabH, SpellW * 0.7f, TabH, GBAlpha(GBRpg::EmberLight, 0.18f));
+			}
+			FPixelTextStyle Style;
+			Style.Scale = TabScale;
+			Style.Ink = bShown ? &GBRpg::InkGold : (bHover ? &GBRpg::InkBone : nullptr);
+			Style.Color = bShown || bHover ? FLinearColor::White : GBRpg::BoneDim;
+			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+			DrawPixelText(Titles[0], TabX0 + SpellW * 0.5f, TabY + FMath::RoundToFloat((TabH - 7.f * TabScale) * 0.5f / P) * P, Style, 0.5f);
+			AddMenuHit(EMenuHitKind::SkillTreeTab, TabX0, TabY, SpellW, TabH, 0);
+		}
+		// Weapons: a cut-corner cyberpunk tab, filled red when shown.
+		{
+			const float TX = TabX0 + SpellW + TabGap;
+			const bool bShown = ShownTree == 1;
+			const bool bHover = IsMouseOver(TX, TabY, WeaponW, TabH);
+			if (bShown)
+			{
+				CyBox(TX, TabY, WeaponW, TabH, 10.f * S, GBCy::Red, FLinearColor::Transparent, 0x4);
+			}
+			else
+			{
+				CyBox(TX, TabY, WeaponW, TabH, 10.f * S, GBAlpha(GBCy::Ink, 0.85f), bHover ? GBCy::RedBright : GBCy::RedDeep, 0x4);
+			}
+			CyTab.Color = bShown ? GBCy::Ink : (bHover ? GBCy::Pale : GBCy::RedDim);
+			const FVector2D Size = MeasureCyText(Titles[1], CyTab);
+			DrawCyText(Titles[1], TX + WeaponW * 0.5f, TabY + (TabH - Size.Y) * 0.5f, CyTab, 0.5f);
+			AddMenuHit(EMenuHitKind::SkillTreeTab, TX, TabY, WeaponW, TabH, 1);
+		}
+		// The tab keys on both sides, in the screen's look (the inventory's skills page uses its own Q / E for pages).
+		if (GetOpenMenu() == EGBMenu::SkillTrees)
+		{
+			if (bCyber)
+			{
+				CyKey(TabX0 - 36.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("Q"), GBCy::Cyan, 22.f);
+				CyKey(TabX0 + SpellW + TabGap + WeaponW + 12.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("E"), GBCy::Cyan, 22.f);
+			}
+			else
+			{
+				RpgKeyCap(TabX0 - 13.f * P, TabY + 3.f * P, TEXT("Q"));
+				RpgKeyCap(TabX0 + SpellW + TabGap + WeaponW + 3.f * P, TabY + 3.f * P, TEXT("E"));
+			}
+		}
+		const float Below = TabH + (bCyber ? 14.f * S : 3.f * P);
+		Y += Below;
+		H -= Below;
+	}
+
 	const float DetailH = FMath::RoundToFloat(FMath::Max(110.f * S, 26.f * P));
-	const float Gap = FMath::RoundToFloat(W * 0.02f);
-	const float AreaW = FMath::RoundToFloat((W - Gap) * 0.5f);
+	const float AreaW = W;
 	const float AreaY = Y;
 	const float AreaH = FMath::Max(100.f * S, H - DetailH - 12.f * S);
-	static const TCHAR* Titles[] = { TEXT("SPELLS"), TEXT("WEAPONS") };
 
-	for (int32 Tree = 0; Tree < 2; ++Tree)
+	for (int32 Tree = ShownTree; Tree == ShownTree; ++Tree)
 	{
-		const float AX = X + Tree * (AreaW + Gap);
+		const float AX = X;
 		const bool bTreeCyber = Tree == 1;
 		const EGBHudSkin TreeSkin = bTreeCyber ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
 		float GridTop = AreaY;
@@ -2233,20 +2348,14 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 			CyBox(AX, AreaY, AreaW, AreaH, 22.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
 			CyScanlines(AX, AreaY, AreaW, AreaH, 0.25f);
 			DrawGlow(AX + AreaW * 0.5f, AreaY, AreaW * 0.6f, AreaH * 0.4f, GBAlpha(GBCy::Red, 0.08f));
-			FCyTextStyle TitleStyle;
-			TitleStyle.Face = ECyFace::Condensed;
-			TitleStyle.Px = 26.f;
-			TitleStyle.Spacing = 200;
-			TitleStyle.bUpper = true;
-			TitleStyle.Color = GBCy::Red;
-			const FVector2D TS = DrawCyText(Titles[Tree], AX + 26.f * S, AreaY + 16.f * S, TitleStyle, 0.f);
+			// The tab above names the tree; the panel keeps only its small tag and ruler, so the nodes keep their height.
 			FCyTextStyle Sub;
 			Sub.Face = ECyFace::Mono;
 			Sub.Px = 12.f;
 			Sub.Color = GBCy::RedDim;
-			DrawCyText(TEXT("// FIREARMS PERKS"), AX + 26.f * S + TS.X + 14.f * S, AreaY + 26.f * S, Sub, 0.f);
-			CyRuler(AX + 26.f * S, AreaY + 16.f * S + TS.Y + 8.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
-			GridTop = AreaY + 16.f * S + TS.Y + 30.f * S;
+			const FVector2D SubSize = DrawCyText(TEXT("// FIREARMS PERKS"), AX + 26.f * S, AreaY + 12.f * S, Sub, 0.f);
+			CyRuler(AX + 26.f * S, AreaY + 12.f * S + SubSize.Y + 6.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
+			GridTop = AreaY + 12.f * S + SubSize.Y + 24.f * S;
 		}
 		else
 		{
@@ -2259,14 +2368,8 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 			DrawGlow(PX + PW * 0.5f, PY + PH * 0.35f, PW * 0.6f, PH * 0.6f, FLinearColor(0.35f, 0.2f, 0.1f, 0.12f));
 			RpgFrame(PX, PY, PW, PH, ERpgFrame::Iron);
 			DrawOutline(PX + 4.f * P, PY + 4.f * P, PW - 8.f * P, PH - 8.f * P, GBRpg::Gold1, P);
-			const int32 HeadScale = FMath::Max(2, FMath::RoundToInt(4.f * S));
-			FPixelTextStyle Head;
-			Head.Scale = HeadScale;
-			Head.Ink = &GBRpg::InkGold;
-			Head.Outline = GBRpg::Outline;
-			Head.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.7f);
-			DrawPixelText(Titles[Tree], PX + PW * 0.5f, PY + 8.f * P, Head, 0.5f);
-			GridTop = PY + 8.f * P + 7.f * HeadScale + 6.f * P;
+			// The tab above names the tree, so no title here: the four spell rows keep their height at 720p.
+			GridTop = PY + 6.f * P;
 		}
 
 		int32 MaxColumn = 0;
@@ -2279,23 +2382,26 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 				MaxRow = FMath::Max(MaxRow, Node.Row);
 			}
 		}
-		const float Pad = bTreeCyber ? 22.f * S : 9.f * P;
+		const float Pad = bTreeCyber ? 22.f * S : 6.f * P;
 		// The spell tree names its four element columns above the nodes.
 		const float ColumnHeadH = bTreeCyber ? 0.f : 8.f * P;
 		const float GridY = GridTop + ColumnHeadH;
-		const float CellW = (AreaW - 2.f * Pad) / (MaxColumn + 1);
+		// The page is the full width: cap the cell width so the boxes keep their size, and centre the grid.
+		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
+		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
+		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
 		const float CellH = FMath::Min(bTreeCyber ? 104.f * S : 29.f * P, (AreaY + AreaH - Pad - GridY) / (MaxRow + 1));
 		const float BoxW = FMath::Max(20.f * S, CellW - (bTreeCyber ? 18.f * S : 5.f * P));
 		const float BoxH = FMath::Max(20.f * S, CellH - (bTreeCyber ? 22.f * S : 4.f * P));
 		auto BoxPos = [&](const FSkillNodeRef& Node)
 		{
-			return FVector2D(AX + Pad + Node.Column * CellW + (CellW - BoxW) * 0.5f, GridY + Node.Row * CellH);
+			return FVector2D(GridX + Node.Column * CellW + (CellW - BoxW) * 0.5f, GridY + Node.Row * CellH);
 		};
 		if (!bTreeCyber)
 		{
 			for (int32 Column = 0; Column <= MaxColumn; ++Column)
 			{
-				const float ColX = AX + Pad + Column * CellW + CellW * 0.5f;
+				const float ColX = GridX + Column * CellW + CellW * 0.5f;
 				const FLinearColor EC = GBHudText::ElementColor(GBHudMenuDraw::SpellColumnElement(Column));
 				const FString Label = FString(GBHudMenuDraw::SpellColumnName(Column)).ToUpper();
 				const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));

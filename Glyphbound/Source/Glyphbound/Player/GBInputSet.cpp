@@ -187,6 +187,7 @@ void UGBInputSet::Build()
 	MapButton(G, Block, EKeys::Gamepad_LeftTrigger);
 
 	MapButton(G, Inventory, EKeys::Tab);
+	MapButton(G, Inventory, EKeys::I);
 	MapButton(G, Inventory, EKeys::Gamepad_Special_Left);
 	MapButton(G, SkillTrees, EKeys::K);
 	MapButton(G, Pause, EKeys::Escape);
@@ -229,6 +230,9 @@ void UGBInputSet::Build()
 	MapAxis1D(M, MenuTab, EKeys::E);
 	MapAxis1D(M, MenuTab, EKeys::Gamepad_LeftShoulder, true);
 	MapAxis1D(M, MenuTab, EKeys::Gamepad_RightShoulder);
+	// L2 also turns pages (owner: "L1 y L2" between the two skill trees). In the gameplay context it is aim / block,
+	// but that context is not read while a menu is open.
+	MapAxis1D(M, MenuTab, EKeys::Gamepad_LeftTrigger);
 
 	MapButton(M, MenuClick, EKeys::LeftMouseButton);
 
@@ -241,5 +245,6 @@ void UGBInputSet::Build()
 	// Inside menus: the gamepad Menu / View buttons and K still toggle their screens (Esc and Tab are "back" here).
 	MapButton(M, Pause, EKeys::Gamepad_Special_Right);
 	MapButton(M, Inventory, EKeys::Gamepad_Special_Left);
+	MapButton(M, Inventory, EKeys::I);
 	MapButton(M, SkillTrees, EKeys::K);
 }
