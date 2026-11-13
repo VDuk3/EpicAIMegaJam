@@ -81,3 +81,5 @@ Translation: "Make it possible to climb without looking at the wall, with your b
 **Known trade-off for the owner:** a jump in place right next to a block now climbs it even if the player is not looking at it. From 0.5 m up it climbs on the press; lower blocks (15 to 50 cm) are grabbed once in the air, because the air search looks all around. That is what was asked, but in combat it may happen by accident.
 
 **Checks.** Game target build succeeded; full suite 48 tests green (1.01 s); full smoke clean (155 s, no LogGB errors or warnings): back to the wall climbs and turns the view to -90, the air grab with the back to the platform turns it to 0, and holding away is a jump at 540 cm/s away from the wall.
+
+**Package.** `TeamTBD_Glyphbound.zip` from commit `cd9c024`: 299.7 MB, BuildCookRun 89 s. The full smoke on the packaged game is clean (145 s, no LogGB errors). Every climb check matches the Editor run: the back climb turns the view to -90, the back air grab turns it to 0, and holding away is a jump at 540 cm/s. Sent to the owner to play.
