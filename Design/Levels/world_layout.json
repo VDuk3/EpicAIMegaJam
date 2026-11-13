@@ -1,0 +1,6559 @@
+{
+	"meta": {
+		"title": "Glyphbound world layout",
+		"version": "1.0 (2026-11-13, level planner)",
+		"units": "cm",
+		"frame": "+X north, +Y east, +Z up; origin = centre of the courtyard floor, Z 0 = main floor of both eras",
+		"grids": {
+			"castle": 400,
+			"castleShell": 1600,
+			"base": 400,
+			"labKit": 350,
+			"labPilaster": 100
+		},
+		"reach": {
+			"note": "From Player.json: JumpVelocity 800, GravityScale 1.6, MantleMaxReach 160, MantleMinHeight 50, step height 45 (engine default)",
+			"jumpApex": 204,
+			"stepUp": 45,
+			"mantleMin": 50,
+			"climbSingleMax": 364,
+			"climbSingleDesign": 320,
+			"climbDoubleMax": 568,
+			"climbDoubleDesign": 500,
+			"unclimbableMin": 650
+		}
+	},
+	"flags": {
+		"openingPast": "Encounter.Opening_Past.Cleared",
+		"sealUsed": "SealUsed",
+		"gotGun": "GotFirstGun",
+		"fire": "Encounter.Zone_Fire.Cleared",
+		"lightning": "Encounter.Zone_Lightning.Cleared",
+		"ice": "Encounter.Zone_Ice.Cleared",
+		"air": "Encounter.Zone_Air.Cleared",
+		"yard": "Encounter.Wave_Future_1.Cleared",
+		"gen": "Encounter.Wave_Future_2.Cleared",
+		"server": "Encounter.Wave_Future_3.Cleared",
+		"herald": "Encounter.MiniBoss_Herald.Cleared",
+		"valkPast": "Encounter.Valkyrie_Past.Cleared",
+		"valkFuture": "Encounter.Valkyrie_Future.Cleared",
+		"finalPortal": "FinalPortalOpen"
+	},
+	"rooms": [
+		{
+			"id": "GATE",
+			"past": "Gatehouse",
+			"future": "Checkpoint",
+			"rect": [
+				-4000,
+				-2400,
+				-800,
+				800
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 600
+		},
+		{
+			"id": "COURT",
+			"past": "Courtyard",
+			"future": "Yard",
+			"rect": [
+				-2400,
+				2400,
+				-2400,
+				2400
+			],
+			"eras": "both",
+			"ceilPast": 0,
+			"ceilFuture": 0
+		},
+		{
+			"id": "HALL",
+			"past": "Great Hall",
+			"future": "Containment Hall",
+			"rect": [
+				2400,
+				5600,
+				-2400,
+				2400
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 1200
+		},
+		{
+			"id": "SEAL",
+			"past": "Seal Room",
+			"future": "Seal Vault",
+			"rect": [
+				5600,
+				7200,
+				-800,
+				800
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 700
+		},
+		{
+			"id": "EAST",
+			"past": "Forge (Fire zone)",
+			"future": "Generator Hall",
+			"rect": [
+				-2400,
+				2400,
+				2400,
+				5600
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 1200
+		},
+		{
+			"id": "WEST",
+			"past": "Stormworks (Lightning zone)",
+			"future": "Server Hall",
+			"rect": [
+				-2400,
+				2400,
+				-5600,
+				-2400
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 1200
+		},
+		{
+			"id": "NE",
+			"past": "High Ward (Air zone)",
+			"future": "Signal Corridor",
+			"rect": [
+				2400,
+				5600,
+				2400,
+				5600
+			],
+			"futureRect": [
+				2400,
+				3100,
+				2400,
+				5600
+			],
+			"eras": "both",
+			"ceilPast": 0,
+			"ceilFuture": 700
+		},
+		{
+			"id": "NW",
+			"past": "Frozen Cistern (Ice zone)",
+			"future": "Cryo Corridor",
+			"rect": [
+				2400,
+				5600,
+				-5600,
+				-2400
+			],
+			"futureRect": [
+				2400,
+				3100,
+				-5600,
+				-2400
+			],
+			"eras": "both",
+			"ceilPast": 1500,
+			"ceilFuture": 700
+		},
+		{
+			"id": "BREACH",
+			"past": "",
+			"future": "Breach Corridor",
+			"rect": [
+				-8050,
+				-4000,
+				-265,
+				265
+			],
+			"eras": "future",
+			"ceilFuture": 333
+		},
+		{
+			"id": "ANTE",
+			"past": "",
+			"future": "Antechamber",
+			"rect": [
+				-8450,
+				-8050,
+				-1800,
+				1800
+			],
+			"eras": "future",
+			"ceilFuture": 600
+		},
+		{
+			"id": "HANGAR",
+			"past": "",
+			"future": "Hangar (Herald)",
+			"rect": [
+				-13250,
+				-8450,
+				-2400,
+				2400
+			],
+			"eras": "future",
+			"ceilFuture": 2400
+		}
+	],
+	"doors": [
+		{
+			"id": "D0",
+			"era": "past",
+			"axis": "X",
+			"at": -4000,
+			"along": 0,
+			"pos": [
+				-4000,
+				0
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Outer gate (shut for good: portcullis)",
+			"lock": [
+				{
+					"kind": "SM_Portcullis",
+					"removedBy": null
+				}
+			]
+		},
+		{
+			"id": "D1",
+			"era": "past",
+			"axis": "X",
+			"at": -2400,
+			"along": 0,
+			"pos": [
+				-2400,
+				0
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Gatehouse -> Courtyard",
+			"lock": []
+		},
+		{
+			"id": "D2",
+			"era": "past",
+			"axis": "X",
+			"at": 2400,
+			"along": 0,
+			"pos": [
+				2400,
+				0
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Courtyard -> Great Hall",
+			"lock": [
+				{
+					"kind": "rune ward",
+					"removedBy": "Encounter.Opening_Past.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D3a",
+			"era": "past",
+			"axis": "Y",
+			"at": 2400,
+			"along": -1600,
+			"pos": [
+				-1600,
+				2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Courtyard -> Forge (south door)",
+			"lock": [
+				{
+					"kind": "rune ward",
+					"removedBy": "SealUsed"
+				}
+			]
+		},
+		{
+			"id": "D3b",
+			"era": "past",
+			"axis": "Y",
+			"at": 2400,
+			"along": 1600,
+			"pos": [
+				1600,
+				2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Courtyard -> Forge (north door)",
+			"lock": [
+				{
+					"kind": "rune ward",
+					"removedBy": "SealUsed"
+				}
+			]
+		},
+		{
+			"id": "D4a",
+			"era": "past",
+			"axis": "Y",
+			"at": -2400,
+			"along": -1600,
+			"pos": [
+				-1600,
+				-2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Courtyard -> Stormworks (south door)",
+			"lock": [
+				{
+					"kind": "rune ward",
+					"removedBy": "SealUsed"
+				}
+			]
+		},
+		{
+			"id": "D4b",
+			"era": "past",
+			"axis": "Y",
+			"at": -2400,
+			"along": 1600,
+			"pos": [
+				1600,
+				-2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Courtyard -> Stormworks (north door)",
+			"lock": [
+				{
+					"kind": "rune ward",
+					"removedBy": "SealUsed"
+				}
+			]
+		},
+		{
+			"id": "D5",
+			"era": "past",
+			"axis": "X",
+			"at": 5600,
+			"along": 0,
+			"pos": [
+				5600,
+				0
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Great Hall -> Seal Room",
+			"lock": []
+		},
+		{
+			"id": "D6",
+			"era": "past",
+			"axis": "Y",
+			"at": 2400,
+			"along": 3200,
+			"pos": [
+				3200,
+				2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Great Hall <- High Ward (barred from the Air side)",
+			"lock": [
+				{
+					"kind": "barred door (2 x SM_Castle_Door)",
+					"removedBy": "Encounter.Zone_Air.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D7",
+			"era": "past",
+			"axis": "Y",
+			"at": -2400,
+			"along": 3200,
+			"pos": [
+				3200,
+				-2400
+			],
+			"w": 288,
+			"h": 492,
+			"piece": "SM_Wall_Door_16x15",
+			"label": "Great Hall <- Frozen Cistern (barred from the Ice side)",
+			"lock": [
+				{
+					"kind": "barred door (2 x SM_Castle_Door)",
+					"removedBy": "Encounter.Zone_Ice.Cleared"
+				}
+			]
+		},
+		{
+			"id": "G0",
+			"era": "future",
+			"axis": "X",
+			"at": -4000,
+			"along": 0,
+			"pos": [
+				-4000,
+				0
+			],
+			"w": 392,
+			"h": 303,
+			"piece": "SciFi SM_MGate01 frame + GateL + GateR",
+			"label": "Checkpoint -> Breach Corridor",
+			"lock": [
+				{
+					"kind": "blast gate",
+					"removedBy": "Encounter.Wave_Future_2.Cleared"
+				},
+				{
+					"kind": "blast gate (second lock)",
+					"removedBy": "Encounter.Wave_Future_3.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D1f",
+			"era": "future",
+			"axis": "X",
+			"at": -2400,
+			"along": 0,
+			"pos": [
+				-2400,
+				0
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Yard -> Checkpoint",
+			"lock": [
+				{
+					"kind": "door leaf",
+					"removedBy": "Encounter.Wave_Future_1.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D2f",
+			"era": "future",
+			"axis": "X",
+			"at": 2400,
+			"along": 0,
+			"pos": [
+				2400,
+				0
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Yard <-> Containment Hall (LOCKDOWN)",
+			"lock": [
+				{
+					"kind": "lockdown shutter",
+					"removedBy": "Encounter.MiniBoss_Herald.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D3f",
+			"era": "future",
+			"axis": "Y",
+			"at": 2400,
+			"along": 0,
+			"pos": [
+				0,
+				2400
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Generator Hall -> Yard",
+			"lock": [
+				{
+					"kind": "door leaf",
+					"removedBy": "Encounter.Wave_Future_2.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D4f",
+			"era": "future",
+			"axis": "Y",
+			"at": -2400,
+			"along": 0,
+			"pos": [
+				0,
+				-2400
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Server Hall -> Yard",
+			"lock": [
+				{
+					"kind": "door leaf",
+					"removedBy": "Encounter.Wave_Future_3.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D5f",
+			"era": "future",
+			"axis": "X",
+			"at": 5600,
+			"along": 0,
+			"pos": [
+				5600,
+				0
+			],
+			"w": 392,
+			"h": 303,
+			"piece": "SciFi SM_MGate01 frame + GateL + GateR",
+			"label": "Containment Hall <-> Seal Vault",
+			"lock": []
+		},
+		{
+			"id": "D8f",
+			"era": "future",
+			"axis": "X",
+			"at": 2400,
+			"along": 4800,
+			"pos": [
+				2400,
+				4800
+			],
+			"w": 392,
+			"h": 303,
+			"piece": "SciFi SM_MGate01 frame + GateL + GateR",
+			"label": "Generator Hall -> Signal Corridor (cross-era unlock U1)",
+			"lock": [
+				{
+					"kind": "rune-sealed plug",
+					"removedBy": "Encounter.Zone_Lightning.Cleared"
+				},
+				{
+					"kind": "door leaf",
+					"removedBy": "Encounter.Wave_Future_2.Cleared"
+				}
+			]
+		},
+		{
+			"id": "D9f",
+			"era": "future",
+			"axis": "X",
+			"at": 2400,
+			"along": -4800,
+			"pos": [
+				2400,
+				-4800
+			],
+			"w": 392,
+			"h": 303,
+			"piece": "SciFi SM_MGate01 frame + GateL + GateR",
+			"label": "Server Hall -> Cryo Corridor (cross-era unlock U2)",
+			"lock": [
+				{
+					"kind": "rune-sealed plug",
+					"removedBy": "Encounter.Zone_Fire.Cleared"
+				},
+				{
+					"kind": "door leaf",
+					"removedBy": "Encounter.Wave_Future_3.Cleared"
+				}
+			]
+		},
+		{
+			"id": "B1",
+			"era": "future",
+			"axis": "X",
+			"at": -8050,
+			"along": 0,
+			"pos": [
+				-8050,
+				0
+			],
+			"w": 530,
+			"h": 333,
+			"piece": "open end of the corridor model",
+			"label": "Breach Corridor -> Antechamber",
+			"lock": []
+		},
+		{
+			"id": "H1",
+			"era": "future",
+			"axis": "X",
+			"at": -8450,
+			"along": -1200,
+			"pos": [
+				-8450,
+				-1200
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Antechamber -> Hangar (west door)",
+			"lock": []
+		},
+		{
+			"id": "H2",
+			"era": "future",
+			"axis": "X",
+			"at": -8450,
+			"along": 1200,
+			"pos": [
+				-8450,
+				1200
+			],
+			"w": 850,
+			"h": 425,
+			"piece": "HTB SM_Door_02_Side (frame) + SM_Door_02 (leaf)",
+			"label": "Antechamber -> Hangar (east door)",
+			"lock": []
+		}
+	],
+	"castleLines": [
+		{
+			"axis": "X",
+			"at": -4000,
+			"from": -800,
+			"to": 800
+		},
+		{
+			"axis": "X",
+			"at": -2400,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 2400,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 5600,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 7200,
+			"from": -800,
+			"to": 800
+		},
+		{
+			"axis": "Y",
+			"at": -5600,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": -2400,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": 2400,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": 5600,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": -800,
+			"from": -4000,
+			"to": -2400
+		},
+		{
+			"axis": "Y",
+			"at": 800,
+			"from": -4000,
+			"to": -2400
+		},
+		{
+			"axis": "Y",
+			"at": -800,
+			"from": 5600,
+			"to": 7200
+		},
+		{
+			"axis": "Y",
+			"at": 800,
+			"from": 5600,
+			"to": 7200
+		}
+	],
+	"baseLines": [
+		{
+			"axis": "X",
+			"at": -4000,
+			"from": -800,
+			"to": 800
+		},
+		{
+			"axis": "X",
+			"at": -2400,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 2400,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 5600,
+			"from": -5600,
+			"to": 5600
+		},
+		{
+			"axis": "X",
+			"at": 7200,
+			"from": -800,
+			"to": 800
+		},
+		{
+			"axis": "Y",
+			"at": -5600,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": -2400,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": 2400,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": 5600,
+			"from": -2400,
+			"to": 5600
+		},
+		{
+			"axis": "Y",
+			"at": -800,
+			"from": -4000,
+			"to": -2400
+		},
+		{
+			"axis": "Y",
+			"at": 800,
+			"from": -4000,
+			"to": -2400
+		},
+		{
+			"axis": "Y",
+			"at": -800,
+			"from": 5600,
+			"to": 7200
+		},
+		{
+			"axis": "Y",
+			"at": 800,
+			"from": 5600,
+			"to": 7200
+		},
+		{
+			"axis": "X",
+			"at": 3100,
+			"from": 2400,
+			"to": 5600,
+			"note": "north wall of the Signal Corridor; everything north of it is sealed mass in the future"
+		},
+		{
+			"axis": "X",
+			"at": 3100,
+			"from": -5600,
+			"to": -2400,
+			"note": "north wall of the Cryo Corridor"
+		},
+		{
+			"axis": "Y",
+			"at": -265,
+			"from": -8050,
+			"to": -4000,
+			"note": "Breach Corridor (the imported model has its own walls)"
+		},
+		{
+			"axis": "Y",
+			"at": 265,
+			"from": -8050,
+			"to": -4000
+		},
+		{
+			"axis": "X",
+			"at": -8050,
+			"from": -1800,
+			"to": 1800
+		},
+		{
+			"axis": "Y",
+			"at": -1800,
+			"from": -8450,
+			"to": -8050
+		},
+		{
+			"axis": "Y",
+			"at": 1800,
+			"from": -8450,
+			"to": -8050
+		},
+		{
+			"axis": "X",
+			"at": -8450,
+			"from": -2400,
+			"to": 2400
+		},
+		{
+			"axis": "X",
+			"at": -13250,
+			"from": -2400,
+			"to": 2400
+		},
+		{
+			"axis": "Y",
+			"at": -2400,
+			"from": -13250,
+			"to": -8450
+		},
+		{
+			"axis": "Y",
+			"at": 2400,
+			"from": -13250,
+			"to": -8450
+		}
+	],
+	"castleWallPieces": [
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				-4000,
+				-800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-4000",
+			"span": [
+				-800,
+				800
+			],
+			"door": "D0"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				-5600,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				-5600,
+				-4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				-4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				-4000,
+				-2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				-2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				-2400,
+				-800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				-800,
+				800
+			],
+			"door": "D1"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				800,
+				2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				2400,
+				4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=-2400",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				-5600,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				-5600,
+				-4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				-4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				-4000,
+				-2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				-2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				2400,
+				-800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				-800,
+				800
+			],
+			"door": "D2"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				800,
+				2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				2400,
+				4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=2400",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				-5600,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				-5600,
+				-4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				-4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				-4000,
+				-2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				-2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				5600,
+				-800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				-800,
+				800
+			],
+			"door": "D5"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				800,
+				2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				2400,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				2400,
+				4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				4000,
+				0
+			],
+			"yaw": 0,
+			"line": "X=5600",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				7200,
+				-800,
+				0
+			],
+			"yaw": 0,
+			"line": "X=7200",
+			"span": [
+				-800,
+				800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				-5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-5600",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-800,
+				-5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-5600",
+			"span": [
+				-800,
+				800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				800,
+				-5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-5600",
+			"span": [
+				800,
+				2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				-5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-5600",
+			"span": [
+				2400,
+				4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				4000,
+				-5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-5600",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				-2400,
+				-2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-2400",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": "D4a"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-800,
+				-2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-2400",
+			"span": [
+				-800,
+				800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				800,
+				-2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-2400",
+			"span": [
+				800,
+				2400
+			],
+			"door": "D4b"
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				2400,
+				-2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-2400",
+			"span": [
+				2400,
+				4000
+			],
+			"door": "D7"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				4000,
+				-2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-2400",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				-2400,
+				2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=2400",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": "D3a"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-800,
+				2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=2400",
+			"span": [
+				-800,
+				800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				800,
+				2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=2400",
+			"span": [
+				800,
+				2400
+			],
+			"door": "D3b"
+		},
+		{
+			"mesh": "SM_Wall_Door_16x15",
+			"origin": [
+				2400,
+				2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=2400",
+			"span": [
+				2400,
+				4000
+			],
+			"door": "D6"
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				4000,
+				2400,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=2400",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-2400,
+				5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=5600",
+			"span": [
+				-2400,
+				-800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-800,
+				5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=5600",
+			"span": [
+				-800,
+				800
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				800,
+				5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=5600",
+			"span": [
+				800,
+				2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				2400,
+				5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=5600",
+			"span": [
+				2400,
+				4000
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				4000,
+				5600,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=5600",
+			"span": [
+				4000,
+				5600
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-4000,
+				-800,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-800",
+			"span": [
+				-4000,
+				-2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				-4000,
+				800,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=800",
+			"span": [
+				-4000,
+				-2400
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				-800,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=-800",
+			"span": [
+				5600,
+				7200
+			],
+			"door": null
+		},
+		{
+			"mesh": "SM_Wall_16x15",
+			"origin": [
+				5600,
+				800,
+				0
+			],
+			"yaw": -90,
+			"line": "Y=800",
+			"span": [
+				5600,
+				7200
+			],
+			"door": null
+		}
+	],
+	"shell": {
+		"floor": {
+			"rect": [
+				-13650,
+				7600,
+				-6000,
+				6000
+			],
+			"z0": -100,
+			"z1": 0,
+			"era": "both",
+			"note": "one slab under the whole site, in the persistent level: the footing never changes on era travel"
+		},
+		"past": {
+			"walls": [
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4054.5,
+					"from": -800,
+					"to": -144,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4054.5,
+					"from": 144,
+					"to": 800,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2454.5,
+					"from": -5600,
+					"to": -144,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2454.5,
+					"from": 144,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2345.5,
+					"from": -5600,
+					"to": -144,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2345.5,
+					"from": 144,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5545.5,
+					"from": -5600,
+					"to": -144,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5545.5,
+					"from": 144,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "X",
+					"at": 7200,
+					"centre": 7145.5,
+					"from": -800,
+					"to": 800,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -5600,
+					"centre": -5545.5,
+					"from": -2400,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": -2400,
+					"to": -1744,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": -1456,
+					"to": 1456,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": 1744,
+					"to": 3056,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": 3344,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": -2400,
+					"to": -1744,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": -1456,
+					"to": 1456,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": 1744,
+					"to": 3056,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": 3344,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 5600,
+					"centre": 5654.5,
+					"from": -2400,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -800,
+					"centre": -745.5,
+					"from": -4000,
+					"to": -2400,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 800,
+					"centre": 854.5,
+					"from": -4000,
+					"to": -2400,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": -800,
+					"centre": -745.5,
+					"from": 5600,
+					"to": 7200,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				},
+				{
+					"axis": "Y",
+					"at": 800,
+					"centre": 854.5,
+					"from": 5600,
+					"to": 7200,
+					"z0": 0,
+					"z1": 1500,
+					"thick": 125
+				}
+			],
+			"lintels": [
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4054.5,
+					"from": -144,
+					"to": 144,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D0"
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2454.5,
+					"from": -144,
+					"to": 144,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D1"
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2345.5,
+					"from": -144,
+					"to": 144,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D2"
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5545.5,
+					"from": -144,
+					"to": 144,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D5"
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": -1744,
+					"to": -1456,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D4a"
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": 1456,
+					"to": 1744,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D4b"
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2345.5,
+					"from": 3056,
+					"to": 3344,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D7"
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": -1744,
+					"to": -1456,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D3a"
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": 1456,
+					"to": 1744,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D3b"
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2454.5,
+					"from": 3056,
+					"to": 3344,
+					"z0": 492,
+					"z1": 1500,
+					"thick": 125,
+					"door": "D6"
+				}
+			]
+		},
+		"future": {
+			"walls": [
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4000,
+					"from": -800,
+					"to": -196,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4000,
+					"from": 196,
+					"to": 800,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2400,
+					"from": -5600,
+					"to": -425,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2400,
+					"from": 425,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": -5600,
+					"to": -4996,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": -4604,
+					"to": -425,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": 425,
+					"to": 4604,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": 4996,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5600,
+					"from": -5600,
+					"to": -196,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5600,
+					"from": 196,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 7200,
+					"centre": 7200,
+					"from": -800,
+					"to": 800,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -5600,
+					"centre": -5600,
+					"from": -2400,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2400,
+					"from": -2400,
+					"to": -425,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2400,
+					"from": 425,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2400,
+					"from": -2400,
+					"to": -425,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2400,
+					"from": 425,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 5600,
+					"centre": 5600,
+					"from": -2400,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -800,
+					"centre": -800,
+					"from": -4000,
+					"to": -2400,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 800,
+					"centre": 800,
+					"from": -4000,
+					"to": -2400,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -800,
+					"centre": -800,
+					"from": 5600,
+					"to": 7200,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 800,
+					"centre": 800,
+					"from": 5600,
+					"to": 7200,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 3100,
+					"centre": 3100,
+					"from": 2400,
+					"to": 5600,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": 3100,
+					"centre": 3100,
+					"from": -5600,
+					"to": -2400,
+					"z0": 0,
+					"z1": 1200,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -265,
+					"centre": -265,
+					"from": -8050,
+					"to": -4000,
+					"z0": 0,
+					"z1": 333,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 265,
+					"centre": 265,
+					"from": -8050,
+					"to": -4000,
+					"z0": 0,
+					"z1": 333,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -8050,
+					"centre": -8050,
+					"from": -1800,
+					"to": -265,
+					"z0": 0,
+					"z1": 600,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -8050,
+					"centre": -8050,
+					"from": 265,
+					"to": 1800,
+					"z0": 0,
+					"z1": 600,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -1800,
+					"centre": -1800,
+					"from": -8450,
+					"to": -8050,
+					"z0": 0,
+					"z1": 600,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 1800,
+					"centre": 1800,
+					"from": -8450,
+					"to": -8050,
+					"z0": 0,
+					"z1": 600,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -8450,
+					"centre": -8450,
+					"from": -2400,
+					"to": -1625,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -8450,
+					"centre": -8450,
+					"from": -775,
+					"to": 775,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -8450,
+					"centre": -8450,
+					"from": 1625,
+					"to": 2400,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				},
+				{
+					"axis": "X",
+					"at": -13250,
+					"centre": -13250,
+					"from": -2400,
+					"to": 2400,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2400,
+					"from": -13250,
+					"to": -8450,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2400,
+					"from": -13250,
+					"to": -8450,
+					"z0": 0,
+					"z1": 2400,
+					"thick": 100
+				}
+			],
+			"lintels": [
+				{
+					"axis": "X",
+					"at": -4000,
+					"centre": -4000,
+					"from": -196,
+					"to": 196,
+					"z0": 303,
+					"z1": 1200,
+					"thick": 100,
+					"door": "G0"
+				},
+				{
+					"axis": "X",
+					"at": -2400,
+					"centre": -2400,
+					"from": -425,
+					"to": 425,
+					"z0": 425,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D1f"
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": -4996,
+					"to": -4604,
+					"z0": 303,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D9f"
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": -425,
+					"to": 425,
+					"z0": 425,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D2f"
+				},
+				{
+					"axis": "X",
+					"at": 2400,
+					"centre": 2400,
+					"from": 4604,
+					"to": 4996,
+					"z0": 303,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D8f"
+				},
+				{
+					"axis": "X",
+					"at": 5600,
+					"centre": 5600,
+					"from": -196,
+					"to": 196,
+					"z0": 303,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D5f"
+				},
+				{
+					"axis": "Y",
+					"at": -2400,
+					"centre": -2400,
+					"from": -425,
+					"to": 425,
+					"z0": 425,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D4f"
+				},
+				{
+					"axis": "Y",
+					"at": 2400,
+					"centre": 2400,
+					"from": -425,
+					"to": 425,
+					"z0": 425,
+					"z1": 1200,
+					"thick": 100,
+					"door": "D3f"
+				},
+				{
+					"axis": "X",
+					"at": -8050,
+					"centre": -8050,
+					"from": -265,
+					"to": 265,
+					"z0": 333,
+					"z1": 600,
+					"thick": 100,
+					"door": "B1"
+				},
+				{
+					"axis": "X",
+					"at": -8450,
+					"centre": -8450,
+					"from": -1625,
+					"to": -775,
+					"z0": 425,
+					"z1": 2400,
+					"thick": 100,
+					"door": "H1"
+				},
+				{
+					"axis": "X",
+					"at": -8450,
+					"centre": -8450,
+					"from": 775,
+					"to": 1625,
+					"z0": 425,
+					"z1": 2400,
+					"thick": 100,
+					"door": "H2"
+				}
+			]
+		}
+	},
+	"structures": [
+		{
+			"id": "gate_keg_w",
+			"zone": "GATE",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				-3860,
+				-3740,
+				-660,
+				-540
+			],
+			"z0": 0,
+			"z1": 127,
+			"mesh": "SM_Large_Keg",
+			"note": "dressing"
+		},
+		{
+			"id": "gate_keg_e",
+			"zone": "GATE",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				-3860,
+				-3740,
+				540,
+				660
+			],
+			"z0": 0,
+			"z1": 127,
+			"mesh": "SM_Large_Keg",
+			"note": "dressing"
+		},
+		{
+			"id": "gate_console_w",
+			"zone": "GATE",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-4000,
+				-3820,
+				-750,
+				-350
+			],
+			"z0": 0,
+			"z1": 240,
+			"mesh": "HTB SM_Prop_03",
+			"note": "guard console"
+		},
+		{
+			"id": "gate_console_e",
+			"zone": "GATE",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-4000,
+				-3820,
+				350,
+				750
+			],
+			"z0": 0,
+			"z1": 240,
+			"mesh": "HTB SM_Prop_03",
+			"note": "guard console"
+		},
+		{
+			"id": "court_stage",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				-800,
+				800,
+				1800,
+				2400
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "BOX + 4x8 SM_CastleTower_Floor_A_01 on top",
+			"note": "east stage between the two Forge doors"
+		},
+		{
+			"id": "court_stage_stairs",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "stairs",
+			"rect": [
+				-405,
+				405,
+				1500,
+				1800
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "SM_Stairs_4M",
+			"note": "",
+			"asc": "+Y"
+		},
+		{
+			"id": "court_perch",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				-800,
+				800,
+				-2400,
+				-1800
+			],
+			"z0": 0,
+			"z1": 410,
+			"mesh": "BOX + SM_CastleTower_Floor_A_01 on top",
+			"note": "west perch between the two Stormworks doors"
+		},
+		{
+			"id": "court_perch_stairs",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "stairs",
+			"rect": [
+				-405,
+				405,
+				-1800,
+				-1200
+			],
+			"z0": 0,
+			"z1": 410,
+			"mesh": "SM_Stairs_8M",
+			"note": "",
+			"asc": "-Y"
+		},
+		{
+			"id": "court_cover_a",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1235,
+				-1165,
+				-910,
+				-290
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "court_cover_b",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1235,
+				-1165,
+				290,
+				910
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "court_cover_c",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				690,
+				1310,
+				-935,
+				-865
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "court_cover_d",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				690,
+				1310,
+				865,
+				935
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "court_podium_ne",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				1790,
+				2010,
+				1790,
+				2010
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "full-height cover; its top is meant for the double jump (bonus pickup)"
+		},
+		{
+			"id": "court_podium_nw",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				1790,
+				2010,
+				-2010,
+				-1790
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "full-height cover"
+		},
+		{
+			"id": "court_podium_se",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				-2010,
+				-1790,
+				1790,
+				2010
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "full-height cover"
+		},
+		{
+			"id": "court_podium_sw",
+			"zone": "COURT",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				-2010,
+				-1790,
+				-2010,
+				-1790
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "full-height cover"
+		},
+		{
+			"id": "yard_dock_w",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-1300,
+				1300,
+				-1800,
+				-1200
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "HTB SM_Hero_Floor_01",
+			"note": "loading dock, 1 m high"
+		},
+		{
+			"id": "yard_dock_w_ramp_n",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				1300,
+				1600,
+				-1800,
+				-1200
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "ramp so the navmesh joins the dock",
+			"asc": "-X"
+		},
+		{
+			"id": "yard_dock_w_ramp_s",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-1600,
+				-1300,
+				-1800,
+				-1200
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "yard_dock_e",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-1300,
+				1300,
+				1200,
+				1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "HTB SM_Hero_Floor_01",
+			"note": "loading dock, 1 m high"
+		},
+		{
+			"id": "yard_dock_e_ramp_n",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				1300,
+				1600,
+				1200,
+				1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "-X"
+		},
+		{
+			"id": "yard_dock_e_ramp_s",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-1600,
+				-1300,
+				1200,
+				1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "yard_container_nw",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				1575,
+				1825,
+				-800,
+				-200
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX 250x600x260, MI_Scifi_Panels + HTB SM_Wall_Cargo face",
+			"note": "container"
+		},
+		{
+			"id": "yard_container_ne",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				1575,
+				1825,
+				200,
+				800
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX container",
+			"note": "container"
+		},
+		{
+			"id": "yard_container_sw",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1825,
+				-1575,
+				-800,
+				-200
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX container",
+			"note": "container"
+		},
+		{
+			"id": "yard_container_se",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1825,
+				-1575,
+				200,
+				800
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX container",
+			"note": "container"
+		},
+		{
+			"id": "yard_cube_w1",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-810,
+				-590,
+				-1610,
+				-1390
+			],
+			"z0": 100,
+			"z1": 320,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "yard_cube_w2",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				590,
+				810,
+				-1610,
+				-1390
+			],
+			"z0": 100,
+			"z1": 320,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "yard_cube_e1",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-810,
+				-590,
+				1390,
+				1610
+			],
+			"z0": 100,
+			"z1": 320,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "yard_cube_e2",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				590,
+				810,
+				1390,
+				1610
+			],
+			"z0": 100,
+			"z1": 320,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "yard_mast_ne",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "pillar",
+			"rect": [
+				2225,
+				2375,
+				2225,
+				2375
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "2 x HTB SM_Wall_03 stacked + flood light",
+			"note": "floodlight mast"
+		},
+		{
+			"id": "yard_mast_nw",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "pillar",
+			"rect": [
+				2225,
+				2375,
+				-2375,
+				-2225
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "2 x HTB SM_Wall_03 stacked + flood light",
+			"note": "floodlight mast"
+		},
+		{
+			"id": "yard_mast_se",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "pillar",
+			"rect": [
+				-2375,
+				-2225,
+				2225,
+				2375
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "2 x HTB SM_Wall_03 stacked + flood light",
+			"note": "floodlight mast"
+		},
+		{
+			"id": "yard_mast_sw",
+			"zone": "COURT",
+			"era": "future",
+			"kind": "pillar",
+			"rect": [
+				-2375,
+				-2225,
+				-2375,
+				-2225
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "2 x HTB SM_Wall_03 stacked + flood light",
+			"note": "floodlight mast"
+		},
+		{
+			"id": "hall_pillar_2800_w",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				2725,
+				2875,
+				-1275,
+				-1125
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_3600_w",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				3525,
+				3675,
+				-1275,
+				-1125
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_4400_w",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				4325,
+				4475,
+				-1275,
+				-1125
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_5200_w",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				5125,
+				5275,
+				-1275,
+				-1125
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_2800_e",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				2725,
+				2875,
+				1125,
+				1275
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_3600_e",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				3525,
+				3675,
+				1125,
+				1275
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_4400_e",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				4325,
+				4475,
+				1125,
+				1275
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_pillar_5200_e",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "pillar",
+			"rect": [
+				5125,
+				5275,
+				1125,
+				1275
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "past: SM_PillarStem_01 + SM_PillarTop_01; future: 2 x HTB SM_Wall_03 stacked",
+			"note": "same spot in both eras"
+		},
+		{
+			"id": "hall_gallery_w",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				4000,
+				5600,
+				-2400,
+				-1800
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "west gallery"
+		},
+		{
+			"id": "hall_gallery_w_stairs",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				4395,
+				5205,
+				-1800,
+				-1500
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "-Y"
+		},
+		{
+			"id": "hall_gallery_e",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				4000,
+				5600,
+				1800,
+				2400
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "east gallery"
+		},
+		{
+			"id": "hall_gallery_e_stairs",
+			"zone": "HALL",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				4395,
+				5205,
+				1500,
+				1800
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "+Y"
+		},
+		{
+			"id": "hall_pylon_air",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "feature",
+			"rect": [
+				4490,
+				4710,
+				490,
+				710
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium + rune glow",
+			"note": "Air pylon (north-east)",
+			"removedBy": "Encounter.Zone_Air.Cleared"
+		},
+		{
+			"id": "hall_pylon_ice",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "feature",
+			"rect": [
+				4490,
+				4710,
+				-710,
+				-490
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium + rune glow",
+			"note": "Ice pylon (north-west)",
+			"removedBy": "Encounter.Zone_Ice.Cleared"
+		},
+		{
+			"id": "hall_pylon_fire",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "feature",
+			"rect": [
+				3290,
+				3510,
+				490,
+				710
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium + rune glow",
+			"note": "Fire pylon (south-east)",
+			"removedBy": "Encounter.Zone_Fire.Cleared"
+		},
+		{
+			"id": "hall_pylon_lightning",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "feature",
+			"rect": [
+				3290,
+				3510,
+				-710,
+				-490
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium + rune glow",
+			"note": "Lightning pylon (south-west)",
+			"removedBy": "Encounter.Zone_Lightning.Cleared"
+		},
+		{
+			"id": "hall_table_w",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				2750,
+				3050,
+				-1870,
+				-1730
+			],
+			"z0": 0,
+			"z1": 99,
+			"mesh": "SM_HallTable_01",
+			"note": "low cover"
+		},
+		{
+			"id": "hall_table_e",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				2750,
+				3050,
+				1730,
+				1870
+			],
+			"z0": 0,
+			"z1": 99,
+			"mesh": "SM_HallTable_01",
+			"note": "low cover"
+		},
+		{
+			"id": "hall_throne",
+			"zone": "HALL",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				4740,
+				4860,
+				-2310,
+				-2190
+			],
+			"z0": 210,
+			"z1": 495,
+			"mesh": "SM_Throne",
+			"note": "on the west gallery, facing east"
+		},
+		{
+			"id": "hall_cryo_tube",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "feature",
+			"rect": [
+				3790,
+				4210,
+				-210,
+				210
+			],
+			"z0": 0,
+			"z1": 455,
+			"mesh": "SciFi SM_LabCapsule11_1_Capsule + _Glass, scale 1.3",
+			"note": "the Valkyrie's cryogenic tube; stays as central cover"
+		},
+		{
+			"id": "hall_cube_w",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				3090,
+				3310,
+				-1810,
+				-1590
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "cover"
+		},
+		{
+			"id": "hall_cube_e",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				3090,
+				3310,
+				1590,
+				1810
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "cover"
+		},
+		{
+			"id": "hall_side_tube_w2050",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				2435,
+				2685,
+				-2175,
+				-1925
+			],
+			"z0": 0,
+			"z1": 328,
+			"mesh": "SciFi SM_LabCapsule05_Capsule + _Glass",
+			"note": "against the south wall"
+		},
+		{
+			"id": "hall_side_tube_w1600",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				2435,
+				2685,
+				-1725,
+				-1475
+			],
+			"z0": 0,
+			"z1": 328,
+			"mesh": "SciFi SM_LabCapsule05_Capsule + _Glass",
+			"note": "against the south wall"
+		},
+		{
+			"id": "hall_side_tube_e1600",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				2435,
+				2685,
+				1475,
+				1725
+			],
+			"z0": 0,
+			"z1": 328,
+			"mesh": "SciFi SM_LabCapsule05_Capsule + _Glass",
+			"note": "against the south wall"
+		},
+		{
+			"id": "hall_side_tube_e2050",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				2435,
+				2685,
+				1925,
+				2175
+			],
+			"z0": 0,
+			"z1": 328,
+			"mesh": "SciFi SM_LabCapsule05_Capsule + _Glass",
+			"note": "against the south wall"
+		},
+		{
+			"id": "hall_console_n1",
+			"zone": "HALL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				4660,
+				4740,
+				-390,
+				-310
+			],
+			"z0": 0,
+			"z1": 130,
+			"mesh": "SciFi SM_ControlPanel01",
+			"note": "cryo release console (interaction that starts Valkyrie_Future)"
+		},
+		{
+			"id": "seal_shelf_w",
+			"zone": "SEAL",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				6520,
+				6690,
+				-760,
+				-700
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "SM_Bookshelf_A_01",
+			"note": "dressing"
+		},
+		{
+			"id": "seal_shelf_e",
+			"zone": "SEAL",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				6520,
+				6690,
+				700,
+				760
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "SM_Bookshelf_A_01",
+			"note": "dressing"
+		},
+		{
+			"id": "seal_console_w",
+			"zone": "SEAL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				6460,
+				6540,
+				-640,
+				-560
+			],
+			"z0": 0,
+			"z1": 130,
+			"mesh": "SciFi SM_ControlPanel01",
+			"note": "dressing"
+		},
+		{
+			"id": "seal_console_e",
+			"zone": "SEAL",
+			"era": "future",
+			"kind": "prop",
+			"rect": [
+				6460,
+				6540,
+				560,
+				640
+			],
+			"z0": 0,
+			"z1": 130,
+			"mesh": "SciFi SM_ControlPanel01",
+			"note": "dressing"
+		},
+		{
+			"id": "east_gallery_n",
+			"zone": "EAST",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				1800,
+				2400,
+				2800,
+				4400
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "north gallery"
+		},
+		{
+			"id": "east_gallery_n_stairs",
+			"zone": "EAST",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				1500,
+				1800,
+				3195,
+				4005
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "east_gallery_s",
+			"zone": "EAST",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				-2400,
+				-1800,
+				2800,
+				4400
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "south gallery"
+		},
+		{
+			"id": "east_gallery_s_stairs",
+			"zone": "EAST",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				-1800,
+				-1500,
+				3195,
+				4005
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "-X"
+		},
+		{
+			"id": "east_hearth",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				-300,
+				300,
+				3700,
+				4300
+			],
+			"z0": 0,
+			"z1": 120,
+			"mesh": "BOX + SM_ConicalCauldron_02 + SM_FirePit_01 on top",
+			"note": "the great hearth"
+		},
+		{
+			"id": "east_core",
+			"zone": "EAST",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-300,
+				300,
+				3700,
+				4300
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "BOX, emissive MI_Scifi_Panels",
+			"note": "generator core (hides the portal from the hall)"
+		},
+		{
+			"id": "east_cover_1",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1210,
+				-590,
+				3165,
+				3235
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "east_cube_1",
+			"zone": "EAST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1010,
+				-790,
+				3090,
+				3310
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "machine block"
+		},
+		{
+			"id": "east_cover_2",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				590,
+				1210,
+				3165,
+				3235
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "east_cube_2",
+			"zone": "EAST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				790,
+				1010,
+				3090,
+				3310
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "machine block"
+		},
+		{
+			"id": "east_cover_3",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1035,
+				-965,
+				4390,
+				5010
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "east_cube_3",
+			"zone": "EAST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1110,
+				-890,
+				4590,
+				4810
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "machine block"
+		},
+		{
+			"id": "east_cover_4",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				965,
+				1035,
+				4390,
+				5010
+			],
+			"z0": 0,
+			"z1": 203,
+			"mesh": "3 x SM_Short_Walls_Wall_2M + 2 x SM_Short_Walls_Post",
+			"note": "low wall"
+		},
+		{
+			"id": "east_cube_4",
+			"zone": "EAST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				890,
+				1110,
+				4590,
+				4810
+			],
+			"z0": 0,
+			"z1": 228,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "machine block"
+		},
+		{
+			"id": "east_apse_n",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				390,
+				610,
+				5380,
+				5600
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "frames the portal, against the end wall"
+		},
+		{
+			"id": "east_apse_s",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				-610,
+				-390,
+				5380,
+				5600
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "frames the portal, against the end wall"
+		},
+		{
+			"id": "west_gallery_n",
+			"zone": "WEST",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				1800,
+				2400,
+				-4400,
+				-2800
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "north gallery"
+		},
+		{
+			"id": "west_gallery_n_stairs",
+			"zone": "WEST",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				1500,
+				1800,
+				-4005,
+				-3195
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "west_gallery_s",
+			"zone": "WEST",
+			"era": "both",
+			"kind": "block",
+			"rect": [
+				-2400,
+				-1800,
+				-4400,
+				-2800
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: BOX + floor tiles; future: BOX, MI_Scifi_Panels",
+			"note": "south gallery"
+		},
+		{
+			"id": "west_gallery_s_stairs",
+			"zone": "WEST",
+			"era": "both",
+			"kind": "stairs",
+			"rect": [
+				-1800,
+				-1500,
+				-4005,
+				-3195
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "past: SM_Stairs_4M; future: BOX wedge",
+			"note": "",
+			"asc": "-X"
+		},
+		{
+			"id": "west_orrery",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				-110,
+				110,
+				-4110,
+				-3890
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium + spark sprite",
+			"note": "the storm rod"
+		},
+		{
+			"id": "west_core",
+			"zone": "WEST",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-300,
+				300,
+				-4300,
+				-3700
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "BOX, emissive MI_Scifi_Panels",
+			"note": "server core"
+		},
+		{
+			"id": "west_cover_1",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1155,
+				-645,
+				-3260,
+				-3140
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "3 x SM_Bookshelf_A_01 back to back with 3 more",
+			"note": "bookshelf row"
+		},
+		{
+			"id": "west_rack_1",
+			"zone": "WEST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1155,
+				-645,
+				-3260,
+				-3140
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX 510x120x260, emissive MI_Scifi_Panels",
+			"note": "server rack row (where the bookshelves were)"
+		},
+		{
+			"id": "west_cover_2",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				645,
+				1155,
+				-3260,
+				-3140
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "3 x SM_Bookshelf_A_01 back to back with 3 more",
+			"note": "bookshelf row"
+		},
+		{
+			"id": "west_rack_2",
+			"zone": "WEST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				645,
+				1155,
+				-3260,
+				-3140
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX 510x120x260, emissive MI_Scifi_Panels",
+			"note": "server rack row (where the bookshelves were)"
+		},
+		{
+			"id": "west_cover_3",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				-1060,
+				-940,
+				-4955,
+				-4445
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "3 x SM_Bookshelf_A_01 back to back with 3 more",
+			"note": "bookshelf row"
+		},
+		{
+			"id": "west_rack_3",
+			"zone": "WEST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-1060,
+				-940,
+				-4955,
+				-4445
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX 510x120x260, emissive MI_Scifi_Panels",
+			"note": "server rack row (where the bookshelves were)"
+		},
+		{
+			"id": "west_cover_4",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				940,
+				1060,
+				-4955,
+				-4445
+			],
+			"z0": 0,
+			"z1": 201,
+			"mesh": "3 x SM_Bookshelf_A_01 back to back with 3 more",
+			"note": "bookshelf row"
+		},
+		{
+			"id": "west_rack_4",
+			"zone": "WEST",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				940,
+				1060,
+				-4955,
+				-4445
+			],
+			"z0": 0,
+			"z1": 260,
+			"mesh": "BOX 510x120x260, emissive MI_Scifi_Panels",
+			"note": "server rack row (where the bookshelves were)"
+		},
+		{
+			"id": "west_apse_n",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				390,
+				610,
+				-5600,
+				-5380
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "frames the portal, against the end wall"
+		},
+		{
+			"id": "west_apse_s",
+			"zone": "WEST",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				-610,
+				-390,
+				-5600,
+				-5380
+			],
+			"z0": 0,
+			"z1": 507,
+			"mesh": "SM_Podium",
+			"note": "frames the portal, against the end wall"
+		},
+		{
+			"id": "east_anvil_1",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				-540,
+				-460,
+				3460,
+				3540
+			],
+			"z0": 0,
+			"z1": 40,
+			"mesh": "SM_Anvil",
+			"note": "dressing"
+		},
+		{
+			"id": "east_anvil_2",
+			"zone": "EAST",
+			"era": "past",
+			"kind": "prop",
+			"rect": [
+				460,
+				540,
+				3460,
+				3540
+			],
+			"z0": 0,
+			"z1": 40,
+			"mesh": "SM_Anvil",
+			"note": "dressing"
+		},
+		{
+			"id": "ne_terrace",
+			"zone": "NE",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				3600,
+				5600,
+				2400,
+				5600
+			],
+			"z0": 0,
+			"z1": 410,
+			"mesh": "BOX; south face 8 x SM_CastleTower_Wall_A_01; top 5x8 SM_CastleTower_Floor_A_01 (or one tiled box)",
+			"note": "the terrace, 4.1 m up"
+		},
+		{
+			"id": "ne_stairs",
+			"zone": "NE",
+			"era": "past",
+			"kind": "stairs",
+			"rect": [
+				3000,
+				3600,
+				3595,
+				4405
+			],
+			"z0": 0,
+			"z1": 410,
+			"mesh": "SM_Stairs_8M",
+			"note": "main way up (navmesh)",
+			"asc": "+X"
+		},
+		{
+			"id": "ne_step",
+			"zone": "NE",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				3400,
+				3600,
+				5100,
+				5300
+			],
+			"z0": 0,
+			"z1": 200,
+			"mesh": "BOX",
+			"note": "second way up for the player: hop on, then ledge climb"
+		},
+		{
+			"id": "ne_crenel_1",
+			"zone": "NE",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				3607.5,
+				3692.5,
+				2492,
+				2908
+			],
+			"z0": 410,
+			"z1": 641,
+			"mesh": "SM_Crenel_A_01",
+			"note": "parapet on the terrace edge"
+		},
+		{
+			"id": "ne_crenel_2",
+			"zone": "NE",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				3607.5,
+				3692.5,
+				2908,
+				3324
+			],
+			"z0": 410,
+			"z1": 641,
+			"mesh": "SM_Crenel_A_01",
+			"note": "parapet"
+		},
+		{
+			"id": "ne_crenel_3",
+			"zone": "NE",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				3607.5,
+				3692.5,
+				4442,
+				4858
+			],
+			"z0": 410,
+			"z1": 641,
+			"mesh": "SM_Crenel_A_01",
+			"note": "parapet"
+		},
+		{
+			"id": "ne_tower_1",
+			"zone": "NE",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				4000,
+				4400,
+				2800,
+				3200
+			],
+			"z0": 410,
+			"z1": 610,
+			"mesh": "BOX",
+			"note": "wind tower, 2 m above the terrace"
+		},
+		{
+			"id": "ne_tower_2",
+			"zone": "NE",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				4800,
+				5200,
+				3800,
+				4200
+			],
+			"z0": 410,
+			"z1": 610,
+			"mesh": "BOX",
+			"note": "wind tower, 2 m above the terrace"
+		},
+		{
+			"id": "ne_aerie",
+			"zone": "NE",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				5200,
+				5600,
+				4800,
+				5600
+			],
+			"z0": 410,
+			"z1": 700,
+			"mesh": "BOX",
+			"note": "the aerie, 2.9 m above the terrace: the Air chest"
+		},
+		{
+			"id": "ne_spire",
+			"zone": "NE",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				4190,
+				4410,
+				4890,
+				5110
+			],
+			"z0": 410,
+			"z1": 860,
+			"mesh": "SM_Podium, sunk 57 cm into the terrace",
+			"note": "4.5 m above the terrace: meant for the double jump (bonus)"
+		},
+		{
+			"id": "ne_sealed",
+			"zone": "NE",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				3100,
+				5600,
+				2400,
+				5600
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "no geometry needed behind the corridor wall",
+			"note": "sealed mass (not reachable in the future)",
+			"sealed": true
+		},
+		{
+			"id": "ne_crate",
+			"zone": "NE",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				2920,
+				3040,
+				3840,
+				3960
+			],
+			"z0": 0,
+			"z1": 112,
+			"mesh": "SciFi SM_LabBarrels01_1 x3",
+			"note": "low cover against the north wall of the corridor"
+		},
+		{
+			"id": "nw_pillar_3700_5000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				3625,
+				3775,
+				-5075,
+				-4925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_pillar_3700_4000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				3625,
+				3775,
+				-4075,
+				-3925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_pillar_3700_3000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				3625,
+				3775,
+				-3075,
+				-2925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_pillar_4400_5000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				4325,
+				4475,
+				-5075,
+				-4925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_pillar_4400_4000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				4325,
+				4475,
+				-4075,
+				-3925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_pillar_4400_3000",
+			"zone": "NW",
+			"era": "past",
+			"kind": "pillar",
+			"rect": [
+				4325,
+				4475,
+				-3075,
+				-2925
+			],
+			"z0": 0,
+			"z1": 1400,
+			"mesh": "SM_PillarStem_01 + SM_PillarTop_01",
+			"note": "frozen pillar"
+		},
+		{
+			"id": "nw_gallery",
+			"zone": "NW",
+			"era": "past",
+			"kind": "block",
+			"rect": [
+				5000,
+				5600,
+				-5600,
+				-2400
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "BOX + floor tiles",
+			"note": "north gallery: the Ice chest"
+		},
+		{
+			"id": "nw_gallery_stairs",
+			"zone": "NW",
+			"era": "past",
+			"kind": "stairs",
+			"rect": [
+				4700,
+				5000,
+				-4405,
+				-3595
+			],
+			"z0": 0,
+			"z1": 210,
+			"mesh": "SM_Stairs_4M",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "nw_ice_1",
+			"zone": "NW",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				3950,
+				4150,
+				-4700,
+				-4300
+			],
+			"z0": 0,
+			"z1": 200,
+			"mesh": "BOX, ice tile",
+			"note": "ice block"
+		},
+		{
+			"id": "nw_ice_2",
+			"zone": "NW",
+			"era": "past",
+			"kind": "cover",
+			"rect": [
+				3950,
+				4150,
+				-3700,
+				-3300
+			],
+			"z0": 0,
+			"z1": 200,
+			"mesh": "BOX, ice tile",
+			"note": "ice block"
+		},
+		{
+			"id": "nw_sealed",
+			"zone": "NW",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				3100,
+				5600,
+				-5600,
+				-2400
+			],
+			"z0": 0,
+			"z1": 1200,
+			"mesh": "no geometry needed behind the corridor wall",
+			"note": "sealed mass (not reachable in the future)",
+			"sealed": true
+		},
+		{
+			"id": "hangar_dock_w",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-12150,
+				-9550,
+				-2400,
+				-1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "HTB SM_Hero_Floor_01",
+			"note": "dock, 1 m high"
+		},
+		{
+			"id": "hangar_dock_w_ramp_n",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-9550,
+				-9250,
+				-2400,
+				-1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "-X"
+		},
+		{
+			"id": "hangar_dock_w_ramp_s",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-12450,
+				-12150,
+				-2400,
+				-1800
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "hangar_dock_e",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-12150,
+				-9550,
+				1800,
+				2400
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "HTB SM_Hero_Floor_01",
+			"note": "dock, 1 m high"
+		},
+		{
+			"id": "hangar_dock_e_ramp_n",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-9550,
+				-9250,
+				1800,
+				2400
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "-X"
+		},
+		{
+			"id": "hangar_dock_e_ramp_s",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-12450,
+				-12150,
+				1800,
+				2400
+			],
+			"z0": 0,
+			"z1": 100,
+			"mesh": "BOX wedge",
+			"note": "",
+			"asc": "+X"
+		},
+		{
+			"id": "hangar_container_nw",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-10300,
+				-9100,
+				-1450,
+				-1150
+			],
+			"z0": 0,
+			"z1": 300,
+			"mesh": "BOX 1200x300x300 container",
+			"note": "big cover"
+		},
+		{
+			"id": "hangar_container_ne",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-10300,
+				-9100,
+				1150,
+				1450
+			],
+			"z0": 0,
+			"z1": 300,
+			"mesh": "BOX container",
+			"note": "big cover"
+		},
+		{
+			"id": "hangar_container_sw",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-12600,
+				-11400,
+				-1450,
+				-1150
+			],
+			"z0": 0,
+			"z1": 300,
+			"mesh": "BOX container",
+			"note": "big cover"
+		},
+		{
+			"id": "hangar_container_se",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-12600,
+				-11400,
+				1150,
+				1450
+			],
+			"z0": 0,
+			"z1": 300,
+			"mesh": "BOX container",
+			"note": "big cover"
+		},
+		{
+			"id": "hangar_catwalk",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "block",
+			"rect": [
+				-13250,
+				-13050,
+				-2090,
+				2090
+			],
+			"z0": 262,
+			"z1": 282,
+			"mesh": "10 x HTB SM_Bridge_01 (deck at +282) + 4 x SM_Railing_02 on the wall side",
+			"note": "gantry along the south wall: a deck box in the shell (the kit piece keeps no collision; its own hull is solid underneath)"
+		},
+		{
+			"id": "hangar_catwalk_ramp_w",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-13050,
+				-12450,
+				-2090,
+				-1890
+			],
+			"z0": 0,
+			"z1": 282,
+			"mesh": "BOX wedge",
+			"note": "ramp to the gantry",
+			"asc": "-X"
+		},
+		{
+			"id": "hangar_catwalk_ramp_e",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "stairs",
+			"rect": [
+				-13050,
+				-12450,
+				1890,
+				2090
+			],
+			"z0": 0,
+			"z1": 282,
+			"mesh": "BOX wedge",
+			"note": "ramp to the gantry",
+			"asc": "-X"
+		},
+		{
+			"id": "hangar_cube_w_s",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-11410,
+				-11190,
+				-2210,
+				-1990
+			],
+			"z0": 100,
+			"z1": 328,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "hangar_cube_w_n",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-10510,
+				-10290,
+				-2210,
+				-1990
+			],
+			"z0": 100,
+			"z1": 328,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "hangar_cube_e_s",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-11410,
+				-11190,
+				1990,
+				2210
+			],
+			"z0": 100,
+			"z1": 328,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		},
+		{
+			"id": "hangar_cube_e_n",
+			"zone": "HANGAR",
+			"era": "future",
+			"kind": "cover",
+			"rect": [
+				-10510,
+				-10290,
+				1990,
+				2210
+			],
+			"z0": 100,
+			"z1": 328,
+			"mesh": "HTB SM_Prop_HS",
+			"note": "on the dock"
+		}
+	],
+	"portals": [
+		{
+			"id": "P1",
+			"name": "Seal portal",
+			"pos": [
+				6150,
+				0,
+				0
+			],
+			"yaw": 0,
+			"zone": "SEAL",
+			"requiredFlag": "GotFirstGun",
+			"note": "the way back after the first gun"
+		},
+		{
+			"id": "P0",
+			"name": "Hub portal",
+			"pos": [
+				0,
+				0,
+				0
+			],
+			"yaw": 0,
+			"zone": "COURT",
+			"requiredFlag": "Encounter.Wave_Future_1.Cleared",
+			"note": "Courtyard <-> Yard, lit once the Yard wave is cleared"
+		},
+		{
+			"id": "P2",
+			"name": "Forge portal",
+			"pos": [
+				0,
+				5300,
+				0
+			],
+			"yaw": 90,
+			"zone": "EAST",
+			"requiredFlag": "Encounter.Zone_Fire.Cleared",
+			"note": "Forge <-> Generator Hall"
+		},
+		{
+			"id": "P3",
+			"name": "Stormworks portal",
+			"pos": [
+				0,
+				-5300,
+				0
+			],
+			"yaw": -90,
+			"zone": "WEST",
+			"requiredFlag": "Encounter.Zone_Lightning.Cleared",
+			"note": "Stormworks <-> Server Hall"
+		},
+		{
+			"id": "P4",
+			"name": "Cryo portal",
+			"pos": [
+				2750,
+				-3200,
+				0
+			],
+			"yaw": -90,
+			"zone": "NW",
+			"requiredFlag": null,
+			"note": "Cryo Corridor <-> Frozen Cistern; only reachable from the future first"
+		},
+		{
+			"id": "P5",
+			"name": "Signal portal",
+			"pos": [
+				2750,
+				3200,
+				0
+			],
+			"yaw": 90,
+			"zone": "NE",
+			"requiredFlag": null,
+			"note": "Signal Corridor <-> High Ward; only reachable from the future first"
+		}
+	],
+	"special": [
+		{
+			"id": "START",
+			"name": "Player start",
+			"era": "past",
+			"pos": [
+				-3300,
+				0,
+				0
+			],
+			"yaw": 0
+		},
+		{
+			"id": "SEAL",
+			"name": "The seal",
+			"era": "past",
+			"pos": [
+				6850,
+				0,
+				0
+			],
+			"note": "interact: cutscene 1, sets SealUsed, travel to the future in place"
+		},
+		{
+			"id": "FINAL",
+			"name": "Final portal",
+			"era": "future",
+			"pos": [
+				6850,
+				0,
+				0
+			],
+			"requiredFlag": "FinalPortalOpen",
+			"note": "opens on the seal when the two quest items are combined; leads to the Entity map"
+		},
+		{
+			"id": "CAGE",
+			"name": "Rune cage (Valkyrie)",
+			"era": "past",
+			"pos": [
+				4000,
+				0,
+				0
+			],
+			"note": "interact when the four pylons are gone: starts Valkyrie_Past"
+		},
+		{
+			"id": "TUBE",
+			"name": "Cryo tube console",
+			"era": "future",
+			"pos": [
+				4700,
+				-350,
+				0
+			],
+			"note": "interact: starts Valkyrie_Future; needs Valkyrie_Past and MiniBoss_Herald cleared"
+		}
+	],
+	"encounters": [
+		{
+			"id": "Opening_Past",
+			"zone": "COURT",
+			"era": "past",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					0,
+					300
+				],
+				"e": [
+					1600,
+					1900,
+					400
+				]
+			},
+			"spawns": [
+				[
+					1700,
+					-1300,
+					0
+				],
+				[
+					1700,
+					1300,
+					0
+				],
+				[
+					2000,
+					-600,
+					0
+				],
+				[
+					2000,
+					600,
+					0
+				],
+				[
+					1200,
+					-1900,
+					0
+				],
+				[
+					1200,
+					1900,
+					0
+				],
+				[
+					600,
+					-1500,
+					0
+				],
+				[
+					600,
+					1500,
+					0
+				]
+			],
+			"size": "2 sub-waves, 8 enemies (imps and orcs)",
+			"seconds": 20,
+			"ignorePortals": [
+				"P0"
+			]
+		},
+		{
+			"id": "Opening_Future",
+			"zone": "HALL",
+			"era": "future",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					3900,
+					0,
+					300
+				],
+				"e": [
+					1400,
+					2300,
+					600
+				]
+			},
+			"spawns": [
+				[
+					2900,
+					-400,
+					0
+				],
+				[
+					2900,
+					400,
+					0
+				],
+				[
+					3050,
+					-2000,
+					0
+				],
+				[
+					3050,
+					2000,
+					0
+				],
+				[
+					3600,
+					-2100,
+					0
+				],
+				[
+					3600,
+					2100,
+					0
+				]
+			],
+			"size": "2 sub-waves, 8 enemies; the first one spawned (first spawn point) carries the pistol",
+			"seconds": 25
+		},
+		{
+			"id": "Zone_Fire",
+			"zone": "EAST",
+			"era": "past",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					4000,
+					300
+				],
+				"e": [
+					2000,
+					1300,
+					600
+				]
+			},
+			"spawns": [
+				[
+					-1500,
+					5200,
+					0
+				],
+				[
+					1500,
+					5200,
+					0
+				],
+				[
+					-2000,
+					4750,
+					0
+				],
+				[
+					2000,
+					4750,
+					0
+				],
+				[
+					-600,
+					4650,
+					0
+				],
+				[
+					600,
+					4650,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-45 enemies",
+			"seconds": 72
+		},
+		{
+			"id": "Zone_Lightning",
+			"zone": "WEST",
+			"era": "past",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					-4000,
+					300
+				],
+				"e": [
+					2000,
+					1300,
+					600
+				]
+			},
+			"spawns": [
+				[
+					-1500,
+					-5200,
+					0
+				],
+				[
+					1500,
+					-5200,
+					0
+				],
+				[
+					-2000,
+					-4750,
+					0
+				],
+				[
+					2000,
+					-4750,
+					0
+				],
+				[
+					-600,
+					-4650,
+					0
+				],
+				[
+					600,
+					-4650,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-45 enemies",
+			"seconds": 72
+		},
+		{
+			"id": "Zone_Ice",
+			"zone": "NW",
+			"era": "past",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					4500,
+					-4000,
+					300
+				],
+				"e": [
+					900,
+					1600,
+					600
+				]
+			},
+			"spawns": [
+				[
+					4550,
+					-5300,
+					0
+				],
+				[
+					4550,
+					-2700,
+					0
+				],
+				[
+					4000,
+					-5300,
+					0
+				],
+				[
+					4000,
+					-2700,
+					0
+				],
+				[
+					4500,
+					-4600,
+					0
+				],
+				[
+					4500,
+					-3400,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-45 enemies",
+			"seconds": 72
+		},
+		{
+			"id": "Zone_Air",
+			"zone": "NE",
+			"era": "past",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					4600,
+					4000,
+					710
+				],
+				"e": [
+					1000,
+					1600,
+					400
+				]
+			},
+			"spawns": [
+				[
+					5300,
+					2800,
+					410
+				],
+				[
+					5300,
+					3400,
+					410
+				],
+				[
+					5000,
+					4500,
+					410
+				],
+				[
+					4500,
+					5300,
+					410
+				],
+				[
+					4000,
+					3600,
+					410
+				],
+				[
+					4700,
+					2700,
+					410
+				]
+			],
+			"size": "5 sub-waves, 35-45 enemies (imps and shamans first)",
+			"seconds": 72
+		},
+		{
+			"id": "Valkyrie_Past",
+			"zone": "HALL",
+			"era": "past",
+			"start": "interact",
+			"exists": true,
+			"trigger": null,
+			"spawns": [
+				[
+					4000,
+					0,
+					0
+				]
+			],
+			"size": "boss",
+			"seconds": 120,
+			"requires": [
+				"Encounter.Zone_Fire.Cleared",
+				"Encounter.Zone_Lightning.Cleared",
+				"Encounter.Zone_Ice.Cleared",
+				"Encounter.Zone_Air.Cleared"
+			]
+		},
+		{
+			"id": "Wave_Future_2",
+			"zone": "EAST",
+			"era": "future",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					3550,
+					300
+				],
+				"e": [
+					2000,
+					1050,
+					600
+				]
+			},
+			"spawns": [
+				[
+					-1400,
+					2750,
+					0
+				],
+				[
+					1400,
+					2750,
+					0
+				],
+				[
+					-700,
+					2700,
+					0
+				],
+				[
+					700,
+					2700,
+					0
+				],
+				[
+					-1200,
+					3800,
+					0
+				],
+				[
+					1200,
+					3800,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-40 enemies",
+			"seconds": 67
+		},
+		{
+			"id": "Wave_Future_3",
+			"zone": "WEST",
+			"era": "future",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					-3550,
+					300
+				],
+				"e": [
+					2000,
+					1050,
+					600
+				]
+			},
+			"spawns": [
+				[
+					-1400,
+					-2750,
+					0
+				],
+				[
+					1400,
+					-2750,
+					0
+				],
+				[
+					-700,
+					-2700,
+					0
+				],
+				[
+					700,
+					-2700,
+					0
+				],
+				[
+					-1200,
+					-3800,
+					0
+				],
+				[
+					1200,
+					-3800,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-40 enemies",
+			"seconds": 74
+		},
+		{
+			"id": "Wave_Future_1",
+			"zone": "COURT",
+			"era": "future",
+			"start": "trigger",
+			"exists": true,
+			"trigger": {
+				"c": [
+					0,
+					0,
+					300
+				],
+				"e": [
+					1900,
+					1900,
+					600
+				]
+			},
+			"spawns": [
+				[
+					2100,
+					-1700,
+					0
+				],
+				[
+					2100,
+					1700,
+					0
+				],
+				[
+					-2100,
+					-1700,
+					0
+				],
+				[
+					-2100,
+					1700,
+					0
+				],
+				[
+					600,
+					-2000,
+					0
+				],
+				[
+					600,
+					2000,
+					0
+				],
+				[
+					-600,
+					-2000,
+					0
+				],
+				[
+					-600,
+					2000,
+					0
+				]
+			],
+			"size": "5 sub-waves, 35-40 enemies",
+			"seconds": 60
+		},
+		{
+			"id": "Skirmish_Signal",
+			"zone": "NE",
+			"era": "future",
+			"start": "trigger",
+			"exists": false,
+			"trigger": {
+				"c": [
+					2750,
+					4800,
+					200
+				],
+				"e": [
+					350,
+					300,
+					200
+				]
+			},
+			"spawns": [
+				[
+					2750,
+					4100,
+					0
+				],
+				[
+					2600,
+					3600,
+					0
+				],
+				[
+					2900,
+					3600,
+					0
+				],
+				[
+					2750,
+					4400,
+					0
+				]
+			],
+			"size": "NEW, corridor fight: 3 Drone_Future + 2 Orc_Future, one wave",
+			"seconds": 15
+		},
+		{
+			"id": "Skirmish_Breach",
+			"zone": "BREACH",
+			"era": "future",
+			"start": "trigger",
+			"exists": false,
+			"trigger": {
+				"c": [
+					-4700,
+					0,
+					160
+				],
+				"e": [
+					300,
+					265,
+					170
+				]
+			},
+			"spawns": [
+				[
+					-7000,
+					0,
+					0
+				],
+				[
+					-7200,
+					-120,
+					0
+				],
+				[
+					-7200,
+					120,
+					0
+				],
+				[
+					-7600,
+					0,
+					0
+				],
+				[
+					-7700,
+					-130,
+					0
+				],
+				[
+					-7700,
+					130,
+					0
+				]
+			],
+			"size": "NEW, corridor fight: 4 Drone_Future + 2 Orc_Future, one wave",
+			"seconds": 20
+		},
+		{
+			"id": "MiniBoss_Herald",
+			"zone": "HANGAR",
+			"era": "future",
+			"start": "trigger",
+			"exists": false,
+			"trigger": {
+				"c": [
+					-10850,
+					0,
+					500
+				],
+				"e": [
+					2000,
+					2000,
+					1000
+				]
+			},
+			"spawns": [
+				[
+					-10850,
+					0,
+					0
+				]
+			],
+			"size": "NEW, mini-boss: the tentacle machine (actor class GBEntity), one wave",
+			"seconds": 75
+		},
+		{
+			"id": "Valkyrie_Future",
+			"zone": "HALL",
+			"era": "future",
+			"start": "interact",
+			"exists": true,
+			"trigger": null,
+			"spawns": [
+				[
+					3650,
+					0,
+					0
+				]
+			],
+			"size": "boss",
+			"seconds": 120,
+			"requires": [
+				"Encounter.Valkyrie_Past.Cleared",
+				"Encounter.MiniBoss_Herald.Cleared"
+			]
+		}
+	],
+	"chests": [
+		{
+			"id": "chest_fire",
+			"zone": "EAST",
+			"era": "past",
+			"pos": [
+				0,
+				4900,
+				0
+			],
+			"requiredFlag": "Encounter.Zone_Fire.Cleared",
+			"contents": "Fire knowledge (fire wall + flamethrower); Ember staff (provisional)"
+		},
+		{
+			"id": "chest_lightning",
+			"zone": "WEST",
+			"era": "past",
+			"pos": [
+				0,
+				-4900,
+				0
+			],
+			"requiredFlag": "Encounter.Zone_Lightning.Cleared",
+			"contents": "Lightning knowledge (rune trap + static ball)"
+		},
+		{
+			"id": "chest_ice",
+			"zone": "NW",
+			"era": "past",
+			"pos": [
+				5300,
+				-4000,
+				210
+			],
+			"requiredFlag": "Encounter.Zone_Ice.Cleared",
+			"contents": "Ice knowledge (ice shield + ice floor)"
+		},
+		{
+			"id": "chest_air",
+			"zone": "NE",
+			"era": "past",
+			"pos": [
+				5400,
+				5200,
+				700
+			],
+			"requiredFlag": "Encounter.Zone_Air.Cleared",
+			"contents": "Air knowledge (double jump, improved dash, speed)"
+		},
+		{
+			"id": "crate_herald",
+			"zone": "HANGAR",
+			"era": "future",
+			"pos": [
+				-12800,
+				0,
+				0
+			],
+			"requiredFlag": "Encounter.MiniBoss_Herald.Cleared",
+			"contents": "Rifle (provisional) + 2 Ammo_Magazine"
+		},
+		{
+			"id": "crate_yard",
+			"zone": "GATE",
+			"era": "future",
+			"pos": [
+				-3200,
+				600,
+				0
+			],
+			"requiredFlag": null,
+			"contents": "Shotgun (provisional) + 1 HealthInjection"
+		}
+	],
+	"pickups": [
+		{
+			"id": "pk_court_stage",
+			"era": "past",
+			"pos": [
+				0,
+				2100,
+				210
+			],
+			"item": "HealthPotion"
+		},
+		{
+			"id": "pk_court_perch",
+			"era": "past",
+			"pos": [
+				0,
+				-2100,
+				410
+			],
+			"item": "ManaPotion"
+		},
+		{
+			"id": "pk_court_podium",
+			"era": "past",
+			"pos": [
+				1900,
+				1900,
+				507
+			],
+			"item": "ManaPotion x2 (meant for the double jump)"
+		},
+		{
+			"id": "pk_hall_gallery_w",
+			"era": "past",
+			"pos": [
+				5200,
+				-2100,
+				210
+			],
+			"item": "ManaPotion"
+		},
+		{
+			"id": "pk_hall_gallery_e",
+			"era": "past",
+			"pos": [
+				5200,
+				2100,
+				210
+			],
+			"item": "HealthPotion"
+		},
+		{
+			"id": "pk_ne_tower",
+			"era": "past",
+			"pos": [
+				4200,
+				3000,
+				610
+			],
+			"item": "ManaPotion"
+		},
+		{
+			"id": "pk_ne_spire",
+			"era": "past",
+			"pos": [
+				4300,
+				5000,
+				860
+			],
+			"item": "HealthPotion x2 (meant for the double jump)"
+		},
+		{
+			"id": "pk_nw_gallery",
+			"era": "past",
+			"pos": [
+				5300,
+				-2700,
+				210
+			],
+			"item": "HealthPotion"
+		},
+		{
+			"id": "pk_east_gallery",
+			"era": "past",
+			"pos": [
+				2100,
+				3000,
+				210
+			],
+			"item": "ManaPotion"
+		},
+		{
+			"id": "pk_west_gallery",
+			"era": "past",
+			"pos": [
+				2100,
+				-3000,
+				210
+			],
+			"item": "ManaPotion"
+		},
+		{
+			"id": "pk_hall_f_w",
+			"era": "future",
+			"pos": [
+				5200,
+				-2100,
+				210
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_hall_f_e",
+			"era": "future",
+			"pos": [
+				5200,
+				2100,
+				210
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_yard_dock_w",
+			"era": "future",
+			"pos": [
+				0,
+				-1500,
+				100
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_yard_dock_e",
+			"era": "future",
+			"pos": [
+				0,
+				1500,
+				100
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_gate_ammo",
+			"era": "future",
+			"pos": [
+				-3000,
+				-500,
+				0
+			],
+			"item": "Ammo_Magazine x2"
+		},
+		{
+			"id": "pk_east_f_gallery",
+			"era": "future",
+			"pos": [
+				-2100,
+				3600,
+				210
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_east_f_gallery2",
+			"era": "future",
+			"pos": [
+				2100,
+				3600,
+				210
+			],
+			"item": "HealthInjection"
+		},
+		{
+			"id": "pk_west_f_gallery",
+			"era": "future",
+			"pos": [
+				-2100,
+				-3600,
+				210
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_west_f_gallery2",
+			"era": "future",
+			"pos": [
+				2100,
+				-3600,
+				210
+			],
+			"item": "HealthInjection"
+		},
+		{
+			"id": "pk_signal_end",
+			"era": "future",
+			"pos": [
+				2750,
+				5400,
+				0
+			],
+			"item": "Ammo_Magazine + HealthInjection"
+		},
+		{
+			"id": "pk_cryo_end",
+			"era": "future",
+			"pos": [
+				2750,
+				-5400,
+				0
+			],
+			"item": "Ammo_Magazine + Grenade (provisional)"
+		},
+		{
+			"id": "pk_ante",
+			"era": "future",
+			"pos": [
+				-8250,
+				-1500,
+				0
+			],
+			"item": "Ammo_Magazine x2 + HealthInjection (before the Herald)"
+		},
+		{
+			"id": "pk_hangar_dock_w",
+			"era": "future",
+			"pos": [
+				-10850,
+				-2100,
+				100
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_hangar_dock_e",
+			"era": "future",
+			"pos": [
+				-10850,
+				2100,
+				100
+			],
+			"item": "Ammo_Magazine"
+		},
+		{
+			"id": "pk_hangar_catwalk",
+			"era": "future",
+			"pos": [
+				-13150,
+				0,
+				282
+			],
+			"item": "HealthInjection"
+		}
+	],
+	"checkpoints": [
+		{
+			"id": "cp_start",
+			"era": "past",
+			"pos": [
+				-3300,
+				0,
+				0
+			],
+			"extent": [
+				300,
+				300,
+				200
+			]
+		},
+		{
+			"id": "cp_hall",
+			"era": "past",
+			"pos": [
+				2750,
+				0,
+				0
+			],
+			"extent": [
+				200,
+				300,
+				200
+			]
+		},
+		{
+			"id": "cp_seal",
+			"era": "past",
+			"pos": [
+				5900,
+				0,
+				0
+			],
+			"extent": [
+				200,
+				300,
+				200
+			]
+		},
+		{
+			"id": "cp_forge_door",
+			"era": "past",
+			"pos": [
+				1600,
+				2150,
+				0
+			],
+			"extent": [
+				250,
+				200,
+				200
+			]
+		},
+		{
+			"id": "cp_storm_door",
+			"era": "past",
+			"pos": [
+				1600,
+				-2150,
+				0
+			],
+			"extent": [
+				250,
+				200,
+				200
+			]
+		},
+		{
+			"id": "cp_checkpoint",
+			"era": "future",
+			"pos": [
+				-3300,
+				0,
+				0
+			],
+			"extent": [
+				300,
+				300,
+				200
+			]
+		},
+		{
+			"id": "cp_ante",
+			"era": "future",
+			"pos": [
+				-8250,
+				0,
+				0
+			],
+			"extent": [
+				150,
+				300,
+				200
+			]
+		}
+	],
+	"stations": [
+		{
+			"n": 1,
+			"era": "past",
+			"pos": [
+				-3300,
+				0
+			],
+			"text": "Start in the gatehouse"
+		},
+		{
+			"n": 2,
+			"era": "past",
+			"pos": [
+				300,
+				-250
+			],
+			"text": "Opening_Past in the courtyard"
+		},
+		{
+			"n": 3,
+			"era": "past",
+			"pos": [
+				6850,
+				0
+			],
+			"text": "The seal: cutscene 1, thrown to the future"
+		},
+		{
+			"n": 4,
+			"era": "future",
+			"pos": [
+				3300,
+				-350
+			],
+			"text": "Opening_Future, first gun, cutscene 2"
+		},
+		{
+			"n": 5,
+			"era": "future",
+			"pos": [
+				6150,
+				0
+			],
+			"text": "Portal P1 back to the castle"
+		},
+		{
+			"n": 6,
+			"era": "past",
+			"pos": [
+				600,
+				3900
+			],
+			"text": "Zone_Fire in the Forge, chest"
+		},
+		{
+			"n": 7,
+			"era": "past",
+			"pos": [
+				0,
+				5300
+			],
+			"text": "Portal P2"
+		},
+		{
+			"n": 8,
+			"era": "future",
+			"pos": [
+				700,
+				3300
+			],
+			"text": "Wave_Future_2 in the Generator Hall"
+		},
+		{
+			"n": 9,
+			"era": "future",
+			"pos": [
+				0,
+				0
+			],
+			"text": "Wave_Future_1 in the Yard, portal P0"
+		},
+		{
+			"n": 10,
+			"era": "past",
+			"pos": [
+				600,
+				-3900
+			],
+			"text": "Zone_Lightning in the Stormworks, chest"
+		},
+		{
+			"n": 11,
+			"era": "past",
+			"pos": [
+				0,
+				-5300
+			],
+			"text": "Portal P3"
+		},
+		{
+			"n": 12,
+			"era": "future",
+			"pos": [
+				700,
+				-3300
+			],
+			"text": "Wave_Future_3 in the Server Hall"
+		},
+		{
+			"n": 13,
+			"era": "future",
+			"pos": [
+				-10850,
+				0
+			],
+			"text": "Breach skirmish, then the Herald in the Hangar"
+		},
+		{
+			"n": 14,
+			"era": "future",
+			"pos": [
+				2750,
+				-3200
+			],
+			"text": "Cryo Corridor (door opened by Fire), portal P4"
+		},
+		{
+			"n": 15,
+			"era": "past",
+			"pos": [
+				4300,
+				-4000
+			],
+			"text": "Zone_Ice in the Frozen Cistern, chest, door D7"
+		},
+		{
+			"n": 16,
+			"era": "future",
+			"pos": [
+				2750,
+				3200
+			],
+			"text": "Signal Corridor (door opened by Lightning), skirmish, portal P5"
+		},
+		{
+			"n": 17,
+			"era": "past",
+			"pos": [
+				4600,
+				4000
+			],
+			"text": "Zone_Air on the High Ward, chest, door D6"
+		},
+		{
+			"n": 18,
+			"era": "past",
+			"pos": [
+				4000,
+				0
+			],
+			"text": "Valkyrie_Past in the Great Hall"
+		},
+		{
+			"n": 19,
+			"era": "past",
+			"pos": [
+				6150,
+				0
+			],
+			"text": "Portal P1 to the future"
+		},
+		{
+			"n": 20,
+			"era": "future",
+			"pos": [
+				4000,
+				-450
+			],
+			"text": "Valkyrie_Future in the Containment Hall"
+		},
+		{
+			"n": 21,
+			"era": "future",
+			"pos": [
+				6850,
+				0
+			],
+			"text": "Final portal on the seal"
+		}
+	],
+	"legs": [
+		{
+			"era": "past",
+			"pts": [
+				[
+					-3300,
+					0
+				],
+				[
+					-2400,
+					0
+				],
+				[
+					300,
+					-250
+				],
+				[
+					2400,
+					0
+				],
+				[
+					3000,
+					0
+				],
+				[
+					3400,
+					-920
+				],
+				[
+					4600,
+					-920
+				],
+				[
+					5100,
+					0
+				],
+				[
+					5600,
+					0
+				],
+				[
+					6850,
+					0
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					6850,
+					0
+				],
+				[
+					5600,
+					0
+				],
+				[
+					5000,
+					-350
+				],
+				[
+					3300,
+					-350
+				],
+				[
+					5000,
+					250
+				],
+				[
+					5600,
+					0
+				],
+				[
+					6150,
+					0
+				]
+			]
+		},
+		{
+			"era": "past",
+			"pts": [
+				[
+					6150,
+					0
+				],
+				[
+					5600,
+					0
+				],
+				[
+					5100,
+					0
+				],
+				[
+					4600,
+					920
+				],
+				[
+					3400,
+					920
+				],
+				[
+					3000,
+					0
+				],
+				[
+					2400,
+					0
+				],
+				[
+					1900,
+					1300
+				],
+				[
+					1600,
+					2400
+				],
+				[
+					1500,
+					2900
+				],
+				[
+					600,
+					3900
+				],
+				[
+					0,
+					4900
+				],
+				[
+					0,
+					5300
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					0,
+					5300
+				],
+				[
+					600,
+					4700
+				],
+				[
+					700,
+					3300
+				],
+				[
+					0,
+					2400
+				],
+				[
+					0,
+					0
+				]
+			]
+		},
+		{
+			"era": "past",
+			"pts": [
+				[
+					0,
+					0
+				],
+				[
+					1300,
+					-1500
+				],
+				[
+					1600,
+					-2400
+				],
+				[
+					1500,
+					-2900
+				],
+				[
+					600,
+					-3900
+				],
+				[
+					0,
+					-4900
+				],
+				[
+					0,
+					-5300
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					0,
+					-5300
+				],
+				[
+					600,
+					-4700
+				],
+				[
+					700,
+					-3300
+				],
+				[
+					0,
+					-2400
+				],
+				[
+					-900,
+					-400
+				],
+				[
+					-2400,
+					0
+				],
+				[
+					-4000,
+					0
+				],
+				[
+					-8050,
+					0
+				],
+				[
+					-8250,
+					600
+				],
+				[
+					-8450,
+					1200
+				],
+				[
+					-10850,
+					0
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					-10850,
+					0
+				],
+				[
+					-8450,
+					-1200
+				],
+				[
+					-8250,
+					-600
+				],
+				[
+					-8050,
+					0
+				],
+				[
+					-4000,
+					0
+				],
+				[
+					-2400,
+					0
+				],
+				[
+					-500,
+					-700
+				],
+				[
+					0,
+					-2400
+				],
+				[
+					1300,
+					-3000
+				],
+				[
+					2000,
+					-4800
+				],
+				[
+					2400,
+					-4800
+				],
+				[
+					2750,
+					-4800
+				],
+				[
+					2750,
+					-3200
+				]
+			]
+		},
+		{
+			"era": "past",
+			"pts": [
+				[
+					2750,
+					-3200
+				],
+				[
+					3300,
+					-4000
+				],
+				[
+					4300,
+					-4000
+				],
+				[
+					4850,
+					-4000
+				],
+				[
+					5300,
+					-4000
+				],
+				[
+					4850,
+					-3800
+				],
+				[
+					3600,
+					-3000
+				],
+				[
+					3200,
+					-2400
+				],
+				[
+					3200,
+					-1500
+				],
+				[
+					3000,
+					-500
+				],
+				[
+					2400,
+					0
+				],
+				[
+					0,
+					0
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					2400
+				],
+				[
+					1300,
+					3000
+				],
+				[
+					2000,
+					4800
+				],
+				[
+					2400,
+					4800
+				],
+				[
+					2750,
+					4800
+				],
+				[
+					2750,
+					3200
+				]
+			]
+		},
+		{
+			"era": "past",
+			"pts": [
+				[
+					2750,
+					3200
+				],
+				[
+					2800,
+					4000
+				],
+				[
+					3600,
+					4000
+				],
+				[
+					4600,
+					4000
+				],
+				[
+					5400,
+					5200
+				],
+				[
+					4600,
+					4400
+				],
+				[
+					3600,
+					4000
+				],
+				[
+					2900,
+					3600
+				],
+				[
+					3200,
+					2400
+				],
+				[
+					3200,
+					1500
+				],
+				[
+					4000,
+					0
+				],
+				[
+					5100,
+					0
+				],
+				[
+					5600,
+					0
+				],
+				[
+					6150,
+					0
+				]
+			]
+		},
+		{
+			"era": "future",
+			"pts": [
+				[
+					6150,
+					0
+				],
+				[
+					5600,
+					0
+				],
+				[
+					4700,
+					-350
+				],
+				[
+					4000,
+					-450
+				],
+				[
+					5600,
+					0
+				],
+				[
+					6850,
+					0
+				]
+			]
+		}
+	]
+}

@@ -112,6 +112,48 @@ On combat: *"rápido, amplio... combates al estilo Cyberpunk 2077... los combate
 - **The fix:** the architect wired a constant 1 (opaque) to that pin over MCP (`MaterialToolset`), then recompiled and saved.
 - **Check:** the five masters and eight instances and meshes now validate with no errors or warnings. Substrate stays off for the project.
 
+## The world plan (Claude Fable 5.2, High, about 46 minutes)
+**What the planner delivered in `Design/Levels/`:**
+- `WORLD_PLAN.md` (737 lines).
+- Top-down plans of each era, an overlay of the two and side sections, as SVG, at one scale and origin.
+- `world_layout.json`: every coordinate.
+- `make_plans.js`: generates the JSON and the drawings, and checks the layout: spawns out of walls, portals clear in both eras, at least 2 m between obstacles, nothing free-standing within 3 m of a wall, no fight starting on arrival.
+- `castle_keep_list.txt`.
+
+It read mesh bounds, vertices and collision through the Editor's MCP, and changed nothing (0 dirty packages).
+
+**The layout:**
+- **The castle:** 3 x 3 blocks on a 16 m grid (112 x 112 m).
+- **The courtyard:** it is the base's yard.
+- **The Great Hall:** it is the Containment Hall, and holds the Valkyrie in both eras.
+- **The Seal Room:** it is the Seal Vault. The final portal opens on the seal.
+- **The east wing:** the Forge (fire) in the past, the Generator Hall in the future.
+- **The west wing:** the Stormworks (lightning) in the past, the Server Hall in the future.
+- **The north corners:** the Frozen Cistern (ice) and the High Ward (air) in the past. In the future they shrink to corridors.
+- **South of the gate, future only:** the Breach Corridor (the Blender model), an antechamber and a 48 x 48 x 24 m hangar for the tentacle machine.
+
+**The route:** 21 stations, six portals on the shared floor, four era-gated zones and three cross-era unlocks. About 22 to 25 minutes for a first run.
+
+**What the planner measured:**
+- Two kit pieces block their own doorways with one convex hull, and the HTB bridge is solid under its deck. So each era gets a collision shell of boxes, built first as the greybox, with the kits placed as looks only.
+- The castle needs 31 meshes for the pixel-art conversion, and 101 of the 1,797 `CastleTown` packages are kept.
+
+**Provisional choices for the owner:**
+- The Valkyrie arenas merged into the Great Hall / Containment Hall.
+- The mini-boss is named "the Herald" and shares the Entity's model.
+- The zone names and the play length.
+
+**Renders:** `media/2026-11-13/worldplan_plan_past.png`, `worldplan_plan_future.png`, `worldplan_plan_overlay.png` and `worldplan_section_side.png`, made with headless Edge from the SVG files.
+
+**The corridor model, read in headless Blender with its scripts disabled:**
+- **Size:** 5.3 x 40.5 x 3.3 m.
+- **Geometry:** about 800k placed triangles, 39 meshes.
+- **Materials:** 34 procedural materials.
+- **Lights:** 8.
+- **Props:** fire extinguishers, an axe and crates, whose textures are packed inside the file.
+
+Its source files moved to `Glyphbound/SourceArt/Environment/SpaceshipCorridor/`.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.
