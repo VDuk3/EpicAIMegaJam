@@ -88,6 +88,30 @@ The asset was **Medieval Kingdom**. When its import finished, the Fab plugin sca
   - Decision: these packs' files are not fed to the generative tools we use for our own art (Meshy, Tripo, image generators).
   - The owner should read that EULA section to confirm what else it covers.
 
+## Toward the maps: the owner's direction, the planner, High Tech Base brought in
+The owner: *"vamos a armar los mapas ambos... que se armen pensando en el uno y el otro al mismo tiempo"*, then *"es el mismo sitio, pero uno en el futuro y otro en el pasado"*. Translation: build both maps, designing each with the other in mind, because they are the same site, one in the future and one in the past.
+
+**The owner's rules:**
+- Build the spaces from the **modular pieces**, not by dropping whole assets in as they are.
+- Medieval Kingdom: only the castle is needed. The town can be deleted, and the castle will become pixel art in another workflow.
+- The futuristic assets are used as they are.
+
+**The owner's answers to four questions:**
+- **The future site:** a futuristic military base.
+- **The future's content:** several wave arenas, plus a mini-boss: the tentacle creature already in the project.
+- **The size:** a bit more than "compact".
+- **The Blender corridor:** prepare it and use it.
+
+On combat: *"rápido, amplio... combates al estilo Cyberpunk 2077... los combates principales serán en salas amplias"*, that is, fast and wide, in the style of Cyberpunk 2077, with the main fights in large rooms and only a few in corridors.
+
+**The planner:** a Claude Fable 5.2 subagent at High effort, as the owner asked. Its brief is `Prompts/world_plan_fable.md`. It is read-only in Unreal and writes only to `Design/Levels/`; the architect assembles the levels from its plan.
+
+**High Tech Base brought in.** Its `Content/High_Tech_Base` (565 files, 1.0 GB) was copied into `Glyphbound/Content`, so the planner can measure its modules.
+- **Why a copy:** its only references outside its folder are stale map names and two reference models, so a copy does the same job as Migrate.
+- **Substrate:** one of its five master materials, `M_Material`, did not compile with our `r.Substrate=0`. It is the master behind the walls, concrete, panels and rubber. Its "Use Opacity" static switch had nothing on its False pin, so every instance would have shown the default material.
+- **The fix:** the architect wired a constant 1 (opaque) to that pin over MCP (`MaterialToolset`), then recompiled and saved.
+- **Check:** the five masters and eight instances and meshes now validate with no errors or warnings. Substrate stays off for the project.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.
