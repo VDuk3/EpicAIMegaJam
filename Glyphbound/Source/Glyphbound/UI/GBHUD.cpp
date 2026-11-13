@@ -56,6 +56,8 @@ namespace GBHudLayout
 	constexpr float ShieldPixelMult = 2.f;
 	/** Seconds of the raise / lower slide of the shield (visual only; blocking follows the input at once). */
 	constexpr float ShieldSlideTime = 0.12f;
+	/** Both hands jump up this many sprite pixels with the seat bump. */
+	constexpr float ReloadSeatPush = 2.f;
 }
 
 namespace GBHudText
@@ -656,10 +658,20 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	{
 		// The gun is a 3D model drawn by the world; only the hands are drawn here. Recoil pushes them down.
 		const float KickY = Kick01 * 3.f * P;
-		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X, H - RightSize.Y * 0.7f + Bob.Y + KickY, P);
+		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
+		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
+		const AGBGun* GunItem = Cast<AGBGun>(Item);
+		const float ReloadProgress = (GunItem && GunItem->HasViewModel()) ? GunItem->GetReloadAnimProgress() : -1.f;
+		const GBReloadAnim::FHandBeat Beat = GBReloadAnim::HandBeat(ReloadProgress);
+		const float RightFollow = GBReloadAnim::PoseAmount(ReloadProgress);
+		const float PushY = -Beat.Push * GBHudLayout::ReloadSeatPush * P;
+		const FVector2D RightShift = (GunItem ? GunItem->GetReloadRightHandFollow() : FVector2D::ZeroVector) * (RightFollow * P);
+		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X + RightShift.X, H - RightSize.Y * 0.7f + Bob.Y + KickY + RightShift.Y + PushY, P);
 		if (!bCastPose)
 		{
-			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY, P);
+			const FVector2D Reach = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * (Beat.Reach * P);
+			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(Reach.Y));
+			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY, P);
 		}
 	}
 	else if (Item && Slot == EGBHeldSlot::Sword)

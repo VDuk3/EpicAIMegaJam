@@ -13,6 +13,22 @@ class UCanvasRenderTarget2D;
 struct FGBDamageInfo;
 struct FGBGunModelArt;
 
+/** Reload animation shared by the gun viewmodel and the HUD hands: everything is a function of the reload progress (0 to 1). */
+namespace GBReloadAnim
+{
+	/** Where the 2D left hand is, as three 0..1 amounts: Reach (towards the magazine well), Drop (off the bottom of the screen) and Push (the seat bump). */
+	struct FHandBeat
+	{
+		float Reach = 0.f;
+		float Drop = 0.f;
+		float Push = 0.f;
+	};
+	/** Zero beats for a negative progress (no reload animation running). */
+	FHandBeat HandBeat(float Progress);
+	/** 0..1: how far the gun is in its reload pose (eases in over the first beat, out over the last). 0 for a negative progress. */
+	float PoseAmount(float Progress);
+}
+
 /**
  * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
  * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
@@ -74,6 +90,22 @@ public:
 	bool IsMuzzleFlashVisible() const;
 	/** How far back in cm the shot kick has pushed the viewmodel right now (0 at rest). */
 	float GetViewModelKickBackCm() const { return CurrentKickBackCm; }
+	/** Whether the magazine mesh is showing (it is hidden while the old one is gone and the new one has not arrived). */
+	bool IsViewModelMagazineVisible() const;
+	/** Distance in cm of the viewmodel root from its rest location (reload pose and shot kick both move it). */
+	float GetViewModelRootOffsetCm() const;
+	/** Angle in degrees between the viewmodel root's rotation and its rest rotation. */
+	float GetViewModelRootAngleDeg() const;
+	/** Per-model art value for the HUD: how far (sprite pixels, x right, y down) the left hand moves to meet the magazine. */
+	FVector2D GetReloadHandReach() const;
+	/** Per-model art value for the HUD: how far (sprite pixels) the right hand moves at full pose so it stays on the grip. */
+	FVector2D GetReloadRightHandFollow() const;
+	/** Progress (0 to 1) the reload animation is showing: the pinned preview if any, else the real reload; -1 when none. */
+	float GetReloadAnimProgress() const;
+	/** Dev only (smoke run): pins the reload animation at this progress without touching ammo or the reload itself. */
+	void SetReloadPreview(float Progress);
+	/** Dev only: releases the pin; the gun blends back to rest. */
+	void ClearReloadPreview();
 
 protected:
 	virtual bool AcceptsEnchant() const override { return true; }
@@ -96,8 +128,14 @@ protected:
 	void UpdateViewModel(float DeltaSeconds);
 	/** Starts the shot kick and the muzzle flash. */
 	void StartShotEffects();
-	/** Puts the viewmodel root at its base pose plus the current kick. */
-	void ApplyKickPose();
+	/** The one place that writes the viewmodel root's transform: rest pose + reload pose + shot kick. */
+	void ApplyViewModelPose();
+	/** Places the magazine (slide, fall on screen, hidden, rise, slide in) from the reload animation progress. */
+	void ApplyReloadMagazine();
+	/** Starts the short blend from the current reload pose back to rest (a cancelled reload or a released preview). */
+	void BeginReloadBlend();
+	/** Magazine at rest and visible, pose at rest, no blend: used when the gun leaves the hand. */
+	void ResetReloadVisuals();
 	void HideMuzzleFlash();
 	/** Global damage event: a weak-point hit by this gun's owner while this gun is equipped lights the weak-point light. */
 	void HandleDamageDealt(AActor* Target, const FGBDamageInfo& Info, float DamageDealt);
@@ -142,6 +180,15 @@ protected:
 	float KickElapsed = -1.f;
 	float MuzzleFlashElapsed = -1.f;
 	float CurrentKickBackCm = 0.f;
+	/** Pinned reload progress for the smoke run; negative = not pinned. */
+	float ReloadPreview = -1.f;
+	/** The reload pose's contribution to the root right now (location cm, rotation degrees); a cancel blends it to zero. */
+	FVector ReloadPoseLoc = FVector::ZeroVector;
+	FRotator ReloadPoseRot = FRotator::ZeroRotator;
+	FVector ReloadBlendLoc = FVector::ZeroVector;
+	FRotator ReloadBlendRot = FRotator::ZeroRotator;
+	/** Seconds since a cancelled reload started blending to rest. Negative = no blend. */
+	float ReloadBlendElapsed = -1.f;
 	/** Seconds since the last shot started the trigger pull. Negative = the trigger is at rest. */
 	float TriggerPullElapsed = -1.f;
 	/** Last values sent to the model materials (parameters are only set when they change). */

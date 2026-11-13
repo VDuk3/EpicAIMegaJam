@@ -45,6 +45,13 @@ struct FGBGunModelArt
 	float KickBackCm;             // shot kick: how far back the viewmodel root moves
 	float KickPitchDeg;           // and how far it pitches up
 	bool bDrawDisplayFrame;       // the game draws the display's frame lines and round pips (the pistol's are in its model)
+	FVector ReloadOffset;         // reload pose: cm added to the root (camera frame: x forward, y right, z up) at full pose
+	FRotator ReloadRot;           // reload pose: degrees added to the root; roll cants the magazine well towards the camera
+	float ReloadFallCm;           // how far (cm, camera down) the old magazine falls before it is below the view; the new one rises from there
+	float ReloadDipCm;            // the gun dips this much as the magazine leaves
+	float ReloadBumpCm;           // the gun jumps up this much as the new magazine seats
+	FVector2D ReloadHandReach;    // HUD: sprite pixels (x right, y down) the left hand moves from its place to meet the magazine
+	FVector2D ReloadRightHandFollow; // HUD: sprite pixels the right hand moves at full pose, to stay on this gun's grip
 };
 
 namespace
@@ -62,7 +69,8 @@ namespace
 		FVector(28.84f, 0.f, 0.f), FVector(0.f, 0.f, -29.31f), FVector(-12.15f, 0.f, -24.11f),
 		FLinearColor(0.02f, 1.f, 0.07f), FVector(82.5f, 0.f, 20.2f), 13.f,
 		0.42f, 0.6f, 0.39f,
-		1.6f, 3.f, false };
+		1.6f, 3.f, false,
+		FVector(0.f, 3.5f, 19.f), FRotator(15.f, 4.f, 50.f), 30.f, 1.2f, 0.6f, FVector2D(-9.f, -10.f), FVector2D(7.5f, -37.f) };
 
 	// Rifle art tuning from Glyphbound/SourceArt/Weapons/Rifle/export_report.json, made by Tools/Blender/rifle_export_fbx.py.
 	// All provisional. The rifle's pane is plain, so the game draws the pistol-style frame on it (owner: "like the
@@ -74,7 +82,8 @@ namespace
 		FVector(6.5f, 0.f, 0.3f), FVector(15.8f, 0.f, -2.8f), FVector(2.f, 0.f, -17.f),
 		FLinearColor(0.05f, 0.9f, 0.6f), FVector(69.f, 0.f, 6.6f), 13.f,
 		0.42f, 0.6f, 0.39f,
-		1.2f, 1.5f, true };
+		1.2f, 1.5f, true,
+		FVector(4.f, 1.7f, 11.f), FRotator(16.f, 0.f, 40.f), 32.f, 1.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f) };
 
 	const FGBGunModelArt* FindModelArt(const FString& Name)
 	{
@@ -129,10 +138,87 @@ namespace
 	// Visual timers never advance by more than this per frame, so a hitch cannot skip a kick or a flash entirely.
 	constexpr float MaxEffectStep = 1.f / 30.f;
 
+	// Reload animation: shares of the reload (GetReloadAnimProgress, 0 to 1). Provisional art values.
+	constexpr float ReloadTiltEnd = 0.15f;       // the gun leaves rest for the reload pose
+	constexpr float ReloadDipEnd = 0.35f;        // the dip as the magazine leaves is over
+	constexpr float ReloadSlideOutEnd = 0.25f;   // the old magazine has slid out along MagazineOut, then it falls
+	constexpr float ReloadOutEnd = 0.40f;        // the old magazine is below the view and hidden
+	constexpr float ReloadEmptyEnd = 0.50f;      // empty well; a fresh magazine appears below the view
+	constexpr float ReloadRiseEnd = 0.62f;       // the fresh magazine has risen to the end of the slide path
+	constexpr float ReloadInEnd = 0.80f;         // the fresh magazine is seated
+	constexpr float ReloadSeatEnd = 0.86f;       // the seat bump is over; the gun eases back to rest
+	constexpr float ReloadSlideInEase = 1.6f;    // exponent of the slide-in (above 1: fastest at the end)
+	// A cancelled reload (or a released preview) blends the gun back to rest over this time.
+	constexpr float ReloadBlendSeconds = 0.12f;
+
 	float Smoothstep01(float T)
 	{
 		T = FMath::Clamp(T, 0.f, 1.f);
 		return T * T * (3.f - 2.f * T);
+	}
+
+	// Share of [From, To] that Progress has covered, clamped to 0..1.
+	float Share(float Progress, float From, float To)
+	{
+		return FMath::Clamp((Progress - From) / (To - From), 0.f, 1.f);
+	}
+
+	// 0..1: dip as the magazine leaves, and bump as the new one seats (half sine over their beats).
+	float ReloadDip(float Progress)
+	{
+		return (Progress > ReloadTiltEnd && Progress < ReloadDipEnd) ? FMath::Sin(PI * Share(Progress, ReloadTiltEnd, ReloadDipEnd)) : 0.f;
+	}
+	float ReloadBump(float Progress)
+	{
+		return (Progress > ReloadInEnd && Progress < ReloadSeatEnd) ? FMath::Sin(PI * Share(Progress, ReloadInEnd, ReloadSeatEnd)) : 0.f;
+	}
+	// 0..1 how far down the magazine (and the left hand) is: falls with t^2 after the slide, rises with (1-t)^2 after the empty beat.
+	float ReloadDrop(float Progress)
+	{
+		if (Progress < ReloadSlideOutEnd)
+		{
+			return 0.f;
+		}
+		if (Progress < ReloadOutEnd)
+		{
+			const float Fall = Share(Progress, ReloadSlideOutEnd, ReloadOutEnd);
+			return Fall * Fall;
+		}
+		if (Progress < ReloadEmptyEnd)
+		{
+			return 1.f;
+		}
+		const float Rise = 1.f - Share(Progress, ReloadEmptyEnd, ReloadRiseEnd);
+		return Rise * Rise;
+	}
+}
+
+namespace GBReloadAnim
+{
+	float PoseAmount(float Progress)
+	{
+		if (Progress < 0.f)
+		{
+			return 0.f;
+		}
+		if (Progress < ReloadSeatEnd)
+		{
+			return Smoothstep01(Progress / ReloadTiltEnd);
+		}
+		return 1.f - Smoothstep01(Share(Progress, ReloadSeatEnd, 1.f));
+	}
+
+	FHandBeat HandBeat(float Progress)
+	{
+		FHandBeat Beat;
+		if (Progress >= 0.f)
+		{
+			Beat.Reach = PoseAmount(Progress);
+			// The hand starts to fall only once the magazine has slid out, but it already reaches in during the tilt.
+			Beat.Drop = ReloadDrop(Progress);
+			Beat.Push = ReloadBump(Progress);
+		}
+		return Beat;
 	}
 }
 
@@ -233,7 +319,7 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	// The base pose of the whole viewmodel (offset and yaw towards the view centre); the shot kick moves it from here.
 	CurrentKickBackCm = 0.f;
 	KickElapsed = -1.f;
-	ApplyKickPose();
+	ApplyViewModelPose();
 
 	ViewModelMIDs.Reset();
 	ViewModelIndicatorMID = nullptr;
@@ -353,22 +439,177 @@ bool AGBGun::IsMuzzleFlashVisible() const
 	return MuzzleFlash && MuzzleFlash->IsVisible();
 }
 
-void AGBGun::ApplyKickPose()
+bool AGBGun::IsViewModelMagazineVisible() const
+{
+	return VMMagazine && VMMagazine->IsVisible();
+}
+
+float AGBGun::GetViewModelRootOffsetCm() const
+{
+	return ModelArt ? (Root->GetRelativeLocation() - ModelArt->RootOffset).Size() : 0.f;
+}
+
+float AGBGun::GetViewModelRootAngleDeg() const
+{
+	if (!ModelArt)
+	{
+		return 0.f;
+	}
+	const FQuat Rest = FRotator(0.f, ModelArt->RootYaw, 0.f).Quaternion();
+	return FMath::RadiansToDegrees(Root->GetRelativeRotation().Quaternion().AngularDistance(Rest));
+}
+
+FVector2D AGBGun::GetReloadRightHandFollow() const
+{
+	return ModelArt ? ModelArt->ReloadRightHandFollow : FVector2D::ZeroVector;
+}
+
+FVector2D AGBGun::GetReloadHandReach() const
+{
+	return ModelArt ? ModelArt->ReloadHandReach : FVector2D::ZeroVector;
+}
+
+float AGBGun::GetReloadAnimProgress() const
+{
+	if (ReloadPreview >= 0.f)
+	{
+		return ReloadPreview;
+	}
+	return bReloading ? GetReloadProgress() : -1.f;
+}
+
+void AGBGun::SetReloadPreview(float Progress)
+{
+	ReloadPreview = FMath::Clamp(Progress, 0.f, 1.f);
+	ReloadBlendElapsed = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::ClearReloadPreview()
+{
+	if (ReloadPreview < 0.f)
+	{
+		return;
+	}
+	if (bViewModel && !bReloading)
+	{
+		BeginReloadBlend();
+	}
+	ReloadPreview = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::BeginReloadBlend()
+{
+	if (!bViewModel)
+	{
+		return;
+	}
+	ReloadBlendLoc = ReloadPoseLoc;
+	ReloadBlendRot = ReloadPoseRot;
+	ReloadBlendElapsed = 0.f;
+}
+
+void AGBGun::ResetReloadVisuals()
+{
+	ReloadPreview = -1.f;
+	ReloadBlendElapsed = -1.f;
+	ReloadPoseLoc = FVector::ZeroVector;
+	ReloadPoseRot = FRotator::ZeroRotator;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+		ApplyReloadMagazine();
+	}
+}
+
+void AGBGun::ApplyViewModelPose()
 {
 	if (!ModelArt)
 	{
 		return;
 	}
-	// Ease out: the push is full at the shot and shrinks as (1 - t)^2 over KickSeconds.
+	const FGBGunModelArt& Art = *ModelArt;
+	// Shot kick, ease out: the push is full at the shot and shrinks as (1 - t)^2 over KickSeconds.
 	float Strength = 0.f;
 	if (KickElapsed >= 0.f)
 	{
 		const float Remaining = 1.f - FMath::Clamp(KickElapsed / KickSeconds, 0.f, 1.f);
 		Strength = Remaining * Remaining;
 	}
-	CurrentKickBackCm = ModelArt->KickBackCm * Strength;
-	Root->SetRelativeLocation(ModelArt->RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f));
-	Root->SetRelativeRotation(FRotator(ModelArt->KickPitchDeg * Strength, ModelArt->RootYaw, 0.f));
+	CurrentKickBackCm = Art.KickBackCm * Strength;
+
+	// Reload pose: rest -> reload pose -> rest, with a dip as the magazine leaves and a bump as the new one seats.
+	// After a cancel the pose it had blends to rest instead of snapping.
+	const float Progress = GetReloadAnimProgress();
+	if (Progress >= 0.f)
+	{
+		const float Pose = GBReloadAnim::PoseAmount(Progress);
+		ReloadPoseLoc = Art.ReloadOffset * Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * ReloadBump(Progress) - Art.ReloadDipCm * ReloadDip(Progress));
+		ReloadPoseRot = Art.ReloadRot * Pose;
+	}
+	else if (ReloadBlendElapsed >= 0.f)
+	{
+		const float Left = 1.f - Smoothstep01(ReloadBlendElapsed / ReloadBlendSeconds);
+		ReloadPoseLoc = ReloadBlendLoc * Left;
+		ReloadPoseRot = ReloadBlendRot * Left;
+	}
+	else
+	{
+		ReloadPoseLoc = FVector::ZeroVector;
+		ReloadPoseRot = FRotator::ZeroRotator;
+	}
+
+	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc);
+	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot);
+}
+
+void AGBGun::ApplyReloadMagazine()
+{
+	if (!VMMagazine || !ModelArt)
+	{
+		return;
+	}
+	const FGBGunModelArt& Art = *ModelArt;
+	FVector Offset = FVector::ZeroVector;
+	bool bShow = true;
+	const float Progress = GetReloadAnimProgress();
+	if (Progress >= 0.f)
+	{
+		// Slide out along MagazineOut, (fall), (rise), slide in; the slide share is 1 while the magazine is away.
+		float Slide = 1.f;
+		if (Progress < ReloadSlideOutEnd)
+		{
+			Slide = Smoothstep01(Share(Progress, ReloadTiltEnd, ReloadSlideOutEnd));
+		}
+		else if (Progress >= ReloadRiseEnd)
+		{
+			const float In = FMath::Pow(Share(Progress, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+			Slide = 1.f - In;
+		}
+		bShow = Progress < ReloadOutEnd || Progress >= ReloadEmptyEnd;
+		Offset = Art.MagazineOut * Slide;
+		const float Drop = ReloadDrop(Progress);
+		if (Drop > 0.f)
+		{
+			// Straight down on screen whatever the gun's tilt: camera down, brought into the body's own (scaled) frame.
+			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Drop);
+			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, Art.ViewScale);
+		}
+	}
+	VMMagazine->SetRelativeLocation(Art.MagazineRest + Offset);
+	if (VMMagazine->IsVisible() != bShow)
+	{
+		VMMagazine->SetVisibility(bShow);
+	}
 }
 
 void AGBGun::HideMuzzleFlash()
@@ -391,7 +632,7 @@ void AGBGun::StartShotEffects()
 		return;
 	}
 	KickElapsed = 0.f;
-	ApplyKickPose();
+	ApplyViewModelPose();
 
 	// Visual randomness uses the global stream, never the gun's own, so the spread sequence is not disturbed.
 	const float Roll = FMath::FRandRange(0.f, 90.f);
@@ -449,8 +690,18 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 		{
 			KickElapsed = -1.f;
 		}
-		ApplyKickPose();
 	}
+	if (ReloadBlendElapsed >= 0.f)
+	{
+		ReloadBlendElapsed += DeltaSeconds;
+		if (ReloadBlendElapsed >= ReloadBlendSeconds)
+		{
+			ReloadBlendElapsed = -1.f;
+		}
+	}
+	// The root pose (rest + reload + kick) and the magazine follow the reload progress every frame.
+	ApplyViewModelPose();
+	ApplyReloadMagazine();
 	if (MuzzleFlashElapsed >= 0.f)
 	{
 		MuzzleFlashElapsed += EffectStep;
@@ -458,29 +709,6 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 		{
 			HideMuzzleFlash();
 		}
-	}
-
-	// Magazine slide during reload, driven by GetReloadProgress: out (smoothstep), held, back in (smoothstep).
-	if (VMMagazine)
-	{
-		FVector Offset = FVector::ZeroVector;
-		if (bReloading)
-		{
-			const float Progress = GetReloadProgress();
-			if (Progress < 1.f / 3.f)
-			{
-				Offset = Art.MagazineOut * Smoothstep01(Progress * 3.f);
-			}
-			else if (Progress < 2.f / 3.f)
-			{
-				Offset = Art.MagazineOut;
-			}
-			else
-			{
-				Offset = Art.MagazineOut * (1.f - Smoothstep01((Progress - 2.f / 3.f) * 3.f));
-			}
-		}
-		VMMagazine->SetRelativeLocation(Art.MagazineRest + Offset);
 	}
 
 	// Glow color and energy bar (GDD 6, weapon enchant): enchanted = element color + imbue left, else idle glow + dark bar.
@@ -744,6 +972,11 @@ void AGBGun::CancelReload()
 	{
 		return;
 	}
+	// Blend from the pose the gun is in now (the pinned preview, if any, keeps owning the pose until it is released).
+	if (ReloadPreview < 0.f)
+	{
+		BeginReloadBlend();
+	}
 	bReloading = false;
 	ReloadElapsed = 0.f;
 	NotifyEquipmentChanged();
@@ -839,7 +1072,7 @@ void AGBGun::OnUnequipped()
 	if (bViewModel)
 	{
 		KickElapsed = -1.f;
-		ApplyKickPose();
+		ResetReloadVisuals();
 		HideMuzzleFlash();
 	}
 	Super::OnUnequipped();

@@ -87,6 +87,76 @@ namespace GBSmokeRun
 		UE_LOG(LogGB, Display, TEXT("SMOKE screenshot %s"), *Path);
 	}
 
+	static FGBAmmoState ReloadAmmoBefore;
+
+	// One pinned beat of the reload animation: the gun is away from its rest pose, the magazine is where the beat says.
+	static void CheckReloadBeat(const TCHAR* Gun, AGBGun* Item, float Progress, bool bMagazineVisible)
+	{
+		const bool bVisible = Item->IsViewModelMagazineVisible();
+		const float Magazine = Item->GetViewModelMagazineOffsetCm();
+		const float RootCm = Item->GetViewModelRootOffsetCm();
+		const float RootDeg = Item->GetViewModelRootAngleDeg();
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload at %.2f: magazine visible=%d offset=%.1f cm, root %.1f cm and %.1f deg from rest"),
+			Gun, Progress, bVisible ? 1 : 0, Magazine, RootCm, RootDeg);
+		if (!FMath::IsNearlyEqual(Item->GetReloadAnimProgress(), Progress, 0.001f))
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED: pinned at %.2f but the animation shows %.2f"), Gun, Progress, Item->GetReloadAnimProgress());
+		}
+		if (bVisible != bMagazineVisible)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED at %.2f: magazine visible=%d (expected %d)"), Gun, Progress, bVisible ? 1 : 0, bMagazineVisible ? 1 : 0);
+		}
+		if (bMagazineVisible && Magazine < 1.f)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED at %.2f: magazine only %.1f cm from rest (expected away from it)"), Gun, Progress, Magazine);
+		}
+		if (RootCm < 1.f && RootDeg < 5.f)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED at %.2f: the gun is at its rest pose (%.1f cm, %.1f deg)"), Gun, Progress, RootCm, RootDeg);
+		}
+	}
+
+	// After a real reload ran to its end: everything at rest, the display shows the full count, one spare magazine fewer.
+	static void CheckReloadFinished(const TCHAR* Gun, AGBGun* Item)
+	{
+		const FString Text = Item->GetViewModelDisplayText();
+		const FGBAmmoState Ammo = Item->GetAmmo();
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload finished: reloading=%d magazine visible=%d offset=%.2f root %.2f cm %.2f deg display=%s ammo %d/%d spare %d (was %d)"),
+			Gun, Item->IsReloading() ? 1 : 0, Item->IsViewModelMagazineVisible() ? 1 : 0, Item->GetViewModelMagazineOffsetCm(),
+			Item->GetViewModelRootOffsetCm(), Item->GetViewModelRootAngleDeg(), *Text, Ammo.InMagazine, Item->GetMagazineSize(),
+			Ammo.SpareMagazines, ReloadAmmoBefore.SpareMagazines);
+		if (Item->IsReloading() || !Item->IsViewModelMagazineVisible() || Item->GetViewModelMagazineOffsetCm() > 0.05f
+			|| Item->GetViewModelRootOffsetCm() > 0.05f || Item->GetViewModelRootAngleDeg() > 0.5f)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED: after the reload the magazine or the gun is not back at rest"), Gun);
+		}
+		if (Text != FString::FromInt(Item->GetMagazineSize()) || Ammo.InMagazine != Item->GetMagazineSize() || Ammo.SpareMagazines != ReloadAmmoBefore.SpareMagazines - 1)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload FAILED: display '%s', %d in the magazine and %d spare after the reload (expected the full count and one spare magazine fewer than %d)"),
+				Gun, *Text, Ammo.InMagazine, Ammo.SpareMagazines, ReloadAmmoBefore.SpareMagazines);
+		}
+	}
+
+	// After a reload cancelled halfway: magazine and gun at rest, ammo untouched.
+	static void CheckReloadCancelled(const TCHAR* Gun, AGBGun* Item)
+	{
+		const FGBAmmoState Ammo = Item->GetAmmo();
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload cancelled: reloading=%d magazine visible=%d offset=%.2f root %.2f cm %.2f deg ammo %d spare %d (was %d, %d)"),
+			Gun, Item->IsReloading() ? 1 : 0, Item->IsViewModelMagazineVisible() ? 1 : 0, Item->GetViewModelMagazineOffsetCm(),
+			Item->GetViewModelRootOffsetCm(), Item->GetViewModelRootAngleDeg(), Ammo.InMagazine, Ammo.SpareMagazines,
+			ReloadAmmoBefore.InMagazine, ReloadAmmoBefore.SpareMagazines);
+		if (Item->IsReloading() || !Item->IsViewModelMagazineVisible() || Item->GetViewModelMagazineOffsetCm() > 0.05f
+			|| Item->GetViewModelRootOffsetCm() > 0.05f || Item->GetViewModelRootAngleDeg() > 0.5f)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload cancel FAILED: the magazine or the gun is not back at rest"), Gun);
+		}
+		if (Ammo.InMagazine != ReloadAmmoBefore.InMagazine || Ammo.SpareMagazines != ReloadAmmoBefore.SpareMagazines)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE %s reload cancel FAILED: ammo %d / %d spare after the cancel (expected the unchanged %d / %d)"),
+				Gun, Ammo.InMagazine, Ammo.SpareMagazines, ReloadAmmoBefore.InMagazine, ReloadAmmoBefore.SpareMagazines);
+		}
+	}
+
 	static void SetQTEEnabled(bool bEnabled)
 	{
 		if (IConsoleVariable* Var = IConsoleManager::Get().FindConsoleVariable(TEXT("gb.QTE")))
@@ -1086,9 +1156,13 @@ namespace GBSmokeRun
 				Ammo.InMagazine = Gun->GetMagazineSize() - 3;
 				Gun->SetAmmo(Ammo);
 			}
-			Gun->Reload();
 		});
-		Add(51.1f + S, TEXT("pistol reload: magazine out halfway, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		// Reload animation: three pinned beats (a reload is too short to photograph while it plays), then a real
+		// reload to its end, then one cancelled halfway. The window is longer than the old single step, so the last
+		// step winds the smoke clock back to where the old step ended and everything after keeps its timing.
+		const float PistolReloadStart = 50.5f + S;
+		constexpr float PistolReloadWindow = 4.1f;
+		Add(PistolReloadStart + 0.5f, TEXT("pistol reload: pinned at 0.30, old magazine leaving, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
 			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
@@ -1096,20 +1170,94 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
 				return;
 			}
-			const float Progress = Gun->GetReloadProgress();
-			const float Offset = Gun->GetViewModelMagazineOffsetCm();
-			UE_LOG(LogGB, Display, TEXT("SMOKE pistol magazine offset=%.1f"), Offset);
-			if (Progress < 0.3f || Progress > 0.7f || FMath::Abs(Offset - 27.f) > 1.f)
+			Gun->SetReloadPreview(0.30f);
+			CheckReloadBeat(TEXT("pistol"), Gun, 0.30f, true);
+			Shot(TEXT("13b_pistol_reload_out"));
+		});
+		Add(PistolReloadStart + 1.0f, TEXT("pistol reload: pinned at 0.45, empty well, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
 			{
-				UE_LOG(LogGB, Error, TEXT("SMOKE pistol magazine FAILED: offset=%.1f (expected about 27.0) progress=%.2f (expected about 0.5)"), Offset, Progress);
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			Gun->SetReloadPreview(0.45f);
+			CheckReloadBeat(TEXT("pistol"), Gun, 0.45f, false);
+			Shot(TEXT("13f_pistol_reload_empty"));
+		});
+		Add(PistolReloadStart + 1.5f, TEXT("pistol reload: pinned at 0.70, new magazine going in, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			Gun->SetReloadPreview(0.70f);
+			CheckReloadBeat(TEXT("pistol"), Gun, 0.70f, true);
+			Shot(TEXT("13g_pistol_reload_in"));
+		});
+		Add(PistolReloadStart + 2.0f, TEXT("pistol reload: release the pin, start a real reload"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			Gun->ClearReloadPreview();
+			ReloadAmmoBefore = Gun->GetAmmo();
+			Gun->Reload();
+		});
+		Add(PistolReloadStart + 2.4f, TEXT("pistol reload: the display shows -- while it runs"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
 			}
 			const FString ReloadText = Gun->GetViewModelDisplayText();
-			UE_LOG(LogGB, Display, TEXT("SMOKE pistol display reloading text=%s"), *ReloadText);
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol display reloading text=%s reloading=%d"), *ReloadText, Gun->IsReloading() ? 1 : 0);
 			if (ReloadText != TEXT("--"))
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol display FAILED: text '%s' during the reload (expected --)"), *ReloadText);
 			}
-			Shot(TEXT("13b_pistol_reload"));
+		});
+		Add(PistolReloadStart + 3.4f, TEXT("pistol reload: a real reload ran to its end, then spend rounds and start another"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			CheckReloadFinished(TEXT("pistol"), Gun);
+			FGBAmmoState Ammo = Gun->GetAmmo();
+			Ammo.InMagazine = Gun->GetMagazineSize() - 3;
+			Gun->SetAmmo(Ammo);
+			ReloadAmmoBefore = Gun->GetAmmo();
+			Gun->Reload();
+		});
+		Add(PistolReloadStart + 3.7f, TEXT("pistol reload: cancelled halfway by a weapon switch"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			UE_LOG(LogGB, Display, TEXT("SMOKE pistol reload cancel: switching away at progress=%.2f"), Gun ? Gun->GetReloadProgress() : -1.f);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+		});
+		Add(PistolReloadStart + PistolReloadWindow, TEXT("pistol reload: cancelled, magazine at rest and visible, ammo unchanged; clock back"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pistol reload: no pistol in hand"));
+				return;
+			}
+			CheckReloadCancelled(TEXT("pistol"), Gun);
+			// The old single reload step sat 0.6 s after the start of this block: continue the clock from there.
+			StartSeconds += PistolReloadWindow - 0.6f;
 		});
 		Add(51.7f + S, TEXT("pistol enchant: cast the weapon enchant with the pistol in hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
@@ -1322,9 +1470,11 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle display FAILED: text '%s' then '%s' after one shot (expected one round less)"), *RifleDisplayFullText, *AfterText);
 			}
-			Gun->Reload();
 		});
-		Add(57.3f + S, TEXT("rifle reload: magazine out halfway, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		// Rifle reload animation: the same sequence as the pistol's, with the rifle's longer reload.
+		const float RifleReloadStart = 56.3f + S;
+		constexpr float RifleReloadWindow = 5.4f;
+		Add(RifleReloadStart + 1.0f, TEXT("rifle reload: pinned at 0.30, old magazine leaving, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBGun* Gun = RifleInHand(Player);
 			if (!Gun)
@@ -1332,20 +1482,94 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
 				return;
 			}
-			const float Progress = Gun->GetReloadProgress();
-			const float Offset = Gun->GetViewModelMagazineOffsetCm();
-			UE_LOG(LogGB, Display, TEXT("SMOKE rifle magazine offset=%.1f"), Offset);
-			if (Progress < 0.3f || Progress > 0.7f || Offset <= 5.f)
+			Gun->SetReloadPreview(0.30f);
+			CheckReloadBeat(TEXT("rifle"), Gun, 0.30f, true);
+			Shot(TEXT("14b_rifle_reload_out"));
+		});
+		Add(RifleReloadStart + 1.5f, TEXT("rifle reload: pinned at 0.45, empty well, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
 			{
-				UE_LOG(LogGB, Error, TEXT("SMOKE rifle magazine FAILED: offset=%.1f (expected more than 5.0) progress=%.2f (expected about 0.5)"), Offset, Progress);
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
+			}
+			Gun->SetReloadPreview(0.45f);
+			CheckReloadBeat(TEXT("rifle"), Gun, 0.45f, false);
+			Shot(TEXT("14h_rifle_reload_empty"));
+		});
+		Add(RifleReloadStart + 2.0f, TEXT("rifle reload: pinned at 0.70, new magazine going in, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
+			}
+			Gun->SetReloadPreview(0.70f);
+			CheckReloadBeat(TEXT("rifle"), Gun, 0.70f, true);
+			Shot(TEXT("14i_rifle_reload_in"));
+		});
+		Add(RifleReloadStart + 2.5f, TEXT("rifle reload: release the pin, start a real reload"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
+			}
+			Gun->ClearReloadPreview();
+			ReloadAmmoBefore = Gun->GetAmmo();
+			Gun->Reload();
+		});
+		Add(RifleReloadStart + 2.9f, TEXT("rifle reload: the display shows -- while it runs"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
 			}
 			const FString ReloadText = Gun->GetViewModelDisplayText();
-			UE_LOG(LogGB, Display, TEXT("SMOKE rifle display reloading text=%s"), *ReloadText);
+			UE_LOG(LogGB, Display, TEXT("SMOKE rifle display reloading text=%s reloading=%d"), *ReloadText, Gun->IsReloading() ? 1 : 0);
 			if (ReloadText != TEXT("--"))
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle display FAILED: text '%s' during the reload (expected --)"), *ReloadText);
 			}
-			Shot(TEXT("14b_rifle_reload"));
+		});
+		Add(RifleReloadStart + 4.7f, TEXT("rifle reload: a real reload ran to its end, then spend rounds and start another"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
+			}
+			CheckReloadFinished(TEXT("rifle"), Gun);
+			FGBAmmoState Ammo = Gun->GetAmmo();
+			Ammo.InMagazine = Gun->GetMagazineSize() - 5;
+			Gun->SetAmmo(Ammo);
+			ReloadAmmoBefore = Gun->GetAmmo();
+			Gun->Reload();
+		});
+		Add(RifleReloadStart + 5.0f, TEXT("rifle reload: cancelled halfway by a weapon switch"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			UE_LOG(LogGB, Display, TEXT("SMOKE rifle reload cancel: switching away at progress=%.2f"), Gun ? Gun->GetReloadProgress() : -1.f);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+		});
+		Add(RifleReloadStart + RifleReloadWindow, TEXT("rifle reload: cancelled, magazine at rest and visible, ammo unchanged; clock back"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = RifleInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rifle reload: no rifle in hand"));
+				return;
+			}
+			CheckReloadCancelled(TEXT("rifle"), Gun);
+			// The old single reload step sat 1.0 s after the start of this block: continue the clock from there.
+			StartSeconds += RifleReloadWindow - 1.0f;
 		});
 		Add(58.4f + S, TEXT("rifle enchant: lightning enchant on (the cast itself is on an 18 s cooldown since the pistol's)"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
@@ -1493,8 +1717,8 @@ namespace GBSmokeRun
 			UE_LOG(LogGB, Error, TEXT("SMOKE aborted: the world went away"));
 			return false;
 		}
-		const float Elapsed = static_cast<float>(FPlatformTime::Seconds() - StartSeconds);
-		while (NextStep < Steps.Num() && Steps[NextStep].Time <= Elapsed)
+		// Read the clock again for every step: a step may wind StartSeconds back (the reload steps stretch the run).
+		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
 		{
 			const FStep& Step = Steps[NextStep++];
 			AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
