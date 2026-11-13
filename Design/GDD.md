@@ -6,6 +6,7 @@
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.32 (2026-11-12): the pixel-art line is defined: "dark fantasy hi-bit pixel art, 16-bit inspired", from 9 sprites drawn by hand on the LAPTOP (Valki, axe, sword, two shields, four staffs). Rules, master palette and checklist in `Design/VisualStyleGuide.md`, linked from §3.
 - v0.31 (2026-11-12): owner picked the Entity's first model (Tripo, variant #26): a metal shell with electronic-light eyes, and hologram tentacles. Phase 1 art in §11; its size is provisional.
 - v0.30 (2026-11-12): owner: the pistol's energy bar must match the enchant's duration; the weak-point light lasts half as long.
 - v0.29 (2026-11-12): owner, after reading the balance suggestions: Long Shot goes from +0.15x to +0.2x per rank (the rifle perk now matches Point Blank); the free skill reset will not be in the final version.
@@ -77,6 +78,7 @@ Working title: **TBD**. Project code name: **Glyphbound**.
 
 ### The pixel-art look
 - **Visual reference:** retro first-person fantasy shooters with modern lighting (the owner's reference: *Wizordum*). Reference only, nothing copied.
+- **Style guide:** `Design/VisualStyleGuide.md` ("dark fantasy hi-bit pixel art, 16-bit inspired"): canvas and scale, outline, light from the top left, a master palette of about 50 colors in ramps per material and element, color budget per sprite, the staff variant system and a checklist. Built from the first hand-made sprites (2026-11-12).
 - **Pixel-art environments are 3D geometry with low-resolution pixel textures** (nearest filtering, no smoothing), not flat 2D.
 - **Pixel-art characters are sprites that always face the camera.** Target: **8 view angles**; fewer if time runs short.
 - **Headshots on sprites:** the head is the top part of the sprite. The head / weak point bonus applies to **every aimed weapon attack** (owner, 2026-11-12): guns, the staff's basic attack and the sword. Each weapon has its own multiplier.
