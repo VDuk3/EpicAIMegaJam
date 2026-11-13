@@ -59,3 +59,12 @@ Without the fix the gun would have stayed at 7 / 36, so the check can fail.
 - Quick Draw's feel: aiming is 60% faster at rank 3, and aiming no longer slows the player.
 - Whether Extended Tube at +1 feels worth a point.
 - The reset with a gun in hand, to see the ammo drop back.
+
+## Package
+Owner: "Yes, package". Made from `2445f8c` with a clean tree while holding the machine lock: `TeamTBD_Glyphbound.zip`, **299.7 MB**, BuildCookRun 108 s.
+
+**Full smoke on the packaged game:** `done=True crashed=False LogGB errors=0`, no LogGB warnings, 60 screenshots, 131 s.
+- The packaged data has the 30 skill nodes.
+- The pistol's Rapid Reload gives 0.66 s, and Arcane Conduit gives x1.3.
+- The tube perk sequence ends at 6 / 24 after the reset, with no reload running.
+- The shotgun has its 6 meshes, and the Entity loads its real art.
