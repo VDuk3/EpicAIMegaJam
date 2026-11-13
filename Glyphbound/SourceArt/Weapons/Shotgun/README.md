@@ -17,7 +17,7 @@ Built by `Tools/Blender/shotgun_build_blend.py` (80 to 90 s, most of it the two 
 
 `blender -b --factory-startup --python Tools/Blender/shotgun_build_blend.py -- model.glb Shotgun.blend`
 
-SHA-256 `03104765D9E5BAF4EDB8917C912D813E0FE91FB8C5AC583C82525B081DCAE93E` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
+SHA-256 `A963F7B10E84EB7EEEB5D7DD03123CC63B704ABA95B9A5CE1DC03DE96BD32E86` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
 
 - **Rebuilt on the same shape:** vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals; one navy taken from the gun's own texels, with the frost, the baked light and the cables' imprint gone; small drawn details re-cut; the carbon panels found by their texture and their weave redrawn by position; a glow mask cut from the cyan; AO and a normal map baked in Cycles.
 - **Cables:** split from the body, one colour per piece (black, copper orange, dark red, blue), smooth and subdivided once, 16,081 triangles.
@@ -34,8 +34,12 @@ SHA-256 `03104765D9E5BAF4EDB8917C912D813E0FE91FB8C5AC583C82525B081DCAE93E` (Blen
 - **Objects:** `Shotgun_Body` (31,536 triangles, with the cables, the cell, the energy bar and the port joined in), `Shotgun_Trigger` (111), `Shotgun_Pump` (5,688), `Shotgun_AmmoDisplay` (2), `Shotgun_WeakPointLight` (108), `Shotgun_Magazine` (the shell, 316; slots hull, base, glow).
 - **Custom properties, for the export:** `pivot` on every object (the body's is the top of the grip; the trigger's its hinge; the pump's and the shell's their rest places), `slide` on the pump, `out` on the shell (its way out of the port), and on the scene `strip_y`, `strip_half_w`, `strip_zmin`.
 
-**Review renders:** `Tools/Blender/shotgun_render_review.py` draws the ammo hologram the way the game does and can pose the pump and the shell. The ones kept are in `Devlog/media/2026-11-12/17a…17z_shotgun_*.png`.
+**Review renders:** `Tools/Blender/shotgun_render_review.py` draws the ammo hologram the way the game does and can pose the pump and the shell. The ones kept are in `Devlog/media/2026-11-12/17a…17z_shotgun_*.png` and `18a…18j_shotgun_review_*.png`.
 
-**Known limits:** the carbon panels' outlines are rounded, not the source's sharp trapezoids; the small panel on the left of the receiver, near the stock, still shows one of the source's invented signs; the circuit board is mostly navy; the mesh still has open edges (a gap in the stock's comb is the model's own).
+**Carbon panels:** the weave is found by its texture on the left side only, inside two zones (handguard, stock); each panel's outline is closed, opened, traced and simplified to a polygon with straight edges (4, 5, 5 and 21 corners), and the right side takes the same polygons.
+
+**Small plate:** the small panel on the left of the receiver, near the stock, is redrawn like the side plates: a border and the sigil's diamonds.
+
+**Known limits:** the stock's rear carbon panel still has one bite of navy near the butt pad and an outline of 21 corners; the short cable stubs beside the small plate are black lumps; some cable ends in the handguard's slot stop in mid-air; the mesh still has open edges (a gap in the stock's comb is the model's own).
 
 **Not written yet:** the export and import scripts (the rifle's are the template), and the game code for a pump and a shell-by-shell reload.

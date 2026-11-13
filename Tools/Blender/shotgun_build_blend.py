@@ -50,7 +50,7 @@ BAKE_SIZE = 4096
 PAD = 12                   # texels of padding around every UV island
 VOXEL = 0.004              # metres: the cell of space in which small islands look for their surroundings
 MEDIAN_R = 5               # texels: half window of the median that gives each texel its surroundings' brightness
-SHADE = 0.08               # how much of the surroundings' brightness stays in the navy (1 = all of it)
+SHADE = 0.03               # how much of the surroundings' brightness stays in the navy (1 = all of it)
 NAVY = (0.50, 0.20)        # roughness, metallic of the body
 # The carbon panels do not differ from the body in brightness but in texture: the mean deviation of a texel's
 # brightness from its surroundings, over CARBON_R texels, is about 0.03 on the plain body and 0.16 to 0.20 on the weave.
@@ -109,6 +109,7 @@ CABLE_COLOURS = [
     ((0.300, 0.045, 0.040), 0.45, 0.0),   # dark red
     ((0.060, 0.170, 0.420), 0.45, 0.0),   # blue
 ]
+CABLE_STUB = 0.06          # metres: a cable piece shorter than this is a stub, and stubs are black (as coloured blobs they drew the eye)
 CABLE_KEEP = 0.55          # share of the subdivided cables' faces kept by the decimation
 CABLE_FATTEN = 0.00045     # metres: pushed out along the normals after the subdivision, which thins a strand
 # Welded pieces fully inside one of these boxes and longer than CABLE_MIN are cables (straightened frame).
@@ -164,6 +165,31 @@ SCREEN_HALF = (0.0250, 0.0125)
 # The weak-point light: a lens on the sight's rear lower panel, a plane leaning LIGHT_LEAN (y per z) through LIGHT_C.
 LIGHT_C, LIGHT_LEAN = Vector((0.0085, -0.0063, 0.329)), -0.3375
 LIGHT_HALF, LIGHT_SLAB = (0.017, 0.0035), (-0.0020, 0.0026)
+
+# Found by the architect's own zone-by-zone review of the renders, before the owner saw them:
+# - the carbon panels had ragged outlines, bites of navy inside them and scraps on the tubes. The weave is now kept
+#   only on side faces inside CARBON_ZONES, and each panel's outline is tidied on a flat grid of the gun's side
+#   (CARBON_GRID metres per cell): closed over CARBON_CLOSE, then opened over CARBON_OPEN;
+# - the stock's comb strip had a torn blob at its front end, in the player's view: glow there only on faces that look
+#   up, within the strip's own width (measured from its texels);
+# - single dark specks on the sight: a drawn detail now needs neighbours;
+# - the circuit board's own colours were a blurred smudge beside crisp parts: nothing keeps its own colours any more;
+# - blotches on the lower tube's front end: no drawn details there.
+CARBON_ZONES = [((0.015, -0.500, 0.135), (0.075, -0.255, 0.215)),    # handguard side panels (left; mirrored for the right)
+                ((0.004, 0.190, 0.030), (0.075, 0.470, 0.330))]      # stock side panels
+CARBON_GRID, CARBON_CLOSE, CARBON_OPEN = 0.00075, 0.0050, 0.0035
+# ...and then each panel's outline is traced and simplified to a polygon whose corners keep within CARBON_STRAIGHT of
+# it, so its edges are straight like the source's panels; panels under CARBON_MIN_AREA (square metres) are dropped.
+CARBON_STRAIGHT, CARBON_MIN_AREA = 0.0050, 0.0004
+# The polygons come from the left side, where the weave is found best, and the right side takes the same ones
+# (the gun's sides mirror each other). What was found as weave but falls outside them gets no drawn details either:
+# those were the scribbles left around the panels.
+COMB_STRIP = ((-0.030, 0.190, 0.285), (0.030, 0.480, 0.335))
+KEEP_OWN_COLOURS = False
+NO_DETAIL_BOXES = [((-0.070, -0.520, 0.000), (0.070, -0.440, 0.120))]
+# The small panel on the left of the receiver, near the stock, carried one more painted screen sign: it becomes a
+# small plate with the border and the sigil's diamonds.
+SMALL_PLATE_BOX = ((0.020, 0.070, 0.240), (0.050, 0.140, 0.295))
 
 # The side plates. The GLB has a slab on each side of the receiver with a painted data screen (owner: "remove that
 # panel that simulates a screen; put some design, something that is not electronic"). The slab stays; its face is
@@ -328,7 +354,9 @@ for rank, pi in enumerate(order):
         continue
     if max(hi[k] - lo[k] for k in range(3)) > CABLE_MIN and any(inside(lo, hi, *b) for b in CABLE_BOXES):
         face_part[orig] = 1
-        face_strand[orig] = len(cable_bounds)
+        long_cables = sum(1 for b_ in cable_bounds if max(b_[1][k] - b_[0][k] for k in range(3)) >= CABLE_STUB)
+        is_stub = max(hi[k] - lo[k] for k in range(3)) < CABLE_STUB
+        face_strand[orig] = 0 if is_stub else long_cables          # the colour it takes: stubs black, the rest in turn
         cable_bounds.append((lo, hi))
     elif len(comp) > 500 and inside(lo, hi, *SIGHT_BOX):
         face_part[orig] = 2
@@ -398,6 +426,7 @@ def in_box(lo, hi):
 mx, mn = col.max(axis=2), col.min(axis=2)
 sat = (mx - mn) / np.maximum(mx, 1e-3)
 glow_raw = (covered & (part != 1) & (mx > 0.55) & (col[..., 0] < 0.52 * mx) & (sat > 0.50)).astype(np.float32)
+small_sign = glow_raw.copy()
 glow_raw *= box_blur(glow_raw, 2) > 0.42          # the frost has cyan specks: a glowing texel has glowing neighbours
 glow_raw *= box_blur(glow_raw, 6) > 0.35          # ...and belongs to a shape of some size, not to a blob
 # The handguard's strip is on its top face; the projection spilled it onto the sides as ragged blobs.
@@ -428,7 +457,17 @@ isl_green = share(green)
 isl_board = share(in_box(*BOARD_BOX) & (part == 0))
 isl_sight = share(part == 2)
 keep_isl = ((isl_board > 0.9) & (isl_green > 0.06)) | ((isl_sight > 0.9) & (isl_colour > 0.35))
+if not KEEP_OWN_COLOURS:
+    keep_isl[:] = False
 keep = covered & keep_isl[np.where(covered, ids, 0)]
+# The comb strip: its own centre and width from its texels, then nothing glows outside that band or on other faces.
+on_comb = in_box(*COMB_STRIP) & (facing == 5) & (glow_raw > 0.5)
+if on_comb.sum() > 2000:
+    cx_ = pos[..., 0][on_comb]
+    comb_c = float(np.median(cx_))
+    comb_w = float(np.percentile(cx_, 80) - np.percentile(cx_, 20)) / 0.6
+    glow_raw[in_box(*COMB_STRIP) & ((facing != 5) | (np.abs(pos[..., 0] - comb_c) > comb_w / 2 + 0.0004))] = 0.0
+    print("COMB strip centre x %.1f mm, width %.1f mm" % (comb_c * 1000, comb_w * 1000))
 print("KEEP islands", int(keep_isl.sum()), "texels", int(keep.sum()), "GLOW texels", int(glow_raw.sum()))
 
 # The cables' imprint on the body: no drawn details near the cables.
@@ -436,6 +475,8 @@ plain = np.zeros((H, W), bool)
 g = IMPRINT_GROW
 for lo, hi in cable_bounds:
     plain |= in_box([v - g for v in lo], [v + g for v in hi])
+for lo, hi in NO_DETAIL_BOXES:
+    plain |= in_box(lo, hi)
 plain &= part != 1
 
 # ---------------------------------------------------------------- each texel's surroundings: a median on its island
@@ -498,7 +539,124 @@ print("NAVY colour %.3f %.3f %.3f, median brightness of the surroundings %.3f" %
 ratio = lum / np.maximum(around, 0.03)
 # Details from a slightly blurred brightness: a line survives it, the frost's single dark specks do not.
 dark_all = smoothstep(0.74, 0.56, box_blur(lum, 1) / np.maximum(around, 0.03)) * neutral * (part != 1)
-carbon = smoothstep(0.42, 0.58, weave_isl) * sel * (part == 0) * ~plain
+dark_all *= box_blur(dark_all, 2) > 0.20          # a line survives this, a single speck does not
+
+
+def grey(a, r, fn):
+    """Minimum or maximum over a square of half size r cells."""
+    p_ = np.pad(a, ((r, r), (0, 0)), mode="edge")
+    a = fn(sliding_window_view(p_, 2 * r + 1, axis=0), axis=-1)
+    p_ = np.pad(a, ((0, 0), (r, r)), mode="edge")
+    return fn(sliding_window_view(p_, 2 * r + 1, axis=1), axis=-1)
+
+
+def simplify(chain, tol):
+    """Douglas-Peucker on an open chain of 2D points."""
+    if len(chain) < 3:
+        return chain
+    a, b = chain[0], chain[-1]
+    pts = np.array(chain[1:-1], np.float64)
+    ab = np.array(b, np.float64) - np.array(a, np.float64)
+    length = math.hypot(ab[0], ab[1])
+    rel = pts - np.array(a, np.float64)
+    d = np.abs(rel[:, 0] * ab[1] - rel[:, 1] * ab[0]) / length if length > 1e-9 else np.hypot(rel[:, 0], rel[:, 1])
+    k = int(d.argmax())
+    if d[k] <= tol:
+        return [a, b]
+    return simplify(chain[:k + 2], tol)[:-1] + simplify(chain[k + 1:], tol)
+
+
+def outlines(mask, tol, min_cells):
+    """The mask's shapes as polygons with straight edges: lists of (x, y) corners in cells. Cells are unit squares."""
+    m = np.pad(mask, 1)
+    inner = m[1:-1, 1:-1]
+    edges = {}
+
+    def add(a, b):
+        edges.setdefault(a, []).append(b)
+
+    rim = inner & ~(m[:-2, 1:-1] & m[2:, 1:-1] & m[1:-1, :-2] & m[1:-1, 2:])
+    for i, j in zip(*np.nonzero(rim)):
+        i, j = int(i), int(j)
+        if not m[i + 1, j]:
+            add((i, j), (i + 1, j))                 # the side below: the inside stays on the left of every edge
+        if not m[i + 2, j + 1]:
+            add((i + 1, j), (i + 1, j + 1))
+        if not m[i + 1, j + 2]:
+            add((i + 1, j + 1), (i, j + 1))
+        if not m[i, j + 1]:
+            add((i, j + 1), (i, j))
+    polys = []
+    while edges:
+        start = next(iter(edges))
+        loop, cur = [start], start
+        while True:
+            nxt = edges[cur].pop()
+            if not edges[cur]:
+                del edges[cur]
+            if nxt == start or nxt not in edges:
+                break
+            loop.append(nxt)
+            cur = nxt
+        xs_, ys_ = np.array([q[0] for q in loop], np.float64), np.array([q[1] for q in loop], np.float64)
+        area = 0.5 * float(np.sum(xs_ * np.roll(ys_, -1) - np.roll(xs_, -1) * ys_))
+        if area < min_cells:                         # holes run the other way (negative), scraps are small
+            continue
+        far = int(((xs_ - xs_[0]) ** 2 + (ys_ - ys_[0]) ** 2).argmax())
+        polys.append(simplify(loop[:far + 1], tol)[:-1] + simplify(loop[far:] + [loop[0]], tol)[:-1])
+    return polys
+
+
+def draw_polygons(polys, ny, nz):
+    out = np.zeros((ny, nz), bool)
+    gx, gy = np.arange(ny)[:, None] + 0.5, np.arange(nz)[None, :] + 0.5
+    for poly in polys:
+        inside_ = np.zeros((ny, nz), bool)
+        for (x1, y1), (x2, y2) in zip(poly, poly[1:] + poly[:1]):
+            if y1 != y2:
+                inside_ ^= ((y1 > gy) != (y2 > gy)) & (gx < (x2 - x1) * (gy - y1) / (y2 - y1) + x1)
+        out |= inside_
+    return out
+
+
+carbon = np.zeros((H, W), np.float32)
+panel_sides = np.zeros((H, W), bool)          # the faces that carry panels: no "deep recess" tone on them
+r_close, r_open = int(round(CARBON_CLOSE / CARBON_GRID)), int(round(CARBON_OPEN / CARBON_GRID))
+for zlo, zhi in CARBON_ZONES:
+    ny, nz = int((zhi[1] - zlo[1]) / CARBON_GRID) + 2, int((zhi[2] - zlo[2]) / CARBON_GRID) + 2
+    polys = None
+    for side, facing_bin in ((1.0, 1), (-1.0, 0)):           # the left side first: its polygons serve both
+        lo_ = (min(side * zlo[0], side * zhi[0]), zlo[1], zlo[2])
+        hi_ = (max(side * zlo[0], side * zhi[0]), zhi[1], zhi[2])
+        zone = in_box(lo_, hi_) & sel & (part == 0) & ~plain
+        found = zone & (facing == facing_bin)
+        gy = ((pos[..., 1][found] - lo_[1]) / CARBON_GRID).astype(np.int64)
+        gz = ((pos[..., 2][found] - lo_[2]) / CARBON_GRID).astype(np.int64)
+        flat = gy * nz + gz
+        count = np.bincount(flat, minlength=ny * nz).reshape(ny, nz)
+        total = np.bincount(flat, weights=(weave_isl[found] > 0.5).astype(np.float64), minlength=ny * nz).reshape(ny, nz)
+        known = count > 0
+        grid, _ = fill_from(known, np.where(known, total / np.maximum(count, 1), 0.0).astype(np.float32), 12)
+        seen = grey((grid > 0.3).astype(np.float32), 4, np.max) > 0.5      # everything that looked like weave, grown a little
+        if polys is None:
+            panel = (grid > 0.5).astype(np.float32)
+            panel = grey(grey(panel, r_close, np.max), r_close, np.min)       # closed: bites and holes filled
+            panel = grey(grey(panel, r_open, np.min), r_open, np.max)         # opened: spurs and scraps gone
+            polys = outlines(panel > 0.5, CARBON_STRAIGHT / CARBON_GRID, CARBON_MIN_AREA / CARBON_GRID ** 2)
+            print("CARBON zone y %.2f..%.2f: %d panels, corners %s" % (zlo[1], zhi[1], len(polys), [len(q) for q in polys]))
+        straight = draw_polygons(polys, ny, nz)
+        soft = box_blur(straight.astype(np.float32), 1)
+        # every face of this side's skin takes the panel, whichever way it looks, except those that look inwards
+        target = zone & (facing != (1 - facing_bin))
+        ty = np.clip(((pos[..., 1][target] - lo_[1]) / CARBON_GRID).astype(np.int64), 0, ny - 1)
+        tz = np.clip(((pos[..., 2][target] - lo_[2]) / CARBON_GRID).astype(np.int64), 0, nz - 1)
+        carbon[target] = soft[ty, tz]
+        panel_sides |= target & (facing == facing_bin)
+        scraps = np.zeros((H, W), bool)
+        scraps[target] = (seen & ~straight)[ty, tz]
+        dark_all[scraps] = 0.0
+        print("CARBON side %+d: %.0f cm2 of weave, %d texels of scraps cleared" %
+              (side, soft.sum() * CARBON_GRID ** 2 * 1e4, int(scraps.sum())))
 # The weave, drawn by where each texel is on the gun: two sets of diagonal lines on the plane the face looks along.
 axis = facing // 2
 pu = np.where(axis == 0, pos[..., 1], pos[..., 0])
@@ -512,7 +670,7 @@ def lines(t):
 
 weave = np.maximum(lines((pu + pv) * 0.7071), lines((pu - pv) * 0.7071)) * carbon
 dark = np.maximum(dark_all * ~plain * (1.0 - carbon), weave)
-deep = smoothstep(DEEP_AT[0], DEEP_AT[1], around) * neutral * (part != 1) * (1.0 - carbon)
+deep = smoothstep(DEEP_AT[0], DEEP_AT[1], around) * neutral * (part != 1) * (1.0 - carbon) * ~panel_sides
 neon_a = smoothstep(0.35, 0.65, box_blur(glow_raw, 1)) * covered
 # The cell, by position.
 in_cell_box = in_box(*CELL_BOX) & (part == 0)
@@ -557,6 +715,52 @@ def segment(u, v, a, b):
     return np.sqrt((u - au - t * (bu - au)) ** 2 + (v - av - t * (bv - av)) ** 2)
 
 
+def plate_frame(plate):
+    """The plate's own axes from its texels: (u, v) of each texel in metres from its centre, and its half sizes."""
+    yz = np.stack([pos[..., 1][plate], pos[..., 2][plate]], axis=1).astype(np.float64)
+    centre = yz.mean(axis=0)
+    _, vecs = np.linalg.eigh(np.cov((yz - centre).T))
+    ax_u = vecs[:, 1] * (1.0 if vecs[0, 1] > 0 else -1.0)       # the long axis, towards the rear
+    ax_v = np.array([-ax_u[1], ax_u[0]])                        # across it, upwards
+    pu_, pv_ = (yz - centre) @ ax_u, (yz - centre) @ ax_v
+    u0, u1 = np.percentile(pu_, (1.5, 98.5))
+    v0, v1 = np.percentile(pv_, (1.5, 98.5))
+    return pu_ - (u0 + u1) / 2, pv_ - (v0 + v1) / 2, (u1 - u0) / 2, (v1 - v0) / 2, math.degrees(math.atan2(ax_u[1], ax_u[0]))
+
+
+def draw_plate(plate, sigil, slots, bolts, name):
+    """Redraws a plate's face: engraved border, bolts, the sigil (centre u, v, half height, half width, line; with
+    or without its side bars) inlaid with the glow, slots."""
+    U, V, hu, hv, tilt = plate_frame(plate)
+    print("PLATE %s: %d texels, %.1f x %.1f mm, tilted %.1f deg" % (name, plate.sum(), hu * 2000, hv * 2000, tilt))
+    engraved = band(np.maximum(np.abs(U) - (hu - PLATE_BORDER), np.abs(V) - (hv - PLATE_BORDER)), PLATE_LINE)
+    if bolts:
+        for su in (-1, 1):
+            for sv in (-1, 1):
+                bu, bv = su * (hu - PLATE_BOLT[0]), sv * (hv - PLATE_BOLT[0])
+                r_ = np.sqrt((U - bu) ** 2 + (V - bv) ** 2)
+                engraved = np.maximum(engraved, band(r_ - PLATE_BOLT[1], PLATE_LINE))
+                engraved = np.maximum(engraved, band(segment(U, V, (bu - 0.0014, bv - 0.0008), (bu + 0.0014, bv + 0.0008)), 0.0007))
+    if slots:
+        first, pitch, half_len, width, count = PLATE_SLOTS
+        for k in range(count):
+            cu = first + k * pitch
+            engraved = np.maximum(engraved, band(segment(U, V, (cu - 0.0030, -half_len), (cu + 0.0030, half_len)), width))
+    su_, sv_, sh, sw, line, bars = sigil
+    scale = sh * sw / math.hypot(sh, sw)                        # turns the diamond's |u|/w + |v|/h - 1 into a distance
+    d_outer = (np.abs(U - su_) / sw + np.abs(V - sv_) / sh - 1.0) * scale
+    d_inner = (np.abs(U - su_) / (sw * 0.36) + np.abs(V - sv_) / (sh * 0.36) - 1.0) * scale * 0.36
+    inlay = np.maximum(band(d_outer, line), 1.0 - smoothstep(-0.00025, 0.00025, d_inner))
+    if bars:
+        for sgn in (-1, 1):
+            inlay = np.maximum(inlay, band(segment(U, V, (su_ + sgn * (sw + 0.0030), sv_), (su_ + sgn * (sw + 0.0095), sv_)), line))
+    dark[plate] = engraved
+    carbon[plate] = 0.0
+    deep[plate] = 0.0
+    neon_a[plate] = inlay * PLATE_INLAY
+    keep[plate] = False
+
+
 for side, facing_bin in ((1.0, 1), (-1.0, 0)):
     lo_ = (min(side * PLATE_BOX[0][0], side * PLATE_BOX[1][0]), PLATE_BOX[0][1], PLATE_BOX[0][2])
     hi_ = (max(side * PLATE_BOX[0][0], side * PLATE_BOX[1][0]), PLATE_BOX[1][1], PLATE_BOX[1][2])
@@ -564,42 +768,16 @@ for side, facing_bin in ((1.0, 1), (-1.0, 0)):
     if cand.sum() < 5000:
         raise SystemExit("shotgun_build_blend: side plate not found on side %+d" % side)
     plane = float(np.median(pos[..., 0][cand]))
-    plate = cand & (np.abs(pos[..., 0] - plane) < 0.0012)
-    yz = np.stack([pos[..., 1][plate], pos[..., 2][plate]], axis=1).astype(np.float64)
-    centre = yz.mean(axis=0)
-    w_, vecs = np.linalg.eigh(np.cov((yz - centre).T))
-    ax_u = vecs[:, 1] * (1.0 if vecs[0, 1] > 0 else -1.0)       # the long axis, towards the rear
-    ax_v = np.array([-ax_u[1], ax_u[0]])                        # across it, upwards
-    pu_, pv_ = (yz - centre) @ ax_u, (yz - centre) @ ax_v
-    u0, u1 = np.percentile(pu_, (1.5, 98.5))
-    v0, v1 = np.percentile(pv_, (1.5, 98.5))
-    U, V = pu_ - (u0 + u1) / 2, pv_ - (v0 + v1) / 2
-    hu, hv = (u1 - u0) / 2, (v1 - v0) / 2
-    print("PLATE side %+d: plane x %.1f mm, %d texels, %.1f x %.1f mm, tilted %.1f deg" %
-          (side, plane * 1000, plate.sum(), hu * 2000, hv * 2000, math.degrees(math.atan2(ax_u[1], ax_u[0]))))
-    engraved = band(np.maximum(np.abs(U) - (hu - PLATE_BORDER), np.abs(V) - (hv - PLATE_BORDER)), PLATE_LINE)
-    for su in (-1, 1):
-        for sv in (-1, 1):
-            bu, bv = su * (hu - PLATE_BOLT[0]), sv * (hv - PLATE_BOLT[0])
-            r_ = np.sqrt((U - bu) ** 2 + (V - bv) ** 2)
-            engraved = np.maximum(engraved, band(r_ - PLATE_BOLT[1], PLATE_LINE))
-            engraved = np.maximum(engraved, band(segment(U, V, (bu - 0.0014, bv - 0.0008), (bu + 0.0014, bv + 0.0008)), 0.0007))
-    first, pitch, half_len, width, count = PLATE_SLOTS
-    for k in range(count):
-        cu = first + k * pitch
-        engraved = np.maximum(engraved, band(segment(U, V, (cu - 0.0030, -half_len), (cu + 0.0030, half_len)), width))
-    su_, sv_, sh, sw, line = PLATE_SIGIL
-    scale = sh * sw / math.hypot(sh, sw)                        # turns the diamond's |u|/w + |v|/h - 1 into a distance
-    d_outer = (np.abs(U - su_) / sw + np.abs(V - sv_) / sh - 1.0) * scale
-    d_inner = (np.abs(U - su_) / (sw * 0.36) + np.abs(V - sv_) / (sh * 0.36) - 1.0) * scale * 0.36
-    inlay = np.maximum(band(d_outer, line), 1.0 - smoothstep(-0.00025, 0.00025, d_inner))
-    for sgn in (-1, 1):
-        inlay = np.maximum(inlay, band(segment(U, V, (su_ + sgn * (sw + 0.0030), sv_), (su_ + sgn * (sw + 0.0095), sv_)), line))
-    dark[plate] = engraved
-    carbon[plate] = 0.0
-    deep[plate] = 0.0
-    neon_a[plate] = inlay * PLATE_INLAY
-    keep[plate] = False
+    draw_plate(cand & (np.abs(pos[..., 0] - plane) < 0.0012), PLATE_SIGIL + (True,), True, True, "side %+d (plane x %.1f mm)" % (side, plane * 1000))
+
+# The small plate: the face that carried the painted sign (its plane is where that sign's glow was).
+cand = in_box(*SMALL_PLATE_BOX) & (part == 0) & (facing == 1)
+seed = cand & (small_sign > 0.5)
+if seed.sum() < 100:
+    raise SystemExit("shotgun_build_blend: the small panel's sign was not found")
+plane = float(np.median(pos[..., 0][seed]))
+small = cand & (np.abs(pos[..., 0] - plane) < 0.0012)
+draw_plate(small, (0.0, 0.0, 0.0085, 0.0060, 0.0011, False), False, False, "small (plane x %.1f mm)" % (plane * 1000))
 
 shade = 1.0 + SHADE * np.clip(around / mid - 1.0, -1.0, 1.0)
 base = navy[None, None, :] * shade[..., None]
