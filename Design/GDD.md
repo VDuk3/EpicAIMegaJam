@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.34, 2026-11-13** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.35, 2026-11-13** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.35 (2026-11-13): a tool for the game's magic effects, the **GBPixelVfx** plugin (owner's idea; the architect built the minimal version): it bakes a realistic Niagara Fluids effect (fire, smoke, explosion) into a pixel-art flipbook in the master palette and plays it in the game as a camera-facing sprite with a real light. Four clips are baked. **None is used by a spell yet: that waits for the owner's OK.** Rules in §3 "The pixel-art look" and §18.
 - v0.34 (2026-11-13): the shotgun is in the game with its 3D model, its pump and its shell-by-shell reload (§18 "Reload"): firing stops the reload at once, a tap on an empty gun fires when the first shell lands, the reserve reads "x24 shells". Owner: its energy bar stays on top of the receiver.
 - v0.34 (2026-11-13): the Entity's phase 1 as built (2.5x, a 3D floating boss). Owner: its combat is **pending** polish, including **tentacle melee**. Added to §11 and §17.
 - v0.33 (2026-11-12): owner, on the shotgun: it loads **shell by shell** (not a magazine swap), and its **forend pumps** after every shot. Its model is a Tripo science-fiction shotgun. Rules and the architect's provisional numbers in §18 "Reload".
@@ -86,6 +87,7 @@ Working title: **TBD**. Project code name: **Glyphbound**.
 - **Pixel-art characters are sprites that always face the camera.** Target: **8 view angles**; fewer if time runs short.
 - **Headshots on sprites:** the head is the top part of the sprite. The head / weak point bonus applies to **every aimed weapon attack** (owner, 2026-11-12): guns, the staff's basic attack and the sword. Each weapon has its own multiplier.
 - **Ground spells are drawn on the ground** (owner, 2026-11-12): a spell that marks an area of the floor (lightning rune trap, ice floor) shows its pixel-art figure lying flat on the ground and stretched over the whole area it affects, so its size on screen is its real reach. It is not a small camera-facing sprite in the middle of a colored disc.
+- **Fluid effects can be baked from a simulation** (owner's idea, 2026-11-13; plugin `Glyphbound/Plugins/GBPixelVfx`, see its `README.md`). Fire, smoke and explosions are hard to draw by hand, so a Niagara Fluids simulation is rendered once on a development machine and converted to a pixel-art flipbook: master-palette ramps, hard alpha, held frames, no screen filter. The game ships only the flipbook; the sprite carries a real point light that follows the effect's brightness, so it lights the scene, casts shadows and shows in reflections. A baked clip is still a sprite and follows this section's rules (it faces the camera; a ground effect lies on the ground).
 - **Structures are never flat sprites** (owner, 2026-11-12). Anything that is a structure, the castle and also what magic builds (the ice wall), is a 3D object with 2D pixel textures. Camera-facing sprites are for characters, items, projectiles and effects (flames, bolts).
 
 ## 4. World and travel
@@ -483,6 +485,10 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Encounters:** if the player dies during one, its living enemies are removed and it starts again from wave 1 on return. Progress flags are never rolled back.
 - **Checkpoints:** saved at the start, on every era travel, on entering a checkpoint zone and when an encounter is cleared. Death sends the player back to the checkpoint's place and era with full health, mana and ammo, and **keeps everything collected since** (items, weapons, spells, skill points): pickups and chests do not come back, so rolling the inventory back would lose rewards for good (found by the code review).
 - **Consumables** can be used at full health or mana (they are wasted).
+- **Baked fluid effects (GBPixelVfx, architect, 2026-11-13; all provisional):**
+  - Clip frames are 48 x 64 or 64 x 64 pixels at **12 fps**, larger and faster than the style guide's sprites (6 fps): fluid motion reads badly below that. Colors come only from the master palette's fire, bone, smoke and arcane ramps.
+  - The owner asked for "ray tracing behaviors" without detail. The architect read it as: the baked effect must still behave as a light source in a Lumen or ray-traced scene (lights the scene, casts shadows, shows in reflections). **To be confirmed by the owner.** Hardware ray tracing stays off in the project; the plugin's showcase can run with it through a command-line override.
+  - The four clips (fire, smoke column with fire, explosion, arcane fire) are a demonstration. Which spell uses which clip, at what size and light strength, is the owner's call.
 - **Art rule on pickups:** cyberpunk items (injection, grenade, magazine, sword hilt) lie on the floor as 3D shapes; medieval ones (potions, gems, books, staffs) as pixel-art sprites.
 
 ### Numbers (first pass, all in the JSON files)

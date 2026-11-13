@@ -64,7 +64,7 @@
   "Light": {
     "Enabled": true,
     "Color": "#F3610B",
-    "Intensity": 10,
+    "Intensity": 40,
     "RadiusCm": 800,
     "CastShadows": true,
     "TrackMode": "Baked"

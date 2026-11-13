@@ -89,7 +89,9 @@ function Invoke-PixelVfxRun([string]$modeArg, [int]$resX, [int]$resY) {
         # r.RayTracing is read once at startup: it has to come from the ini layer, not from a console command.
         # Ray tracing refuses to start without the skin cache shaders (fatal error in RenderUtils.cpp), so that goes with it.
         # The first run compiles the ray tracing shader permutations: give it a long -TimeoutSeconds.
-        $argList += @('-dx12', '-ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing=1,r.Lumen.HardwareRayTracing=1,r.SkinCache.CompileShaders=1')
+        # Every key of an -ini: override needs its own [Section] prefix (without it only the first key is applied).
+        $rs = '[/Script/Engine.RendererSettings]'
+        $argList += @('-dx12', "-ini:Engine:${rs}:r.RayTracing=1,${rs}:r.Lumen.HardwareRayTracing=1,${rs}:r.SkinCache.CompileShaders=1")
     }
     $sw = [Diagnostics.Stopwatch]::StartNew()
     $p = Start-Process -FilePath $editor -ArgumentList $argList -PassThru
