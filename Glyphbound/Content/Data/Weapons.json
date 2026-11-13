@@ -92,6 +92,7 @@
 			"Slot": "Gun",
 			"Element": "Physical",
 			"ActorClass": "",
+			"ViewModel": "Shotgun",
 			"FireMode": "Hitscan",
 			"bAutomatic": false,
 			"Stats": {
@@ -100,6 +101,7 @@
 				"MagazineSize": 6,
 				"SpareMagazines": 4,
 				"ReloadTime": 2,
+				"ReloadPerRound": 1,
 				"Range": 3000,
 				"Spread": 6,
 				"AimSpread": 4.5,

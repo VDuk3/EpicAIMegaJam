@@ -661,9 +661,9 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
 		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
 		const AGBGun* GunItem = Cast<AGBGun>(Item);
-		const float ReloadProgress = (GunItem && GunItem->HasViewModel()) ? GunItem->GetReloadAnimProgress() : -1.f;
-		const GBReloadAnim::FHandBeat Beat = GBReloadAnim::HandBeat(ReloadProgress);
-		const float RightFollow = GBReloadAnim::PoseAmount(ReloadProgress);
+		const bool bModelGun = GunItem && GunItem->HasViewModel();
+		const GBReloadAnim::FHandBeat Beat = bModelGun ? GunItem->GetReloadHandBeat() : GBReloadAnim::FHandBeat();
+		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
 		const float PushY = -Beat.Push * GBHudLayout::ReloadSeatPush * P;
 		const FVector2D RightShift = (GunItem ? GunItem->GetReloadRightHandFollow() : FVector2D::ZeroVector) * (RightFollow * P);
 		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X + RightShift.X, H - RightSize.Y * 0.7f + Bob.Y + KickY + RightShift.Y + PushY, P);
@@ -671,7 +671,9 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		{
 			const FVector2D Reach = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * (Beat.Reach * P);
 			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(Reach.Y));
-			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY, P);
+			// A gun with a pump: the left hand rides the forend back and forward with it.
+			const FVector2D PumpShift = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector) * P;
+			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X + PumpShift.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY + PumpShift.Y, P);
 		}
 	}
 	else if (Item && Slot == EGBHeldSlot::Sword)
@@ -983,7 +985,8 @@ void AGBHUD::DrawGunPanel(AGBPlayerCharacter* Player, AGBHeldItem* Gun, const FG
 	const FLinearColor AmmoColor = Ammo.InMagazine > 0 ? Style.Text : GBHudLocal::Bad;
 	DrawLabel(AmmoText, AmmoColor, X, Y + 22.f * S, 32.f, 0.f, bShadow);
 	const FVector2D AmmoSize = MeasureLabel(AmmoText, 32.f);
-	DrawLabel(FString::Printf(TEXT("x%d mags"), Ammo.SpareMagazines), Style.Text, X + AmmoSize.X + 12.f * S, Y + 34.f * S, 16.f, 0.f, bShadow);
+	const FString ReserveText = Gun->ReloadsPerRound() ? FString::Printf(TEXT("x%d shells"), Ammo.SpareMagazines) : FString::Printf(TEXT("x%d mags"), Ammo.SpareMagazines);
+	DrawLabel(ReserveText, Style.Text, X + AmmoSize.X + 12.f * S, Y + 34.f * S, 16.f, 0.f, bShadow);
 
 	if (Gun->IsReloading())
 	{

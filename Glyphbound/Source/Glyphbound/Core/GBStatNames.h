@@ -58,6 +58,7 @@ namespace GBStat
 	inline const FName MagazineSize(TEXT("MagazineSize"));
 	inline const FName SpareMagazines(TEXT("SpareMagazines"));      // spare magazines after a full refill
 	inline const FName ReloadTime(TEXT("ReloadTime"));
+	inline const FName ReloadPerRound(TEXT("ReloadPerRound"));      // 1 = loads shell by shell, SpareMagazines then counts rounds
 	inline const FName Range(TEXT("Range"));
 	inline const FName Spread(TEXT("Spread"));                      // degrees, hip fire
 	inline const FName AimSpread(TEXT("AimSpread"));                // degrees, aiming

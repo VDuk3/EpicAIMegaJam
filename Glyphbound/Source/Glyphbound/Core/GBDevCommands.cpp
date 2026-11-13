@@ -107,6 +107,31 @@ namespace GBSmokeRun
 		return (Gun && Gun->GetWeaponId() == FName(TEXT("Rifle"))) ? Gun : nullptr;
 	}
 
+	// Shotgun block of the smoke run (round-by-round reload and pump).
+	static AGBGun* ShotgunInHand(AGBPlayerCharacter* Player)
+	{
+		AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
+		return (Gun && Gun->GetWeaponId() == FName(TEXT("Shotgun"))) ? Gun : nullptr;
+	}
+	static TWeakObjectPtr<AGBEnemyCharacter> ShotgunFlashTarget;
+	static FGBAmmoState ShotgunAmmoBefore;
+	// The reload from 3 shells: the game time it started and the time one shell takes (ReloadTime moves with the Rapid Reload perk).
+	static double ShotgunReloadStartSim = 0.0;
+	static float ShotgunCycleSeconds = 0.333f;
+	// Everything at rest: no reload, the shell hidden inside the port, the pump home, the root at its rest pose.
+	static void CheckShotgunAtRest(const TCHAR* When, AGBGun* Gun)
+	{
+		const bool bOk = !Gun->IsReloading() && !Gun->IsViewModelMagazineVisible() && Gun->GetViewModelMagazineOffsetCm() < 0.05f
+			&& Gun->GetViewModelPumpOffsetCm() < 0.05f && Gun->GetViewModelRootOffsetCm() < 0.05f && Gun->GetViewModelRootAngleDeg() < 0.5f;
+		UE_LOG(LogGB, Display, TEXT("SMOKE shotgun at rest (%s): reloading=%d shell visible=%d shell %.2f cm pump %.2f cm root %.2f cm %.2f deg"), When,
+			Gun->IsReloading() ? 1 : 0, Gun->IsViewModelMagazineVisible() ? 1 : 0, Gun->GetViewModelMagazineOffsetCm(),
+			Gun->GetViewModelPumpOffsetCm(), Gun->GetViewModelRootOffsetCm(), Gun->GetViewModelRootAngleDeg());
+		if (!bOk)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE shotgun rest FAILED (%s): the shell, the pump or the gun is not at rest"), When);
+		}
+	}
+
 	static void Shot(const TCHAR* Name)
 	{
 		const FString Path = FPaths::ProjectSavedDir() / TEXT("Screenshots/Smoke") / (FString(Name) + TEXT(".png"));
@@ -1776,6 +1801,537 @@ namespace GBSmokeRun
 				CheckEnchantBlink(TEXT("rifle"), BlinkGun, true, TEXT("with 2 seconds left"));
 			}
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+		});
+		// ---- Shotgun: model, pump, shell-by-shell reload (feedback15). Its clock runs on from the rifle block and is wound back at the end. ----
+		const float SG = 61.7f + S;
+		Add(SG, TEXT("shotgun: own it, equip it in the gun slot, full ammo, no enchant"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			Player->GetEquipment()->GiveWeapon(TEXT("Shotgun"), false, false);
+			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Shotgun"));
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				Effects->RemoveAllEffects();
+			}
+			if (AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
+			{
+				Gun->RefillAmmo();
+			}
+		});
+		Add(SG + 0.4f, TEXT("shotgun: meshes and materials in hand, display 6, hip screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun: no shotgun in hand"));
+				return;
+			}
+			const int32 Meshes = Gun->GetViewModelMeshCount();
+			const int32 Mids = Gun->GetViewModelMIDCount();
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun viewmodel meshes=%d mids=%d pump=%d display=%s ammo %d / spare rounds %d"), Meshes, Mids,
+				Gun->HasPump() ? 1 : 0, *Gun->GetViewModelDisplayText(), Ammo.InMagazine, Ammo.SpareMagazines);
+			if (Meshes != 6 || Mids <= 6 || !Gun->HasPump())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun viewmodel FAILED: meshes=%d (expected 6) mids=%d (expected more than 6) pump=%d"), Meshes, Mids, Gun->HasPump() ? 1 : 0);
+			}
+			if (Gun->GetViewModelDisplayText() != TEXT("6") || Ammo.InMagazine != 6 || Ammo.SpareMagazines != 24 || !Gun->ReloadsPerRound())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun ammo FAILED: display '%s', %d in the gun, %d spare (expected 6, 6, 24 rounds) perRound=%d"),
+					*Gun->GetViewModelDisplayText(), Ammo.InMagazine, Ammo.SpareMagazines, Gun->ReloadsPerRound() ? 1 : 0);
+			}
+			CheckShotgunAtRest(TEXT("hip"), Gun);
+			Shot(TEXT("15a_shotgun_hip"));
+		});
+		Add(SG + 0.9f, TEXT("shotgun shot: kick, muzzle flash, one round less"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun shot: no shotgun in hand"));
+				return;
+			}
+			Gun->StartPrimary();
+			Gun->StopPrimary();
+			const bool bVisible = Gun->IsMuzzleFlashVisible();
+			const float Kick = Gun->GetViewModelKickBackCm();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun shot: muzzle flash visible=%d kick=%.2f ammo=%d"), bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
+			if (!bVisible || Kick <= 0.1f || Gun->GetAmmo().InMagazine != 5)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun shot FAILED: visible=%d kick=%.2f ammo=%d right after a shot (expected a flash, a kick and 5 rounds)"),
+					bVisible ? 1 : 0, Kick, Gun->GetAmmo().InMagazine);
+			}
+		});
+		Add(SG + 1.27f, TEXT("shotgun pump: slid back during the interval, display 5"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+				return;
+			}
+			const float Pump = Gun->GetViewModelPumpOffsetCm();
+			const FString Text = Gun->GetViewModelDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun pump 0.37 s after the shot: %.2f cm from rest, display=%s"), Pump, *Text);
+			if (Pump < 1.2f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump FAILED: only %.2f cm from rest in the middle of the interval (expected it back, about 4 cm)"), Pump);
+			}
+			if (Text != TEXT("5"))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun display FAILED: '%s' after one shot (expected 5)"), *Text);
+			}
+		});
+		Add(SG + 1.85f, TEXT("shotgun pump: home again before the next shot is allowed"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+				return;
+			}
+			CheckShotgunAtRest(TEXT("after the pump"), Gun);
+		});
+		Add(SG + 2.0f, TEXT("shotgun pump: pinned at the back of its travel, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+				return;
+			}
+			Gun->SetPumpPreview(1.f);
+			const float Pump = Gun->GetViewModelPumpOffsetCm();
+			const float RootCm = Gun->GetViewModelRootOffsetCm();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun pump pinned: %.2f cm from rest, root %.2f cm %.2f deg, hand shift %s"), Pump, RootCm,
+				Gun->GetViewModelRootAngleDeg(), *Gun->GetPumpHandShift().ToString());
+			if (Pump < 3.5f || RootCm < 0.1f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump FAILED: pinned back but the pump is %.2f cm from rest and the root %.2f cm (expected about 4 and a little rack)"), Pump, RootCm);
+			}
+			Shot(TEXT("15b_shotgun_pump"));
+		});
+		Add(SG + 2.5f, TEXT("shotgun pump: pin released, pump home"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun pump: no shotgun in hand"));
+				return;
+			}
+			Gun->ClearPumpPreview();
+			CheckShotgunAtRest(TEXT("pin released"), Gun);
+		});
+		Add(SG + 2.6f, TEXT("shotgun enchant: ice enchant on"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBStatusEffectComponent* Effects = Player->GetStatusEffects();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun enchant ok=%d"), (Effects && Effects->ApplyEffect(FName(TEXT("Enchant_Ice")), Player)) ? 1 : 0);
+		});
+		Add(SG + 3.2f, TEXT("shotgun weak point: a head hit by the player lights the lens"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+			AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+			ShotgunFlashTarget = Enemy;
+			if (!Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: could not spawn the test orc"));
+				return;
+			}
+			FGBDamageInfo Info;
+			Info.Amount = 1.f;
+			Info.Instigator = Player;
+			Info.bHeadshot = true;
+			UGBCombatLibrary::DealDamage(Enemy, Info);
+		});
+		Add(SG + 3.25f, TEXT("shotgun weak point: flash is on"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: no shotgun in hand"));
+				return;
+			}
+			const float Flash = Gun->GetViewModelWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun weakpoint flash=%.2f"), Flash);
+			if (Flash <= 0.5f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint FAILED: flash=%.2f right after a weak-point hit (expected more than 0.5)"), Flash);
+			}
+		});
+		Add(SG + 4.3f, TEXT("shotgun weak point: flash is off again, then a body hit"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get();
+			if (!Gun || !Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint: no shotgun in hand or no test orc"));
+				return;
+			}
+			const float After = Gun->GetViewModelWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun weakpoint flash after=%.2f"), After);
+			if (After > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun weakpoint FAILED: flash=%.2f one second later (expected 0)"), After);
+			}
+			FGBDamageInfo Info;
+			Info.Amount = 1.f;
+			Info.Instigator = Player;
+			Info.bHeadshot = false;
+			UGBCombatLibrary::DealDamage(Enemy, Info);
+		});
+		Add(SG + 4.4f, TEXT("shotgun body shot: the lens stays dark; half the enchant left"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun bodyshot: no shotgun in hand"));
+				return;
+			}
+			const float Flash = Gun->GetViewModelWeakPointFlash();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun bodyshot flash=%.2f"), Flash);
+			if (Flash > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun bodyshot FAILED: flash=%.2f after a body hit (expected 0)"), Flash);
+			}
+			if (AGBEnemyCharacter* Enemy = ShotgunFlashTarget.Get())
+			{
+				Enemy->Destroy();
+			}
+			ShotgunFlashTarget.Reset();
+			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				for (const FGBActiveStatusEffect& Active : Effects->GetActiveEffects())
+				{
+					if (Active.EffectId.ToString().StartsWith(TEXT("Enchant_")))
+					{
+						const FName EnchantId = Active.EffectId;
+						Effects->SetTimeRemaining(EnchantId, 0.5f * Active.TotalDuration);
+						break;
+					}
+				}
+			}
+		});
+		Add(SG + 4.7f, TEXT("shotgun half bar: imbue about half, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun half bar: no shotgun in hand"));
+				return;
+			}
+			const float Imbue = Gun->GetViewModelImbueSent();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun half bar imbue=%.2f ammo=%d"), Imbue, Gun->GetAmmo().InMagazine);
+			CheckEnchantBlink(TEXT("shotgun"), Gun, false, TEXT("at half the enchant"));
+			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
+			}
+			Shot(TEXT("15c_shotgun_enchanted"));
+		});
+		// Reload from 3 shells with 24 in reserve: one shell per third of a second.
+		const float SR = SG + 4.9f;
+		Add(SR, TEXT("shotgun reload: from 3 shells with 24 in reserve"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+				return;
+			}
+			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
+			{
+				Effects->RemoveAllEffects();
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 3;
+			Ammo.SpareMagazines = 24;
+			Gun->SetAmmo(Ammo);
+			ShotgunAmmoBefore = Gun->GetAmmo();
+			Gun->Reload();
+			ShotgunReloadStartSim = World->GetTimeSeconds();
+			ShotgunCycleSeconds = Gun->GetStat(GBStat::ReloadTime, 2.f) / FMath::Max(1, Gun->GetMagazineSize());
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload started: one shell takes %.3f s;"), ShotgunCycleSeconds);
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload started: reloading=%d ammo %d / %d"), Gun->IsReloading() ? 1 : 0, Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines);
+			if (!Gun->IsReloading() || ShotgunAmmoBefore.InMagazine != 3 || ShotgunAmmoBefore.SpareMagazines != 24)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: reloading=%d, ammo %d / %d (expected a reload from 3 with 24 in reserve)"),
+					Gun->IsReloading() ? 1 : 0, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+			}
+		});
+		Add(SR + 0.4f, TEXT("shotgun reload: one shell in (4 and 23), display follows; a shell's cycle pinned mid-way, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			const FString Text = Gun->GetViewModelDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload after one cycle: ammo %d / %d, display=%s, reloading=%d"), Ammo.InMagazine, Ammo.SpareMagazines, *Text, Gun->IsReloading() ? 1 : 0);
+			if (!Gun->IsReloading() || Ammo.InMagazine != 4 || Ammo.SpareMagazines != 23 || Text != FString::FromInt(Ammo.InMagazine))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: %d in the gun and %d in reserve, display '%s' after one shell (expected 4, 23 and the live count)"),
+					Ammo.InMagazine, Ammo.SpareMagazines, *Text);
+			}
+			Gun->SetReloadPreview(0.55f);
+			CheckReloadBeat(TEXT("shotgun"), Gun, 0.55f, true);
+			Shot(TEXT("15d_shotgun_reload_shell"));
+		});
+		Add(SR + 0.8f, TEXT("shotgun reload: pin released, the real reload goes on"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBGun* Gun = ShotgunInHand(Player))
+			{
+				Gun->ClearReloadPreview();
+			}
+		});
+		Add(SR + 0.85f, TEXT("shotgun reload: the shells follow the clock, one per cycle"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload at 0.85 s: ammo %d / %d reloading=%d progress=%.2f"), Ammo.InMagazine, Ammo.SpareMagazines, Gun->IsReloading() ? 1 : 0, Gun->GetReloadProgress());
+			// Shells landed by a game time T: one per cycle from 3, up to 6. The state is that of the last frame, so allow 60 ms of lag.
+			const double Elapsed = World->GetTimeSeconds() - ShotgunReloadStartSim;
+			auto ShellsAt = [](double T) { return FMath::Clamp(3 + FMath::FloorToInt(static_cast<float>(FMath::Max(0.0, T)) / ShotgunCycleSeconds), 3, 6); };
+			const int32 Low = ShellsAt(Elapsed - 0.06);
+			const int32 High = ShellsAt(Elapsed);
+			if (Ammo.InMagazine < Low || Ammo.InMagazine > High || Ammo.InMagazine + Ammo.SpareMagazines != 27 || (High < 6 && !Gun->IsReloading()))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: %d in the gun and %d in reserve after %.2f s (expected %d to %d shells, 27 rounds in all, reloading until 6)"),
+					Ammo.InMagazine, Ammo.SpareMagazines, Elapsed, Low, High);
+			}
+		});
+		Add(SR + 1.45f, TEXT("shotgun reload: ends at 6 and 21 after about half of ReloadTime, everything at rest"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			const FString Text = Gun->GetViewModelDisplayText();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun reload finished: ammo %d / %d display=%s"), Ammo.InMagazine, Ammo.SpareMagazines, *Text);
+			if (Ammo.InMagazine != 6 || Ammo.SpareMagazines != 21 || Text != TEXT("6"))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun reload FAILED: %d in the gun, %d in reserve, display '%s' at the end (expected 6, 21, 6)"), Ammo.InMagazine, Ammo.SpareMagazines, *Text);
+			}
+			CheckShotgunAtRest(TEXT("reload finished"), Gun);
+		});
+		// Fire pressed during a reload from 2 shells.
+		const float SF = SR + 1.6f;
+		Add(SF, TEXT("shotgun fire during reload: start a reload from 2 shells"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun fire in reload: no shotgun in hand"));
+				return;
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 2;
+			Ammo.SpareMagazines = 21;
+			Gun->SetAmmo(Ammo);
+			Gun->Reload();
+		});
+		Add(SF + 0.5f, TEXT("shotgun fire during reload: fire stops the reload and shoots, nothing lost or created"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun fire in reload: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Before = Gun->GetAmmo();
+			const bool bWasReloading = Gun->IsReloading();
+			Gun->StartPrimary();
+			const FGBAmmoState After = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun fire in reload: before %d / %d reloading=%d, after %d / %d reloading=%d, muzzle flash=%d"),
+				Before.InMagazine, Before.SpareMagazines, bWasReloading ? 1 : 0, After.InMagazine, After.SpareMagazines, Gun->IsReloading() ? 1 : 0, Gun->IsMuzzleFlashVisible() ? 1 : 0);
+			// Two shells and 21 in reserve make 23 rounds; one is fired, so 22 are left; the shells already loaded stay in.
+			if (!bWasReloading || Before.InMagazine < 3 || Gun->IsReloading() || After.InMagazine != Before.InMagazine - 1
+				|| After.SpareMagazines != Before.SpareMagazines || After.InMagazine + After.SpareMagazines != 22 || !Gun->IsMuzzleFlashVisible())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun fire in reload FAILED: %d / %d (reloading=%d) became %d / %d (reloading=%d); expected the reload stopped, one shell fired, 22 rounds in all"),
+					Before.InMagazine, Before.SpareMagazines, bWasReloading ? 1 : 0, After.InMagazine, After.SpareMagazines, Gun->IsReloading() ? 1 : 0);
+			}
+		});
+		Add(SF + 0.6f, TEXT("shotgun fire during reload: trigger released"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBGun* Gun = ShotgunInHand(Player))
+			{
+				Gun->StopPrimary();
+			}
+		});
+		// Fire pressed on an EMPTY gun during its reload: it waits for the first shell, then stops the reload and shoots.
+		const float SE = SF + 1.8f;
+		Add(SE, TEXT("shotgun empty gun: start a reload from 0 and press fire"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun empty gun: no shotgun in hand"));
+				return;
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 0;
+			Ammo.SpareMagazines = 24;
+			Gun->SetAmmo(Ammo);
+			Gun->Reload();
+			Gun->StartPrimary();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun empty gun pressed fire: ammo %d / %d reloading=%d"), Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines, Gun->IsReloading() ? 1 : 0);
+			if (!Gun->IsReloading() || Gun->GetAmmo().InMagazine != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun empty gun FAILED: pressing fire on an empty gun during its reload must wait for the first shell (reloading=%d, %d in the gun)"),
+					Gun->IsReloading() ? 1 : 0, Gun->GetAmmo().InMagazine);
+			}
+		});
+		Add(SE + 0.5f, TEXT("shotgun empty gun: the first shell landed and was fired"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun empty gun: no shotgun in hand"));
+				return;
+			}
+			Gun->StopPrimary();
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			const float Since = Gun->GetTimeSinceLastAttack();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun empty gun after 0.5 s: ammo %d / %d, last shot %.2f s ago, reloading=%d"), Ammo.InMagazine, Ammo.SpareMagazines, Since, Gun->IsReloading() ? 1 : 0);
+			// 24 rounds, one landed and was fired: 23 left. The gun is empty again, so it reloads by itself.
+			if (Ammo.InMagazine + Ammo.SpareMagazines != 23 || Since > 0.45f || Since < 0.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun empty gun FAILED: %d / %d and the last shot %.2f s ago (expected 23 rounds in all and a shot right after the first shell landed)"),
+					Ammo.InMagazine, Ammo.SpareMagazines, Since);
+			}
+		});
+		// A TAP (press and release) on an empty gun during its reload still fires when the first shell lands.
+		const float ST = SE + 1.2f;
+		Add(ST, TEXT("shotgun tap on an empty gun: start a reload from 0, tap fire"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tap: no shotgun in hand"));
+				return;
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 0;
+			Ammo.SpareMagazines = 24;
+			Gun->SetAmmo(Ammo);
+			Gun->Reload();
+			Gun->StartPrimary();
+			Gun->StopPrimary();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun tap on an empty gun: ammo %d / %d reloading=%d"), Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines, Gun->IsReloading() ? 1 : 0);
+			if (!Gun->IsReloading() || Gun->GetAmmo().InMagazine != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tap FAILED: the tap must wait for the first shell (reloading=%d, %d in the gun)"), Gun->IsReloading() ? 1 : 0, Gun->GetAmmo().InMagazine);
+			}
+		});
+		Add(ST + 0.5f, TEXT("shotgun tap on an empty gun: the shell landed and the tapped shot was fired"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tap: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			const float Since = Gun->GetTimeSinceLastAttack();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun tap after 0.5 s: ammo %d / %d, last shot %.2f s ago"), Ammo.InMagazine, Ammo.SpareMagazines, Since);
+			if (Ammo.InMagazine + Ammo.SpareMagazines != 23 || Since > 0.45f || Since < 0.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tap FAILED: %d / %d and the last shot %.2f s ago (expected 23 rounds in all and a shot right after the first shell landed)"), Ammo.InMagazine, Ammo.SpareMagazines, Since);
+			}
+		});
+		// Fire pressed while the fire cooldown still runs, during a reload: the reload stops at once.
+		const float SP = ST + 1.2f;
+		Add(SP, TEXT("shotgun cooldown press: shoot, start a reload, press fire inside the cooldown"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cooldown press: no shotgun in hand"));
+				return;
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 3;
+			Ammo.SpareMagazines = 24;
+			Gun->SetAmmo(Ammo);
+			Gun->StartPrimary();
+			Gun->StopPrimary();
+			Gun->Reload();
+			const bool bReloadingBefore = Gun->IsReloading();
+			Gun->StartPrimary();
+			const bool bReloadingAfter = Gun->IsReloading();
+			Gun->StopPrimary(); // release inside the cooldown: no second shot follows
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun cooldown press: reloading before the press=%d, after=%d, ammo %d / %d"), bReloadingBefore ? 1 : 0, bReloadingAfter ? 1 : 0,
+				Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines);
+			if (!bReloadingBefore || bReloadingAfter || Gun->GetAmmo().InMagazine != 2 || Gun->GetAmmo().SpareMagazines != 24)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cooldown press FAILED: reloading %d then %d, ammo %d / %d (expected the press to stop the reload at once, 2 / 24)"),
+					bReloadingBefore ? 1 : 0, bReloadingAfter ? 1 : 0, Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines);
+			}
+		});
+		// A reload cancelled by switching to the staff and back keeps the shells already loaded.
+		const float SC = SP + 1.0f;
+		Add(SC, TEXT("shotgun cancel: start a reload from 1 shell"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cancel: no shotgun in hand"));
+				return;
+			}
+			FGBAmmoState Ammo;
+			Ammo.InMagazine = 1;
+			Ammo.SpareMagazines = 23;
+			Gun->SetAmmo(Ammo);
+			Gun->Reload();
+		});
+		Add(SC + 0.5f, TEXT("shotgun cancel: switched to the staff and back after a shell landed"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cancel: no shotgun in hand"));
+				return;
+			}
+			ShotgunAmmoBefore = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun cancel: switching away with %d / %d"), ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
+		});
+		Add(SC + 0.6f, TEXT("shotgun cancel: loaded shells kept, shell and gun at rest"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cancel: no shotgun in hand"));
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun cancel: back with %d / %d (was %d / %d)"), Ammo.InMagazine, Ammo.SpareMagazines, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+			if (ShotgunAmmoBefore.InMagazine < 2 || Ammo.InMagazine != ShotgunAmmoBefore.InMagazine || Ammo.SpareMagazines != ShotgunAmmoBefore.SpareMagazines)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cancel FAILED: %d / %d after the switch, was %d / %d (expected the shells already loaded to stay, at least 2)"),
+					Ammo.InMagazine, Ammo.SpareMagazines, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+			}
+		});
+		Add(SC + 1.2f, TEXT("shotgun done: pump, shell and root at rest; staff back in hand; clock back"), [SC, SG](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBGun* Gun = ShotgunInHand(Player))
+			{
+				CheckShotgunAtRest(TEXT("end of the block"), Gun);
+			}
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			// The next step (the Entity) was timed 0.1 s after this block started: continue the clock from there.
+			StartSeconds += (SC + 1.2f) - (SG + 0.1f);
 		});
 		Add(61.8f + S, TEXT("entity: spawn where the player can see it, attacks off"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{

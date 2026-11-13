@@ -116,6 +116,11 @@ FGBAmmoState UGBEquipmentComponent::ComputeFullAmmo(FName WeaponId) const
 	};
 	Full.InMagazine = FMath::Max(0, FMath::RoundToInt(ReadStat(GBStat::MagazineSize, 1.f)));
 	Full.SpareMagazines = FMath::Max(0, FMath::RoundToInt(ReadStat(GBStat::SpareMagazines, 0.f)));
+	if (ReadStat(GBStat::ReloadPerRound, 0.f) > 0.5f)
+	{
+		// A round-by-round gun counts its reserve in rounds: the same total as the magazines would have held.
+		Full.SpareMagazines *= Full.InMagazine;
+	}
 	return Full;
 }
 

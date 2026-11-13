@@ -52,6 +52,13 @@ struct FGBGunModelArt
 	float ReloadBumpCm;           // the gun jumps up this much as the new magazine seats
 	FVector2D ReloadHandReach;    // HUD: sprite pixels (x right, y down) the left hand moves from its place to meet the magazine
 	FVector2D ReloadRightHandFollow; // HUD: sprite pixels the right hand moves at full pose, to stay on this gun's grip
+	// Optional pump (the shotgun's forend). A model without one leaves all of these at zero and behaves as before.
+	bool bPump;                   // the model has a SM_<Prefix>Pump part
+	FVector PumpRest;             // pump position at rest
+	FVector PumpSlide;            // vector the pump slides along to the back of its travel
+	float PumpRackDipCm;          // the gun dips this much (cm, camera down) while the pump is back
+	float PumpRackRollDeg;        // and rolls this much
+	FVector2D PumpHandTravel;     // HUD: sprite pixels (x right, y down) the left hand rides with the pump at full travel
 };
 
 namespace
@@ -85,9 +92,23 @@ namespace
 		1.2f, 1.5f, true,
 		FVector(4.f, 1.7f, 11.f), FRotator(16.f, 0.f, 40.f), 32.f, 1.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f) };
 
+	// Shotgun art tuning from Glyphbound/SourceArt/Weapons/Shotgun/export_report.json (offsets in cm in the body's frame).
+	// The shell is the "Magazine" part: at rest it sits inside the loading port on the underside, and the pump is a sleeve
+	// around the forend. The pane is plain (the game draws the frame and one pip per shell). Framing, kick and the reload
+	// pose are provisional, tuned from the smoke screenshots.
+	const FGBGunModelArt ShotgunArt = {
+		TEXT("Shotgun"), TEXT("/Game/Glyphbound/Weapons/Shotgun"), TEXT("SM_Shotgun_"), false,
+		0.55f, FVector(-6.f, -5.f, -1.5f), -0.4f,
+		FVector(5.8f, 0.f, 0.6f), FVector(18.47f, 0.f, -5.04f), FVector(-5.f, 0.f, -1.81f),
+		FLinearColor(0.10f, 0.85f, 1.00f), FVector(65.48f, 0.f, -1.24f), 13.f,
+		0.42f, 0.6f, 0.39f,
+		2.2f, 2.5f, true,
+		FVector(4.f, 1.7f, 8.f), FRotator(16.f, 0.f, 40.f), 32.f, 0.f, 0.5f, FVector2D(0.f, -2.f), FVector2D(10.f, -19.f),
+		true, FVector(49.9f, 0.f, -10.45f), FVector(-4.11f, 0.f, 0.88f), 0.5f, 1.5f, FVector2D(-6.f, 1.f) };
+
 	const FGBGunModelArt* FindModelArt(const FString& Name)
 	{
-		for (const FGBGunModelArt* Art : { &PistolArt, &RifleArt })
+		for (const FGBGunModelArt* Art : { &PistolArt, &RifleArt, &ShotgunArt })
 		{
 			if (Name == Art->Name)
 			{
@@ -154,6 +175,15 @@ namespace
 	constexpr float ReloadSlideInEase = 1.6f;    // exponent of the slide-in (above 1: fastest at the end)
 	// A cancelled reload (or a released preview) blends the gun back to rest over this time.
 	constexpr float ReloadBlendSeconds = 0.12f;
+	// Round-by-round reload (look): the gun leaves rest during this share of the FIRST round's cycle, then holds the pose.
+	// Each round's cycle plays the magazine guns' "fresh magazine" beats (rise, slide in, seat bump) from ReloadEmptyEnd to ReloadSeatEnd.
+	constexpr float PerRoundPoseInShare = 0.35f;
+	// After the last round the gun eases back to rest over this time (it may run past the gameplay end of the reload).
+	constexpr float PerRoundExitSeconds = 0.22f;
+	// Pump: shares of the gun's FireInterval. Provisional.
+	constexpr float PumpStartShare = 0.22f;      // the pump starts to slide back
+	constexpr float PumpBackShare = 0.45f;       // fully back
+	constexpr float PumpHomeShare = 0.72f;       // home again, well before the next shot is allowed
 
 	float Smoothstep01(float T)
 	{
@@ -226,6 +256,65 @@ namespace GBReloadAnim
 	}
 }
 
+// ---- Round-by-round reload stepping (pure) ----
+
+void FGBPerRoundReload::Begin(int32 Rounds, int32 Reserve, int32 Capacity, float TotalSeconds)
+{
+	CycleSeconds = Capacity > 0 ? FMath::Max(0.f, TotalSeconds) / Capacity : 0.f;
+	CycleElapsed = 0.f;
+	Moved = 0;
+	Planned = FMath::Max(0, FMath::Min(Capacity - Rounds, Reserve));
+	bRunning = Planned > 0;
+}
+
+int32 FGBPerRoundReload::Advance(float DeltaSeconds, int32& Rounds, int32& Reserve, int32 Capacity, int32 MaxRounds)
+{
+	if (!bRunning)
+	{
+		return 0;
+	}
+	int32 MovedNow = 0;
+	CycleElapsed += FMath::Max(0.f, DeltaSeconds);
+	// The small tolerance keeps six cycles of 1/3 s from falling a float rounding error short of 2 s.
+	while (bRunning && MovedNow < MaxRounds && CycleElapsed + 0.0001f >= CycleSeconds)
+	{
+		CycleElapsed = FMath::Max(0.f, CycleElapsed - CycleSeconds);
+		if (Rounds < Capacity && Reserve > 0)
+		{
+			++Rounds;
+			--Reserve;
+			++Moved;
+			++MovedNow;
+		}
+		if (Rounds >= Capacity || Reserve <= 0)
+		{
+			bRunning = false;
+			CycleElapsed = 0.f;
+		}
+	}
+	return MovedNow;
+}
+
+void FGBPerRoundReload::Stop()
+{
+	bRunning = false;
+	CycleElapsed = 0.f;
+}
+
+float FGBPerRoundReload::Progress() const
+{
+	if (Planned <= 0)
+	{
+		return 1.f;
+	}
+	return FMath::Clamp((Moved + CycleProgress()) / Planned, 0.f, 1.f);
+}
+
+float FGBPerRoundReload::CycleProgress() const
+{
+	return (bRunning && CycleSeconds > KINDA_SMALL_NUMBER) ? FMath::Clamp(CycleElapsed / CycleSeconds, 0.f, 1.f) : 0.f;
+}
+
 void AGBGun::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayerCharacter* InOwner)
 {
 	Super::InitFromDefinition(Definition, InOwner);
@@ -272,7 +361,7 @@ void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
 		}
 		else
 		{
-			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': unknown ViewModel '%s' (Pistol or Rifle); using the placeholder shapes instead."),
+			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': unknown ViewModel '%s' (Pistol, Rifle or Shotgun); using the placeholder shapes instead."),
 				*Definition.Id.ToString(), *Definition.ViewModel);
 		}
 	}
@@ -292,7 +381,8 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	UStaticMesh* EnergyBarMesh = Art.bEnergyBarMesh ? LoadModelMesh(TEXT("EnergyBar")) : nullptr;
 	UStaticMesh* WeakPointLightMesh = LoadModelMesh(TEXT("WeakPointLight"));
 	UStaticMesh* AmmoDisplayMesh = LoadModelMesh(TEXT("AmmoDisplay"));
-	if (!BodyMesh || !TriggerMesh || !MagazineMesh || (Art.bEnergyBarMesh && !EnergyBarMesh) || !WeakPointLightMesh || !AmmoDisplayMesh)
+	UStaticMesh* PumpMesh = Art.bPump ? LoadModelMesh(TEXT("Pump")) : nullptr;
+	if (!BodyMesh || !TriggerMesh || !MagazineMesh || (Art.bEnergyBarMesh && !EnergyBarMesh) || !WeakPointLightMesh || !AmmoDisplayMesh || (Art.bPump && !PumpMesh))
 	{
 		return false;
 	}
@@ -320,6 +410,11 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	VMAmmoDisplay = NewViewPart(TEXT("AmmoDisplay"), AmmoDisplayMesh, VMBody, FVector::ZeroVector);
 	VMTrigger = NewViewPart(TEXT("Trigger"), TriggerMesh, VMBody, Art.TriggerOffset);
 	VMMagazine = NewViewPart(TEXT("Magazine"), MagazineMesh, VMBody, Art.MagazineRest);
+	VMPump = Art.bPump ? NewViewPart(TEXT("Pump"), PumpMesh, VMBody, Art.PumpRest) : nullptr;
+	PumpElapsed = -1.f;
+	PumpPreview = -1.f;
+	CurrentPumpAmount = 0.f;
+	CurrentPoseAmount = 0.f;
 	// The base pose of the whole viewmodel (offset and yaw towards the view centre); the shot kick moves it from here.
 	CurrentKickBackCm = 0.f;
 	KickElapsed = -1.f;
@@ -328,7 +423,7 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	ViewModelMIDs.Reset();
 	ViewModelIndicatorMID = nullptr;
 	ViewModelDisplayMID = nullptr;
-	UStaticMeshComponent* ModelParts[6] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay };
+	UStaticMeshComponent* ModelParts[7] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay, VMPump };
 	for (UStaticMeshComponent* Part : ModelParts)
 	{
 		if (!Part)
@@ -416,7 +511,7 @@ int32 AGBGun::GetViewModelMeshCount() const
 	{
 		return 0;
 	}
-	const UStaticMeshComponent* ModelParts[6] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay };
+	const UStaticMeshComponent* ModelParts[7] = { VMBody, VMTrigger, VMMagazine, VMEnergyBar, VMWeakPointLight, VMAmmoDisplay, VMPump };
 	int32 Count = 0;
 	for (const UStaticMeshComponent* Part : ModelParts)
 	{
@@ -473,13 +568,179 @@ FVector2D AGBGun::GetReloadHandReach() const
 	return ModelArt ? ModelArt->ReloadHandReach : FVector2D::ZeroVector;
 }
 
+bool AGBGun::ReloadsPerRound() const
+{
+	return GetStat(GBStat::ReloadPerRound, 0.f) > 0.5f;
+}
+
+bool AGBGun::HasPump() const
+{
+	return VMPump != nullptr;
+}
+
+float AGBGun::GetViewModelPumpOffsetCm() const
+{
+	if (!VMPump || !ModelArt)
+	{
+		return 0.f;
+	}
+	return (VMPump->GetRelativeLocation() - ModelArt->PumpRest).Size();
+}
+
+FVector2D AGBGun::GetPumpHandShift() const
+{
+	return ModelArt ? ModelArt->PumpHandTravel * CurrentPumpAmount : FVector2D::ZeroVector;
+}
+
+void AGBGun::SetPumpPreview(float Amount)
+{
+	PumpPreview = FMath::Clamp(Amount, 0.f, 1.f);
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+void AGBGun::ClearPumpPreview()
+{
+	PumpPreview = -1.f;
+	PumpElapsed = -1.f;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+void AGBGun::StartPump()
+{
+	if (ModelArt && ModelArt->bPump && !bReloading)
+	{
+		PumpElapsed = 0.f;
+	}
+}
+
+void AGBGun::ResetPump()
+{
+	PumpElapsed = -1.f;
+	PumpPreview = -1.f;
+	if (bViewModel)
+	{
+		ApplyPump();
+	}
+}
+
+void AGBGun::ApplyPump()
+{
+	float Amount = 0.f;
+	if (ModelArt && ModelArt->bPump)
+	{
+		if (PumpPreview >= 0.f)
+		{
+			Amount = PumpPreview;
+		}
+		else if (PumpElapsed >= 0.f)
+		{
+			// Shares of the current FireInterval: still, back, fully back, home, still.
+			const float T = PumpElapsed / FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f));
+			if (T >= PumpStartShare && T < PumpBackShare)
+			{
+				Amount = Smoothstep01(Share(T, PumpStartShare, PumpBackShare));
+			}
+			else if (T >= PumpBackShare && T < PumpHomeShare)
+			{
+				Amount = 1.f - Smoothstep01(Share(T, PumpBackShare, PumpHomeShare));
+			}
+		}
+	}
+	CurrentPumpAmount = Amount;
+	if (VMPump && ModelArt)
+	{
+		VMPump->SetRelativeLocation(ModelArt->PumpRest + ModelArt->PumpSlide * Amount);
+	}
+}
+
 float AGBGun::GetReloadAnimProgress() const
 {
 	if (ReloadPreview >= 0.f)
 	{
 		return ReloadPreview;
 	}
-	return bReloading ? GetReloadProgress() : -1.f;
+	if (!bReloading)
+	{
+		return -1.f;
+	}
+	return ReloadsPerRound() ? PerRound.CycleProgress() : GetReloadProgress();
+}
+
+FGBReloadLook AGBGun::ComputeReloadLook() const
+{
+	FGBReloadLook Look;
+	const float Progress = GetReloadAnimProgress();
+	if (Progress < 0.f)
+	{
+		return Look;
+	}
+	Look.bActive = true;
+	if (!ReloadsPerRound())
+	{
+		// Magazine reload: slide out along MagazineOut, (fall), (rise), slide in; the slide share is 1 while the magazine is away.
+		Look.Pose = GBReloadAnim::PoseAmount(Progress);
+		Look.Dip = ReloadDip(Progress);
+		Look.Bump = ReloadBump(Progress);
+		Look.Drop = ReloadDrop(Progress);
+		Look.Slide = 1.f;
+		if (Progress < ReloadSlideOutEnd)
+		{
+			Look.Slide = Smoothstep01(Share(Progress, ReloadTiltEnd, ReloadSlideOutEnd));
+		}
+		else if (Progress >= ReloadRiseEnd)
+		{
+			Look.Slide = 1.f - FMath::Pow(Share(Progress, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+		}
+		Look.bShowMag = Progress < ReloadOutEnd || Progress >= ReloadEmptyEnd;
+		return Look;
+	}
+	// One round of a round-by-round reload: the "fresh magazine" beats of the magazine guns, once per round.
+	// The pose eases in during the first round only (a pinned preview holds it fully); the last ease-out is the blend after the end.
+	const bool bFirstRound = ReloadPreview < 0.f && PerRound.Moved == 0;
+	Look.Pose = bFirstRound ? Smoothstep01(Progress / PerRoundPoseInShare) : 1.f;
+	const float Beat = FMath::Lerp(ReloadEmptyEnd, ReloadSeatEnd, Progress);
+	Look.Bump = ReloadBump(Beat);
+	Look.Drop = ReloadDrop(Beat);
+	Look.Slide = Beat < ReloadRiseEnd ? 1.f : 1.f - FMath::Pow(Share(Beat, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
+	Look.bShowMag = Progress < 0.98f; // seated: inside the port, the next round starts below the view
+	return Look;
+}
+
+GBReloadAnim::FHandBeat AGBGun::GetReloadHandBeat() const
+{
+	GBReloadAnim::FHandBeat Beat;
+	if (!bViewModel)
+	{
+		return Beat;
+	}
+	const FGBReloadLook Look = ComputeReloadLook();
+	if (Look.bActive)
+	{
+		Beat.Reach = Look.Pose;
+		Beat.Drop = Look.Drop;
+		Beat.Push = Look.Bump;
+	}
+	else if (ReloadsPerRound())
+	{
+		Beat.Reach = CurrentPoseAmount;
+	}
+	return Beat;
+}
+
+float AGBGun::GetReloadPoseAmount() const
+{
+	if (!bViewModel)
+	{
+		return 0.f;
+	}
+	const FGBReloadLook Look = ComputeReloadLook();
+	return Look.bActive ? Look.Pose : (ReloadsPerRound() ? CurrentPoseAmount : 0.f);
 }
 
 void AGBGun::SetReloadPreview(float Progress)
@@ -501,7 +762,7 @@ void AGBGun::ClearReloadPreview()
 	}
 	if (bViewModel && !bReloading)
 	{
-		BeginReloadBlend();
+		BeginReloadBlend(ReloadBlendSeconds);
 	}
 	ReloadPreview = -1.f;
 	if (bViewModel)
@@ -511,13 +772,15 @@ void AGBGun::ClearReloadPreview()
 	}
 }
 
-void AGBGun::BeginReloadBlend()
+void AGBGun::BeginReloadBlend(float Seconds)
 {
 	if (!bViewModel)
 	{
 		return;
 	}
+	ReloadBlendLength = FMath::Max(0.01f, Seconds);
 	ReloadBlendLoc = ReloadPoseLoc;
+	ReloadBlendPoseAmount = CurrentPoseAmount;
 	ReloadBlendRot = ReloadPoseRot;
 	ReloadBlendElapsed = 0.f;
 }
@@ -528,6 +791,8 @@ void AGBGun::ResetReloadVisuals()
 	ReloadBlendElapsed = -1.f;
 	ReloadPoseLoc = FVector::ZeroVector;
 	ReloadPoseRot = FRotator::ZeroRotator;
+	CurrentPoseAmount = 0.f;
+	ResetPump();
 	if (bViewModel)
 	{
 		ApplyViewModelPose();
@@ -551,29 +816,37 @@ void AGBGun::ApplyViewModelPose()
 	}
 	CurrentKickBackCm = Art.KickBackCm * Strength;
 
+	// Pump first: its amount drives the small rack motion of the root.
+	ApplyPump();
+
 	// Reload pose: rest -> reload pose -> rest, with a dip as the magazine leaves and a bump as the new one seats.
 	// After a cancel the pose it had blends to rest instead of snapping.
-	const float Progress = GetReloadAnimProgress();
-	if (Progress >= 0.f)
+	const FGBReloadLook Look = ComputeReloadLook();
+	if (Look.bActive)
 	{
-		const float Pose = GBReloadAnim::PoseAmount(Progress);
-		ReloadPoseLoc = Art.ReloadOffset * Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * ReloadBump(Progress) - Art.ReloadDipCm * ReloadDip(Progress));
-		ReloadPoseRot = Art.ReloadRot * Pose;
+		ReloadPoseLoc = Art.ReloadOffset * Look.Pose + FVector(0.f, 0.f, Art.ReloadBumpCm * Look.Bump - Art.ReloadDipCm * Look.Dip);
+		ReloadPoseRot = Art.ReloadRot * Look.Pose;
+		CurrentPoseAmount = Look.Pose;
 	}
 	else if (ReloadBlendElapsed >= 0.f)
 	{
-		const float Left = 1.f - Smoothstep01(ReloadBlendElapsed / ReloadBlendSeconds);
+		const float Left = 1.f - Smoothstep01(ReloadBlendElapsed / ReloadBlendLength);
 		ReloadPoseLoc = ReloadBlendLoc * Left;
 		ReloadPoseRot = ReloadBlendRot * Left;
+		CurrentPoseAmount = ReloadBlendPoseAmount * Left;
 	}
 	else
 	{
 		ReloadPoseLoc = FVector::ZeroVector;
 		ReloadPoseRot = FRotator::ZeroRotator;
+		CurrentPoseAmount = 0.f;
 	}
 
-	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc);
-	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot);
+	// The pump's rack: the gun dips and rolls a little while the pump is back. It adds to the shot kick.
+	const FVector RackLoc(0.f, 0.f, -Art.PumpRackDipCm * CurrentPumpAmount);
+	const FRotator RackRot(0.f, 0.f, Art.PumpRackRollDeg * CurrentPumpAmount);
+	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
+	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
 }
 
 void AGBGun::ApplyReloadMagazine()
@@ -584,28 +857,16 @@ void AGBGun::ApplyReloadMagazine()
 	}
 	const FGBGunModelArt& Art = *ModelArt;
 	FVector Offset = FVector::ZeroVector;
-	bool bShow = true;
-	const float Progress = GetReloadAnimProgress();
-	if (Progress >= 0.f)
+	const FGBReloadLook Look = ComputeReloadLook();
+	// A round-by-round gun keeps its shell inside the port (hidden) outside a reload; a magazine gun shows its magazine.
+	bool bShow = Look.bActive ? Look.bShowMag : !ReloadsPerRound();
+	if (Look.bActive)
 	{
-		// Slide out along MagazineOut, (fall), (rise), slide in; the slide share is 1 while the magazine is away.
-		float Slide = 1.f;
-		if (Progress < ReloadSlideOutEnd)
-		{
-			Slide = Smoothstep01(Share(Progress, ReloadTiltEnd, ReloadSlideOutEnd));
-		}
-		else if (Progress >= ReloadRiseEnd)
-		{
-			const float In = FMath::Pow(Share(Progress, ReloadRiseEnd, ReloadInEnd), ReloadSlideInEase);
-			Slide = 1.f - In;
-		}
-		bShow = Progress < ReloadOutEnd || Progress >= ReloadEmptyEnd;
-		Offset = Art.MagazineOut * Slide;
-		const float Drop = ReloadDrop(Progress);
-		if (Drop > 0.f)
+		Offset = Art.MagazineOut * Look.Slide;
+		if (Look.Drop > 0.f)
 		{
 			// Straight down on screen whatever the gun's tilt: camera down, brought into the body's own (scaled) frame.
-			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Drop);
+			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Look.Drop);
 			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, Art.ViewScale);
 		}
 	}
@@ -698,9 +959,25 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 	if (ReloadBlendElapsed >= 0.f)
 	{
 		ReloadBlendElapsed += DeltaSeconds;
-		if (ReloadBlendElapsed >= ReloadBlendSeconds)
+		if (ReloadBlendElapsed >= ReloadBlendLength)
 		{
 			ReloadBlendElapsed = -1.f;
+		}
+	}
+	// Pump timer: runs for PumpHomeShare of the fire interval, then the pump rests. No pump while a reload runs.
+	if (PumpElapsed >= 0.f)
+	{
+		if (bReloading)
+		{
+			PumpElapsed = -1.f;
+		}
+		else
+		{
+			PumpElapsed += DeltaSeconds;
+			if (PumpElapsed >= PumpHomeShare * FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f)))
+			{
+				PumpElapsed = -1.f;
+			}
 		}
 	}
 	// The root pose (rest + reload + kick) and the magazine follow the reload progress every frame.
@@ -805,7 +1082,8 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 	// Holographic ammo count: redraw only when the wanted text differs from the one on the render target.
 	if (ViewModelDisplayTarget)
 	{
-		const FString Wanted = bReloading ? FString(AmmoDisplayReloadText) : FString::FromInt(Ammo.InMagazine);
+		// A round-by-round gun shows the live count while it loads; a magazine gun shows -- until the new magazine is in.
+		const FString Wanted = (bReloading && !ReloadsPerRound()) ? FString(AmmoDisplayReloadText) : FString::FromInt(Ammo.InMagazine);
 		if (Wanted != ShownDisplayText)
 		{
 			ShownDisplayText = Wanted;
@@ -882,7 +1160,7 @@ void AGBGun::DrawViewModelDisplay(UCanvas* Canvas, int32 Width, int32 Height)
 	}
 	const int32 RoundsPerPip = FMath::DivideAndRoundUp(Capacity, AmmoDisplayMaxPips);
 	const int32 Pips = FMath::DivideAndRoundUp(Capacity, RoundsPerPip);
-	const int32 Lit = bReloading ? 0 : FMath::DivideAndRoundUp(Ammo.InMagazine, RoundsPerPip);
+	const int32 Lit = (bReloading && !ReloadsPerRound()) ? 0 : FMath::DivideAndRoundUp(Ammo.InMagazine, RoundsPerPip);
 	const float PipSlot = (AmmoDisplayPipRow.X1 - AmmoDisplayPipRow.X0) / Pips;
 	for (int32 Index = 0; Index < Pips; ++Index)
 	{
@@ -933,12 +1211,15 @@ int32 AGBGun::GetMagazineSize() const
 
 int32 AGBGun::GetMaxSpareMagazines() const
 {
-	return FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::SpareMagazines, 0.f)));
+	const int32 Magazines = FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::SpareMagazines, 0.f)));
+	// A round-by-round gun keeps its reserve in rounds: the same total the magazines would have held.
+	return ReloadsPerRound() ? Magazines * GetMagazineSize() : Magazines;
 }
 
 void AGBGun::SetAmmo(const FGBAmmoState& InAmmo)
 {
 	CancelReload();
+	bFireWhenLoaded = false;
 	Ammo.InMagazine = FMath::Clamp(InAmmo.InMagazine, 0, GetMagazineSize());
 	Ammo.SpareMagazines = FMath::Clamp(InAmmo.SpareMagazines, 0, GetMaxSpareMagazines());
 	NotifyEquipmentChanged();
@@ -947,6 +1228,7 @@ void AGBGun::SetAmmo(const FGBAmmoState& InAmmo)
 void AGBGun::RefillAmmo()
 {
 	CancelReload();
+	bFireWhenLoaded = false;
 	Ammo.InMagazine = GetMagazineSize();
 	Ammo.SpareMagazines = GetMaxSpareMagazines();
 	NotifyEquipmentChanged();
@@ -957,6 +1239,18 @@ int32 AGBGun::AddSpareMagazines(int32 Count)
 	if (Count <= 0)
 	{
 		return 0;
+	}
+	if (ReloadsPerRound())
+	{
+		// Count magazines' worth of rounds; the result is how many magazines' worth went in, rounded up.
+		const int32 PerMagazine = FMath::Max(1, GetMagazineSize());
+		const int32 AddedRounds = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count * PerMagazine);
+		if (AddedRounds > 0)
+		{
+			Ammo.SpareMagazines += AddedRounds;
+			NotifyEquipmentChanged();
+		}
+		return FMath::DivideAndRoundUp(AddedRounds, PerMagazine);
 	}
 	const int32 Added = FMath::Clamp(GetMaxSpareMagazines() - Ammo.SpareMagazines, 0, Count);
 	if (Added > 0)
@@ -982,6 +1276,11 @@ void AGBGun::Reload()
 	bReloading = true;
 	ReloadElapsed = 0.f;
 	ReloadDuration = FMath::Max(0.f, GetStat(GBStat::ReloadTime, 1.f));
+	ResetPump();
+	if (ReloadsPerRound())
+	{
+		PerRound.Begin(Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), ReloadDuration);
+	}
 	NotifyEquipmentChanged();
 }
 
@@ -994,10 +1293,24 @@ void AGBGun::CancelReload()
 	// Blend from the pose the gun is in now (the pinned preview, if any, keeps owning the pose until it is released).
 	if (ReloadPreview < 0.f)
 	{
-		BeginReloadBlend();
+		BeginReloadBlend(ReloadBlendSeconds);
 	}
 	bReloading = false;
 	ReloadElapsed = 0.f;
+	PerRound.Stop(); // rounds already loaded stay loaded; the round in flight was never taken from the reserve
+	bFireWhenLoaded = false;
+	NotifyEquipmentChanged();
+}
+
+void AGBGun::FinishPerRoundReload()
+{
+	bReloading = false;
+	ReloadElapsed = 0.f;
+	// The gun eases back to rest a little slower than a cancel and may still be moving when it is allowed to fire.
+	if (ReloadPreview < 0.f)
+	{
+		BeginReloadBlend(PerRoundExitSeconds);
+	}
 	NotifyEquipmentChanged();
 }
 
@@ -1019,6 +1332,10 @@ float AGBGun::GetReloadProgress() const
 	if (!bReloading)
 	{
 		return 0.f;
+	}
+	if (ReloadsPerRound())
+	{
+		return PerRound.Progress();
 	}
 	return ReloadDuration > KINDA_SMALL_NUMBER ? FMath::Clamp(ReloadElapsed / ReloadDuration, 0.f, 1.f) : 1.f;
 }
@@ -1086,6 +1403,7 @@ void AGBGun::UpdateAimFOV(float DeltaSeconds, bool bInstant)
 void AGBGun::OnUnequipped()
 {
 	CancelReload();
+	bFireWhenLoaded = false;
 	SetAiming(false);
 	UpdateAimFOV(0.f, true);
 	if (bViewModel)
@@ -1097,9 +1415,53 @@ void AGBGun::OnUnequipped()
 	Super::OnUnequipped();
 }
 
+void AGBGun::StartPrimary()
+{
+	// Round-by-round gun mid-reload: the press itself interrupts, whatever the fire cooldown says.
+	if (bEquipped && bReloading && ReloadsPerRound())
+	{
+		if (Ammo.InMagazine > 0)
+		{
+			CancelReload(); // the shot then follows through PressTrigger as soon as the fire rules allow
+		}
+		else
+		{
+			bFireWhenLoaded = true; // empty: wait for the first shell
+		}
+	}
+	PressTrigger();
+}
+
 void AGBGun::Tick(float DeltaSeconds)
 {
-	if (bReloading)
+	if (bReloading && ReloadsPerRound())
+	{
+		ReloadElapsed += DeltaSeconds;
+		const AGBPlayerCharacter* PlayerRef = GetPlayerOwner();
+		if (bFireWhenLoaded && (!PlayerRef || PlayerRef->IsDead()))
+		{
+			bFireWhenLoaded = false; // a pending shot does not survive death
+		}
+		// With a shot pending the stepping yields after the first round, so a long frame cannot load more shells first.
+		const int32 MaxRounds = bFireWhenLoaded ? 1 : MAX_int32;
+		const int32 Moved = PerRound.Advance(DeltaSeconds, Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), MaxRounds);
+		if (Moved > 0)
+		{
+			NotifyEquipmentChanged();
+		}
+		if (Moved > 0 && bFireWhenLoaded && Ammo.InMagazine > 0)
+		{
+			// Fire was pressed on an empty gun: the first shell is in, so the reload stops now and the queued shot follows
+			// through the normal trigger path as soon as the fire rules allow.
+			CancelReload();
+			bAttackQueued = true;
+		}
+		else if (!PerRound.bRunning)
+		{
+			FinishPerRoundReload();
+		}
+	}
+	else if (bReloading)
 	{
 		ReloadElapsed += DeltaSeconds;
 		if (ReloadElapsed >= ReloadDuration)
@@ -1123,9 +1485,23 @@ void AGBGun::Tick(float DeltaSeconds)
 bool AGBGun::PerformAttack()
 {
 	AGBPlayerCharacter* Player = GetPlayerOwner();
-	if (!Player || !GetWorld() || bReloading)
+	if (!Player || !GetWorld())
 	{
 		return false;
+	}
+	if (bReloading)
+	{
+		if (!ReloadsPerRound())
+		{
+			return false;
+		}
+		if (Ammo.InMagazine <= 0)
+		{
+			// Empty gun: the shot waits for the first shell to land (Tick), then the reload stops and the gun shoots.
+			bFireWhenLoaded = true;
+			return false;
+		}
+		CancelReload(); // fire stops a round-by-round reload; the shells already in stay in
 	}
 	if (Ammo.InMagazine <= 0)
 	{
@@ -1155,6 +1531,7 @@ bool AGBGun::PerformAttack()
 	{
 		TriggerPullElapsed = 0.f;
 		StartShotEffects();
+		StartPump();
 	}
 	NotifyEquipmentChanged();
 

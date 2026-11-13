@@ -39,6 +39,7 @@ struct GLYPHBOUND_API FGBAmmoState
 	GENERATED_BODY()
 
 	UPROPERTY() int32 InMagazine = 0;
+	/** Spare magazines; for a gun that reloads round by round (stat ReloadPerRound) it counts spare ROUNDS instead. */
 	UPROPERTY() int32 SpareMagazines = 0;
 };
 
@@ -100,6 +101,8 @@ public:
 	virtual int32 AddSpareMagazines(int32 Count) { return 0; }
 	virtual bool IsReloading() const { return false; }
 	virtual bool IsAiming() const { return false; }
+	/** True for a gun that loads one round at a time (the reserve in FGBAmmoState then counts rounds, not magazines). The HUD asks this instead of knowing weapon ids. */
+	virtual bool ReloadsPerRound() const { return false; }
 	/** 0..1 progress of the current reload, for the HUD. */
 	virtual float GetReloadProgress() const { return 0.f; }
 
