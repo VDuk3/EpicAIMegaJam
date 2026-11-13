@@ -1,22 +1,40 @@
 # Shotgun (source art)
 
-The source file for the shotgun: `model.glb`, a Tripo model. The owner handed it over on 2026-11-12 as `futuristic rifle 3d model.glb` (SHA-256 `E00DD166500378A4E4C40E6D40AC782527A4748D9FF96A6410FBF2E9E7F17622`, 4.8 MB), renamed here.
+Two files: `model.glb`, the Tripo model as the owner handed it over, and `Shotgun.blend`, built from it. Nothing is imported into Unreal yet: the owner sees the renders first.
 
-It replaces a first hand-over of the same model converted to FBX (`tripo_convert_8f45a6e1-07ca-492e-88d4-435d4c21e797.zip`, SHA-256 `9937173D2878063CC12DEBECE4AC8EA387A4D19B2708CCE99DA0B3AA7DA0C66D`), which had the same mesh and a 2048 JPG. That copy is deleted from the project (one copy per asset).
+## `model.glb`
+Handed over on 2026-11-12 as `futuristic rifle 3d model.glb` (SHA-256 `E00DD166500378A4E4C40E6D40AC782527A4748D9FF96A6410FBF2E9E7F17622`, 4.8 MB), renamed here. It replaces a first hand-over of the same model converted to FBX (`tripo_convert_8f45a6e1-07ca-492e-88d4-435d4c21e797.zip`, SHA-256 `9937173D2878063CC12DEBECE4AC8EA387A4D19B2708CCE99DA0B3AA7DA0C66D`), which had the same mesh and a 2048 JPG; that copy is deleted from the project.
 
-**The GLB as it comes** (`Tools/Blender/shotgun_inspect.py`, Blender 5.3.0, and the GLB's own JSON):
-- one mesh, node `f2d360de_86b5_4ec0_a2ea_095a1dc4ec87`: 20,957 triangles; 25,482 vertices split along UV seams, 11,094 once welded at 0.01 mm; 58 loose pieces; 1,392 open edges and 133 non-manifold ones;
-- 1.03 m long, 13 cm wide, 39 cm tall, muzzle towards -Y, up +Z, and **turned 11.3° about the vertical axis** (the bounding box reads 27 cm wide until it is turned back);
-- one material with **one 4096 × 4096 JPG colour texture** (`baseColorTexture`) and nothing else: `metallicFactor` 0, `roughnessFactor` 0.9, no roughness, metallic, normal, AO or emissive map;
-- the texture: 47.7% of the atlas used, 2,616 UV islands, an even 31 texels per cm; baked light, a frost-like painted wear, patches of different tone where projections meet; 2.6% of the gun's texels are glowing cyan (strips, screens, the cell);
-- what the model shows: an over-under front (barrel over a tube), a ribbed forend under the muzzle, a glowing blue cell between the forend and the receiver, a screen on each side of the receiver, a circuit board on the left, a holographic sight with a rear window, a trigger inside its guard, a thumbhole stock, cyan glow strips on the handguard, on the stock's comb and inside the thumbhole, and cables.
+As it comes (`Tools/Blender/shotgun_inspect.py`, Blender 5.3.0, and the GLB's own JSON):
+- one mesh, node `f2d360de_86b5_4ec0_a2ea_095a1dc4ec87`: 20,957 triangles; 25,482 vertices split along UV seams, 11,094 once welded at 0.01 mm; 58 loose pieces; 1,392 open edges;
+- 1.03 m long, 13 cm wide, 39 cm tall, muzzle towards -Y, up +Z, and **turned 11.3° about the vertical axis**;
+- one material with **one 4096 × 4096 JPG colour texture** and nothing else: `metallicFactor` 0, `roughnessFactor` 0.9, no roughness, metallic, normal, AO or emissive map;
+- the texture: 47.7% of the atlas used, 2,616 UV islands, an even 31 texels per cm; baked light, a frost-like painted wear, patches where projections meet;
+- the cables (`Tools/Blender/shotgun_pieces.py`): real geometry, about 7,000 triangles, fused strands about 3 mm thick with 4 to 6 sides, with no colour of their own, and their imprint painted on the body behind them.
 
-**Pieces** (`Tools/Blender/shotgun_pieces.py`; numbers are the script's, sorted by vertex count; straightened frame, gun centred on X = 0):
-- 0: the main body, which includes the cell and the forend (they have to be cut out of it);
-- 1: the sight; 33: the trigger;
-- cables, about 7,000 triangles in all: 3, 4, 5 (left of the receiver); 2, 10, 12, 23, 42 (left of the handguard); 6, 9, 13, 17, 20, 21 (right of the handguard); 14, 15, 18 (short loops beside the side screens).
-- The cables are fused strands about 3 mm thick with 4 to 6 sides. They have no colour of their own: the body's grey-blue with copper-orange on 3% to 7% of their texels, in 176 to 241 UV islands per bundle; the body behind them carries their imprint.
+## `Shotgun.blend`
+Built by `Tools/Blender/shotgun_build_blend.py` (80 to 90 s, most of it the two bakes):
 
-**Review renders:** `Tools/Blender/shotgun_render_review.py` (it turns the gun back the 11.3° and nothing else). The ones kept are in `Devlog/media/2026-11-12/17a…17i_shotgun_*.png` (17a to 17d are of the FBX hand-over, the same mesh).
+`blender -b --factory-startup --python Tools/Blender/shotgun_build_blend.py -- model.glb Shotgun.blend`
 
-Nothing is imported into Unreal yet.
+SHA-256 `048AC3A90CFEB4633CBA4DFBA7BD6610DD4DBC527603037F168295B659FBA772` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
+
+- **Rebuilt on the same shape:** vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals; one navy taken from the gun's own texels, with the frost, the baked light and the cables' imprint gone; small drawn details re-cut; the carbon panels found by their texture and their weave redrawn by position; a glow mask cut from the cyan; AO and a normal map baked in Cycles.
+- **Cables:** split from the body, one colour per piece (black, copper orange, dark red, blue), smooth and subdivided once, 16,081 triangles.
+- **Textures** (4096, packed in the file): `T_Shotgun_BaseColor`, `T_Shotgun_ORM`, `T_Shotgun_Normal` (OpenGL), `T_Shotgun_EmissiveMask`.
+- **Modelled by the script** (measured with `Tools/Blender/shotgun_measure.py`):
+  - the cell: a cylinder of dim glass with three bright rings over the GLB's lumpy one (radius 32.7 mm);
+  - the energy bar: a dark bezel 70 mm long with a straight glowing strip on the receiver block's top, behind the sight. The strip runs from y = 80.3 to 141.8 mm; the game cuts it into 13 cells;
+  - the loading port: a framed dark opening 68 × 27 mm on the sloped underside in front of the trigger guard;
+  - the pump: a ribbed U-shaped sleeve 62 mm long around the forend, which slides 42 mm back along the forend's slope (12.1°) and returns;
+  - the ammo display: a 2:1 hologram pane, 50 × 25 mm, in the sight's rear window, tilted 8° up;
+  - the weak-point light: a lens 34 × 7 mm on the sight's rear lower panel;
+  - the shell: 19 mm across and 58 mm long, base to the rear, at rest inside the port.
+- **Objects:** `Shotgun_Body` (31,413 triangles, with the cables, the cell, the energy bar and the port joined in), `Shotgun_Trigger` (111), `Shotgun_Pump` (5,688), `Shotgun_AmmoDisplay` (2), `Shotgun_WeakPointLight` (108), `Shotgun_Magazine` (the shell, 316; slots hull, base, glow).
+- **Custom properties, for the export:** `pivot` on every object (the body's is the top of the grip; the trigger's its hinge; the pump's and the shell's their rest places), `slide` on the pump, `out` on the shell (its way out of the port), and on the scene `strip_y`, `strip_half_w`, `strip_zmin`.
+
+**Review renders:** `Tools/Blender/shotgun_render_review.py` draws the ammo hologram the way the game does and can pose the pump and the shell. The ones kept are in `Devlog/media/2026-11-12/17a…17u_shotgun_*.png`.
+
+**Known limits:** the carbon panels' outlines are rounded, not the source's sharp trapezoids; the screens' glyphs are the source's invented signs, re-cut; the circuit board is mostly navy; the mesh still has open edges (a gap in the stock's comb is the model's own).
+
+**Not written yet:** the export and import scripts (the rifle's are the template), and the game code for a pump and a shell-by-shell reload.

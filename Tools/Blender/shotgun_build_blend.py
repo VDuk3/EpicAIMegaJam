@@ -17,6 +17,19 @@
 #   ORM       R = ambient occlusion baked in Cycles (with the cables in place: their real contact shadow),
 #             G = roughness and B = metallic by tone
 #   Normal    baked in Cycles (OpenGL, +Y): rounded edges (Bevel node) and the drawn details pressed in (Bump)
+# Modelled here, measured on the mesh with Tools/Blender/shotgun_measure.py (ray casts):
+#   cell          see CELL_* below
+#   energy bar    a dark bezel with a straight glowing strip on the flat top of the receiver block, behind the sight:
+#                 the game cuts the strip into 13 cells that drain with the enchant. The painted strip under it goes
+#   loading port  the shotgun loads shell by shell (owner): a framed dark opening on the sloped underside in front of
+#                 the trigger guard
+#   pump          the forend pumps after each shot (owner): a ribbed U-shaped sleeve around the forend, which has one
+#                 section all along once it is seen along its own slope. It slides back PUMP_TRAVEL and returns
+#   ammo display  a 2:1 hologram pane in the sight's rear window, which faces the player
+#   weak-point light  a lens on the sight's rear lower panel, under the window
+#   shell         one shell, at rest inside the loading port; its "out" vector is the way out of the port
+# Objects saved: Shotgun_Body (with cables, cell, energy bar and port joined in), Shotgun_Trigger, Shotgun_Pump,
+# Shotgun_AmmoDisplay, Shotgun_WeakPointLight, Shotgun_Magazine (the shell). Pivots and motion are custom properties.
 # Usage: blender -b --factory-startup --python shotgun_build_blend.py -- <model.glb> <out.blend> [review_dir] [tex|full]
 #        "tex" stops after the textures are computed and dumped to review_dir (no bakes, nothing saved).
 import bpy, bmesh, sys, os, math
@@ -96,6 +109,49 @@ IMPRINT_GROW = 0.022
 BOARD_BOX = ((0.008, -0.030, 0.190), (0.060, 0.230, 0.285))
 SIGHT_BOX = ((-0.060, -0.200, 0.225), (0.060, 0.010, 0.400))
 TRIGGER_BOX = ((-0.012, 0.060, 0.110), (0.012, 0.120, 0.180))
+
+CHAMFER = 0.0004
+HAND = Vector((0.0, 0.150, 0.165))             # top of the pistol grip: the body's origin in Unreal
+TRIGGER_PIVOT = Vector((0.0, 0.092, 0.171))    # the trigger's hinge, at its top
+
+# The energy bar, on the receiver block's top: a plane rising BAR_SLOPE (z per y) through BAR_C.
+BAR_C, BAR_SLOPE = Vector((0.0, 0.112, 0.30374)), 0.22
+BAR_ALONG = (-0.036, 0.034)        # metres from BAR_C along the plane: front and rear ends of the bezel
+BAR_HALF_W, BAR_PROUD, BAR_DEEP = 0.0065, 0.0016, 0.0030
+STRIP_HALF_W, STRIP_INSET, STRIP_LIFT = 0.0030, 0.0035, 0.0002
+STRIP_CELLS, CELL_GAP = 13, 0.12   # as the game's material draws them; here only for the review material
+BAR_CLEAR = ((-0.018, 0.066, 0.288), (0.018, 0.158, 0.318))   # the painted strip under the bar: its glow goes
+
+# The loading port, on the sloped underside in front of the trigger guard: a plane rising PORT_SLOPE through PORT_C.
+PORT_C, PORT_SLOPE = Vector((0.0, -0.030, 0.1025)), 0.39
+PORT_HALF = (0.034, 0.0135)        # half length (along the slope) and half width of the frame
+PORT_BAR, PORT_PROUD = 0.0030, 0.0014
+# The shell: at rest inside the port, base to the rear. Its way out: back along the port and down out of it.
+SHELL_R, SHELL_LEN, SHELL_BASE, SHELL_DEEP = 0.0095, 0.058, 0.011, 0.013
+SHELL_OUT = (0.040, 0.035)         # metres: rearwards along the port's plane, and out of it
+
+# The pump: the forend's section is the same from y = -0.385 to -0.265 when seen along its own slope (the underside
+# rises PUMP_SLOPE). PUMP_SECTION is the forend's right half, (x, height above the underside's centre line), in metres.
+PUMP_C, PUMP_SLOPE = Vector((0.0, -0.349, 0.06047)), 0.214
+PUMP_SECTION = [(0.0, 0.0), (0.020, 0.0013), (0.030, 0.0037), (0.036, 0.0076), (0.040, 0.0112), (0.044, 0.0176),
+                (0.046, 0.0276), (0.0495, 0.0376), (0.0495, 0.042)]
+PUMP_HALF_LEN, PUMP_CLEAR, PUMP_THICK = 0.031, 0.0008, 0.0038
+PUMP_RIBS, PUMP_RIB_LEN, PUMP_RIB_PITCH, PUMP_RIB_PROUD = 5, 0.0050, 0.0110, 0.0013
+PUMP_TRAVEL = 0.042                # metres back along the slope, then forward again
+
+# The ammo display: a 2:1 hologram pane in the sight's rear window (66 x 40 mm inside, its glass 4 to 10 mm behind
+# the pane), tilted up towards the player's eye.
+SCREEN_C = Vector((0.0085, -0.0385, 0.3695))
+SCREEN_TILT = 8.0
+SCREEN_HALF = (0.0250, 0.0125)
+# The weak-point light: a lens on the sight's rear lower panel, a plane leaning LIGHT_LEAN (y per z) through LIGHT_C.
+LIGHT_C, LIGHT_LEAN = Vector((0.0085, -0.0063, 0.329)), -0.3375
+LIGHT_HALF, LIGHT_SLAB = (0.017, 0.0035), (-0.0020, 0.0026)
+
+# Flat tones of the modelled parts (sRGB, roughness, metallic), each on its own block of the atlas.
+DARK_POLYMER = ((0.062, 0.100, 0.135), 0.75, 0.0)   # pump
+DARK_METAL = ((0.085, 0.120, 0.160), 0.40, 0.60)    # bar bezel, port frame
+BLACK = ((0.012, 0.014, 0.018), 0.60, 0.0)          # the port's opening
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb)
@@ -317,7 +373,7 @@ glow_raw *= box_blur(glow_raw, 2) > 0.42          # the frost has cyan specks: a
 glow_raw *= box_blur(glow_raw, 6) > 0.35          # ...and belongs to a shape of some size, not to a blob
 # The handguard's strip is on its top face; the projection spilled it onto the sides as ragged blobs.
 glow_raw[in_box(*GLOW_UP_ONLY) & ((facing != 5) | (np.abs(pos[..., 0]) > GLOW_STRIP_HALF))] = 0.0
-for lo_, hi_ in GLOW_NONE:
+for lo_, hi_ in GLOW_NONE + [BAR_CLEAR]:
     glow_raw[in_box(lo_, hi_)] = 0.0
 green = (col[..., 1] > col[..., 0] * 1.12) & (col[..., 1] > col[..., 2] * 1.08) & (sat > 0.2)
 warm = (col[..., 0] > col[..., 2] * 1.10) & (sat > 0.2) & (mx > 0.12)
@@ -382,7 +438,7 @@ for i in range(n_isl):
     # then smoothed twice so a panel has an even outline and no holes.
     wv = (box_blur(np.abs(filled / np.maximum(ar, 0.03) - 1.0), CARBON_R) > CARBON_AT) & (ar < CARBON_BRIGHT)
     wv = box_blur(wv.astype(np.float32), 6) > 0.5
-    wv &= box_blur(wv.astype(np.float32), 14) > 0.25          # a panel, not a patch
+    wv &= box_blur(wv.astype(np.float32), 20) > 0.35          # a panel, not a patch
     weave_isl[sl][mask] = box_blur(wv.astype(np.float32), 8)[mask]
 print("AROUND done")
 
@@ -529,6 +585,13 @@ base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEO
 _, CELL_RING_UV = claim_block("the cell's rings")
 neon_a[BLOCKS[-1]] = 1.0
 base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEON_BASE[0], 0.18, 0.0, 1.0
+_, STRIP_UV = claim_block("the energy strip")
+neon_a[BLOCKS[-1]] = 1.0
+base[BLOCKS[-1]], rough[BLOCKS[-1]], metal[BLOCKS[-1]], height[BLOCKS[-1]] = NEON_BASE[0], NEON_BASE[1], 0.0, 1.0
+FLAT_UV = {}
+for name_, (rgb, r_, m_) in (("polymer", DARK_POLYMER), ("metal", DARK_METAL), ("black", BLACK)):
+    block, FLAT_UV[name_] = claim_block("dark " + name_)
+    base[block], rough[block], metal[block], height[block], neon_a[block] = rgb, r_, m_, 1.0, 0.0
 CABLE_UV = []
 for k, (rgb, r_, m_) in enumerate(CABLE_COLOURS):
     block, uv_c = claim_block("cable colour %d" % k)
@@ -700,6 +763,226 @@ def build_cell():
     return ob
 
 
+def flat_material(name, rgb_srgb, roughness, metallic, glow=None, alpha=1.0):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = next(n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    b.inputs["Base Color"].default_value = tuple(c ** 2.2 for c in rgb_srgb) + (1.0,)
+    b.inputs["Roughness"].default_value = roughness
+    b.inputs["Metallic"].default_value = metallic
+    b.inputs["Alpha"].default_value = alpha
+    if glow is not None:
+        b.inputs["Emission Color"].default_value = tuple(glow[:3]) + (1.0,)
+        b.inputs["Emission Strength"].default_value = glow[3]
+    return m
+
+
+def set_uv(b, faces, uv_c):
+    layer_uv = b.loops.layers.uv.verify()
+    for f in faces:
+        for l_ in f.loops:
+            l_[layer_uv].uv = uv_c
+
+
+def box(b, origin, ax, ay, az, lo, hi, uv_c):
+    """A closed box in the frame (ax, ay, az) at origin, from lo to hi along each axis; its UVs on one flat block."""
+    vs = [b.verts.new(origin + ax * x + ay * y + az * z)
+          for z in (lo[2], hi[2]) for y in (lo[1], hi[1]) for x in (lo[0], hi[0])]
+    faces = [b.faces.new([vs[i] for i in q]) for q in
+             ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3))]
+    set_uv(b, faces, uv_c)
+    return faces
+
+
+def quad(b, origin, ax, ay, az, lo, hi, lift, uv_rect):
+    """A quad in the (ax, ay) plane, lifted along az; uv_rect = (u0, v0, u1, v1) from lo to hi."""
+    layer_uv = b.loops.layers.uv.verify()
+    pts = [(lo[0], lo[1]), (hi[0], lo[1]), (hi[0], hi[1]), (lo[0], hi[1])]
+    f = b.faces.new([b.verts.new(origin + ax * x + ay * y + az * lift) for x, y in pts])
+    f.normal_update()
+    if f.normal.dot(az) < 0:
+        f.normal_flip()
+    for loop in f.loops:
+        local = loop.vert.co - origin
+        s_ = (local.dot(ax) - lo[0]) / (hi[0] - lo[0])
+        t_ = (local.dot(ay) - lo[1]) / (hi[1] - lo[1])
+        loop[layer_uv].uv = (uv_rect[0] + (uv_rect[2] - uv_rect[0]) * s_, uv_rect[1] + (uv_rect[3] - uv_rect[1]) * t_)
+    return f
+
+
+def extrude(b, outline, origin, ax, ay, az, z0, z1, uv_c):
+    """A closed prism: the 2D outline (in the ax, ay plane) from z0 to z1 along az. The outline may be concave."""
+    a_ = [b.verts.new(origin + ax * x + ay * y + az * z0) for x, y in outline]
+    c_ = [b.verts.new(origin + ax * x + ay * y + az * z1) for x, y in outline]
+    n = len(outline)
+    faces = [b.faces.new((a_[i], a_[(i + 1) % n], c_[(i + 1) % n], c_[i])) for i in range(n)]
+    faces += [b.faces.new(a_), b.faces.new(list(reversed(c_)))]
+    set_uv(b, faces, uv_c)
+    return faces
+
+
+def finish(b, name, materials, solids, chamfer=True, smooth=True):
+    """bmesh -> object. solids: faces of the closed boxes and prisms, whose edges get a real chamfer."""
+    b.loops.layers.uv.verify()
+    bmesh.ops.recalc_face_normals(b, faces=solids)
+    if chamfer and solids:
+        edges = list({e for f in solids for e in f.edges})
+        bmesh.ops.bevel(b, geom=edges, offset=CHAMFER, offset_type="OFFSET", segments=2, profile=0.5,
+                        affect="EDGES", clamp_overlap=True)
+    bmesh.ops.triangulate(b, faces=b.faces[:])
+    for f in b.faces:
+        f.smooth = smooth
+    new_me = bpy.data.meshes.new(name)
+    b.to_mesh(new_me)
+    b.free()
+    new_me.uv_layers[0].name = UV_NAME
+    for m in materials:
+        new_me.materials.append(m)
+    ob = bpy.data.objects.new(name, new_me)
+    scene.collection.objects.link(ob)
+    if smooth:
+        weighted_normals(ob)
+    else:
+        new_me.set_sharp_from_angle(angle=math.radians(SHARP_ANGLE))
+    print("MODELLED", name, "tris", len(new_me.polygons))
+    return ob
+
+
+def slope_frame(slope):
+    """Axes of a plane that rises 'slope' (z per y): along it towards the rear, and out of it upwards."""
+    along = Vector((0.0, 1.0, slope)).normalized()
+    return along, Vector((0.0, -along.z, along.y))
+
+
+X_AXIS = Vector((1.0, 0.0, 0.0))
+ATLAS = me.materials[0]
+BAR_AX, BAR_UP = slope_frame(BAR_SLOPE)
+STRIP_S = (BAR_ALONG[0] + STRIP_INSET, BAR_ALONG[1] - STRIP_INSET)
+STRIP_Y = tuple((BAR_C + BAR_AX * s_).y for s_ in STRIP_S)
+PORT_AX, PORT_UP = slope_frame(PORT_SLOPE)
+PORT_OUT = -PORT_UP                                  # the port is on the underside: out of it is downwards
+PUMP_AX, PUMP_UP = slope_frame(PUMP_SLOPE)
+
+
+def build_extras():
+    """Energy bar and loading port: one object, joined into the body after the bakes."""
+    b = bmesh.new()
+    u, v = STRIP_UV
+    h = 6.0 / W
+    solids = box(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-BAR_HALF_W, BAR_ALONG[0], -BAR_DEEP),
+                 (BAR_HALF_W, BAR_ALONG[1], BAR_PROUD), FLAT_UV["metal"])
+    quad(b, BAR_C, X_AXIS, BAR_AX, BAR_UP, (-STRIP_HALF_W, STRIP_S[0]), (STRIP_HALF_W, STRIP_S[1]),
+         BAR_PROUD + STRIP_LIFT, (u - h, v - h, u + h, v + h))
+    # the port: four bars round a dark opening
+    hl, hw, bar = PORT_HALF[0], PORT_HALF[1], PORT_BAR
+    for lo, hi in (((-hw, -hl), (hw, -hl + bar)), ((-hw, hl - bar), (hw, hl)),
+                   ((-hw, -hl + bar), (-hw + bar, hl - bar)), ((hw - bar, -hl + bar), (hw, hl - bar))):
+        solids += box(b, PORT_C, X_AXIS, PORT_AX, PORT_OUT, (lo[0], lo[1], -0.003), (hi[0], hi[1], PORT_PROUD), FLAT_UV["metal"])
+    ub, vb = FLAT_UV["black"]
+    quad(b, PORT_C, X_AXIS, PORT_AX, PORT_OUT, (-hw + bar, -hl + bar), (hw - bar, hl - bar), 0.0004,
+         (ub - h, vb - h, ub + h, vb + h))
+    return finish(b, "Shotgun_Extras", [ATLAS], solids)
+
+
+def offset_path(path, d):
+    """The open path pushed out by d: each point along the mean of its two segments' outward normals."""
+    out = []
+    for i, pt in enumerate(path):
+        n = Vector((0.0, 0.0))
+        for a_, c_ in ((i - 1, i), (i, i + 1)):
+            if 0 <= a_ and c_ < len(path):
+                seg = (Vector(path[c_]) - Vector(path[a_])).normalized()
+                n += Vector((seg.y, -seg.x))
+        n.normalize()
+        out.append((pt[0] + n.x * d, pt[1] + n.y * d))
+    return out
+
+
+def build_pump():
+    """The pump: a U-shaped sleeve under and beside the forend, with ribs. Its origin is its rest place."""
+    b = bmesh.new()
+    path = [(-x, h_) for x, h_ in reversed(PUMP_SECTION[1:])] + list(PUMP_SECTION)      # left top, round, right top
+    uv_c = FLAT_UV["polymer"]
+
+    def sleeve(inner, outer, s0, s1):
+        outline = offset_path(path, outer) + list(reversed(offset_path(path, inner)))
+        return extrude(b, outline, PUMP_C, X_AXIS, PUMP_UP, PUMP_AX, s0, s1, uv_c)
+
+    solids = sleeve(PUMP_CLEAR, PUMP_CLEAR + PUMP_THICK, -PUMP_HALF_LEN, PUMP_HALF_LEN)
+    for k in range(PUMP_RIBS):
+        centre = (k - (PUMP_RIBS - 1) / 2) * PUMP_RIB_PITCH
+        solids += sleeve(PUMP_CLEAR + PUMP_THICK - 0.0004, PUMP_CLEAR + PUMP_THICK + PUMP_RIB_PROUD,
+                         centre - PUMP_RIB_LEN / 2, centre + PUMP_RIB_LEN / 2)
+    return finish(b, "Shotgun_Pump", [ATLAS], solids)
+
+
+def build_display():
+    """The hologram pane. UV: U to the viewer's right, V up in Blender (down in Unreal), so a texture reads upright."""
+    b = bmesh.new()
+    t = math.radians(SCREEN_TILT)
+    right, s_up, s_out = Vector((-1.0, 0.0, 0.0)), Vector((0.0, -math.sin(t), math.cos(t))), Vector((0.0, math.cos(t), math.sin(t)))
+    quad(b, SCREEN_C, right, s_up, s_out, (-SCREEN_HALF[0], -SCREEN_HALF[1]), (SCREEN_HALF[0], SCREEN_HALF[1]),
+         0.0, (0.0, 0.0, 1.0, 1.0))
+    holo = flat_material("Holo_AmmoDisplay", (0.02, 0.05, 0.05), 0.3, 0.0, glow=(GLOW[0], GLOW[1], GLOW[2], 0.25))
+    return finish(b, "Shotgun_AmmoDisplay", [holo], [], chamfer=False, smooth=False)
+
+
+def build_light():
+    """The weak-point light: a lens on the sight's rear lower panel. Dark until the game flashes it."""
+    b = bmesh.new()
+    up = Vector((0.0, LIGHT_LEAN, 1.0)).normalized()
+    out = Vector((0.0, up.z, -up.y))
+    solids = box(b, LIGHT_C, Vector((-1.0, 0.0, 0.0)), up, out, (-LIGHT_HALF[0], -LIGHT_HALF[1], LIGHT_SLAB[0]),
+                 (LIGHT_HALF[0], LIGHT_HALF[1], LIGHT_SLAB[1]), (0.5, 0.5))
+    lens = flat_material("Shotgun_Light", (0.05, 0.07, 0.08), 0.15, 0.0, glow=(GLOW[0], GLOW[1], GLOW[2], 0.0))
+    return finish(b, "Shotgun_WeakPointLight", [lens], solids)
+
+
+def build_shell():
+    """One shell, base to the rear, at rest inside the port. Three slots: hull, brass base, glowing band."""
+    b = bmesh.new()
+    layer_uv = b.loops.layers.uv.verify()
+    centre = PORT_C + PORT_OUT * (-SHELL_DEEP)
+    side_a, side_b = X_AXIS, PORT_OUT
+    sides = 20
+
+    def ring(s_, r_):
+        return [b.verts.new(centre + PORT_AX * s_ + (side_a * math.cos(2 * math.pi * k / sides) + side_b * math.sin(2 * math.pi * k / sides)) * r_)
+                for k in range(sides)]
+
+    half = SHELL_LEN / 2
+    # from the crimped front to the rim at the rear: (place along the shell, radius, slot of the band that follows)
+    stations = [(-half, SHELL_R * 0.80, 0), (-half + 0.004, SHELL_R, 0), (half - SHELL_BASE - 0.012, SHELL_R, 2),
+                (half - SHELL_BASE - 0.007, SHELL_R, 0), (half - SHELL_BASE, SHELL_R, 1), (half - 0.0015, SHELL_R, 1),
+                (half - 0.0015, SHELL_R * 1.08, 1), (half, SHELL_R * 1.08, 1)]
+    rings = [ring(s_, r_) for s_, r_, _ in stations]
+    faces = []
+    for (a_, c_), (_, _, slot) in zip(zip(rings, rings[1:]), stations):
+        for k in range(sides):
+            j = (k + 1) % sides
+            f = b.faces.new((a_[k], a_[j], c_[j], c_[k]))
+            f.material_index = slot
+            faces.append(f)
+    f = b.faces.new(rings[0])
+    f.material_index = 0
+    faces.append(f)
+    f = b.faces.new(list(reversed(rings[-1])))
+    f.material_index = 1
+    faces.append(f)
+    for f in b.faces:
+        for l_ in f.loops:
+            l_[layer_uv].uv = (0.5, 0.5)
+    mats = [flat_material("Shotgun_Shell_Hull", (0.10, 0.13, 0.17), 0.45, 0.1),
+            flat_material("Shotgun_Shell_Base", (0.78, 0.60, 0.26), 0.30, 0.9),
+            flat_material("Shotgun_Shell_Glow", (0.1, 0.1, 0.1), 0.5, 0.0, glow=(GLOW[0], GLOW[1], GLOW[2], 4.0))]
+    ob = finish(b, "Shotgun_Magazine", mats, faces, chamfer=False, smooth=True)
+    ob["pivot"] = centre[:]
+    ob["out"] = (PORT_AX * SHELL_OUT[0] + PORT_OUT * SHELL_OUT[1])[:]
+    return ob
+
+
+EXTRAS = build_extras()  # in the scene before the bakes, so they shade what is around them
+PUMP = build_pump()
 CELL = build_cell()      # in the scene before the bakes, so it shades what is around it
 
 bm = bmesh.new()
@@ -772,7 +1055,9 @@ def bake(kind, name, samples, **kwargs):
 
 
 im_bake_n = bake("NORMAL", "Shotgun_NormalBake", 24, normal_space="TANGENT")
+PUMP.hide_render = True          # it moves: its shadow must not be baked onto the forend
 im_ao = bake("AO", "Shotgun_AO", 96)
+PUMP.hide_render = False
 
 normal = load(im_bake_n)[..., :3].copy()
 for block in BLOCKS:
@@ -811,18 +1096,57 @@ glow.inputs["Factor"].default_value = 1.0
 glow.inputs["B"].default_value = GLOW + (1.0,)
 nt.links.new(t_mask.outputs["Color"], glow.inputs["A"])
 nt.links.new(glow.outputs["Result"], bsdf.inputs["Emission Color"])
-bsdf.inputs["Emission Strength"].default_value = EMISSION
+# The 13 cells of the energy strip, as the game's material draws them: a dark gap at the start of each cell.
+def math_node(op, a, b=None):
+    n = nt.nodes.new("ShaderNodeMath")
+    n.operation = op
+    for i, v_ in enumerate((a, b)):
+        if v_ is None:
+            continue
+        if isinstance(v_, (int, float)):
+            n.inputs[i].default_value = v_
+        else:
+            nt.links.new(v_, n.inputs[i])
+    return n.outputs[0]
+
+
+coord = nt.nodes.new("ShaderNodeTexCoord")
+xyz = nt.nodes.new("ShaderNodeSeparateXYZ")
+nt.links.new(coord.outputs["Object"], xyz.inputs["Vector"])
+cell_pos = math_node("MULTIPLY", math_node("SUBTRACT", xyz.outputs["Y"], STRIP_Y[0]), STRIP_CELLS / (STRIP_Y[1] - STRIP_Y[0]))
+on_strip = math_node("MULTIPLY", math_node("GREATER_THAN", cell_pos, 0.0), math_node("LESS_THAN", cell_pos, float(STRIP_CELLS)))
+on_strip = math_node("MULTIPLY", on_strip, math_node("GREATER_THAN", xyz.outputs["Z"], BAR_CLEAR[0][2]))
+on_strip = math_node("MULTIPLY", on_strip, math_node("LESS_THAN", math_node("ABSOLUTE", xyz.outputs["X"]), STRIP_HALF_W + 0.001))
+lit_cell = math_node("GREATER_THAN", math_node("FRACT", cell_pos), CELL_GAP)
+cells = math_node("MAXIMUM", lit_cell, math_node("SUBTRACT", 1.0, on_strip))
+nt.links.new(math_node("MULTIPLY", cells, EMISSION), bsdf.inputs["Emission Strength"])
 bpy.data.images.remove(im_height)
 bpy.data.images.remove(color_im)
 
 # ---------------------------------------------------------------- join the cables back, save
+TRIGGER = separate(3, "Shotgun_Trigger")
 only(CABLES)
 CELL.select_set(True)
+EXTRAS.select_set(True)
 SRC.select_set(True)
 bpy.context.view_layer.objects.active = SRC
 bpy.ops.object.join()
 SRC.name = "Shotgun_Body"
 me.name = "Shotgun_Body"
+DISPLAY = build_display()
+LIGHT = build_light()
+SHELL = build_shell()
+
+# What the export needs to know, kept with the objects.
+SRC["pivot"] = HAND[:]
+TRIGGER["pivot"] = TRIGGER_PIVOT[:]
+DISPLAY["pivot"] = HAND[:]
+LIGHT["pivot"] = HAND[:]
+PUMP["pivot"] = PUMP_C[:]
+PUMP["slide"] = (PUMP_AX * PUMP_TRAVEL)[:]
+scene["strip_y"] = STRIP_Y
+scene["strip_half_w"] = STRIP_HALF_W
+scene["strip_zmin"] = BAR_CLEAR[0][2]
 for o in scene.objects:
     if o.type == "MESH":
         print("OBJECT", o.name, "tris", sum(len(p.vertices) - 2 for p in o.data.polygons), "slots",
