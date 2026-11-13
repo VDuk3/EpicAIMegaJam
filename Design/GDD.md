@@ -6,6 +6,7 @@
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.34 (2026-11-13): the Entity's phase 1 as built (2.5x, a 3D floating boss). Owner: its combat is **pending** polish, including **tentacle melee**. Added to §11 and §17.
 - v0.33 (2026-11-12): owner, on the shotgun: it loads **shell by shell** (not a magazine swap), and its **forend pumps** after every shot. Its model is a Tripo science-fiction shotgun. Rules and the architect's provisional numbers in §18 "Reload".
 - v0.32 (2026-11-12): the pixel-art line is defined: "dark fantasy hi-bit pixel art, 16-bit inspired", from 9 sprites drawn by hand on the LAPTOP (Valki, axe, sword, two shields, four staffs). Rules, master palette and checklist in `Design/VisualStyleGuide.md`, linked from §3.
 - v0.31 (2026-11-12): owner picked the Entity's first model (Tripo, variant #26): a metal shell with electronic-light eyes, and hologram tentacles. Phase 1 art in §11; its size is provisional.
@@ -353,6 +354,22 @@ Rewards:
 - **Final portal:** combining the two quest items opens a portal to a separate map, a dimension between space and time, where the player fights the **true final boss**.
 - **True final boss: the Entity** (story in §4). A **mix of both art styles**, which fits what it is (suggestion, not decided: the AI half in 3D, the ghost half in pixel art). Undecided how: two phases with different styles, or one character in both styles at once, or something else (**TBD**).
   - **Phase 1 art, "the machine" (owner, 2026-11-12):** a floating metal shell with a big central eye and smaller eyes that glow like electronic lights, and about eleven tentacles made of light (holograms) that sway. The central eye is a separate mesh: the weak point. Size **about 2.9 m tall (provisional, architect)**. Assets in `/Game/Glyphbound/Enemies/Entity`; the source and how it was split are described in `SourceArt/Enemies/Entity/README.md`. The hologram tentacles already lean towards the ghost half.
+  - **Phase 1 as built (2026-11-13):**
+    - the size is now **2.5x, about 9.4 m** (`EntityScale`);
+    - it floats and banks, turns with weight and strafes;
+    - it fires lit energy bolts from a tentacle tip;
+    - the eye is the weak point;
+    - the tentacles move with one coordinated stroke.
+
+    The owner played it: "it looks much better".
+  - **PENDING (owner, 2026-11-13): polish and improve the combat. The Entity will also fight in melee with its tentacles.** Still to design and build:
+    - tentacle strikes and sweeps at close range, with a readable windup;
+    - the hit volumes along the tentacles;
+    - how the player dodges or blocks them;
+    - when it chooses melee or ranged;
+    - its balance in §19.
+
+    Today it only has the ranged bolt, and the tentacles cannot be hit.
 - This happens in mid/late game.
 
 ## 12. Inventory
@@ -410,6 +427,7 @@ Not decisions, just the list of systems the design implies:
 
 ## 17. Open questions
 Answers get folded into the sections above as they come. The prototype questions of 2026-11-12 are answered (see §0.1 and §3).
+- **Entity combat (pending, owner 2026-11-13):** polish the fight and add tentacle melee. The details are in §11.
 
 ### Still open for the base systems
 1. **NVIDIA feature:** which one? DLSS 4.5 is the simplest. CENTRAL (where the game is built) has an **NVIDIA GeForce RTX 4080 Laptop GPU**, so it can be tested here. The architect checks that a DLSS plugin exists for UE 5.9.0. (The AMD RX 7700 XT belongs to the 3D assets machine, ASSETS.)
