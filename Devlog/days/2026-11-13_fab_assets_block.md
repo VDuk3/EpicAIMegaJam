@@ -30,13 +30,19 @@ Mid-task: *"Hubo un asset que al importarlo pidió unos plugins, no recuerdo cu�
 
 **Package size.** The cook only takes what our maps reference (`DirectoriesToAlwaysCook` lists only `/Game/Glyphbound/*`), so these 9.6 GB only reach the zip as far as the game uses them. Medieval Kingdom's 5.4 GB of textures is the one to watch against the 1 GB limit.
 
-## Started but not in the project
+## Two downloads that were cancelled, then installed again
 Both were added at 21:54 and cancelled by the Fab plugin at 22:10:19, 0.1 s after Medieval Kingdom finished. The log gives no reason.
 
-| Listing (seller) | License held | Note |
-|---|---|---|
-| [Smoke Niagara Fluids](https://www.fab.com/listings/cdb1ca29-88fc-4818-9980-cbbed6abc59e) (SHOGUN GAMES) | Professional | 5 Niagara Fluids smoke effects. The listing says to enable the **NiagaraFluids** plugin (beta) and restart. Not enabled, since nothing in the project uses it yet |
-| [Realistic Gun VFX](https://www.fab.com/listings/21573c1a-e494-4194-9926-0c03f48a5563) (Hivemind) | Professional | Muzzle flashes, impacts, shell ejections. Both can be installed again from the owner's library |
+The owner then said to download both again (*"Sí, ambos"*). The architect installed them from the owner's library with the Fab toolset (`InstallFabListing`, format unreal-engine, built for UE 5.8). Both imported at 22:37 to 22:39.
+
+| Folder | Fab listing (seller) | License held | Files / size | What it is | Plugins it needs |
+|---|---|---|---|---|---|
+| `Smoke_NiagaraFluids` | [Smoke Niagara Fluids](https://www.fab.com/listings/cdb1ca29-88fc-4818-9980-cbbed6abc59e) (SHOGUN GAMES) | Professional | 6 / 44 MB | 5 smoke systems built on Niagara Fluids (`NS_Smoke_NF_01..05`), map `Overview` | **NiagaraFluids** (beta). The systems are built from its Grid3D modules and gas materials. Enabled in this block |
+| `GunFX` | [Realistic Gun VFX](https://www.fab.com/listings/21573c1a-e494-4194-9926-0c03f48a5563) (Hivemind) | Professional | 571 / 833 MB | 125 Niagara systems: 14 muzzle flashes, 93 bullet impacts by surface, 12 shell ejections, overheat smoke, a bullet trail and a flare. Meshes, materials, maps `ShowcaseMap` and `Overview` | none extra |
+
+**Check:** NiagaraFluids was enabled over MCP and the Editor restarted twice. The first boot took 20 s, the second 15 s, so there is no steady cost. Content validation passed on 10 assets with no errors or warnings: the 5 smoke systems, plus a muzzle flash, an ejection, an impact, the bullet trail and an overheat smoke from GunFX. The game target still builds (11 s).
+
+**Note for use:** Niagara Fluids is a GPU grid simulation, and the seller warns it gets expensive at high quality. Before a smoke system goes into the game, measure it on the RTX 4080 Laptop, or bake it to a flipbook like the pixel VFX.
 
 ## Outside the project
 **High Tech Base** ([listing](https://www.fab.com/listings/9970b512-825c-4d6d-917a-1c0480de16fb), YaMaKundra, free, Personal license held). Fab ships it only as a complete project, so the owner created `Documents/Unreal Projects/HighTechBase`.
@@ -66,7 +72,7 @@ The asset was **Medieval Kingdom**. When its import finished, the Fab plugin sca
 - **Left off:**
   - MovieRenderPipeline: only `CastleTown/Cinematics/VideoPreset`, a render preset.
   - WorldPartitionHLODUtilities: only the HLOD of the missing `bloking` map.
-  - NiagaraFluids: its pack is not in the project.
+  - NiagaraFluids at first: its pack was not in the project yet. Enabled later, when Smoke Niagara Fluids was installed again (see above).
 
 **How:** `PluginToolset.SetPluginEnabled` over MCP, then an Editor restart through `Stop-EditorMcp.ps1` / `Start-EditorMcp.ps1`. `Glyphbound.uproject`: the `false` entries for ChaosCloth and CableComponent removed (both are on by default), Water added.
 
@@ -77,7 +83,7 @@ The asset was **Medieval Kingdom**. When its import finished, the Fab plugin sca
 - **One real error:** `CastleTown/Water/Effects/Waterbody/WaterBody_Niagara_ShoreFoam` reads `WaterZone.WaterInfoTexture`, which no longer exists in UE 5.9's Water. The pack was built for 5.3 to 5.8. Only the shore foam effect is affected; it gets fixed or dropped if the game uses the castle's water.
 
 ## Licenses and AI
-- **Fab Standard License for all eight listings:** Professional for the paid packs, Personal for the free ones. The third-party list for the submission gets each pack's name, its seller and that license.
+- **Fab Standard License for all eight listings** (all eight now in the project or the owner's folders): Professional for the paid packs, Personal for the free ones. The third-party list for the submission gets each pack's name, its seller and that license.
 - **"No AI" on every listing:** `aiTrainingForbidden` is set on all eight, under the Fab EULA section "Content that May Not be Used As Training Input Into Generative AI Programs".
   - Decision: these packs' files are not fed to the generative tools we use for our own art (Meshy, Tripo, image generators).
   - The owner should read that EULA section to confirm what else it covers.
