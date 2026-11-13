@@ -3,7 +3,7 @@
 # Run it through Tools/Jam/Import-Entity.ps1 (UnrealEditor-Cmd -run=pythonscript), Editor closed.
 #
 # Inputs, in the temporary folder GB_ENTITY_STAGE (Tools/Blender/entity_export_fbx.py):
-#   Export/SM_Entity_{Body,Eye,Tentacles}.fbx
+#   Export/SM_Entity_{Body,Eye}.fbx, Export/SK_Entity_Tentacles.fbx (skeletal: root + 10 chains x 8 bones)
 #   Textures/T_Entity_{BaseColor,Normal,GlowMask}.png
 # Output: /Game/Glyphbound/Enemies/Entity/
 #   M_EntityBody   opaque metal: the Tripo albedo desaturated into gunmetal, high metallic, normal map; the blue lights
@@ -20,7 +20,9 @@ import unreal
 
 MESH_DIR = os.environ.get("GB_ENTITY_DIR", "/Game/Glyphbound/Enemies/Entity")   # -Preview imports elsewhere
 SOURCE_DIR = os.environ.get("GB_ENTITY_STAGE", "")
-MESHES = ["SM_Entity_Body", "SM_Entity_Eye", "SM_Entity_Tentacles"]
+MESHES = ["SM_Entity_Body", "SM_Entity_Eye"]
+SKELETAL = "SK_Entity_Tentacles"
+BONES_PER_CHAIN = 8
 TEXTURES = {
     # name: (compression, sRGB, flip green)
     "T_Entity_BaseColor": (unreal.TextureCompressionSettings.TC_DEFAULT, True, False),
@@ -352,24 +354,50 @@ def assign(meshes, materials):
         log("mesh %s slots=%d tris=%d verts=%d bounds min=(%.1f, %.1f, %.1f) max=(%.1f, %.1f, %.1f)" % (
             name, len(slots), mesh.get_num_triangles(0), mesh.get_num_vertices(0),
             box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z))
-    # The hologram moves its vertices (sway): grow its bounds so it is not culled at the screen edge.
-    tentacles = meshes["SM_Entity_Tentacles"]
-    tentacles.set_editor_property("positive_bounds_extension", unreal.Vector(SWAY_CM, SWAY_CM, SWAY_CM))
-    tentacles.set_editor_property("negative_bounds_extension", unreal.Vector(SWAY_CM, SWAY_CM, SWAY_CM))
-    sway_uv_check(tentacles)
 
 
-def sway_uv_check(mesh):
-    """UV channel 1 of the tentacles must carry the sway weight: U from 0 (roots) to 1 (tips)."""
-    description = mesh.get_static_mesh_description(0)
-    us = []
-    for i in range(description.get_vertex_instance_count()):
-        vid = unreal.VertexInstanceID()
-        vid.set_editor_property("id_value", i)
-        us.append(description.get_vertex_instance_uv(vid, 1).x)
-    log("tentacles UV 1 (Sway) over %d vertex instances: U %.3f .. %.3f" % (len(us), min(us), max(us)))
-    if min(us) > 0.05 or max(us) < 0.95:
-        fail("SM_Entity_Tentacles UV channel 1 does not carry the sway weight")
+def import_tentacles(holo):
+    """The tentacles are a skeletal mesh (root + 10 chains of 8 bones, Tools/Blender/entity_export_fbx.py) animated
+    procedurally in code. Its skeleton is created on import; no physics asset (the actor owns collision)."""
+    old = MESH_DIR + "/SM_Entity_Tentacles"      # the static version before the rig
+    if EAL.does_asset_exist(old) and not EAL.delete_asset(old):
+        fail("could not delete %s" % old)
+    source = os.path.join(SOURCE_DIR, "Export", SKELETAL + ".fbx")
+    if not os.path.isfile(source):
+        fail("missing %s (run Tools/Blender/entity_export_fbx.py)" % source)
+    ui = unreal.FbxImportUI()
+    ui.set_editor_property("import_mesh", True)
+    ui.set_editor_property("import_as_skeletal", True)
+    ui.set_editor_property("mesh_type_to_import", unreal.FBXImportType.FBXIT_SKELETAL_MESH)
+    ui.set_editor_property("import_materials", False)
+    ui.set_editor_property("import_textures", False)
+    ui.set_editor_property("import_animations", False)
+    ui.set_editor_property("create_physics_asset", False)
+    data = ui.skeletal_mesh_import_data
+    data.set_editor_property("convert_scene", True)
+    data.set_editor_property("force_front_x_axis", False)
+    data.set_editor_property("import_uniform_scale", 1.0)
+    data.set_editor_property("import_morph_targets", False)
+    data.set_editor_property("normal_import_method", unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+    run_import(source, ui)
+    sk = unreal.load_asset(MESH_DIR + "/" + SKELETAL)
+    if not isinstance(sk, unreal.SkeletalMesh):
+        fail("%s did not import as a SkeletalMesh" % SKELETAL)
+    materials = sk.get_editor_property("materials")
+    for m in materials:
+        m.set_editor_property("material_interface", holo)
+    sk.set_editor_property("materials", materials)
+    # The material still sways the vertices a little (world position offset): grow the bounds to match.
+    sk.set_editor_property("positive_bounds_extension", unreal.Vector(SWAY_CM, SWAY_CM, SWAY_CM))
+    sk.set_editor_property("negative_bounds_extension", unreal.Vector(SWAY_CM, SWAY_CM, SWAY_CM))
+    skeleton = sk.get_editor_property("skeleton")
+    names = [str(n) for n in skeleton.get_reference_pose().get_bone_names()]
+    chains = sorted({n[:3] for n in names if re.match(r"^T\d\d_\d\d$", n)})
+    log("skeletal %s materials=%d bones=%d chains=%d skeleton=%s" % (
+        SKELETAL, len(materials), len(names), len(chains), skeleton.get_name()))
+    if "root" not in names or len(chains) < 8 or len(names) != 1 + len(chains) * BONES_PER_CHAIN:
+        fail("%s: unexpected skeleton (%d bones: %s ...)" % (SKELETAL, len(names), names[:5]))
+    return sk
 
 
 def main():
@@ -382,7 +410,8 @@ def main():
     body = build_body(textures)
     holo = build_pack_holo()
     eye = make_instance("MI_EntityEye", body, {"Glow": EYE_GLOW})
-    assign(meshes, {key("Entity_Body"): body, key("Entity_Eye"): eye, key("Entity_Holo"): holo})
+    assign(meshes, {key("Entity_Body"): body, key("Entity_Eye"): eye})
+    import_tentacles(holo)
     if not EAL.save_directory(MESH_DIR, only_if_is_dirty=False, recursive=True):
         fail("could not save %s" % MESH_DIR)
     log("OK")
