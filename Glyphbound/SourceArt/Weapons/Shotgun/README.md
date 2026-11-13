@@ -1,6 +1,6 @@
 # Shotgun (source art)
 
-Two files: `model.glb`, the Tripo model as the owner handed it over, and `Shotgun.blend`, built from it. Nothing is imported into Unreal yet: the owner sees the renders first.
+Two files: `model.glb`, the Tripo model as the owner handed it over, and `Shotgun.blend`, built from it. The owner approved the renders on 2026-11-13 and the gun is imported into `/Game/Glyphbound/Weapons/Shotgun`.
 
 ## `model.glb`
 Handed over on 2026-11-12 as `futuristic rifle 3d model.glb` (SHA-256 `E00DD166500378A4E4C40E6D40AC782527A4748D9FF96A6410FBF2E9E7F17622`, 4.8 MB), renamed here. It replaces a first hand-over of the same model converted to FBX (`tripo_convert_8f45a6e1-07ca-492e-88d4-435d4c21e797.zip`, SHA-256 `9937173D2878063CC12DEBECE4AC8EA387A4D19B2708CCE99DA0B3AA7DA0C66D`), which had the same mesh and a 2048 JPG; that copy is deleted from the project.
@@ -17,7 +17,7 @@ Built by `Tools/Blender/shotgun_build_blend.py` (80 to 90 s, most of it the two 
 
 `blender -b --factory-startup --python Tools/Blender/shotgun_build_blend.py -- model.glb Shotgun.blend`
 
-SHA-256 `09F14F6BC79F7FC64DE110986D6126FD98230514D2DBB13CD28DC484C56DBB9F` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
+SHA-256 `0C6831DB624F337EAA7CD7D07D95FB99BA2205DDE67BA10798F93B1794FC4DC8` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
 
 - **Rebuilt on the same shape:** vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals; one navy taken from the gun's own texels, with the frost, the baked light and the cables' imprint gone; small drawn details re-cut; the carbon panels found by their texture and their weave redrawn by position; a glow mask cut from the cyan; AO and a normal map baked in Cycles.
 - **Cables:** split from the body, one colour per piece (black, copper orange, dark red, blue), smooth and subdivided once, 16,081 triangles.
@@ -42,4 +42,9 @@ SHA-256 `09F14F6BC79F7FC64DE110986D6126FD98230514D2DBB13CD28DC484C56DBB9F` (Blen
 
 **Known limits:** the stock's rear carbon panel still has one bite of navy near the butt pad and an outline of 21 corners; the short cable stubs beside the small plate are black lumps; some cable ends in the handguard's slot stop in mid-air; the mesh still has open edges (a gap in the stock's comb is the model's own).
 
-**Not written yet:** the export and import scripts (the rifle's are the template), and the game code for a pump and a shell-by-shell reload.
+**Into Unreal** (`Tools/Jam/Import-Shotgun.ps1`, Editor closed, pistol and rifle imported first; about 30 s):
+- `Tools/Blender/shotgun_export_fbx.py` exports the six parts and the four textures into a temporary folder under `Saved/`, and writes `export_report.json` here: the offsets the game code uses, in centimetres (trigger hinge, pump rest and slide, shell rest and way out, muzzle tip, ammo display centre);
+- `Tools/Jam/import_shotgun.py` imports them and builds `M_ShotgunAtlas` (body, trigger, pump; the strip in 13 cells) and `M_ShotgunIndicator` (the lens), and reuses `M_GunSolid` (shell) and `M_RifleHolo` (ammo display). It checks the body has one material slot, the shell three, and that UV 1 carries the strip from 0 to 1;
+- the temporary folder is deleted.
+
+**Not written yet:** the game code for the shotgun's viewmodel, its pump and its shell-by-shell reload.

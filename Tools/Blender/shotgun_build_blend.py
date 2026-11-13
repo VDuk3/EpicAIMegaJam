@@ -1214,7 +1214,8 @@ X_AXIS = Vector((1.0, 0.0, 0.0))
 ATLAS = me.materials[0]
 BAR_AX, BAR_UP = slope_frame(BAR_SLOPE)
 STRIP_S = (BAR_ALONG[0] + STRIP_INSET, BAR_ALONG[1] - STRIP_INSET)
-STRIP_Y = tuple((BAR_C + BAR_AX * s_).y for s_ in STRIP_S)
+# y of the strip's two ends as modelled: the strip is lifted off the sloped plane, which also moves it along y
+STRIP_Y = tuple((BAR_C + BAR_AX * s_ + BAR_UP * (BAR_PROUD + STRIP_LIFT)).y for s_ in STRIP_S)
 PORT_AX, PORT_UP = slope_frame(PORT_SLOPE)
 PORT_OUT = -PORT_UP                                  # the port is on the underside: out of it is downwards
 PUMP_AX, PUMP_UP = slope_frame(PUMP_SLOPE)
