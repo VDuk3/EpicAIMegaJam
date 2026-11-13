@@ -14,9 +14,12 @@
 # Modelled here, because the GLB's version was broken or missing:
 #   top rail      the GLB's teeth have uneven lengths and gaps (7 to 34 mm; owner: "the pattern breaks"): deleted, and
 #                 a rail with RAIL_TEETH equal teeth takes its place
-#   energy bars   one on each side of the handguard, on its upper sloped face: a dark bezel with a straight glowing
-#                 strip (owner: the glowing shape "is hard to read" from the player's view). The game cuts the strip
-#                 into 13 cells that drain with the enchant
+#   side panels   the handguard's upper sloped face has a stair-stepped groove 5 to 8 mm deep across it, the channel of
+#                 the GLB's neon (owner: "that part looks destroyed"). A raised white panel covers the whole face on
+#                 each side
+#   energy bars   one on each side, on that panel: a dark bezel with a straight glowing strip (owner: the glowing
+#                 shape "is hard to read" from the player's view). The game cuts the strip into 13 cells that drain
+#                 with the enchant
 #   ammo screen   a dark tilted housing on the rear of the sight's eyepiece, and the hologram pane in it
 #   magazine      the GLB has none: a curved box magazine, base plate and a glowing slit on each side
 # Objects saved (source frame: muzzle -Y, up +Z, metres): Rifle_Body (slots carabina_roja, Rifle_Rail), Rifle_Trigger,
@@ -84,7 +87,16 @@ CHAMFER = 0.0004
 # the centre line is BAR_X0 - 0.5 * (z - BAR_Z0). The bar lies on it, centred at BAR_ZC.
 BAR_X0, BAR_Z0, BAR_ZC = 0.046, 0.065, 0.0725
 BAR_Y = (-0.338, -0.100)
-BAR_HALF_W, BAR_PROUD, BAR_DEEP = 0.0070, 0.0025, 0.0060
+BAR_HALF_W, BAR_PROUD, BAR_DEEP = 0.0070, 0.0040, 0.0060
+# The side panels, on the same plane: from just above the crease with the vertical side (z = 63 mm) to just below the
+# face's top edge (z = 98.5 mm). The face is not perfectly flat (up to 2 mm proud of the plane at the rear), so the
+# panel stands PANEL_PROUD above the plane, and the bars stand above the panel.
+PANEL_Y = (-0.343, -0.058)
+PANEL_Z = (0.0642, 0.0973)
+PANEL_PROUD, PANEL_DEEP = 0.0024, 0.0100
+# Where the groove leaves the face it also notches the dark ledge above it: a metal block fills the notch, flush with
+# the ledge. (distance from the centre line, y, z), lo and hi.
+NOTCH_FILL = ((0.0236, -0.124, 0.0880), (0.0300, -0.107, 0.0991))
 STRIP_HALF_W, STRIP_INSET, STRIP_LIFT = 0.0033, 0.0040, 0.0002
 STRIP_Y = (BAR_Y[0] + STRIP_INSET, BAR_Y[1] - STRIP_INSET)
 STRIP_ZMAX = 0.1
@@ -325,23 +337,36 @@ dark = smoothstep(np.where(is_light, 0.70, 0.55), np.where(is_light, 0.50, 0.38)
 light = smoothstep(0.22, 0.36, lum - pmed) * (pmed < 0.42) * ~plain
 neon_a = smoothstep(0.35, 0.65, box_blur(neon_raw, 1))
 
-# A free block of the atlas for the modelled glowing strips: neon on, flat everywhere else.
-for reach in (40, 28, 20, 14):
-    free = box_blur((~filled).astype(np.float32), reach) > 0.9999
-    free[:48, :] = free[-48:, :] = False
-    free[:, :48] = free[:, -48:] = False
-    if free.any():
-        break
-else:
-    raise SystemExit("rifle_build_blend: ERROR no free block in the atlas for the energy strip")
-fy, fx = np.argwhere(free)[0]
-half = reach - 8
-BLOCK = (slice(fy - half, fy + half + 1), slice(fx - half, fx + half + 1))
-STRIP_UV = ((fx + 0.5) / W, (fy + 0.5) / H, half / 3.0 / W)      # centre u, v and half size of the strips' UV square
-neon_a[BLOCK] = 1.0
-dark[BLOCK] = 0.0
-light[BLOCK] = 0.0
-print("STRIP block at texel", int(fx), int(fy), "half size", half)
+# Free blocks of the atlas for the modelled parts that use the atlas material: flat, no details. One with the neon
+# on for the glowing strips, one in plain white polymer for the side panels.
+used = filled.copy()
+BLOCKS = []
+
+
+def claim_block(what):
+    for reach in (40, 28, 20, 14):
+        free = box_blur((~used).astype(np.float32), reach) > 0.9999
+        free[:48, :] = free[-48:, :] = False
+        free[:, :48] = free[:, -48:] = False
+        if free.any():
+            break
+    else:
+        raise SystemExit("rifle_build_blend: ERROR no free block in the atlas for " + what)
+    fy, fx = np.argwhere(free)[0]
+    half = reach - 8
+    block = (slice(fy - half, fy + half + 1), slice(fx - half, fx + half + 1))
+    used[fy - reach:fy + reach + 1, fx - reach:fx + reach + 1] = True
+    dark[block] = 0.0
+    light[block] = 0.0
+    neon_a[block] = 0.0
+    BLOCKS.append(block)
+    print("BLOCK for", what, "at texel", int(fx), int(fy), "half size", half)
+    return block, ((fx + 0.5) / W, (fy + 0.5) / H, half / 3.0 / W)     # centre u, v and half size of a UV square
+
+
+strip_block, STRIP_UV = claim_block("the energy strips")
+neon_a[strip_block] = 1.0
+_, PANEL_UV = claim_block("the side panels")
 
 tone_rgb = np.array([t[1] for t in TONES], np.float32)
 tone_rough = np.array([t[2] for t in TONES], np.float32)
@@ -360,7 +385,8 @@ for (rgb, r, m), a in ((DARK_DETAIL, dark), (LIGHT_DETAIL, light), (NEON_BASE, n
     rough = layer(rough, r, a)
     metal = layer(metal, m, a)
 height = 1.0 - box_blur(np.maximum(dark, neon_a * 0.6), 1)
-height[BLOCK] = 1.0
+for block in BLOCKS:
+    height[block] = 1.0
 
 im_base = new_image("T_Rifle_BaseColor", base, True)
 im_height = new_image("Rifle_Height", height, False)
@@ -511,14 +537,20 @@ def build_extras():
         y = RAIL_Y[0] + k * (RAIL_TOOTH_LEN + gap)
         solids += prism(b, RAIL_TOOTH, y, y + RAIL_TOOTH_LEN, 1)
     print("RAIL teeth", RAIL_TEETH, "tooth %.1f mm, gap %.1f mm" % (RAIL_TOOTH_LEN * 1000, gap * 1000))
-    # energy bars: frame = along the gun (Y), up the sloped face, out of it
+    # side panels and energy bars: frame = along the gun (Y), up the sloped face, out of it
     u, v, h = STRIP_UV
+    panels_faces = []
     for side in (1, -1):
         up = Vector((-0.5 * side, 0.0, 1.0)).normalized()
         out = Vector((side, 0.0, 0.5)).normalized()
         along = Vector((0.0, 1.0, 0.0))
         origin = Vector((CX + side * (BAR_X0 - 0.5 * (BAR_ZC - BAR_Z0)), 0.0, BAR_ZC))
+        across = [(z - BAR_ZC) / up.z for z in PANEL_Z]
+        panels_faces += box(b, origin, along, up, out, (PANEL_Y[0], across[0], -PANEL_DEEP),
+                            (PANEL_Y[1], across[1], PANEL_PROUD), 0)
         solids += box(b, origin, along, up, out, (BAR_Y[0], -BAR_HALF_W, -BAR_DEEP), (BAR_Y[1], BAR_HALF_W, BAR_PROUD), 1)
+        solids += box(b, Vector((CX, 0.0, 0.0)), Vector((side, 0.0, 0.0)), along, Vector((0.0, 0.0, 1.0)),
+                      NOTCH_FILL[0], NOTCH_FILL[1], 1)
         quad(b, origin, along, up, out, (STRIP_Y[0], -STRIP_HALF_W), (STRIP_Y[1], STRIP_HALF_W),
              BAR_PROUD + STRIP_LIFT, 0, (u - h, v - h, u + h, v + h))
     # ammo screen housing: frame = viewer's right (-X), up the tilted pane, out of it (towards the player)
@@ -530,7 +562,10 @@ def build_extras():
         if f.material_index == 1:
             for loop in f.loops:
                 loop[layer_uv].uv = (0.5, 0.5)
-    return finish(b, "Rifle_Extras", [mat, metal_mat], solids)
+    for f in panels_faces:
+        for loop in f.loops:
+            loop[layer_uv].uv = PANEL_UV[:2]
+    return finish(b, "Rifle_Extras", [mat, metal_mat], solids + panels_faces)
 
 
 def screen_frame():
@@ -684,10 +719,12 @@ im_bake_n = bake("NORMAL", "Rifle_NormalBake", 24, normal_space="TANGENT")
 im_ao = bake("AO", "Rifle_AO", 96)
 
 normal = load(im_bake_n)[..., :3].copy()
-normal[BLOCK] = (0.5, 0.5, 1.0)                 # the strips' block: flat
+for block in BLOCKS:
+    normal[block] = (0.5, 0.5, 1.0)             # the modelled parts' blocks: flat
 im_normal = new_image("T_Rifle_Normal", normal, False)
 ao = np.clip(load(im_ao)[..., 0], 0.0, 1.0) * (1.0 - 0.45 * dark)
-ao[BLOCK] = 1.0
+for block in BLOCKS:
+    ao[block] = 1.0
 im_orm = new_image("T_Rifle_ORM", np.stack([ao, rough, metal], axis=2), False)
 for im in (im_ao, im_bake_n):
     bpy.data.images.remove(im)

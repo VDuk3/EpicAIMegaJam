@@ -3,6 +3,7 @@
 #include "AI/GBEnemyCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/GBCombatLibrary.h"
+#include "CanvasItem.h"
 #include "Engine/Canvas.h"
 #include "Engine/CanvasRenderTarget2D.h"
 #include "Engine/Engine.h"
@@ -43,6 +44,7 @@ struct FGBGunModelArt
 	float TextCenterY;
 	float KickBackCm;             // shot kick: how far back the viewmodel root moves
 	float KickPitchDeg;           // and how far it pitches up
+	bool bDrawDisplayFrame;       // the game draws the display's frame lines and round pips (the pistol's are in its model)
 };
 
 namespace
@@ -60,18 +62,19 @@ namespace
 		FVector(28.84f, 0.f, 0.f), FVector(0.f, 0.f, -29.31f), FVector(-12.15f, 0.f, -24.11f),
 		FLinearColor(0.02f, 1.f, 0.07f), FVector(82.5f, 0.f, 20.2f), 13.f,
 		0.42f, 0.6f, 0.39f,
-		1.6f, 3.f };
+		1.6f, 3.f, false };
 
 	// Rifle art tuning from Glyphbound/SourceArt/Weapons/Rifle/export_report.json, made by Tools/Blender/rifle_export_fbx.py.
-	// All provisional. The rifle's pane has no frame line and no dots, so its text fills more of the display. View scale
+	// All provisional. The rifle's pane is plain, so the game draws the pistol-style frame on it (owner: "like the
+	// pistol's: the count, and the row below shows the rounds left") and the digits use the pistol's layout. View scale
 	// and root offset were tuned from the smoke screenshots.
 	const FGBGunModelArt RifleArt = {
 		TEXT("Rifle"), TEXT("/Game/Glyphbound/Weapons/Rifle"), TEXT("SM_Rifle_"), false,
 		0.62f, FVector(-12.f, -6.f, 2.f), -0.4f,
 		FVector(6.5f, 0.f, 0.3f), FVector(15.8f, 0.f, -2.8f), FVector(2.f, 0.f, -17.f),
 		FLinearColor(0.05f, 0.9f, 0.6f), FVector(69.f, 0.f, 6.6f), 13.f,
-		0.75f, 0.85f, 0.47f,
-		1.2f, 1.5f };
+		0.42f, 0.6f, 0.39f,
+		1.2f, 1.5f, true };
 
 	const FGBGunModelArt* FindModelArt(const FString& Name)
 	{
@@ -102,6 +105,19 @@ namespace
 	constexpr int32 AmmoDisplayWidth = 256;
 	constexpr int32 AmmoDisplayHeight = 128;
 	const TCHAR* const AmmoDisplayReloadText = TEXT("--");
+	// Frame drawn by the game on a plain display (FGBGunModelArt::bDrawDisplayFrame), as shares of the display from its
+	// top left. Copied from the look of the pistol's rear screen: a top and a bottom line, a status bar on each side,
+	// and a row of pips under the digits, one per round, lit while that round is in the magazine. Provisional.
+	constexpr int32 AmmoDisplayMaxPips = 30;        // larger magazines share pips (2 rounds per pip, 3...)
+	constexpr float AmmoDisplaySpentPip = 0.16f;    // brightness of a spent round's pip
+	constexpr float AmmoDisplayPipFill = 0.68f;     // lit share of each pip's slot; the rest is the gap
+	struct FGBDisplayBox { float X0, Y0, X1, Y1; };
+	const FGBDisplayBox AmmoDisplayFrame[] = {
+		{ 0.10f, 0.095f, 0.78f, 0.125f },   // top line
+		{ 0.08f, 0.885f, 0.60f, 0.915f },   // bottom line
+		{ 0.075f, 0.26f, 0.10f, 0.60f },    // left status bar
+		{ 0.90f, 0.26f, 0.925f, 0.60f } };  // right status bar
+	const FGBDisplayBox AmmoDisplayPipRow = { 0.075f, 0.70f, 0.925f, 0.80f };
 	// Shot kick: the root eases back to rest over this time (ease out). Provisional.
 	constexpr float KickSeconds = 0.09f;
 	// Muzzle flash: visible this long, two crossed thin slabs of this size (cm), a random roll and 85-120 % scale.
@@ -587,7 +603,7 @@ void AGBGun::DrawViewModelDisplay(UCanvas* Canvas, int32 Width, int32 Height)
 		return;
 	}
 	// TextHeightShare of the height, narrowed if wider than TextWidthShare of the width, centred on TextCenterY so the
-	// digits stay clear of the model's frame line and dots (pistol) or fill the pane (rifle).
+	// digits stay clear of the frame line and the dots: the pistol's are in its model, the rifle's are drawn below.
 	float Scale = ModelArt->TextHeightShare * Height / FMath::Max(1.f, Font->GetMaxCharHeight());
 	const FVector2D Size = Canvas->K2_TextSize(Font, ShownDisplayText, FVector2D(Scale, Scale));
 	if (Size.X > ModelArt->TextWidthShare * Width && Size.X > KINDA_SMALL_NUMBER)
@@ -596,6 +612,36 @@ void AGBGun::DrawViewModelDisplay(UCanvas* Canvas, int32 Width, int32 Height)
 	}
 	Canvas->K2_DrawText(Font, ShownDisplayText, FVector2D(Width * 0.5f, Height * ModelArt->TextCenterY), FVector2D(Scale, Scale), FLinearColor::White,
 		0.f, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2D::ZeroVector, true, true, false, FLinearColor::Black);
+	if (!ModelArt->bDrawDisplayFrame)
+	{
+		return;
+	}
+	auto DrawBox = [Canvas, Width, Height](float X0, float Y0, float X1, float Y1, float Brightness)
+	{
+		FCanvasTileItem Tile(FVector2D(X0 * Width, Y0 * Height), FVector2D((X1 - X0) * Width, (Y1 - Y0) * Height),
+			FLinearColor(Brightness, Brightness, Brightness, 1.f));
+		Tile.BlendMode = SE_BLEND_Opaque;
+		Canvas->DrawItem(Tile);
+	};
+	for (const FGBDisplayBox& Box : AmmoDisplayFrame)
+	{
+		DrawBox(Box.X0, Box.Y0, Box.X1, Box.Y1, 1.f);
+	}
+	// One pip per round (several rounds per pip above AmmoDisplayMaxPips); none lit while reloading.
+	const int32 Capacity = GetMagazineSize();
+	if (Capacity <= 0)
+	{
+		return;
+	}
+	const int32 RoundsPerPip = FMath::DivideAndRoundUp(Capacity, AmmoDisplayMaxPips);
+	const int32 Pips = FMath::DivideAndRoundUp(Capacity, RoundsPerPip);
+	const int32 Lit = bReloading ? 0 : FMath::DivideAndRoundUp(Ammo.InMagazine, RoundsPerPip);
+	const float PipSlot = (AmmoDisplayPipRow.X1 - AmmoDisplayPipRow.X0) / Pips;
+	for (int32 Index = 0; Index < Pips; ++Index)
+	{
+		const float X0 = AmmoDisplayPipRow.X0 + Index * PipSlot;
+		DrawBox(X0, AmmoDisplayPipRow.Y0, X0 + PipSlot * AmmoDisplayPipFill, AmmoDisplayPipRow.Y1, Index < Lit ? 1.f : AmmoDisplaySpentPip);
+	}
 }
 
 void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)

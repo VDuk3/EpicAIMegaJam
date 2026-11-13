@@ -7,7 +7,7 @@ The source file for the assault rifle ("carabina roja"). The owner handed it ove
   - One 4096 albedo with baked light, smears and soft edges, and a `neon_mask`. No roughness, metallic, normal or AO map.
   - Top rail teeth of uneven length and spacing.
 - **`Rifle.blend` is rebuilt from it** by `Tools/Blender/rifle_build_blend.py` (the first version was the plain GLB import, and the rifle read soft in the game):
-  - SHA-256 `9D14D86AA0BD713D4230E3622BC05292A2669AFD91930D5AA312E32D33A6507F` (Blender 5.3.0);
+  - SHA-256 `17728E439D0085859397F16500775001DD3444596AE512F5D32DA9907AE58BD3` (Blender 5.3.0);
   - vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals;
   - `T_Rifle_BaseColor`: one flat tone per panel (white polymer, two greys, dark metal) and the small drawn details re-cut crisp; the barrel, front sight, eyepiece and the band beside the rail are forced to dark metal as whole parts, because their panels came out as patches of different tones;
   - `T_Rifle_ORM`: AO baked in Cycles, roughness and metallic by tone;
@@ -15,7 +15,8 @@ The source file for the assault rifle ("carabina roja"). The owner handed it ove
   - `T_Rifle_EmissiveMask`: the neon mask with its edges re-cut, and without the GLB's ragged side strip on the handguard;
   - modelled by the script, in the flat metal slot `Rifle_Rail`:
     - the top rail: the old one deleted, 23 equal teeth (10 mm, 6.4 mm gaps), chamfered;
-    - an energy bar on each side of the handguard, on its upper sloped face: a dark bezel 238 mm long with a straight glowing strip (the strip uses the atlas slot);
+    - a raised white panel over the whole upper sloped face of the handguard on each side (atlas slot): the face has a stair-stepped groove 5 to 8 mm deep, the channel of the GLB's neon, and a metal block fills the notch it leaves in the ledge above;
+    - an energy bar on each panel: a dark bezel 238 mm long with a straight glowing strip (the strip uses the atlas slot);
     - the ammo screen's housing on the rear of the sight's eyepiece, tilted 14° up towards the player;
   - also modelled by the script: the hologram pane (32 × 16 mm, in the housing) and the magazine (the GLB has none: a curved box, base plate and a glowing slit on each side);
   - objects `Rifle_Body`, `Rifle_Trigger`, `Rifle_Lens`, `Rifle_AmmoDisplay`, `Rifle_Magazine`. Pivots, the magazine's slide-out vector and the strip's span are custom properties on them, read by the export.
