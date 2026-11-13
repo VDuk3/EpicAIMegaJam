@@ -237,6 +237,10 @@
 			"Enabled": false
 		},
 		{
+			"Name": "ChaosCloth",
+			"Enabled": false
+		},
+		{
 			"Name": "ChaosInsights",
 			"Enabled": false
 		},
@@ -546,10 +550,6 @@
 		},
 		{
 			"Name": "GBPixelVfx",
-			"Enabled": true
-		},
-		{
-			"Name": "Water",
 			"Enabled": true
 		},
 		{

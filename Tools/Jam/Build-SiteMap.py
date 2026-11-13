@@ -59,17 +59,11 @@ def ensure_maps():
         log('created ' + PERSISTENT)
     les.load_level(PERSISTENT)
     world = ues.get_editor_world()
-    present = [s.get_world_asset_package_name() for s in world.get_streaming_levels()]
     for key, path in SUBLEVELS.items():
-        if path not in present:
-            streaming = unreal.EditorLevelUtils.add_level_to_world(world, path, unreal.LevelStreamingDynamic)
+        if unreal.GameplayStatics.get_streaming_level(world, unreal.Name(path)) is None:
+            # Dynamic streaming: UGBEraSubsystem::ApplyEra loads both at BeginPlay and flips their visibility.
+            unreal.EditorLevelUtils.add_level_to_world(world, path, unreal.LevelStreamingDynamic)
             log('added sub-level ' + path)
-    for s in world.get_streaming_levels():
-        name = s.get_world_asset_package_name()
-        if name.endswith('_Past') or name.endswith('_Future'):
-            # Both stay loaded; UGBEraSubsystem only flips visibility. The past is the starting era.
-            s.set_editor_property('initially_loaded', True)
-            s.set_editor_property('initially_visible', name.endswith('_Past'))
     return world
 
 
@@ -349,6 +343,43 @@ def build_lighting():
         fog_actor.get_component_by_class(unreal.ExponentialHeightFogComponent).set_editor_property('fog_density', fog)
 
 
+def build_room_lights(layout):
+    """Greybox work lights: a grid of shadowless point lights under each ceiling (and in the future's open yard at
+    night), so every room is readable before the real lighting pass. Warm torchlight in the past, cool in the future."""
+    old = [a for a in eas.get_all_level_actors() if '_Work_' in a.get_actor_label() and TAG in [str(t) for t in a.tags]]
+    if old:
+        eas.destroy_actors(old)
+    n = 0
+    for room in layout['rooms']:
+        for era in ('past', 'future'):
+            if room['eras'] not in ('both', era):
+                continue
+            ceil = room.get('ceilPast' if era == 'past' else 'ceilFuture') or 0
+            if ceil <= 0 and era == 'past':
+                continue   # open sky in daylight: the sun and the sky light are enough
+            rect = room.get('futureRect') if era == 'future' and room.get('futureRect') else room['rect']
+            x0, x1, y0, y1 = rect
+            z = (ceil - 150) if ceil > 0 else 900
+            z = max(min(z, 1100), 250)
+            nx = max(1, int(round((x1 - x0) / 1600.0)))
+            ny = max(1, int(round((y1 - y0) / 1600.0)))
+            set_current(era)
+            for ix in range(nx):
+                for iy in range(ny):
+                    px = x0 + (ix + 0.5) * (x1 - x0) / nx
+                    py = y0 + (iy + 0.5) * (y1 - y0) / ny
+                    light = eas.spawn_actor_from_class(unreal.PointLight, unreal.Vector(px, py, z), unreal.Rotator(0, 0, 0))
+                    tag(light, 'Lighting/Work', '%s_Work_%s_%d_%d' % (era.capitalize(), room['id'], ix, iy))
+                    comp = light.get_component_by_class(unreal.PointLightComponent)
+                    comp.set_editor_property('intensity_units', unreal.LightUnits.CANDELAS)
+                    comp.set_editor_property('intensity', 400.0 if era == 'past' else 300.0)
+                    comp.set_editor_property('attenuation_radius', 3000.0)
+                    comp.set_editor_property('cast_shadows', False)
+                    comp.set_editor_property('light_color', unreal.Color(r=255, g=196, b=140, a=255) if era == 'past' else unreal.Color(r=170, g=205, b=255, a=255))
+                    n += 1
+    log('work lights: %d' % n)
+
+
 def save_all():
     les.save_all_dirty_levels()
 
@@ -369,6 +400,7 @@ def run(phases=('shell', 'ceilings', 'structures', 'blocks', 'gameplay', 'lighti
         build_gameplay(layout)
     if 'lighting' in phases:
         build_lighting()
+        build_room_lights(layout)
     set_current('persistent')
     save_all()
     counts = {}
