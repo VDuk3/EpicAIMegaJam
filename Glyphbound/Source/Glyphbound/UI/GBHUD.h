@@ -300,6 +300,8 @@ protected:
 	/** Horizontal alpha ramp: Color at the left fading to transparent at the right (or the reverse). */
 	void DrawFade(float X, float Y, float W, float H, const FLinearColor& Color, bool bFadeRight = true);
 	void DrawSprite(UTexture2D* Texture, float X, float Y, float PixelScale, const FLinearColor& Tint = FLinearColor::White);
+	/** A UV sub-rect of a texture (for the climb sleeves: the cuff rows tiled downward). Same pixel snapping as DrawSprite. */
+	void DrawSpriteTile(UTexture2D* Texture, float X, float Y, float W, float H, float U, float V, float UL, float VL, const FLinearColor& Tint = FLinearColor::White);
 	/** A sprite id from Sprites.json fitted inside a box, whole pixels, centered. Returns false if the sprite does not exist. */
 	bool DrawSpriteFit(FName SpriteId, float X, float Y, float W, float H, const FLinearColor& Tint = FLinearColor::White, bool bSilhouette = false);
 
@@ -388,6 +390,8 @@ protected:
 
 	// ======================================================================== HUD layers
 	void DrawHands(AGBPlayerCharacter* Player);
+	/** The two climbing hands gripping the ledge while mantling, with sleeve tiles down to the screen bottom. */
+	void DrawMantleHands(AGBPlayerCharacter* Player, float PixelSize);
 	/** The raised ice shield sprite, large, from the lower left. Returns how raised it is (0..1). */
 	float DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, const FVector2D& Bob);
 

@@ -45,9 +45,9 @@
 // =====================================================================================================================
 namespace GBArena
 {
-	// Shell. Walls are taller than the top of the course plus a double jump, so nobody jumps out of the arena.
+	// Shell. Walls are taller than the top of the course plus a double jump and a climb, so nobody jumps out of the arena.
 	constexpr float HalfSize = 3000.f;                // inner half width of the square arena (60 m x 60 m)
-	constexpr float WallHeight = 1100.f;
+	constexpr float WallHeight = 1400.f;
 	constexpr float WallThickness = 100.f;
 	constexpr float FloorThickness = 50.f;
 
@@ -254,6 +254,7 @@ namespace GBArenaCourse
 		const float GravityScale = FMath::Max(ReadPlayerStat(Data, GBStat::GravityScale, DefaultGravityScale), 0.1f);
 		const float MoveSpeed = FMath::Max(ReadPlayerStat(Data, GBStat::MoveSpeed, DefaultMoveSpeed), 0.f);
 		const float DashDistance = FMath::Max(ReadPlayerStat(Data, GBStat::DashDistance, DefaultDashDistance), 0.f);
+		const float MantleMaxReach = FMath::Max(ReadPlayerStat(Data, GBStat::MantleMaxReach, 160.f), 0.f);
 		const float WorldGravity = World ? FMath::Abs(World->GetGravityZ()) : 0.f;
 		const float Gravity = (WorldGravity > 1.f ? WorldGravity : DefaultGravity) * GravityScale;
 
@@ -262,17 +263,28 @@ namespace GBArenaCourse
 		float Top = 0.f;
 		for (int32 Index = 0; Index < GBArena::NumSteps; ++Index)
 		{
-			Top += Layout.JumpRise * (Index == GBArena::NumSteps - 1 ? GBArena::DoubleJumpStep : GBArena::OneJumpStep);
+			// The last step must need the double jump even with a climb: halfway between one jump + climb
+			// and double jump + climb.
+			float StepRise = Layout.JumpRise * (Index == GBArena::NumSteps - 1 ? GBArena::DoubleJumpStep : GBArena::OneJumpStep);
+			if (Index == GBArena::NumSteps - 1)
+			{
+				StepRise += MantleMaxReach;
+			}
+			Top += StepRise;
 			Layout.StepTops[Index] = Top;
 		}
 		const float AirTime = (2.f + UE_SQRT_2) * JumpVelocity / Gravity;
 		Layout.DashGap = FMath::Clamp(MoveSpeed * AirTime + DashDistance * GBArena::DashGapDashShare, GBArena::MinDashGap, GBArena::MaxDashGap);
 
-		UE_LOG(LogGB, Display, TEXT("Test arena course: one jump %.0f cm, double jump %.0f cm, step tops %.0f / %.0f / %.0f cm, dash gap %.0f cm."),
-			Layout.JumpRise, 2.f * Layout.JumpRise, Layout.StepTops[0], Layout.StepTops[1], Layout.StepTops[2], Layout.DashGap);
-		if (Top + 2.f * Layout.JumpRise > GBArena::WallHeight - GBArena::WallClearance)
+		UE_LOG(LogGB, Display, TEXT("Test arena course: one jump %.0f cm, double jump %.0f cm, step tops %.0f / %.0f / %.0f cm, dash gap %.0f cm, climb reach %.0f cm."),
+			Layout.JumpRise, 2.f * Layout.JumpRise, Layout.StepTops[0], Layout.StepTops[1], Layout.StepTops[2], Layout.DashGap, MantleMaxReach);
+		if (Top + 2.f * Layout.JumpRise + MantleMaxReach > GBArena::WallHeight - GBArena::WallClearance)
 		{
 			UE_LOG(LogGB, Warning, TEXT("Test arena: with these jump numbers the player can jump over the arena walls from the course (raise GBArena::WallHeight)."));
+		}
+		if (2.f * Layout.JumpRise + MantleMaxReach > GBArena::PlatformTop - 20.f)
+		{
+			UE_LOG(LogGB, Warning, TEXT("Test arena: the past-era raised platform (future-only ramp) can be reached by climbing."));
 		}
 		return Layout;
 	}

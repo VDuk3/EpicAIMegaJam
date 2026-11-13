@@ -30,6 +30,9 @@
 #include "Data/GBDataSubsystem.h"
 #include "Items/GBInventoryComponent.h"
 #include "Player/GBPlayerCharacter.h"
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Player/GBPlayerController.h"
 #include "Progression/GBSkillTreeComponent.h"
 #include "QTE/GBQTEComponent.h"
@@ -3177,7 +3180,194 @@ namespace GBSmokeRun
 			UGBCombatLibrary::DealDamage(Player, Info, true);
 		});
 		Add(U + 33.4f, TEXT("ui: screenshot cyber death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("ui_22_cyber_death")); });
-		Add(U + 34.0f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// ---- Mantle block (gb.Smoke mantle): ledge climb of the 200 cm path-test wall and the 600 cm platform.
+		// The arena numbers are the design's (wall centre (-2500, -1150, 100), size (600, 100, 200): north face
+		// at Y = -1100, top at Z = 200; platform centre (2300, 2300), 1000 x 1000, top 600, west face at X = 1800).
+		// Quit is the only step after this block, so the end puts the player back at the arena start.
+		// A filtered run (gb.Smoke mantle) starts this block 1 s after the map load, while frames still hitch and a
+		// screenshot can capture a stale frame: the block waits 3 s first. The shots freeze time (dilation) so they
+		// catch the climb mid-way however slow the frame is, and the next step resumes it.
+		Add(U + 33.6f, TEXT("mantle: let the renderer settle"), [](UWorld*, AGBPlayerCharacter*) {});
+		const float M = U + 36.6f;
+		auto MantleShot = [](UWorld* World, AGBPlayerCharacter* Player, const TCHAR* Name)
+		{
+			const GBMantle::FMantlePose Pose = Player->GetMantlePose();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle shot %s mantling=%d alpha=%.2f grip=%.2f lower=%.2f dip=%.2f control=%d"), Name,
+				Player->IsMantling() ? 1 : 0, Player->GetMantleAlpha(), Pose.Grip01, Pose.ItemLower01, Pose.CameraDip01, Player->IsControlEnabled() ? 1 : 0);
+			if (AWorldSettings* Settings = World ? World->GetWorldSettings() : nullptr)
+			{
+				Settings->SetTimeDilation(0.01f);
+			}
+			Shot(Name);
+		};
+		auto MantleResume = [](UWorld* World, AGBPlayerCharacter*)
+		{
+			if (AWorldSettings* Settings = World ? World->GetWorldSettings() : nullptr)
+			{
+				Settings->SetTimeDilation(1.f);
+			}
+		};
+		auto MantleCapsule = [](AGBPlayerCharacter* Player, float& OutRadius, float& OutHalfHeight)
+		{
+			const UCapsuleComponent* Capsule = Player->GetCapsuleComponent();
+			OutRadius = Capsule ? Capsule->GetScaledCapsuleRadius() : 38.f;
+			OutHalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 90.f;
+		};
+		Add(M + 0.0f, TEXT("mantle: ground press next to the 200 cm wall"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			// The ui cyber death step before this block kills the player: start alive and in control again.
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::None);
+			}
+			if (Player->GetQTE()->IsActive())
+			{
+				Player->GetQTE()->CancelQTE();
+			}
+			Player->RestoreAll();
+			Player->GetStatusEffects()->RemoveAllEffects();
+			Player->GetSpellbook()->SetBlockHeld(false);
+			Player->SetControlEnabled(true);
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, -90.f, 0.f));
+			}
+			Player->SetActorLocation(FVector(-2500.f, -1100.f + R + 5.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Walking);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			MarkSim(World);
+			Player->PressJump();
+			const bool bStarted = Player->IsMantling();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle ground started=%d"), bStarted ? 1 : 0);
+			if (!bStarted)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle ground FAILED: no mantle started on jump press next to the 200 cm wall"));
+			}
+		});
+		Add(M + 0.1f, TEXT("mantle: screenshot mid-climb"), [MantleShot](UWorld* World, AGBPlayerCharacter* Player) { MantleShot(World, Player, TEXT("mantle_grip")); }, 0.12f);
+		Add(M + 0.8f, TEXT("mantle: resume time after the shot"), MantleResume);
+		Add(M + 1.4f, TEXT("mantle: ground result"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			(void)R;
+			const FVector Loc = Player->GetActorLocation();
+			const float Feet = Loc.Z - HH;
+			const bool bOnTop = FMath::Abs(Feet - 200.f) <= 10.f && Loc.Y < -1100.f;
+			const UCharacterMovementComponent* GroundMove = Player->GetCharacterMovement();
+			const bool bDone = !Player->IsMantling() && GroundMove && GroundMove->IsMovingOnGround();
+			// The view offsets go through the camera's additive offset: back to identity at rest.
+			FTransform CamOffset;
+			float CamFovOffset = 0.f;
+			Player->GetCamera()->GetAdditiveOffset(CamOffset, CamFovOffset);
+			const FRotator CamRel = CamOffset.Rotator();
+			const bool bCamRest = CamRel.IsNearlyZero(0.1f) && CamOffset.GetLocation().IsNearlyZero(0.1f);
+			const FVector ItemRel = Player->GetHeldItemAnchor()->GetRelativeLocation();
+			const bool bItemRest = ItemRel.Equals(FVector(30.f, 15.f, -15.f), 1.f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle ground feet=%.0f y=%.0f mantling=%d cam=(%.1f,%.1f,%.1f) item=%s"),
+				Feet, Loc.Y, Player->IsMantling() ? 1 : 0, CamRel.Pitch, CamRel.Yaw, CamRel.Roll, *ItemRel.ToCompactString());
+			if (!bOnTop || !bDone || !bCamRest || !bItemRest)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle ground FAILED: onTop=%d done=%d camRest=%d itemRest=%d"), bOnTop ? 1 : 0, bDone ? 1 : 0, bCamRest ? 1 : 0, bItemRest ? 1 : 0);
+			}
+		}, 1.0f);
+		static float MantleJumpStartZ = 0.f;
+		Add(M + 1.6f, TEXT("mantle: wall too high is a normal jump"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 0.f, 0.f));
+			}
+			Player->SetActorLocation(FVector(1800.f - R - 5.f, 2600.f, HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Walking);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			MarkSim(World);
+			MantleJumpStartZ = Player->GetActorLocation().Z;
+			Player->PressJump();
+			const bool bMantling = Player->IsMantling();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle too high mantling=%d"), bMantling ? 1 : 0);
+			if (bMantling)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle too high FAILED: a mantle started for the 600 cm platform (out of one jump + reach)"));
+			}
+		});
+		Add(M + 1.9f, TEXT("mantle: wall too high leaves the ground"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			const UCharacterMovementComponent* Move = Player->GetCharacterMovement();
+			const float Rise = Player->GetActorLocation().Z - MantleJumpStartZ;
+			const bool bAirborne = Move && Move->MovementMode == MOVE_Falling && Rise > 10.f;
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle too high airborne=%d rise=%.0f mantling=%d"), bAirborne ? 1 : 0, Rise, Player->IsMantling() ? 1 : 0);
+			if (Player->IsMantling() || !bAirborne)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle too high FAILED: expected a normal jump (airborne, not mantling)"));
+			}
+		}, 0.2f);
+		Add(M + 2.1f, TEXT("mantle: air grab at the platform edge"), [MantleCapsule](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 0.f, 0.f));
+			}
+			Player->SetActorLocation(FVector(1800.f - R - 5.f, 2600.f, 600.f - 120.f + HH), false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Falling);
+				Move->Velocity = FVector::ZeroVector;
+			}
+			MarkSim(World);
+		});
+		// Second take of the grip, from the air grab (about a third into the climb, hands on the ledge).
+		Add(M + 2.2f, TEXT("mantle: screenshot mid air-climb"), [MantleShot](UWorld* World, AGBPlayerCharacter* Player) { MantleShot(World, Player, TEXT("mantle_grip_air")); }, 0.1f);
+		Add(M + 2.7f, TEXT("mantle: resume time after the air shot"), MantleResume);
+		Add(M + 3.3f, TEXT("mantle: air result on the platform"), [MantleCapsule](UWorld*, AGBPlayerCharacter* Player)
+		{
+			float R = 38.f;
+			float HH = 90.f;
+			MantleCapsule(Player, R, HH);
+			(void)R;
+			const FVector Loc = Player->GetActorLocation();
+			const float Feet = Loc.Z - HH;
+			const UCharacterMovementComponent* AirMove = Player->GetCharacterMovement();
+			const bool bOnTop = FMath::Abs(Feet - 600.f) <= 10.f && Loc.X > 1800.f && !Player->IsMantling() && AirMove && AirMove->IsMovingOnGround();
+			UE_LOG(LogGB, Display, TEXT("SMOKE mantle air feet=%.0f x=%.0f mantling=%d walking=%d"), Feet, Loc.X, Player->IsMantling() ? 1 : 0, AirMove && AirMove->IsMovingOnGround() ? 1 : 0);
+			if (!bOnTop)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE mantle air FAILED: feet %.0f (expected 600 +- 10) x %.0f (expected over 1800)"), Feet, Loc.X);
+			}
+		}, 1.0f);
+		Add(M + 3.5f, TEXT("mantle: back to the arena start"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			FVector EnemySpawn;
+			FVector PlayerSpot;
+			AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, 0.f, 0.f));
+			}
+			Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+			if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+			{
+				Move->SetMovementMode(MOVE_Falling);
+				Move->Velocity = FVector::ZeroVector;
+			}
+		});
+		Add(U + 40.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

@@ -30,7 +30,16 @@
 		"StickYawRate": 200,
 		"StickPitchRate": 140,
 		"PitchLimit": 89,
-		"DashExitSpeedMult": 1
+		"DashExitSpeedMult": 1,
+		"MantleMaxReach": 160,
+		"MantleMinHeight": 50,
+		"MantleAirMinHeight": 15,
+		"MantleProbeDistance": 40,
+		"MantleFacingMinDot": 0.5,
+		"MantleTopInset": 10,
+		"MantleBaseDuration": 0.22,
+		"MantleDurationPerMeter": 0.18,
+		"MantleRiseShare": 0.6
 	},
 	"StartingWeapons": [
 		"Staff_Apprentice"

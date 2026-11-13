@@ -513,7 +513,11 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const float W = Canvas->ClipX;
 	// The RPG status bar covers the bottom of the view: the hands stand on it (as in the 90s games). Menus hide the bar.
 	const bool bOverBar = GetCurrentSkin() == EGBHudSkin::Rpg90s && GetOpenMenu() == EGBMenu::None;
-	const float H = Canvas->ClipY - (bOverBar ? 22.f * ArtPixel() : 0.f);
+	// While mantling, the normal pose slides down off screen so the climbing hands take over.
+	const bool bMantling = Player->IsMantling();
+	const GBMantle::FMantlePose MantlePose = Player->GetMantlePose();
+	const float H = Canvas->ClipY - (bOverBar ? 22.f * ArtPixel() : 0.f)
+		+ (bMantling ? MantlePose.ItemLower01 * Canvas->ClipY * 0.7f : 0.f);
 	const float P = FMath::Max(1.f, (float)FMath::RoundToInt(Canvas->ClipY / GBHudLayout::HandPixelDivisor));
 
 	// Walk bob from the horizontal speed (world time, so it slows down with the QTE).
@@ -630,7 +634,7 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
 
-	if (bCastPose && ShieldRaise01 < 0.5f)
+	if (bCastPose && ShieldRaise01 < 0.5f && !bMantling)
 	{
 		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
 		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
@@ -640,7 +644,71 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	{
 		DrawSprite(HandLeft, W * 0.22f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.45f + Bob.Y, P);
 	}
-	DrawRaisedShield(Player, P, Bob);
+	// The arms reach up from the bottom edge while the hands grip the ledge; the raised shield stays down.
+	if (bMantling)
+	{
+		DrawMantleHands(Player, P);
+	}
+	else
+	{
+		DrawRaisedShield(Player, P, Bob);
+	}
+}
+
+void AGBHUD::DrawMantleHands(AGBPlayerCharacter* Player, float PixelSize)
+{
+	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
+	if (!Sprites || !Canvas)
+	{
+		return;
+	}
+	const GBMantle::FMantlePose Pose = Player->GetMantlePose();
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+
+	// The ledge edge on screen: where the knuckles sit when the grip is full. Clamped, with a fallback mid-screen.
+	UTexture2D* HandTextures[2] = { Sprites->GetSprite(TEXT("hand_left")), Sprites->GetSprite(TEXT("hand_right")) };
+	// Lowest grip line: the whole hand and a bit of sleeve stay above the RPG status bar (drawn over the hands)
+	// while gripping. Once the body is over the edge the ledge is below the view, so the hands rest there, pushing down.
+	const bool bOverBar = GetCurrentSkin() == EGBHudSkin::Rpg90s && GetOpenMenu() == EGBMenu::None;
+	const float ViewBottom = H - (bOverBar ? 22.f * ArtPixel() : 0.f);
+	const float HandH = HandTextures[0] ? HandTextures[0]->GetSizeY() * PixelSize : 0.f;
+	const float MaxGripY = FMath::Max(0.12f * H, FMath::Min(0.85f * H, ViewBottom - HandH * 1.4f));
+	const FVector Projected = Canvas->Project(Player->GetMantleLedgePoint(), true);
+	float GripY = FMath::Min(0.45f * H, MaxGripY);
+	if (Projected.Z > 0.f)
+	{
+		GripY = FMath::Clamp(Projected.Y, 0.12f * H, MaxGripY);
+	}
+
+	// Wide apart, clear of the status bar's centre crest.
+	const float CentersX[2] = { 0.27f * W, 0.73f * W };
+	for (int32 Index = 0; Index < 2; ++Index)
+	{
+		UTexture2D* Hand = HandTextures[Index];
+		if (!Hand)
+		{
+			continue;
+		}
+		const float SpriteW = Hand->GetSizeX() * PixelSize;
+		const float SpriteH = Hand->GetSizeY() * PixelSize;
+		// The hands come up from below the screen and go back down (fully hidden at Grip01 = 0).
+		const float HandX = CentersX[Index] - SpriteW * 0.5f;
+		const float HandY = GripY + (1.f - Pose.Grip01) * (H - GripY + SpriteH);
+		DrawSprite(Hand, HandX, HandY, PixelSize);
+		// Sleeves: the cuff rows (the bottom 8 of the 20-row sprite) tiled from the wrist down to the screen bottom.
+		const float CuffH = SpriteH * 8.f / 20.f;
+		if (CuffH <= 0.f)
+		{
+			continue;
+		}
+		const float CuffV = 1.f - 8.f / 20.f;
+		for (float Y0 = HandY + SpriteH; Y0 < H; Y0 += CuffH)
+		{
+			const float TileH = FMath::Min(CuffH, H - Y0);
+			DrawSpriteTile(Hand, HandX, Y0, SpriteW, TileH, 0.f, CuffV, 1.f, (1.f - CuffV) * (TileH / CuffH));
+		}
+	}
 }
 
 float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, const FVector2D& Bob)

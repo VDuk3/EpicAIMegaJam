@@ -43,6 +43,15 @@ namespace
 	/** Held item anchor and muzzle offsets from the camera (forward, right, up), cm. */
 	const FVector HeldItemOffset(30.f, 15.f, -15.f);
 	const FVector MuzzleOffset(40.f, 15.f, -12.f);
+	// First-person climb (mantle) feel and visual constants (not gameplay balance, like the offsets above).
+	/** The view pitches down by this (degrees) at the top of the climb. */
+	constexpr float MantlePitchDipDeg = 10.f;
+	/** ...and rolls by this (degrees). */
+	constexpr float MantleRollDeg = 3.f;
+	/** ...while the camera drops by this (cm), the pull on the arms. */
+	constexpr float MantlePullDownCm = 6.f;
+	/** The held item drops out of view by this (cm) while the hands grip the ledge. */
+	const FVector MantleItemLowerOffset(-10.f, 0.f, -35.f);
 
 	/** Not a balance number: a hit far above any health pool (KillZ death). */
 	constexpr float FallOutOfWorldDamage = 1.0e9f;
@@ -157,6 +166,7 @@ void AGBPlayerCharacter::BeginPlay()
 
 void AGBPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	CancelMantle();
 	UGBCombatLibrary::OnDamageDealt().Remove(DamageDealtHandle);
 	DamageDealtHandle.Reset();
 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
@@ -205,6 +215,28 @@ void AGBPlayerCharacter::Tick(float DeltaSeconds)
 		else if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 		{
 			MoveComp->Velocity = DashVelocity;
+		}
+	}
+
+	if (bMantling)
+	{
+		TickMantle(DeltaSeconds);
+	}
+	else if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		// In the air (rising or falling): grab a ledge in front instead of sailing past it.
+		if (CanMantleNow() && MoveComp->MovementMode == MOVE_Falling)
+		{
+			FGBMantleLedge AirLedge;
+			if (FindMantleLedge(AirLedge, /*bFromGround*/ false))
+			{
+				const FVector Velocity = MoveComp->Velocity;
+				const float Approach = -(Velocity.X * AirLedge.WallNormal2D.X + Velocity.Y * AirLedge.WallNormal2D.Y);
+				if (Approach >= -50.f)
+				{
+					StartMantle(AirLedge);
+				}
+			}
 		}
 	}
 
@@ -262,7 +294,7 @@ void AGBPlayerCharacter::ApplyMovementStats()
 	}
 
 	BaseEyeHeight = ReadStat(GBStat::EyeHeight, 70.f);
-	Camera->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+	ApplyCameraPose();
 }
 
 void AGBPlayerCharacter::UpdateWalkSpeed()
@@ -287,6 +319,10 @@ void AGBPlayerCharacter::SetMoveSpeedScale(float Scale)
 
 void AGBPlayerCharacter::ApplyMoveInput(const FVector2D& Input)
 {
+	if (bMantling)
+	{
+		return;
+	}
 	const FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
 	const FRotationMatrix YawMatrix(YawRotation);
 	AddMovementInput(YawMatrix.GetUnitAxis(EAxis::X), Input.Y);
@@ -382,6 +418,313 @@ void AGBPlayerCharacter::EndDash()
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Ledge climb (mantle)
+
+GBMantle::FMantleParams AGBPlayerCharacter::GetMantleParams() const
+{
+	GBMantle::FMantleParams Params;
+	Params.MaxReach = ReadStat(GBStat::MantleMaxReach, 160.f);
+	Params.MinHeight = ReadStat(GBStat::MantleMinHeight, 50.f);
+	Params.AirMinHeight = ReadStat(GBStat::MantleAirMinHeight, 15.f);
+	Params.BaseDuration = ReadStat(GBStat::MantleBaseDuration, 0.22f);
+	Params.DurationPerMeter = ReadStat(GBStat::MantleDurationPerMeter, 0.18f);
+	Params.RiseShare = ReadStat(GBStat::MantleRiseShare, 0.6f);
+	return Params;
+}
+
+bool AGBPlayerCharacter::CanMantleNow() const
+{
+	return bControlEnabled && !IsDead() && !IsQTEActive() && !bDashing && !bMovementFrozen && !bMantling;
+}
+
+bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const
+{
+	UWorld* World = GetWorld();
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	if (!World || !MoveComp || !Capsule)
+	{
+		return false;
+	}
+
+	const float Radius = Capsule->GetScaledCapsuleRadius();
+	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const FVector ActorLocation = GetActorLocation();
+	const float Feet = ActorLocation.Z - HalfHeight;
+	const float Yaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+	const FVector Forward = FRotator(0.f, Yaw, 0.f).Vector();
+	const FVector2D Forward2D = FVector2D(Forward.X, Forward.Y).GetSafeNormal();
+
+	const GBMantle::FMantleParams Params = GetMantleParams();
+	const float ProbeDistance = ReadStat(GBStat::MantleProbeDistance, 40.f);
+	const float FacingMinDot = ReadStat(GBStat::MantleFacingMinDot, 0.5f);
+	const float TopInset = ReadStat(GBStat::MantleTopInset, 10.f);
+
+	float JumpRiseCm = 0.f;
+	if (bFromGround)
+	{
+		const float Gravity = FMath::Abs(World->GetGravityZ()) * MoveComp->GravityScale;
+		JumpRiseCm = GBMantle::JumpRise(MoveComp->JumpZVelocity, Gravity);
+	}
+	const float MinHeight = bFromGround ? Params.MinHeight : Params.AirMinHeight;
+	const float MaxHeight = bFromGround ? JumpRiseCm + Params.MaxReach : Params.MaxReach;
+	if (MaxHeight < MinHeight)
+	{
+		return false;
+	}
+
+	// The sweep answers as the capsule would: with its own collision responses, ignoring this pawn.
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBMantleWall), false, this);
+	FCollisionResponseParams ResponseParams(Capsule->GetCollisionResponseToChannels());
+
+	// ---- Wall: the shrunk capsule swept forward. Lifted a little: from the actor location the capsule
+	// bottom touches the floor it stands on, which would block (or start-penetrate) the sweep itself.
+	// The lift only moves the hit up the same wall face; the edge XY used below does not change.
+	constexpr float WallSweepLiftCm = 5.f;
+	const FVector WallBase = ActorLocation + FVector(0.f, 0.f, WallSweepLiftCm);
+	const float ShrunkRadius = FMath::Max(1.f, Radius - 2.f);
+	const FCollisionShape WallShape = FCollisionShape::MakeCapsule(ShrunkRadius, HalfHeight);
+	FHitResult WallHit;
+	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + Forward * ProbeDistance,
+		FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams)
+		|| !WallHit.bBlockingHit || WallHit.bStartPenetrating)
+	{
+		return false;
+	}
+	AActor* WallActor = WallHit.GetActor();
+	if (!WallActor || WallActor->IsA<APawn>())
+	{
+		return false;
+	}
+	if (FMath::Abs(WallHit.ImpactNormal.Z) >= 0.3f)
+	{
+		return false;
+	}
+	FVector2D WallNormal2D(WallHit.ImpactNormal.X, WallHit.ImpactNormal.Y);
+	if (!WallNormal2D.Normalize())
+	{
+		return false;
+	}
+	if (FVector2D::DotProduct(Forward2D, -WallNormal2D) < FacingMinDot)
+	{
+		return false;
+	}
+
+	// ---- Top: a small sphere swept down behind the wall face. ----
+	const FVector2D Edge2D(WallHit.ImpactPoint.X, WallHit.ImpactPoint.Y);
+	const FVector2D TopXY = Edge2D - WallNormal2D * (TopInset + 8.f);
+	const FVector TopStart(TopXY.X, TopXY.Y, Feet + MaxHeight + 20.f);
+	const FVector TopEnd(TopXY.X, TopXY.Y, Feet + MinHeight - 5.f);
+	FHitResult TopHit;
+	if (!World->SweepSingleByChannel(TopHit, TopStart, TopEnd, FQuat::Identity, ECC_Pawn,
+		FCollisionShape::MakeSphere(8.f), QueryParams, ResponseParams)
+		|| !TopHit.bBlockingHit || TopHit.bStartPenetrating)
+	{
+		return false;
+	}
+	AActor* TopActor = TopHit.GetActor();
+	if (!TopActor || TopActor->IsA<APawn>())
+	{
+		return false;
+	}
+	if (TopHit.ImpactNormal.Z < MoveComp->GetWalkableFloorZ())
+	{
+		return false;
+	}
+	const float LedgeTopZ = TopHit.ImpactPoint.Z;
+	const float LedgeHeight = LedgeTopZ - Feet;
+	const bool bHeightOk = bFromGround
+		? GBMantle::CanMantleFromGround(LedgeHeight, JumpRiseCm, Params)
+		: GBMantle::CanMantleFromAir(LedgeHeight, Params);
+	if (!bHeightOk)
+	{
+		return false;
+	}
+
+	// ---- Room: the capsule must fit at the end, and the whole path (straight up, then forward) must be clear,
+	// so a thin ceiling or beam between the checked poses is never passed through. The path sweeps use the shrunk
+	// capsule, lifted like the wall sweep, so the wall it slides along and the floor it leaves do not count.
+	const FVector2D EndXY = Edge2D - WallNormal2D * (Radius + TopInset);
+	const FVector End(EndXY.X, EndXY.Y, LedgeTopZ + HalfHeight + 2.f);
+	const FVector Mid(ActorLocation.X, ActorLocation.Y, End.Z);
+	const FCollisionShape FitShape = FCollisionShape::MakeCapsule(Radius, HalfHeight);
+	if (World->OverlapBlockingTestByChannel(End, FQuat::Identity, ECC_Pawn, FitShape, QueryParams, ResponseParams))
+	{
+		return false;
+	}
+	FHitResult PathHit;
+	if (Mid.Z > WallBase.Z && World->SweepSingleByChannel(PathHit, WallBase, Mid, FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams))
+	{
+		return false;
+	}
+	if (World->SweepSingleByChannel(PathHit, Mid, End, FQuat::Identity, ECC_Pawn, WallShape, QueryParams, ResponseParams))
+	{
+		return false;
+	}
+	// ---- Support: walkable floor under the end (a thin beam can give a top hit with nothing under the capsule centre).
+	FHitResult FloorHit;
+	const FVector FloorEnd = End - FVector(0.f, 0.f, HalfHeight + 2.f + MoveComp->MaxStepHeight);
+	if (!World->LineTraceSingleByChannel(FloorHit, End, FloorEnd, ECC_Pawn, QueryParams, ResponseParams)
+		|| FloorHit.bStartPenetrating || FloorHit.ImpactNormal.Z < MoveComp->GetWalkableFloorZ()
+		|| (FloorHit.GetActor() && FloorHit.GetActor()->IsA<APawn>()))
+	{
+		return false;
+	}
+
+	Out.Start = ActorLocation;
+	Out.End = End;
+	Out.LedgePoint = FVector(Edge2D.X, Edge2D.Y, LedgeTopZ);
+	Out.RiseCm = End.Z - ActorLocation.Z;
+	Out.WallNormal2D = WallNormal2D;
+	return true;
+}
+
+bool AGBPlayerCharacter::TryStartMantle(bool bFromGround)
+{
+	if (!CanMantleNow())
+	{
+		return false;
+	}
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		if (bFromGround)
+		{
+			if (!MoveComp->IsMovingOnGround())
+			{
+				return false;
+			}
+		}
+		else if (MoveComp->MovementMode != MOVE_Falling)
+		{
+			return false;
+		}
+	}
+	FGBMantleLedge Ledge;
+	if (!FindMantleLedge(Ledge, bFromGround))
+	{
+		return false;
+	}
+	StartMantle(Ledge);
+	return true;
+}
+
+void AGBPlayerCharacter::StartMantle(const FGBMantleLedge& Ledge)
+{
+	ReleaseHeldInputs();
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		// Flying = no gravity and no ground friction while the path drives the actor; the jump count is kept.
+		MantleSavedJumpCount = JumpCurrentCount;
+		MoveComp->SetMovementMode(MOVE_Flying);
+		JumpCurrentCount = MantleSavedJumpCount;
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	const GBMantle::FMantleParams Params = GetMantleParams();
+	MantleStart = Ledge.Start;
+	MantleEnd = Ledge.End;
+	MantleLedgePoint = Ledge.LedgePoint;
+	MantleRiseShare = Params.RiseShare;
+	MantleDuration = GBMantle::Duration(Ledge.RiseCm, Params);
+	MantleElapsed = 0.f;
+	bMantling = true;
+	ApplyCameraPose();
+}
+
+void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
+{
+	if (!bMantling)
+	{
+		return;
+	}
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	MantleElapsed += DeltaSeconds;
+	const float Alpha = GetMantleAlpha();
+	SetActorLocation(GBMantle::EvaluatePath(MantleStart, MantleEnd, Alpha, MantleRiseShare),
+		false, nullptr, ETeleportType::TeleportPhysics);
+	if (MoveComp)
+	{
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	if (Alpha >= 1.f)
+	{
+		SetActorLocation(MantleEnd, false, nullptr, ETeleportType::TeleportPhysics);
+		if (MoveComp)
+		{
+			MoveComp->SetMovementMode(MOVE_Walking);
+			MoveComp->Velocity = FVector::ZeroVector;
+		}
+		bMantling = false;
+		MantleElapsed = 0.f;
+	}
+}
+
+void AGBPlayerCharacter::CancelMantle()
+{
+	if (!bMantling)
+	{
+		return;
+	}
+	bMantling = false;
+	MantleElapsed = 0.f;
+	MantleDuration = 0.f;
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		if (!bMovementFrozen)
+		{
+			MoveComp->SetMovementMode(MOVE_Falling);
+		}
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	// A cancelled climb never refills jumps (releasing jump while Flying resets the count).
+	JumpCurrentCount = MantleSavedJumpCount;
+	ApplyCameraPose();
+}
+
+float AGBPlayerCharacter::GetMantleAlpha() const
+{
+	if (!bMantling || MantleDuration <= 0.f)
+	{
+		return 0.f;
+	}
+	return FMath::Clamp(MantleElapsed / MantleDuration, 0.f, 1.f);
+}
+
+GBMantle::FMantlePose AGBPlayerCharacter::GetMantlePose() const
+{
+	if (!bMantling)
+	{
+		return GBMantle::FMantlePose();
+	}
+	return GBMantle::EvaluatePose(GetMantleAlpha(), MantleRiseShare);
+}
+
+void AGBPlayerCharacter::ApplyCameraPose()
+{
+	if (!Camera)
+	{
+		return;
+	}
+	// One place sets the view: the shake offset plus the climb dip, so neither leaves a residue behind.
+	// The camera follows the control rotation (bUsePawnControlRotation overwrites its rotation every view), so
+	// the view-only offsets go through the camera's additive offset, applied after it. The aim never moves.
+	const GBMantle::FMantlePose Pose = GetMantlePose();
+	const FRotator MantleRot(-Pose.CameraDip01 * MantlePitchDipDeg, 0.f, Pose.CameraDip01 * MantleRollDeg);
+	const FRotator ViewRot = ViewShakeRot + MantleRot;
+	const FVector ViewOffset(0.f, 0.f, -Pose.Grip01 * MantlePullDownCm);
+	Camera->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+	Camera->ClearAdditiveOffset();
+	if (!ViewRot.IsNearlyZero(1.e-4f) || !ViewOffset.IsNearlyZero(1.e-4f))
+	{
+		Camera->AddAdditiveOffset(FTransform(ViewRot, ViewOffset), 0.f);
+	}
+	if (HeldItemAnchor)
+	{
+		HeldItemAnchor->SetRelativeLocation(HeldItemOffset + MantleItemLowerOffset * Pose.ItemLower01);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Aiming
 
 FVector AGBPlayerCharacter::GetAimOrigin() const
@@ -445,7 +788,8 @@ void AGBPlayerCharacter::StartViewShake(float Duration, float AmplitudeDeg, floa
 		ViewShakeTimeLeft = 0.f;
 		ViewShakeDuration = 0.f;
 		ViewShakeAmplitudeDeg = 0.f;
-		Camera->SetRelativeRotation(FRotator::ZeroRotator);
+		ViewShakeRot = FRotator::ZeroRotator;
+		ApplyCameraPose();
 		return;
 	}
 	if (ViewShakeTimeLeft > 0.f)
@@ -459,32 +803,40 @@ void AGBPlayerCharacter::StartViewShake(float Duration, float AmplitudeDeg, floa
 	ViewShakeDuration = Duration;
 	ViewShakeTimeLeft = Duration;
 	ViewShakeFrequency = FMath::Max(0.f, Frequency);
+	ApplyCameraPose();
 }
 
 void AGBPlayerCharacter::TickViewShake(float DeltaSeconds)
 {
-	if (ViewShakeTimeLeft <= 0.f || !Camera)
+	if (!Camera)
 	{
 		return;
 	}
-	ViewShakeTimeLeft -= DeltaSeconds;
-	if (ViewShakeTimeLeft <= 0.f || ViewShakeDuration <= 0.f)
+	if (ViewShakeTimeLeft > 0.f)
 	{
-		ViewShakeTimeLeft = 0.f;
-		ViewShakeDuration = 0.f;
-		ViewShakeAmplitudeDeg = 0.f;
-		if (Camera)
+		ViewShakeTimeLeft -= DeltaSeconds;
+		if (ViewShakeTimeLeft <= 0.f || ViewShakeDuration <= 0.f)
 		{
-			Camera->SetRelativeRotation(FRotator::ZeroRotator);
+			ViewShakeTimeLeft = 0.f;
+			ViewShakeDuration = 0.f;
+			ViewShakeAmplitudeDeg = 0.f;
+			ViewShakeRot = FRotator::ZeroRotator;
 		}
-		return;
+		else
+		{
+			const float Elapsed = ViewShakeDuration - ViewShakeTimeLeft;
+			const float Fade = FMath::Clamp(ViewShakeTimeLeft / ViewShakeDuration, 0.f, 1.f);
+			const float Omega = ViewShakeFrequency * 2.f * UE_PI;
+			const float Pitch = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * Elapsed);
+			const float Yaw = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * 1.13f * Elapsed + 1.3f);
+			ViewShakeRot = FRotator(Pitch, Yaw, 0.f);
+		}
 	}
-	const float Elapsed = ViewShakeDuration - ViewShakeTimeLeft;
-	const float Fade = FMath::Clamp(ViewShakeTimeLeft / ViewShakeDuration, 0.f, 1.f);
-	const float Omega = ViewShakeFrequency * 2.f * UE_PI;
-	const float Pitch = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * Elapsed);
-	const float Yaw = ViewShakeAmplitudeDeg * Fade * FMath::Sin(Omega * 1.13f * Elapsed + 1.3f);
-	Camera->SetRelativeRotation(FRotator(Pitch, Yaw, 0.f));
+	else
+	{
+		ViewShakeRot = FRotator::ZeroRotator;
+	}
+	ApplyCameraPose();
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -594,6 +946,7 @@ void AGBPlayerCharacter::SetControlEnabled(bool bEnabled)
 	bControlEnabled = bEnabled;
 	if (!bEnabled)
 	{
+		CancelMantle();
 		ReleaseHeldInputs();
 		EndDash();
 	}
@@ -605,6 +958,7 @@ void AGBPlayerCharacter::SetControlEnabled(bool bEnabled)
 
 void AGBPlayerCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 {
+	CancelMantle();
 	SetControlEnabled(false);
 	Spellbook->CancelSustained();
 	QTE->CancelQTE();
@@ -708,6 +1062,7 @@ void AGBPlayerCharacter::FellOutOfWorld(const UDamageType& /*DmgType*/)
 
 void AGBPlayerCharacter::FreezeMovement()
 {
+	CancelMantle();
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->StopMovementImmediately();
@@ -756,6 +1111,7 @@ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	{
 		QTE->CancelQTE();
 	}
+	CancelMantle();
 	EndDash();
 
 	SetActorTransform(Snapshot.Transform, false, nullptr, ETeleportType::TeleportPhysics);
@@ -790,10 +1146,8 @@ void AGBPlayerCharacter::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
 	ViewShakeTimeLeft = 0.f;
 	ViewShakeDuration = 0.f;
 	ViewShakeAmplitudeDeg = 0.f;
-	if (Camera)
-	{
-		Camera->SetRelativeRotation(FRotator::ZeroRotator);
-	}
+	ViewShakeRot = FRotator::ZeroRotator;
+	ApplyCameraPose();
 
 	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
 	{
@@ -815,6 +1169,7 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
 	{
 		Spellbook->CancelSustained();
 	}
+	CancelMantle();
 	EndDash();
 
 	SetActorTransform(Snapshot.Transform, false, nullptr, ETeleportType::TeleportPhysics);
@@ -849,10 +1204,8 @@ void AGBPlayerCharacter::RespawnAt(const FGBPlayerSnapshot& Snapshot)
 	ViewShakeTimeLeft = 0.f;
 	ViewShakeDuration = 0.f;
 	ViewShakeAmplitudeDeg = 0.f;
-	if (Camera)
-	{
-		Camera->SetRelativeRotation(FRotator::ZeroRotator);
-	}
+	ViewShakeRot = FRotator::ZeroRotator;
+	ApplyCameraPose();
 
 	if (AGBPlayerController* PC = Cast<AGBPlayerController>(Controller))
 	{
@@ -937,6 +1290,11 @@ void AGBPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void AGBPlayerCharacter::InputMove(const FInputActionValue& Value)
 {
+	if (bMantling)
+	{
+		LastMoveInput = FVector2D::ZeroVector;
+		return;
+	}
 	if (IsQTEActive())
 	{
 		return; // W A S D belong to the QTE; LastMoveInput stays as it was
@@ -1039,13 +1397,25 @@ void AGBPlayerCharacter::InputFace(EGBQTEKey Key)
 	}
 }
 
-void AGBPlayerCharacter::InputJump()
+void AGBPlayerCharacter::PressJump()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || bDashing)
+	if (!CanUseGameplayInput() || IsQTEActive() || bDashing || bMantling)
 	{
 		return;
 	}
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		if (MoveComp->IsMovingOnGround() && TryStartMantle(/*bFromGround*/ true))
+		{
+			return;
+		}
+	}
 	Jump();
+}
+
+void AGBPlayerCharacter::InputJump()
+{
+	PressJump();
 }
 
 void AGBPlayerCharacter::InputJumpReleased()
@@ -1055,7 +1425,7 @@ void AGBPlayerCharacter::InputJumpReleased()
 
 void AGBPlayerCharacter::InputDash()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || bDashing || GetDashCooldownRemaining() > 0.f)
+	if (!CanUseGameplayInput() || IsQTEActive() || bDashing || bMantling || GetDashCooldownRemaining() > 0.f)
 	{
 		return;
 	}
@@ -1096,7 +1466,7 @@ void AGBPlayerCharacter::InputDash()
 
 void AGBPlayerCharacter::InputPrimaryPressed()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || bMantling)
 	{
 		return;
 	}
@@ -1116,6 +1486,11 @@ void AGBPlayerCharacter::InputPrimaryReleased()
 
 void AGBPlayerCharacter::InputSecondaryPressed()
 {
+	if (bMantling)
+	{
+		bSecondaryHeld = false;
+		return;
+	}
 	bSecondaryHeld = true;
 	if (!CanUseGameplayInput() || IsQTEActive())
 	{
@@ -1142,7 +1517,7 @@ void AGBPlayerCharacter::InputSecondaryReleased()
 
 void AGBPlayerCharacter::InputReload()
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}
@@ -1154,7 +1529,7 @@ void AGBPlayerCharacter::InputReload()
 
 void AGBPlayerCharacter::InputSwitchWeapon(const FInputActionValue& Value)
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}
@@ -1168,7 +1543,7 @@ void AGBPlayerCharacter::InputSwitchWeapon(const FInputActionValue& Value)
 
 void AGBPlayerCharacter::InputSpellSlot(int32 Slot)
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || !Equipment->IsHoldingStaff())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || bMantling || !Equipment->IsHoldingStaff())
 	{
 		return;
 	}
@@ -1177,7 +1552,7 @@ void AGBPlayerCharacter::InputSpellSlot(int32 Slot)
 
 void AGBPlayerCharacter::InputEnchant()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || !Equipment->IsHoldingGun())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || bMantling || !Equipment->IsHoldingGun())
 	{
 		return;
 	}
@@ -1237,7 +1612,7 @@ bool AGBPlayerCharacter::IsBlocking() const
 
 void AGBPlayerCharacter::InputBlockPressed()
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}
@@ -1262,7 +1637,7 @@ void AGBPlayerCharacter::InputBlockReleased()
 
 void AGBPlayerCharacter::InputInteract()
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}
@@ -1275,7 +1650,7 @@ void AGBPlayerCharacter::InputInteract()
 
 void AGBPlayerCharacter::InputQuickUse()
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}
@@ -1284,7 +1659,7 @@ void AGBPlayerCharacter::InputQuickUse()
 
 void AGBPlayerCharacter::InputCycleQuickUse(const FInputActionValue& Value)
 {
-	if (!CanUseGameplayInput() || IsQTEActive())
+	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;
 	}

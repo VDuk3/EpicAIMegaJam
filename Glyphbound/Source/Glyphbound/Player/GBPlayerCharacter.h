@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Core/GBTypes.h"
+#include "Player/GBMantle.h"
 #include "QTE/GBQTELogic.h"
 #include "GBPlayerCharacter.generated.h"
 
@@ -30,6 +31,8 @@ struct FGBDamageInfo;
  * so air passives, armor and slows work by adding modifiers.
  *
  * Movement (GDD 9): walk, jump, double jump (MaxJumps), dash (Ctrl / Circle) in the movement direction, no sprint.
+ * Ledge climb (mantle): jumping against a low wall climbs it instead (ground press or air grab); first-person
+ * animation only (camera dip + pixel hands on the ledge + lowered held item, AGBHUD::DrawHands).
  * During the spell QTE: the camera is locked, W/A/S/D and the mouse go to the QTE, and the player keeps moving
  * in the direction it was moving (the last movement input is held).
  *
@@ -89,6 +92,35 @@ public:
 	float GetDashCooldownRemaining() const;
 	/** Multiplies walk speed while set (aiming down sights). 1 = normal. */
 	void SetMoveSpeedScale(float Scale);
+
+	// ---- Ledge climb (mantle) ----
+	/** A climbable ledge in front of the player: start/end of the climb, its edge and the wall it was found on. */
+	struct FGBMantleLedge
+	{
+		FVector Start = FVector::ZeroVector;
+		FVector End = FVector::ZeroVector;
+		/** The ledge edge: the wall face XY at the top surface height (what the HUD's climbing hands grip). */
+		FVector LedgePoint = FVector::ZeroVector;
+		float RiseCm = 0.f;
+		FVector2D WallNormal2D = FVector2D::ZeroVector;
+	};
+	/**
+	 * Looks for a climbable ledge in front of the player (wall + top + room for the capsule at the end).
+	 * bFromGround uses the ground limits (MinHeight .. JumpRise + MaxReach), otherwise the air limits.
+	 */
+	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround) const;
+	/** True while the climb animation runs (movement input, jump, dash and attacks are blocked). */
+	bool IsMantling() const { return bMantling; }
+	/** 0..1 along the climb; 0 when not mantling. */
+	float GetMantleAlpha() const;
+	/** The ledge edge being gripped (valid while mantling). */
+	FVector GetMantleLedgePoint() const { return MantleLedgePoint; }
+	/** View pose weights (zero when not mantling). */
+	GBMantle::FMantlePose GetMantlePose() const;
+	/** To Falling, everything visual back to rest. Called by anything that takes control away from the player. */
+	void CancelMantle();
+	/** Jump press: climbs a ledge in front instead when there is one (the smoke run calls this directly). */
+	void PressJump();
 
 	// ---- Interaction ----
 	/** The interactable the player is looking at and can use right now, or null. The HUD shows its prompt. */
@@ -168,6 +200,16 @@ protected:
 	void EndDash();
 	void TickRecoil(float DeltaSeconds);
 	void TickViewShake(float DeltaSeconds);
+	/** Sets the camera rotation (shake + mantle) and location, and the held item anchor, from the current pose. */
+	void ApplyCameraPose();
+	/** Mantle tunables from Player.json (read with modifiers and missing-stat warnings like every movement stat). */
+	GBMantle::FMantleParams GetMantleParams() const;
+	/** True when a mantle may start or continue: alive, enabled, free (no QTE / dash / freeze / mantle). */
+	bool CanMantleNow() const;
+	/** Starts the climb when a ledge is found (ground or air limits); false when there is none. */
+	bool TryStartMantle(bool bFromGround);
+	void StartMantle(const FGBMantleLedge& Ledge);
+	void TickMantle(float DeltaSeconds);
 
 	// Input handlers (bound to the actions of UGBInputSet)
 	void InputMove(const FInputActionValue& Value);
@@ -242,4 +284,16 @@ protected:
 	float ViewShakeDuration = 0.f;
 	float ViewShakeAmplitudeDeg = 0.f;
 	float ViewShakeFrequency = 0.f;
+	/** Current view shake rotation offset (degrees); ApplyCameraPose combines it with the mantle dip. */
+	FRotator ViewShakeRot = FRotator::ZeroRotator;
+	// ---- Ledge climb (mantle) ----
+	bool bMantling = false;
+	float MantleElapsed = 0.f;
+	float MantleDuration = 0.f;
+	float MantleRiseShare = 0.6f;
+	FVector MantleStart = FVector::ZeroVector;
+	FVector MantleEnd = FVector::ZeroVector;
+	FVector MantleLedgePoint = FVector::ZeroVector;
+	/** Jump count when the climb started: restored if the climb is cancelled (releasing jump while Flying clears it). */
+	int32 MantleSavedJumpCount = 0;
 };

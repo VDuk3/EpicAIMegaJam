@@ -42,6 +42,15 @@ namespace GBStat
 	inline const FName StickPitchRate(TEXT("StickPitchRate"));
 	inline const FName PitchLimit(TEXT("PitchLimit"));                    // max look pitch, degrees
 	inline const FName DashExitSpeedMult(TEXT("DashExitSpeedMult"));       // speed kept after a dash, as a fraction of walk speed
+	inline const FName MantleMaxReach(TEXT("MantleMaxReach"));           // cm: the highest a ledge top above the feet the hands can reach
+	inline const FName MantleMinHeight(TEXT("MantleMinHeight"));         // cm: from the ground, a ledge lower than this is jumped / stepped, not climbed
+	inline const FName MantleAirMinHeight(TEXT("MantleAirMinHeight"));   // cm: in the air, a ledge top less than this above the feet is landed on, not climbed
+	inline const FName MantleProbeDistance(TEXT("MantleProbeDistance")); // cm: how far in front of the capsule a wall is looked for
+	inline const FName MantleFacingMinDot(TEXT("MantleFacingMinDot"));   // the view's yaw forward must face the wall this much
+	inline const FName MantleTopInset(TEXT("MantleTopInset"));           // cm: the capsule ends this far past the ledge edge
+	inline const FName MantleBaseDuration(TEXT("MantleBaseDuration"));   // s
+	inline const FName MantleDurationPerMeter(TEXT("MantleDurationPerMeter")); // s per metre of rise
+	inline const FName MantleRiseShare(TEXT("MantleRiseShare"));         // share of the duration spent rising straight up
 	inline const FName PrecisionRecovery(TEXT("PrecisionRecovery")); // owned rank of the weapon perk (skill modifier only, base 0)
 
 	// ---- Enemy stats (Enemies.json "Stats") ----

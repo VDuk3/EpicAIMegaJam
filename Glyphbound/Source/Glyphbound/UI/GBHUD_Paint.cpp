@@ -291,6 +291,15 @@ void AGBHUD::DrawSprite(UTexture2D* Texture, float X, float Y, float PixelScale,
 	DrawTexture(Texture, FMath::RoundToFloat(X), FMath::RoundToFloat(Y), W, H, 0.f, 0.f, 1.f, 1.f, Tint, BLEND_Translucent);
 }
 
+void AGBHUD::DrawSpriteTile(UTexture2D* Texture, float X, float Y, float W, float H, float U, float V, float UL, float VL, const FLinearColor& Tint)
+{
+	if (!Texture || W <= 0.f || H <= 0.f)
+	{
+		return;
+	}
+	DrawTexture(Texture, FMath::RoundToFloat(X), FMath::RoundToFloat(Y), W, H, U, V, UL, VL, Tint, BLEND_Translucent);
+}
+
 bool AGBHUD::DrawSpriteFit(FName SpriteId, float X, float Y, float W, float H, const FLinearColor& Tint, bool bSilhouette)
 {
 	UGBPixelSpriteLibrary* Sprites = UGBPixelSpriteLibrary::Get(this);
