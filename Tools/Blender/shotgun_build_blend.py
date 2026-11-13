@@ -193,14 +193,18 @@ SMALL_PLATE_BOX = ((0.020, 0.070, 0.240), (0.050, 0.140, 0.295))
 
 # The side plates. The GLB has a slab on each side of the receiver with a painted data screen (owner: "remove that
 # panel that simulates a screen; put some design, something that is not electronic"). The slab stays; its face is
-# redrawn by position: an engraved border, a bolt in each corner, an engraved sigil inlaid with the glow (an abstract
+# redrawn by position, in the frame of the face's own four edges (the first version took one tilt for the whole face
+# from its texels' spread, and its border sat crooked inside the slab: the face is not a rectangle, its front edge
+# leans more than the others; owner: "straighten it, aligned with the rectangle around it"). Each edge is a line
+# fitted to that side of the texels' outline, and the border keeps a constant distance from all four: an engraved
+# border, a bolt in each corner, an engraved sigil inlaid with the glow (an abstract
 # mark: a diamond, a smaller one inside, a bar on each side), and three slanted slots. PLATE_BOX holds the left face;
 # the right one is its mirror. Lengths in metres on the plate, u along it towards the rear, v up.
 PLATE_BOX = ((0.036, -0.135, 0.145), (0.050, 0.000, 0.232))
 PLATE_BORDER, PLATE_LINE = 0.0042, 0.0010        # the border's distance from the plate's edge; engraved line width
 PLATE_BOLT = (0.0085, 0.0024)                    # bolts: distance from the edges, radius
 PLATE_SIGIL = (-0.016, 0.0, 0.0150, 0.0105, 0.0014)   # centre u, v; half height, half width of the diamond; line width
-PLATE_SLOTS = (0.021, 0.0105, 0.0125, 0.0022, 3)      # first slot's u; pitch; half length; width; how many
+PLATE_SLOTS = (0.021, 0.0105, 0.0125, 0.0022, 3)      # first slot's u; pitch; half length; width; how many (parallel to the rear edge)
 PLATE_INLAY = 0.80                               # how brightly the sigil's inlay glows (emissive mask)
 
 # Flat tones of the modelled parts (sRGB, roughness, metallic), each on its own block of the atlas.
@@ -715,37 +719,95 @@ def segment(u, v, a, b):
     return np.sqrt((u - au - t * (bu - au)) ** 2 + (v - av - t * (bv - av)) ** 2)
 
 
-def plate_frame(plate):
-    """The plate's own axes from its texels: (u, v) of each texel in metres from its centre, and its half sizes."""
+def convex_hull(pts):
+    """The outline of a set of 2D points, counter-clockwise (Andrew's monotone chain)."""
+    p_ = pts[np.lexsort((pts[:, 1], pts[:, 0]))]
+    p_ = [(float(a), float(b)) for a, b in p_]
+
+    def turn(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower, upper = [], []
+    for q in p_:
+        while len(lower) >= 2 and turn(lower[-2], lower[-1], q) <= 0:
+            lower.pop()
+        lower.append(q)
+    for q in reversed(p_):
+        while len(upper) >= 2 and turn(upper[-2], upper[-1], q) <= 0:
+            upper.pop()
+        upper.append(q)
+    return np.array(lower[:-1] + upper[:-1], np.float64)
+
+
+def plate_edges(plate):
+    """The face's texels in a rough frame of their own (u along the face, v up), and its four edges: for each of
+    bottom, rear, top and front, a point on the edge, its direction and its normal towards the inside."""
     yz = np.stack([pos[..., 1][plate], pos[..., 2][plate]], axis=1).astype(np.float64)
     centre = yz.mean(axis=0)
     _, vecs = np.linalg.eigh(np.cov((yz - centre).T))
-    ax_u = vecs[:, 1] * (1.0 if vecs[0, 1] > 0 else -1.0)       # the long axis, towards the rear
-    ax_v = np.array([-ax_u[1], ax_u[0]])                        # across it, upwards
-    pu_, pv_ = (yz - centre) @ ax_u, (yz - centre) @ ax_v
-    u0, u1 = np.percentile(pu_, (1.5, 98.5))
-    v0, v1 = np.percentile(pv_, (1.5, 98.5))
-    return pu_ - (u0 + u1) / 2, pv_ - (v0 + v1) / 2, (u1 - u0) / 2, (v1 - v0) / 2, math.degrees(math.atan2(ax_u[1], ax_u[0]))
+    ax_u = vecs[:, 1] * (1.0 if vecs[0, 1] > 0 else -1.0)
+    ax_v = np.array([-ax_u[1], ax_u[0]])
+    P = np.stack([(yz - centre) @ ax_u, (yz - centre) @ ax_v], axis=1)
+    hull = convex_hull(P)
+    nxt = np.roll(hull, -1, axis=0)
+    d = nxt - hull
+    length = np.hypot(d[:, 0], d[:, 1])
+    n_out = np.stack([d[:, 1], -d[:, 0]], axis=1) / np.maximum(length, 1e-12)[:, None]
+    edges = {}
+    for name, want in (("bottom", (0.0, -1.0)), ("rear", (1.0, 0.0)), ("top", (0.0, 1.0)), ("front", (-1.0, 0.0))):
+        pick = (n_out @ np.array(want) > 0.75) & (length > 1e-5)      # the corners' chamfers face neither way enough
+        q = np.concatenate([hull[pick], nxt[pick]])
+        w = np.concatenate([length[pick], length[pick]])
+        c = (q * w[:, None]).sum(axis=0) / w.sum()
+        _, ev = np.linalg.eigh(((q - c) * w[:, None]).T @ (q - c))
+        direction = ev[:, 1]
+        normal = np.array([-direction[1], direction[0]])
+        if normal @ (-c) < 0:                                         # the texels' centre is the origin: inside
+            normal = -normal
+        world = ax_u * direction[0] + ax_v * direction[1]
+        angle = math.degrees(math.atan2(world[1], world[0])) % 180.0
+        edges[name] = (c, direction, normal, angle if angle < 90 else angle - 180.0)
+    return P, edges
+
+
+def corner_inset(e1, e2, inset):
+    """The point this far inside both edges."""
+    a_ = np.array([e1[2], e2[2]])
+    return np.linalg.solve(a_, np.array([e1[0] @ e1[2] + inset, e2[0] @ e2[2] + inset]))
 
 
 def draw_plate(plate, sigil, slots, bolts, name):
-    """Redraws a plate's face: engraved border, bolts, the sigil (centre u, v, half height, half width, line; with
-    or without its side bars) inlaid with the glow, slots."""
-    U, V, hu, hv, tilt = plate_frame(plate)
-    print("PLATE %s: %d texels, %.1f x %.1f mm, tilted %.1f deg" % (name, plate.sum(), hu * 2000, hv * 2000, tilt))
-    engraved = band(np.maximum(np.abs(U) - (hu - PLATE_BORDER), np.abs(V) - (hv - PLATE_BORDER)), PLATE_LINE)
+    """Redraws a plate's face: an engraved border at a constant distance from the face's four edges, bolts in its
+    corners, the sigil (centre u, v, half height, half width, line; with or without its side bars) inlaid with the
+    glow, slots. The sigil and the slots stand on the bottom edge's direction."""
+    P, edges = plate_edges(plate)
+    order = ("bottom", "rear", "top", "front")
+    corners = [corner_inset(edges[a_], edges[b_], 0.0) for a_, b_ in zip(order, order[1:] + order[:1])]
+    origin = np.mean(corners, axis=0)
+    dir_u = edges["bottom"][1] * (1.0 if edges["bottom"][1][0] > 0 else -1.0)
+    dir_v = np.array([-dir_u[1], dir_u[0]])
+    U, V = (P - origin) @ dir_u, (P - origin) @ dir_v
+    rear_dir = edges["rear"][1] * (1.0 if edges["rear"][1] @ dir_v > 0 else -1.0)
+    rear_uv = np.array([rear_dir @ dir_u, rear_dir @ dir_v])
+    print("PLATE %s: %d texels; edges' angles to the gun's axis: bottom %.1f, top %.1f, rear %.1f, front %.1f deg; "
+          "bottom %.1f mm long, rear %.1f mm" %
+          (name, plate.sum(), edges["bottom"][3], edges["top"][3], edges["rear"][3], edges["front"][3],
+           np.linalg.norm(corners[0] - corners[3]) * 1000, np.linalg.norm(corners[1] - corners[0]) * 1000))
+    inside_ = np.minimum.reduce([(P - edges[k][0]) @ edges[k][2] for k in order])     # distance to the nearest edge
+    engraved = band(inside_ - PLATE_BORDER, PLATE_LINE)
     if bolts:
-        for su in (-1, 1):
-            for sv in (-1, 1):
-                bu, bv = su * (hu - PLATE_BOLT[0]), sv * (hv - PLATE_BOLT[0])
-                r_ = np.sqrt((U - bu) ** 2 + (V - bv) ** 2)
-                engraved = np.maximum(engraved, band(r_ - PLATE_BOLT[1], PLATE_LINE))
-                engraved = np.maximum(engraved, band(segment(U, V, (bu - 0.0014, bv - 0.0008), (bu + 0.0014, bv + 0.0008)), 0.0007))
+        for a_, b_ in zip(order, order[1:] + order[:1]):
+            at = corner_inset(edges[a_], edges[b_], PLATE_BOLT[0]) - origin
+            bu, bv = at @ dir_u, at @ dir_v
+            r_ = np.sqrt((U - bu) ** 2 + (V - bv) ** 2)
+            engraved = np.maximum(engraved, band(r_ - PLATE_BOLT[1], PLATE_LINE))
+            engraved = np.maximum(engraved, band(segment(U, V, (bu - 0.0015, bv), (bu + 0.0015, bv)), 0.0007))
     if slots:
         first, pitch, half_len, width, count = PLATE_SLOTS
         for k in range(count):
             cu = first + k * pitch
-            engraved = np.maximum(engraved, band(segment(U, V, (cu - 0.0030, -half_len), (cu + 0.0030, half_len)), width))
+            engraved = np.maximum(engraved, band(segment(U, V, (cu - rear_uv[0] * half_len, -rear_uv[1] * half_len),
+                                                         (cu + rear_uv[0] * half_len, rear_uv[1] * half_len)), width))
     su_, sv_, sh, sw, line, bars = sigil
     scale = sh * sw / math.hypot(sh, sw)                        # turns the diamond's |u|/w + |v|/h - 1 into a distance
     d_outer = (np.abs(U - su_) / sw + np.abs(V - sv_) / sh - 1.0) * scale

@@ -17,11 +17,11 @@ Built by `Tools/Blender/shotgun_build_blend.py` (80 to 90 s, most of it the two 
 
 `blender -b --factory-startup --python Tools/Blender/shotgun_build_blend.py -- model.glb Shotgun.blend`
 
-SHA-256 `A963F7B10E84EB7EEEB5D7DD03123CC63B704ABA95B9A5CE1DC03DE96BD32E86` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
+SHA-256 `09F14F6BC79F7FC64DE110986D6126FD98230514D2DBB13CD28DC484C56DBB9F` (Blender 5.3.0). Frame: muzzle -Y, up +Z, X = 0 on the gun's centre line, metres.
 
 - **Rebuilt on the same shape:** vertices welded, Tripo's normals dropped, hard edges above 30°, face-area weighted normals; one navy taken from the gun's own texels, with the frost, the baked light and the cables' imprint gone; small drawn details re-cut; the carbon panels found by their texture and their weave redrawn by position; a glow mask cut from the cyan; AO and a normal map baked in Cycles.
 - **Cables:** split from the body, one colour per piece (black, copper orange, dark red, blue), smooth and subdivided once, 16,081 triangles.
-- **Side plates:** the slab on each side of the receiver carried a painted data screen. Its face (102 × 65 mm, tilted 9° to 11°) is redrawn by position: an engraved border, a bolt in each corner, an abstract sigil inlaid with the glow (a diamond, a smaller one inside, a bar on each side) and three slanted slots.
+- **Side plates:** the slab on each side of the receiver carried a painted data screen. Its face (100 × 64 mm; its bottom and top edges rise 12° to 14°, its rear edge is square to them and its front edge leans 5° more) is redrawn by position, in the frame of those four edges, each fitted as a line to the face's outline: an engraved border at a constant distance from all four, a bolt in each corner, an abstract sigil inlaid with the glow (a diamond, a smaller one inside, a bar on each side) and three slanted slots.
 - **Textures** (4096, packed in the file): `T_Shotgun_BaseColor`, `T_Shotgun_ORM`, `T_Shotgun_Normal` (OpenGL), `T_Shotgun_EmissiveMask`.
 - **Modelled by the script** (measured with `Tools/Blender/shotgun_measure.py`):
   - the cell: the GLB's own lumpy cell is deleted (949 faces) and a canister sits in its bay on the same axis: a metal collar at each end sunk into the bay's leaning walls, a glass body 25.8 mm in radius that glows evenly, two metal bands, four guard rods, a saddle up to the barrel and a foot under each band;
@@ -34,7 +34,7 @@ SHA-256 `A963F7B10E84EB7EEEB5D7DD03123CC63B704ABA95B9A5CE1DC03DE96BD32E86` (Blen
 - **Objects:** `Shotgun_Body` (31,536 triangles, with the cables, the cell, the energy bar and the port joined in), `Shotgun_Trigger` (111), `Shotgun_Pump` (5,688), `Shotgun_AmmoDisplay` (2), `Shotgun_WeakPointLight` (108), `Shotgun_Magazine` (the shell, 316; slots hull, base, glow).
 - **Custom properties, for the export:** `pivot` on every object (the body's is the top of the grip; the trigger's its hinge; the pump's and the shell's their rest places), `slide` on the pump, `out` on the shell (its way out of the port), and on the scene `strip_y`, `strip_half_w`, `strip_zmin`.
 
-**Review renders:** `Tools/Blender/shotgun_render_review.py` draws the ammo hologram the way the game does and can pose the pump and the shell. The ones kept are in `Devlog/media/2026-11-12/17a…17z_shotgun_*.png` and `18a…18j_shotgun_review_*.png`.
+**Review renders:** `Tools/Blender/shotgun_render_review.py` draws the ammo hologram the way the game does and can pose the pump and the shell. The ones kept are in `Devlog/media/2026-11-12/17a…17z_shotgun_*.png` and `18a…18m_shotgun_*.png`.
 
 **Carbon panels:** the weave is found by its texture on the left side only, inside two zones (handguard, stock); each panel's outline is closed, opened, traced and simplified to a polygon with straight edges (4, 5, 5 and 21 corners), and the right side takes the same polygons.
 
