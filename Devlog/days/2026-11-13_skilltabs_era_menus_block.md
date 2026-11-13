@@ -41,7 +41,8 @@ Prompt: `Prompts/ui_tabs_era_review_sol.md`. **Two findings, both real, both fix
 - **UI smoke:** it gained one screenshot per skin after a tab press (`ui_09b`, `ui_21b`), so both trees are captured in both looks. The RPG inventory Skills page now shows the spell tree, the case Sol named. The main block's `12_weapon_tree` sets a weapon node, because the screen would otherwise open on spells.
 - **Iteration:** each round was an Editor-target build plus `Smoke-Jam.ps1 -Only ui -Offscreen` (about 45 s at 720p). That was one round at 1080p and four at 720p.
 - **Final checks, once each:** full smoke `done=True crashed=False LogGB errors=0` (60 screenshots, 140 s); tests 44 run, 0 failed; game target build succeeded.
-- **Not packaged in this block.**
+- **Package** (owner: "Empaqueta", "Package it"), made from `35f4b45` with a clean tree while holding the machine lock: `TeamTBD_Glyphbound.zip`, **299.7 MB**, BuildCookRun 139 s.
+- **Full smoke on the packaged game:** `done=True crashed=False LogGB errors=0`, no LogGB warnings, 60 screenshots, 131 s. The shotgun has its 6 meshes, and the Entity loads its real art (body, eye and skinned tentacles). The packaged `12_weapon_tree` screenshot shows the new tabs with the weapons page.
 
 ## Screenshots (`media/2026-11-13/`, the game's smoke run, editor build)
 - `skilltabs_owner_report_before.webp`: the owner's screenshot from the package, with both trees side by side.
