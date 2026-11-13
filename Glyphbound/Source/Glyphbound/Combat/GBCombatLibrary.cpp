@@ -84,6 +84,15 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 	return Dealt;
 }
 
+FVector UGBCombatLibrary::GetDamageTargetLocation(const AActor* Target, const FVector& FromPoint)
+{
+	if (const AGBEnemyCharacter* Enemy = Cast<AGBEnemyCharacter>(Target))
+	{
+		return Enemy->GetDamageTargetLocation(FromPoint);
+	}
+	return Target ? Target->GetActorLocation() : FromPoint;
+}
+
 int32 UGBCombatLibrary::DealRadialDamage(const UObject* WorldContextObject, const FVector& Origin, float Radius, const FGBDamageInfo& Info,
 	TConstArrayView<AActor*> IgnoreActors, bool bLinearFalloff)
 {
@@ -142,7 +151,7 @@ int32 UGBCombatLibrary::DealRadialDamage(const UObject* WorldContextObject, cons
 			continue;
 		}
 
-		const FVector TargetLocation = Target->GetActorLocation();
+		const FVector TargetLocation = GetDamageTargetLocation(Target, Origin);
 		const float Distance = FVector::Dist(TargetLocation, Origin);
 		if (Distance > Radius)
 		{

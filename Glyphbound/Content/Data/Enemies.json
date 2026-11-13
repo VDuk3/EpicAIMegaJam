@@ -497,7 +497,7 @@
 				"ProjectileRadius": 16,
 				"ProjectileGravity": 0,
 				"HeadFraction": 0.2,
-				"CapsuleRadius": 60,
+				"CapsuleRadius": 120,
 				"CapsuleHalfHeight": 135,
 				"LightningDamageTaken": 1.25,
 				"LightningBuildUpTaken": 1.5,

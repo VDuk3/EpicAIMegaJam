@@ -14,14 +14,25 @@ namespace GBTentacle
 			Tolerance = 0.f;
 		}
 
+		// Lengths and the authored segment directions. A direction of a zero-length or coincident pair falls
+		// back to the previous valid one (or +X), so coincident joints never collapse a segment.
 		TArray<float> Lengths;
+		TArray<FVector> Directions;
 		Lengths.SetNumUninitialized(Count - 1);
+		Directions.SetNumUninitialized(Count - 1);
 		float TotalLength = 0.f;
+		FVector LastDirection = FVector::XAxisVector;
 		for (int32 Index = 0; Index < Count - 1; ++Index)
 		{
-			const float Segment = (Joints[Index + 1] - Joints[Index]).Size();
+			const FVector Delta = Joints[Index + 1] - Joints[Index];
+			const float Segment = Delta.Size();
 			Lengths[Index] = Segment;
 			TotalLength += Segment;
+			if (Segment > KINDA_SMALL_NUMBER)
+			{
+				LastDirection = Delta / Segment;
+			}
+			Directions[Index] = LastDirection;
 		}
 
 		const FVector Root = Joints[0];
@@ -35,6 +46,33 @@ namespace GBTentacle
 				Joints[Index] = Joints[Index - 1] + Direction * Lengths[Index - 1];
 			}
 			return;
+		}
+
+		// Collinear chain with the target on (or next to) its line: FABRIK can only fold it onto itself
+		// and never bends. Nudge the middle joints sideways so the passes can find the fold.
+		if (Count > 2 && TotalLength > KINDA_SMALL_NUMBER)
+		{
+			const FVector Axis = (Joints[Count - 1] - Root).GetSafeNormal();
+			float MaxOff = 0.f;
+			for (int32 Index = 1; Index < Count - 1; ++Index)
+			{
+				MaxOff = FMath::Max(MaxOff, FVector::CrossProduct(Joints[Index] - Root, Axis).Size());
+			}
+			const float TargetOff = FVector::CrossProduct(ToTarget, Axis).Size();
+			if (!Axis.IsNearlyZero() && MaxOff < TotalLength * 0.01f && TargetOff < TotalLength * 0.01f)
+			{
+				FVector Perp = FVector::CrossProduct(Axis, FVector::ZAxisVector);
+				if (Perp.SizeSquared() < 0.01f)
+				{
+					Perp = FVector::CrossProduct(Axis, FVector::YAxisVector);
+				}
+				Perp.Normalize();
+				for (int32 Index = 1; Index < Count - 1; ++Index)
+				{
+					const float Bulge = FMath::Sin(PI * static_cast<float>(Index) / static_cast<float>(Count - 1));
+					Joints[Index] += Perp * (Bulge * TotalLength * 0.05f);
+				}
+			}
 		}
 
 		const int32 Passes = FMath::Max(Iterations, 0);
@@ -52,14 +90,16 @@ namespace GBTentacle
 			Joints[Count - 1] = Target;
 			for (int32 Index = Count - 2; Index >= 0; --Index)
 			{
-				const FVector Direction = (Joints[Index] - Joints[Index + 1]).GetSafeNormal();
+				const FVector Delta = Joints[Index] - Joints[Index + 1];
+				const FVector Direction = Delta.SizeSquared() > KINDA_SMALL_NUMBER ? Delta.GetSafeNormal() : -Directions[Index];
 				Joints[Index] = Joints[Index + 1] + Direction * Lengths[Index];
 			}
 			// Backward: pin the root, walk out to the tip.
 			Joints[0] = Root;
 			for (int32 Index = 0; Index < Count - 1; ++Index)
 			{
-				const FVector Direction = (Joints[Index + 1] - Joints[Index]).GetSafeNormal();
+				const FVector Delta = Joints[Index + 1] - Joints[Index];
+				const FVector Direction = Delta.SizeSquared() > KINDA_SMALL_NUMBER ? Delta.GetSafeNormal() : Directions[Index];
 				Joints[Index + 1] = Joints[Index] + Direction * Lengths[Index];
 			}
 		}

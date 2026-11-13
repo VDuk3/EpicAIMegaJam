@@ -31,6 +31,9 @@ public:
 	static int32 DealRadialDamage(const UObject* WorldContextObject, const FVector& Origin, float Radius, const FGBDamageInfo& Info,
 		TConstArrayView<AActor*> IgnoreActors, bool bLinearFalloff = false);
 
+	/** Point an area effect (blast, knockback) measures to: the actor location, or the Entity's floating shell. */
+	static FVector GetDamageTargetLocation(const AActor* Target, const FVector& FromPoint);
+
 	/**
 	 * Fired for every hit that removed health, anywhere in the game (weapons, spells, effects over time, enemies).
 	 * It is global, not per world: whoever binds must unbind in EndPlay. The HUD uses it for the floating damage

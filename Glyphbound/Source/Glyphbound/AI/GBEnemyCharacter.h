@@ -91,6 +91,12 @@ public:
 	UGBElementalStatusComponent* GetElementalStatus() const { return ElementalStatus; }
 	UGBEraComponent* GetEraComponent() const { return EraComponent; }
 
+	/**
+	 * The point area damage, blasts and knockback measure to, seen from FromPoint. Default: the actor location.
+	 * The Entity returns the nearest point of its floating shell, so a blast at the shell hurts it.
+	 */
+	virtual FVector GetDamageTargetLocation(const FVector& FromPoint) const { (void)FromPoint; return GetActorLocation(); }
+
 	/** True if a world-space hit location is on the head (top HeadFraction of the capsule). */
 	virtual bool IsHeadshotLocation(const FVector& HitLocation) const;
 
@@ -137,9 +143,10 @@ protected:
 	void ResetStuck();
 	float GetGameValue(FName Key, float DefaultValue) const;
 	void StopMoving();
-	void FaceTowards(const AActor* Goal);
+	virtual void FaceTowards(const AActor* Goal);
 	bool HasLineOfSight(const AActor* Goal) const;
-	FVector GetChestLocation() const;
+	/** Where a shot or a line of sight starts or aims (the Entity overrides it: its shell floats above the capsule). */
+	virtual FVector GetChestLocation() const;
 	bool IsRanged() const;
 	/** Windup telegraph: brighter tint (3D) or a slightly bigger sprite (pixel art). */
 	void SetTelegraph(bool bOn);

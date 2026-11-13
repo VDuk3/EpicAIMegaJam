@@ -45,7 +45,9 @@ HOLO_GREEN = {
     "Shell Color 1": (0.03, 0.24, 0.08),
     "Shell Color 2": (0.05, 0.34, 0.12),
 }
-HOLO_SCALARS = {"Hologram Intensity": 2.5}   # the pack's 0.65 was the dimmest of the 25; barely visible on a tentacle
+HOLO_SCALARS = {"Hologram Intensity": 3.2}   # pack 0.65 was barely visible; 2.5 still read faint (owner 2026-11-13: "a bit more light")
+HOLO_FLASH_COLOR = (0.6, 1.0, 0.7)   # the tentacle flash on a shot or a hit: green-white
+HOLO_FLASH_GLOW = 6.0
 SWAY_CM = 14.0
 SWAY_SPEED = 0.3
 
@@ -309,6 +311,17 @@ def build_pack_holo():
     xyz = g.binary(unreal.MaterialExpressionAppendVector, xy, g.mul(s, g.const(0.4, x0 + 1000, y0 + 350), x0 + 1150, y0 + 350),
                    x0 + 1300, y0 + 250)
     g.out(g.mul(xyz, weight, x0 + 1500, y0 + 300), "", unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    # Flash (0..1, driven by code on a shot or a hit) adds a bright green-white burst on top of the pack's emissive.
+    emissive = MEL.get_material_property_input_node(m, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    if emissive is None:
+        fail("%s has no emissive input to add the flash to" % PACK_MASTER)
+    out_name = getattr(MEL, "get_material_property_input_node_output_name", None)
+    emissive_out = out_name(m, unreal.MaterialProperty.MP_EMISSIVE_COLOR) if out_name else ""
+    fy = y0 + 900
+    burst = g.mul(g.mul(g.vector("FlashColor", x0, fy, HOLO_FLASH_COLOR), g.scalar("Flash", x0, fy + 200, 0.0),
+                        x0 + 300, fy + 100),
+                  g.scalar("FlashGlow", x0 + 300, fy + 250, HOLO_FLASH_GLOW), x0 + 500, fy + 150)
+    g.out(g.add(emissive, burst, x0 + 1500, fy, a_out=emissive_out or ""), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     # The pack's master is made for static meshes; without this flag the game draws the tentacles with the default
     # material (smoke 2026-11-13: "missing usage flag SkeletalMesh").
     m.set_editor_property("used_with_skeletal_mesh", True)

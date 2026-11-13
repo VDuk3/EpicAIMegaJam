@@ -20,6 +20,7 @@
 #include "AI/GBEnemyCharacter.h"
 #include "AI/GBEntity.h"
 #include "AI/GBTentacleRigComponent.h"
+#include "Combat/GBProjectile.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBElementalStatusComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
@@ -51,12 +52,21 @@ namespace GBSmokeRun
 		float Time = 0.f;
 		const TCHAR* Name = TEXT("");
 		TFunction<void(UWorld*, AGBPlayerCharacter*)> Run;
+		/** > 0: the step waits until this much simulated (game) time has passed since the last MarkSim, so ticks always run between two samples. */
+		float MinSimSinceMark = 0.f;
 	};
 
 	static TArray<FStep> Steps;
 	static int32 NextStep = 0;
 	static double StartSeconds = 0.0;
 	static TWeakObjectPtr<UWorld> SmokeWorld;
+	static double SimMark = 0.0;
+	// A gated step waits at most this long (wall seconds past its time) before it runs anyway and reports.
+	constexpr double SimGateTimeoutSeconds = 20.0;
+	static void MarkSim(const UWorld* World)
+	{
+		SimMark = World ? World->GetTimeSeconds() : 0.0;
+	}
 	static FTSTicker::FDelegateHandle TickerHandle;
 
 	// Pathing check: an orc spawned behind a wall must reach the player around it.
@@ -81,6 +91,15 @@ namespace GBSmokeRun
 	static TWeakObjectPtr<AGBEntity> SmokeEntity;
 	static TArray<FVector> SmokeEntityTipsA;
 	static FVector SmokeEntityReachTarget = FVector::ZeroVector;
+	static float SmokeEntityTurnStartError = 0.f;
+
+	/** Angle in degrees between the Entity facing and the direction from it to the player, on the ground plane. */
+	static float TurnErrorDegrees(const AGBEntity* Entity, const AGBPlayerCharacter* Player)
+	{
+		const FVector ToPlayer = (Player->GetActorLocation() - Entity->GetActorLocation()).GetSafeNormal2D();
+		const FVector Facing = Entity->GetActorForwardVector().GetSafeNormal2D();
+		return FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(ToPlayer, Facing), -1.f, 1.f)));
+	}
 
 	static AGBGun* RifleInHand(AGBPlayerCharacter* Player)
 	{
@@ -352,12 +371,13 @@ namespace GBSmokeRun
 	static void BuildSteps()
 	{
 		Steps.Reset();
-		auto Add = [](float Time, const TCHAR* Name, TFunction<void(UWorld*, AGBPlayerCharacter*)> Run)
+		auto Add = [](float Time, const TCHAR* Name, TFunction<void(UWorld*, AGBPlayerCharacter*)> Run, float MinSimSinceMark = 0.f)
 		{
 			FStep Step;
 			Step.Time = Time;
 			Step.Name = Name;
 			Step.Run = MoveTemp(Run);
+			Step.MinSimSinceMark = MinSimSinceMark;
 			Steps.Add(MoveTemp(Step));
 		};
 
@@ -1809,9 +1829,10 @@ namespace GBSmokeRun
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE entity spawned=%d yaw=%.0f dist=%.0f"), Entity ? 1 : 0, PickedYaw, PickedDist);
 		});
-		Add(62.3f + S, TEXT("entity: record the tentacle tips"), [](UWorld*, AGBPlayerCharacter*)
+		Add(62.3f + S, TEXT("entity: record the tentacle tips"), [](UWorld* World, AGBPlayerCharacter*)
 		{
 			SmokeEntityTipsA.Reset();
+			MarkSim(World);
 			if (AGBEntity* Entity = SmokeEntity.Get())
 			{
 				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
@@ -1849,11 +1870,13 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE entity FAILED: tips moved %.1f cm in 0.5 s (expected more than 3)"), Moved);
 			}
-		});
-		Add(62.9f + S, TEXT("entity: reach 60 cm in front of the tip of chain 0"), [](UWorld*, AGBPlayerCharacter*)
+		}, 0.5f);
+		Add(62.9f + S, TEXT("entity: reach 60 cm in front of the tip of chain 0"), [](UWorld* World, AGBPlayerCharacter*)
 		{
+			MarkSim(World);
 			if (AGBEntity* Entity = SmokeEntity.Get())
 			{
+				Entity->SetHoldReach(true);
 				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
 				{
 					if (Rig->GetChainCount() > 0)
@@ -1885,53 +1908,121 @@ namespace GBSmokeRun
 					}
 					Rig->ClearReach();
 				}
+				Entity->SetHoldReach(false);
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE entity reach error=%.1f"), Error);
 			if (!(Error >= 0.f && Error < 15.f))
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE entity reach FAILED: error %.1f cm (expected less than 15)"), Error);
 			}
-		});
-		Add(63.8f + S, TEXT("entity: weak point, stand 4 m away, frame it"), [](UWorld* World, AGBPlayerCharacter* Player)
+		}, 0.8f);
+		Add(63.55f + S, TEXT("entity: start measuring the shared stroke"), [](UWorld* World, AGBPlayerCharacter*)
 		{
+			MarkSim(World);
+			if (const AGBEntity* Entity = SmokeEntity.Get())
+			{
+				// The body holds still meanwhile (no altitude, yaw or pitch change), so only the tentacles move.
+				const_cast<AGBEntity*>(Entity)->SetHoldReach(true);
+				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					Rig->StartSyncMeasure();
+				}
+			}
+		});
+		Add(63.6f + S, TEXT("entity: tentacle sync, 1 simulated second"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			float Sync = -1.f;
+			if (const AGBEntity* Entity = SmokeEntity.Get())
+			{
+				if (const UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					Sync = Rig->GetSyncCorrelation();
+				}
+				const_cast<AGBEntity*>(Entity)->SetHoldReach(false);
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity sync=%.2f"), Sync);
+			if (!(Sync > 0.6f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity sync FAILED: %.2f (expected over 0.6): the tentacles do not follow one shared stroke"), Sync);
+			}
+		}, 1.0f);
+		Add(63.8f + S, TEXT("entity: weak point and hit checks, frame a front three-quarter view"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			MarkSim(World);
 			int32 Eye = 0;
 			int32 Shell = 0;
+			int32 HitEye = 0;
+			int32 HitShell = 0;
+			int32 HitBelow = 0;
 			if (AGBEntity* Entity = SmokeEntity.Get())
 			{
 				Eye = Entity->IsHeadshotLocation(Entity->GetEyeCentreWorld()) ? 1 : 0;
 				Shell = Entity->IsHeadshotLocation(Entity->GetShellTopWorld()) ? 1 : 0;
 				UE_LOG(LogGB, Display, TEXT("SMOKE entity diag %s"), *Entity->DescribeVisual());
-				FVector ToEntity = Entity->GetActorLocation() - Player->GetActorLocation();
-				ToEntity.Z = 0.f;
-				if (ToEntity.IsNearlyZero())
+				const float BoundsHeight = Entity->GetVisualBoundsHeight();
+				UE_LOG(LogGB, Display, TEXT("SMOKE entity scale=%.1f height_cm=%.0f"), Entity->GetVisualScale(), BoundsHeight);
+				if (BoundsHeight < 100.f * Entity->GetVisualScale())
 				{
-					ToEntity = Entity->GetActorForwardVector();
+					UE_LOG(LogGB, Error, TEXT("SMOKE entity scale FAILED: the drawn parts are only %.0f cm tall at scale %.1f"), BoundsHeight, Entity->GetVisualScale());
 				}
-				ToEntity.Normalize();
-				// Stand 5 m from it so the whole Entity fits the frame if it renders.
-				const FVector PlayerSpot = Entity->GetActorLocation() - ToEntity * 500.f;
+
+				// Line traces on the weapon channel (the one guns use): what is drawn must be what is hit.
+				FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(GBSmokeEntityHit), false, Player);
+				auto Trace = [&](const FVector& From, const FVector& To, bool& bHitEntity, bool& bWeak)
+				{
+					FHitResult Hit;
+					bHitEntity = World->LineTraceSingleByChannel(Hit, From, To, ECC_Camera, TraceParams) && Hit.GetActor() == Entity;
+					bWeak = bHitEntity && Entity->IsHeadshotLocation(Hit.ImpactPoint);
+				};
+				bool bHitEntity = false;
+				bool bWeak = false;
+				const FVector EyePoint = Entity->GetEyeCentreWorld();
+				Trace(EyePoint + Entity->GetActorForwardVector() * 300.f, EyePoint, bHitEntity, bWeak);
+				HitEye = (bHitEntity && bWeak) ? 1 : 0;
+				const FVector TopPoint = Entity->GetShellTopWorld();
+				Trace(TopPoint + FVector(0.f, 0.f, 150.f), TopPoint, bHitEntity, bWeak);
+				HitShell = (bHitEntity && !bWeak) ? 1 : 0;
+				const FVector Below = Entity->GetShellCentreWorld() - FVector(0.f, 0.f, Entity->GetShellRadiusWorld() + 150.f);
+				const FVector Right = Entity->GetActorRightVector();
+				Trace(Below + Right * 300.f, Below - Right * 300.f, bHitEntity, bWeak);
+				HitBelow = bHitEntity ? 1 : 0;
+
+				// Front three-quarter view from 7 m, aimed a little below the shell so the tentacles are in frame.
+				// The first free spot (inside the arena, nothing between it and the Entity) from the front three-quarter views.
+				FVector PlayerSpot = Entity->GetActorLocation() + Entity->GetActorForwardVector().RotateAngleAxis(50.f, FVector::UpVector) * 1300.f;
+				FCollisionQueryParams SpotParams(SCENE_QUERY_STAT(GBSmokeEntitySpot), false, Player);
+				SpotParams.AddIgnoredActor(Entity);
+				bool bSpotFound = false;
+				for (float SpotDistance : { 1100.f, 900.f, 700.f })
+				{
+					for (float SpotAngle : { 90.f, -90.f, 75.f, -50.f })
+					{
+						const FVector Candidate = Entity->GetActorLocation() + Entity->GetActorForwardVector().RotateAngleAxis(SpotAngle, FVector::UpVector) * SpotDistance;
+						const FVector ViewEye = FVector(Candidate.X, Candidate.Y, Player->GetActorLocation().Z + 70.f);
+						FHitResult Floor;
+						const bool bFloor = World->LineTraceSingleByChannel(Floor, ViewEye, ViewEye - FVector(0.f, 0.f, 400.f), ECC_Visibility, SpotParams);
+						if (bFloor && !World->LineTraceTestByChannel(Entity->GetActorLocation() + FVector(0.f, 0.f, 150.f), ViewEye, ECC_Visibility, SpotParams)
+							&& !World->LineTraceTestByChannel(ViewEye, Entity->GetShellCentreWorld(), ECC_Visibility, SpotParams))
+						{
+							PlayerSpot = Candidate;
+							bSpotFound = true;
+							break;
+						}
+					}
+					if (bSpotFound)
+					{
+						break;
+					}
+				}
 				Player->SetActorLocation(FVector(PlayerSpot.X, PlayerSpot.Y, Player->GetActorLocation().Z),
 					false, nullptr, ETeleportType::TeleportPhysics);
+				UE_LOG(LogGB, Display, TEXT("SMOKE entity view spot_found=%d player=%s entity=%s shell=%s"), bSpotFound ? 1 : 0, *Player->GetActorLocation().ToCompactString(), *Entity->GetActorLocation().ToCompactString(), *Entity->GetShellCentreWorld().ToCompactString());
 				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 				{
-					// Aim from the camera (70 cm above the capsule centre), at a point a little
-					// below the middle so the tall Entity sits in the frame above the HUD.
-					FVector CameraLoc = Player->GetActorLocation() + FVector(0.f, 0.f, 70.f);
-					if (APlayerCameraManager* Camera = PC->PlayerCameraManager)
-					{
-						CameraLoc = Camera->GetCameraLocation();
-					}
-					const FVector Middle = Entity->GetActorLocation() + FVector(0.f, 0.f, 60.f);
-					const FRotator Aim = (Middle - CameraLoc).Rotation();
-					PC->SetControlRotation(Aim);
-					UE_LOG(LogGB, Display, TEXT("SMOKE entity aim yaw=%.1f pitch=%.1f eye=%s control=%s"),
-						Aim.Yaw, Aim.Pitch, *Entity->GetEyeCentreWorld().ToCompactString(),
-						*PC->GetControlRotation().ToCompactString());
-					if (APlayerCameraManager* Camera = PC->PlayerCameraManager)
-					{
-						UE_LOG(LogGB, Display, TEXT("SMOKE entity cam loc=%s rot=%s"),
-							*Camera->GetCameraLocation().ToCompactString(), *Camera->GetCameraRotation().ToCompactString());
-					}
+					// The camera manager still holds last frame's position: aim from where the camera will be.
+					const FVector CameraLoc = Player->GetActorLocation() + FVector(0.f, 0.f, 70.f);
+					const FVector Middle = Entity->GetShellCentreWorld() - FVector(0.f, 0.f, 170.f);
+					PC->SetControlRotation((Middle - CameraLoc).Rotation());
 				}
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE entity weakpoint eye=%d shell=%d"), Eye, Shell);
@@ -1939,12 +2030,110 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE entity weakpoint FAILED: eye=%d (expected 1) shell=%d (expected 0)"), Eye, Shell);
 			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity hit eye=%d shell=%d below=%d"), HitEye, HitShell, HitBelow);
+			if (HitEye != 1 || HitShell != 1 || HitBelow != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity hit FAILED: eye=%d (expected 1) shell=%d (expected 1) below=%d (expected 0)"), HitEye, HitShell, HitBelow);
+			}
 		});
-		Add(64.0f + S, TEXT("entity: screenshot with the whole Entity visible"), [](UWorld*, AGBPlayerCharacter*)
+		Add(64.4f + S, TEXT("entity: turn test, the player jumps right behind it"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				const FVector Behind = Entity->GetActorLocation() - Entity->GetActorForwardVector() * 500.f;
+				Player->SetActorLocation(FVector(Behind.X, Behind.Y, Player->GetActorLocation().Z), false, nullptr, ETeleportType::TeleportPhysics);
+				Entity->ResetMotionStats();
+				SmokeEntityTurnStartError = TurnErrorDegrees(Entity, Player);
+				MarkSim(World);
+			}
+		});
+		Add(64.9f + S, TEXT("entity: turn rate over 0.6 simulated seconds"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			float MaxRate = -1.f;
+			float Progress = -1.f;
+			if (const AGBEntity* Entity = SmokeEntity.Get())
+			{
+				// Both numbers come from the actor itself: the largest yaw change per second it really made, and how far it turned towards the player.
+				MaxRate = Entity->GetPeakYawRate();
+				Progress = SmokeEntityTurnStartError - TurnErrorDegrees(Entity, Player);
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity turn max_rate=%.0f"), MaxRate);
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity turn progress=%.0f"), Progress);
+			if (!(MaxRate >= 0.f && MaxRate <= 120.f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity turn FAILED: peak %.0f deg/s (expected at most 120)"), MaxRate);
+			}
+			if (!(Progress >= 20.f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity turn FAILED: it turned only %.0f degrees towards the player (expected at least 20)"), Progress);
+			}
+		}, 0.6f);
+		Add(65.0f + S, TEXT("entity: strafe, the player stands at its side"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			MarkSim(World);
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				Entity->ResetMotionStats();
+				Entity->ForceStrafe(2.4f);
+				const FVector Side = Entity->GetActorForwardVector().RotateAngleAxis(70.f, FVector::UpVector);
+				const FVector PlayerSpot = Entity->GetActorLocation() + Side * 1100.f;
+				Player->SetActorLocation(FVector(PlayerSpot.X, PlayerSpot.Y, Player->GetActorLocation().Z),
+					false, nullptr, ETeleportType::TeleportPhysics);
+				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+				{
+					// The camera manager still holds last frame's position: aim from where the camera will be.
+					const FVector CameraLoc = Player->GetActorLocation() + FVector(0.f, 0.f, 70.f);
+					const FVector Middle = Entity->GetShellCentreWorld() - FVector(0.f, 0.f, 170.f);
+					PC->SetControlRotation((Middle - CameraLoc).Rotation());
+				}
+			}
+		});
+		Add(65.3f + S, TEXT("entity: screenshot, three-quarter view of the whole Entity while it strafes"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			Shot(TEXT("15a_entity"));
+		}, 0.5f);
+		Add(65.5f + S, TEXT("entity: fire one energy bolt past the player"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			MarkSim(World);
+			int32 HasLight = 0;
+			float Length = 0.f;
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				const FVector ToPlayer = Player->GetActorLocation() - Entity->GetShellCentreWorld();
+				// Aimed 12 degrees to one side, slow, so it crosses the frame and is still in flight for the screenshot.
+				const FVector Direction = ToPlayer.GetSafeNormal().RotateAngleAxis(12.f, FVector::UpVector);
+				if (const AGBProjectile* Bolt = Entity->FireDebugBolt(Direction, 900.f))
+				{
+					HasLight = Bolt->HasBoltLight() ? 1 : 0;
+					Length = Bolt->GetBoltLength();
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity bolt light=%d length=%.0f"), HasLight, Length);
+			if (HasLight != 1 || Length < 50.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity bolt FAILED: light=%d (expected 1) length=%.0f (expected at least 50)"), HasLight, Length);
+			}
 		});
-		Add(64.2f + S, TEXT("entity: destroy it, so the smoke steps after it are not affected"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(66.0f + S, TEXT("entity: screenshot from the side during the strafe"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			Shot(TEXT("15b_entity_side"));
+		}, 0.6f);
+		Add(67.5f + S, TEXT("entity: flight numbers over the strafe window"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			float ZRange = -1.f;
+			float RollMax = -1.f;
+			if (const AGBEntity* Entity = SmokeEntity.Get())
+			{
+				ZRange = Entity->GetShellZRange();
+				RollMax = Entity->GetPeakRoll();
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity flight z_range=%.0f roll_max=%.1f"), ZRange, RollMax);
+			if (!(ZRange > 20.f) || !(RollMax > 3.f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity flight FAILED: z_range=%.0f (expected over 20) roll_max=%.1f (expected over 3)"), ZRange, RollMax);
+			}
+		}, 2.2f);
+		Add(67.7f + S, TEXT("entity: destroy it, so the smoke steps after it are not affected"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			if (AGBEntity* Entity = SmokeEntity.Get())
 			{
@@ -1953,7 +2142,7 @@ namespace GBSmokeRun
 			SmokeEntity.Reset();
 			Player->GetAttributes()->SetInvulnerable(false);
 		});
-		Add(64.8f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(68.3f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);
@@ -1971,6 +2160,12 @@ namespace GBSmokeRun
 		// Read the clock again for every step: a step may wind StartSeconds back (the reload steps stretch the run).
 		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
 		{
+			const FStep& Gate = Steps[NextStep];
+			if (Gate.MinSimSinceMark > 0.f && World->GetTimeSeconds() - SimMark < Gate.MinSimSinceMark
+				&& FPlatformTime::Seconds() - StartSeconds - Gate.Time < SimGateTimeoutSeconds)
+			{
+				break; // not enough simulated time since the first sample yet: try again next tick
+			}
 			const FStep& Step = Steps[NextStep++];
 			AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
 			UE_LOG(LogGB, Display, TEXT("SMOKE step %d/%d (%.1f s): %s"), NextStep, Steps.Num(), Step.Time, Step.Name);
@@ -1984,7 +2179,7 @@ namespace GBSmokeRun
 		return NextStep < Steps.Num();
 	}
 
-	static void Start(UWorld* World)
+	static void Start(const TArray<FString>& Args, UWorld* World)
 	{
 		if (!World || !World->IsGameWorld())
 		{
@@ -1992,6 +2187,25 @@ namespace GBSmokeRun
 			return;
 		}
 		BuildSteps();
+		if (Args.Num() > 0)
+		{
+			// Filtered run (gb.Smoke Entity): only the steps whose name starts with the argument, plus the quit step, from 1 s on.
+			const FString Prefix = Args[0];
+			Steps.RemoveAll([&Prefix](const FStep& Step) { return !FString(Step.Name).StartsWith(Prefix, ESearchCase::IgnoreCase) && FCString::Strcmp(Step.Name, TEXT("quit")) != 0; });
+			if (Steps.Num() <= 1)
+			{
+				UE_LOG(LogGB, Warning, TEXT("gb.Smoke %s: no step starts with that name"), *Prefix);
+			}
+			float FirstTime = Steps.Num() > 0 ? Steps[0].Time : 0.f;
+			for (const FStep& Step : Steps)
+			{
+				FirstTime = FMath::Min(FirstTime, Step.Time);
+			}
+			for (FStep& Step : Steps)
+			{
+				Step.Time -= FirstTime - 1.f;
+			}
+		}
 		NextStep = 0;
 		StartSeconds = FPlatformTime::Seconds();
 		SmokeWorld = World;
@@ -2000,10 +2214,10 @@ namespace GBSmokeRun
 		UE_LOG(LogGB, Display, TEXT("SMOKE started: %d steps"), Steps.Num());
 	}
 
-	static FAutoConsoleCommandWithWorld SmokeCommand(
+	static FAutoConsoleCommandWithWorldAndArgs SmokeCommand(
 		TEXT("gb.Smoke"),
-		TEXT("Scripted run of the main systems: logs lines starting with SMOKE, saves screenshots to Saved/Screenshots/Smoke and quits."),
-		FConsoleCommandWithWorldDelegate::CreateStatic(&Start));
+		TEXT("Scripted run of the main systems: logs lines starting with SMOKE, saves screenshots to Saved/Screenshots/Smoke and quits. gb.Smoke <Prefix> runs only the steps whose name starts with it (gb.Smoke Entity)."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&Start));
 
 	static void RunBuildUp(const TArray<FString>& Args, UWorld* World)
 	{

@@ -11,6 +11,7 @@ class UProjectileMovementComponent;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UPrimitiveComponent;
+class UPointLightComponent;
 
 /** Keys of Game.json "Values" read when a projectile is launched. */
 namespace GBProjectileKey
@@ -63,6 +64,18 @@ struct GLYPHBOUND_API FGBProjectileConfig
 	UPROPERTY() FLinearColor Color = FLinearColor::White;
 	/** Visual scale relative to the collision radius. */
 	UPROPERTY() float VisualScale = 1.f;
+
+	// ---- Energy bolt look (3D bosses): off by default, so every other projectile keeps its look ----
+	/** Non-pixel-art only: an elongated glowing core along the velocity, a dim stretched trail behind it and a point light. */
+	UPROPERTY() bool bEnergyBolt = false;
+	/** Core length and thickness, cm. */
+	UPROPERTY() float BoltLength = 75.f;
+	UPROPERTY() float BoltThickness = 12.f;
+	/** Length of the dim stretched trail behind the core, cm. */
+	UPROPERTY() float BoltTrailLength = 220.f;
+	/** Point light riding the bolt: candelas (0 = no light) and attenuation radius in cm. Shadows are off. */
+	UPROPERTY() float BoltLightIntensity = 0.f;
+	UPROPERTY() float BoltLightRadius = 600.f;
 };
 
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnProjectileImpact, class AGBProjectile* /*Projectile*/, AActor* /*HitActor (may be null)*/, const FVector& /*Location*/);
@@ -82,6 +95,10 @@ public:
 	static AGBProjectile* SpawnProjectile(UWorld* World, const FGBProjectileConfig& Config, const FVector& Origin, const FVector& Direction, AActor* InInstigator);
 
 	const FGBProjectileConfig& GetConfig() const { return Config; }
+
+	/** Energy bolts: core length in cm (0 for any other projectile) and whether its point light is on. */
+	float GetBoltLength() const;
+	bool HasBoltLight() const;
 
 	/** Fired once, when it hits something or explodes (before it is destroyed). Spells use it to chain behavior. */
 	FGBOnProjectileImpact OnImpact;
@@ -115,6 +132,9 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UProjectileMovementComponent> Movement;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UBillboardComponent> Sprite;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Mesh;
+	/** Only used by energy bolts. */
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> BoltTrail;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UPointLightComponent> BoltLight;
 
 	UPROPERTY() FGBProjectileConfig Config;
 	FVector StartLocation = FVector::ZeroVector;

@@ -9,6 +9,7 @@
 #include "UI/GBPixelSpriteLibrary.h"
 #include "CollisionQueryParams.h"
 #include "Components/BillboardComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/OverlapResult.h"
@@ -57,6 +58,22 @@ AGBProjectile::AGBProjectile()
 	Mesh->SetGenerateOverlapEvents(false);
 	Mesh->SetCastShadow(false);
 	Mesh->SetCanEverAffectNavigation(false);
+
+	// Energy bolt parts: empty and dark unless InitProjectile turns them on.
+	BoltTrail = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BoltTrail"));
+	BoltTrail->SetupAttachment(Collision);
+	BoltTrail->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoltTrail->SetGenerateOverlapEvents(false);
+	BoltTrail->SetCastShadow(false);
+	BoltTrail->SetCanEverAffectNavigation(false);
+
+	BoltLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("BoltLight"));
+	BoltLight->SetupAttachment(Collision);
+	BoltLight->SetMobility(EComponentMobility::Movable);
+	BoltLight->CastShadows = false;
+	BoltLight->IntensityUnits = ELightUnits::Candelas;
+	BoltLight->Intensity = 0.f;
+	BoltLight->SetVisibility(false);
 }
 
 AGBProjectile* AGBProjectile::SpawnProjectile(UWorld* World, const FGBProjectileConfig& InConfig, const FVector& Origin, const FVector& Direction, AActor* InInstigator)
@@ -126,12 +143,45 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
 			UE_LOG(LogGB, Warning, TEXT("Projectile: no pixel sprite library; sprite '%s' not shown"), *Config.SpriteId.ToString());
 		}
 	}
+	else if (Config.bEnergyBolt)
+	{
+		Sprite->SetVisibility(false);
+		Sprite->SetHiddenInGame(true);
+		// Ellipsoids stretched along the local X axis, which the movement keeps pointing along the velocity.
+		const float Length = FMath::Max(Config.BoltLength, VisualSize);
+		const float Thick = FMath::Max(Config.BoltThickness, 1.f);
+		const FLinearColor HotCore = FMath::Lerp(Config.Color, FLinearColor::White, 0.2f);
+		GBPlaceholder::SetupShape(Mesh, EGBShape::Sphere, FVector(Length, Thick, Thick), HotCore, /*bGlow*/ true);
+		const float TrailLength = FMath::Max(Config.BoltTrailLength, 0.f);
+		if (TrailLength > 1.f)
+		{
+			GBPlaceholder::SetupShape(BoltTrail, EGBShape::Sphere, FVector(TrailLength, Thick * 0.6f, Thick * 0.6f), Config.Color * 0.35f, /*bGlow*/ true);
+			BoltTrail->SetRelativeLocation(FVector(-(Length * 0.5f + TrailLength * 0.35f), 0.f, 0.f));
+		}
+		if (Config.BoltLightIntensity > 0.f)
+		{
+			BoltLight->SetLightColor(Config.Color);
+			BoltLight->SetIntensity(Config.BoltLightIntensity);
+			BoltLight->SetAttenuationRadius(FMath::Max(Config.BoltLightRadius, 1.f));
+			BoltLight->SetVisibility(true);
+		}
+	}
 	else
 	{
 		Sprite->SetVisibility(false);
 		Sprite->SetHiddenInGame(true);
 		GBPlaceholder::SetupShape(Mesh, EGBShape::Sphere, FVector(VisualSize), Config.Color, /*bGlow*/ true);
 	}
+}
+
+float AGBProjectile::GetBoltLength() const
+{
+	return (Config.bEnergyBolt && !Config.bPixelArt && Mesh) ? Mesh->GetRelativeScale3D().X * 100.f : 0.f;
+}
+
+bool AGBProjectile::HasBoltLight() const
+{
+	return Config.bEnergyBolt && !Config.bPixelArt && BoltLight && BoltLight->IsVisible() && BoltLight->Intensity > 0.f;
 }
 
 void AGBProjectile::BeginPlay()
@@ -334,7 +384,7 @@ void AGBProjectile::ApplyExplosionKnockback(const FVector& Origin)
 			continue;
 		}
 
-		const FVector TargetLocation = Character->GetActorLocation();
+		const FVector TargetLocation = UGBCombatLibrary::GetDamageTargetLocation(Character, Origin);
 		const float Distance = FVector::Dist(TargetLocation, Origin);
 		if (Distance > Radius)
 		{

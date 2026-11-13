@@ -7,16 +7,27 @@
 
 namespace GBTentacleRigLocal
 {
-	// Technical constants, not tuning: bone name shape, FABRIK budget, lag clamp, ripple shape.
+	// Technical constants, not tuning: bone name shape, FABRIK budget, ripple shape, sim sub-steps.
 	constexpr int32 MaxNameLength = 6;          // "T<cc>_<bb>"
 	constexpr int32 ReachIterations = 10;
 	constexpr float ReachToleranceCm = 0.5f;    // well under the 15 cm the smoke run allows
-	constexpr float MaxLagDegrees = 30.f;       // clamp on a lag spring target
-	constexpr float YawLeverCm = 100.f;         // yaw rate acts like sideways speed at this lever
-	constexpr float MaxDeltaTime = 0.1f;        // a hitch never jumps the pose
+	constexpr float MaxDeltaTime = 0.5f;        // a long hitch is simulated in sub-steps up to this, then dropped
+	constexpr float SimStep = 1.f / 60.f;       // longest verlet sub-step
+	constexpr int32 SimConstraintPasses = 2;
+	constexpr float ReachStiffnessBoost = 3.f;  // the reaching chain follows its solved pose this much harder
+	constexpr float SimResetDistanceShare = 1.5f; // tip farther than this share of the chain length from its pose: re-seed the sim
 	constexpr float RippleWidth = 4.f;          // sharpness of the travelling pulse
 	constexpr float RippleWaves = 2.f;          // oscillations inside the pulse
-	constexpr int32 RootLimitedBones = 2;       // bones _00/_01 keep the root bend limit
+	constexpr int32 RootLimitedBones = 2;       // bones _00/_01 keep the final cone
+	constexpr float WindupStrokeDamp = 0.6f;    // share of the stroke that gives way to the coil at full windup
+	constexpr float StreamBackDown = 0.5f;      // streaming tentacles trail back and a bit down
+	constexpr float AimForward = 0.8f;          // the facing tentacles orient towards the target, this much sideways...
+	constexpr float AimLift = 0.6f;             // ...and this much up
+	constexpr float RecoilDown = 0.3f;          // the flinch pushes along the hit and a bit down
+	constexpr float LimpDroopScale = 4.f;       // degrees per unit of LimpDroop * weight * growth
+	constexpr float WindupBlendBoost = 2.f;     // the windup blends in this much faster than the other intents
+	constexpr float AggroStrokeShare = 0.5f;    // the stroke quickens by this share of the windup gain just from aggro
+	constexpr int32 MinSyncSamples = 8;
 
 	FQuat AxisAngleQuat(const FVector& Axis, float AngleDeg)
 	{
@@ -28,14 +39,41 @@ namespace GBTentacleRigLocal
 		return FQuat(SafeAxis, FMath::DegreesToRadians(AngleDeg));
 	}
 
-	FVector AxisVector(int32 Axis)
+	/** Rotates Direction towards RefDir until it is within MaxDeg of it. */
+	FVector LimitToCone(const FVector& Direction, const FVector& RefDir, float MaxDeg)
 	{
-		switch (Axis)
+		const float Dot = FMath::Clamp(FVector::DotProduct(Direction, RefDir), -1.f, 1.f);
+		const float Angle = FMath::RadiansToDegrees(FMath::Acos(Dot));
+		if (Angle <= MaxDeg)
 		{
-		case 0: return FVector::XAxisVector;
-		case 1: return FVector::YAxisVector;
-		default: return FVector::ZAxisVector;
+			return Direction;
 		}
+		FVector Axis = FVector::CrossProduct(RefDir, Direction);
+		if (Axis.SizeSquared() < KINDA_SMALL_NUMBER)
+		{
+			Axis = FVector::CrossProduct(RefDir, FVector::ZAxisVector);
+			if (Axis.SizeSquared() < KINDA_SMALL_NUMBER)
+			{
+				Axis = FVector::YAxisVector;
+			}
+		}
+		return AxisAngleQuat(Axis, MaxDeg).RotateVector(RefDir).GetSafeNormal();
+	}
+
+	/** Turns Dir towards Want by at most Deg degrees (never past it). */
+	FVector TiltToward(const FVector& Dir, const FVector& Want, float Deg)
+	{
+		if (Deg <= KINDA_SMALL_NUMBER || Want.IsNearlyZero())
+		{
+			return Dir;
+		}
+		const float Angle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(Dir, Want), -1.f, 1.f)));
+		const FVector Axis = FVector::CrossProduct(Dir, Want);
+		if (Angle < KINDA_SMALL_NUMBER || Axis.SizeSquared() < KINDA_SMALL_NUMBER)
+		{
+			return Dir;
+		}
+		return AxisAngleQuat(Axis, FMath::Min(Deg, Angle)).RotateVector(Dir).GetSafeNormal();
 	}
 }
 
@@ -47,11 +85,6 @@ UGBTentacleRigComponent::UGBTentacleRigComponent()
 void UGBTentacleRigComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (AActor* Owner = GetOwner())
-	{
-		PrevYaw = Owner->GetActorRotation().Yaw;
-		bHasPrevYaw = true;
-	}
 }
 
 float UGBTentacleRigComponent::GetGameValue(FName Key, float DefaultValue) const
@@ -63,13 +96,26 @@ float UGBTentacleRigComponent::GetGameValue(FName Key, float DefaultValue) const
 void UGBTentacleRigComponent::ReadTuning(FGBTentacleTuning& OutTuning) const
 {
 	using namespace GBEntityTentacle;
-	OutTuning.WaveFreq = GetGameValue(WaveFreq, WaveFreqDefault);
-	OutTuning.WaveAmp = GetGameValue(WaveAmp, WaveAmpDefault);
-	OutTuning.WaveLength = GetGameValue(WaveLength, WaveLengthDefault);
-	OutTuning.LagStrength = GetGameValue(LagStrength, LagStrengthDefault);
-	OutTuning.LagStiffness = GetGameValue(LagStiffness, LagStiffnessDefault);
-	OutTuning.LagDamping = GetGameValue(LagDamping, LagDampingDefault);
-	OutTuning.RootLimit = GetGameValue(RootLimit, RootLimitDefault);
+	OutTuning.StrokeHz = FMath::Max(GetGameValue(StrokeHz, StrokeHzDefault), 0.f);
+	OutTuning.StrokeAmp = GetGameValue(StrokeAmp, StrokeAmpDefault);
+	OutTuning.StrokeSpeedGain = GetGameValue(StrokeSpeedGain, StrokeSpeedGainDefault);
+	OutTuning.StrokeWindupGain = GetGameValue(StrokeWindupGain, StrokeWindupGainDefault);
+	OutTuning.StrokeSkew = FMath::Clamp(GetGameValue(StrokeSkew, StrokeSkewDefault), 0.f, 0.9f);
+	OutTuning.RingPhase = GetGameValue(RingPhase, RingPhaseDefault);
+	OutTuning.StrokeLag = GetGameValue(StrokeLag, StrokeLagDefault);
+	OutTuning.TipBias = FMath::Max(GetGameValue(TipBias, TipBiasDefault), 0.1f);
+	OutTuning.StreamDeg = GetGameValue(StreamDeg, StreamDegDefault);
+	OutTuning.AimDeg = GetGameValue(AimDeg, AimDegDefault);
+	OutTuning.CoilDeg = GetGameValue(CoilDeg, CoilDegDefault);
+	OutTuning.RecoilDeg = GetGameValue(RecoilDeg, RecoilDegDefault);
+	OutTuning.RecoilTime = FMath::Max(GetGameValue(RecoilTime, RecoilTimeDefault), 0.05f);
+	OutTuning.IntentRate = FMath::Max(GetGameValue(IntentRate, IntentRateDefault), 0.1f);
+	OutTuning.FollowStiffness = FMath::Max(GetGameValue(FollowStiffness, FollowStiffnessDefault), 0.f);
+	OutTuning.FollowDamping = FMath::Max(GetGameValue(FollowDamping, FollowDampingDefault), 0.f);
+	OutTuning.TipSoft = FMath::Clamp(GetGameValue(TipSoft, TipSoftDefault), 0.f, 0.95f);
+	OutTuning.Hang = GetGameValue(Hang, HangDefault);
+	OutTuning.RootCone0 = GetGameValue(RootCone0, RootCone0Default);
+	OutTuning.RootCone1 = GetGameValue(RootCone1, RootCone1Default);
 	OutTuning.ReachBlendIn = GetGameValue(ReachBlendIn, ReachBlendInDefault);
 	OutTuning.ReachBlendOut = GetGameValue(ReachBlendOut, ReachBlendOutDefault);
 	OutTuning.RippleStrength = GetGameValue(RippleStrength, RippleStrengthDefault);
@@ -102,13 +148,13 @@ void UGBTentacleRigComponent::Setup(UPoseableMeshComponent* InMesh)
 		{
 			continue;
 		}
-		const int32 ChainIndex = FCString::Atoi(*Name.Mid(1, 2));
-		const int32 BoneIndex = FCString::Atoi(*Name.Mid(4, 2));
 		// Guard the shape: only T<digits>_<digits>.
 		if (!FChar::IsDigit(Name[1]) || !FChar::IsDigit(Name[2]) || !FChar::IsDigit(Name[4]) || !FChar::IsDigit(Name[5]))
 		{
 			continue;
 		}
+		const int32 ChainIndex = FCString::Atoi(*Name.Mid(1, 2));
+		const int32 BoneIndex = FCString::Atoi(*Name.Mid(4, 2));
 		Groups.FindOrAdd(ChainIndex).Add(TPair<int32, FName>(BoneIndex, BoneName));
 	}
 
@@ -126,57 +172,73 @@ void UGBTentacleRigComponent::Setup(UPoseableMeshComponent* InMesh)
 	{
 		TArray<TPair<int32, FName>>& Pairs = Groups.FindChecked(ChainKey);
 		Pairs.Sort([](const TPair<int32, FName>& A, const TPair<int32, FName>& B) { return A.Key < B.Key; });
+		if (Pairs.Num() < 2)
+		{
+			continue;
+		}
 
 		FGBTentacleChain Chain;
-		Chain.Phase = FMath::FRand();
-		FQuat ParentComp = RootCompQuat;
 		for (const TPair<int32, FName>& Pair : Pairs)
 		{
 			const FTransform CompT = InMesh->GetBoneTransformByName(Pair.Value, EBoneSpaces::ComponentSpace);
 			Chain.Bones.Add(Pair.Value);
+			Chain.BoneIndices.Add(InMesh->GetBoneIndex(Pair.Value));
 			Chain.RefComp.Add(CompT.GetRotation());
 			Chain.RefJoints.Add(CompT.GetLocation());
-			Chain.RefLocal.Add(ParentComp.Inverse() * CompT.GetRotation());
-			ParentComp = CompT.GetRotation();
 		}
 		const int32 BoneCount = Chain.Bones.Num();
-		if (BoneCount == 0)
-		{
-			continue;
-		}
-		// The tip joint continues past the last bone along the last segment.
-		const FVector LastDir = (Chain.RefJoints[BoneCount - 1] - Chain.RefJoints[BoneCount - 2 >= 0 ? BoneCount - 2 : 0]).GetSafeNormal();
-		const float LastLen = BoneCount >= 2 ? (Chain.RefJoints[BoneCount - 1] - Chain.RefJoints[BoneCount - 2]).Size() : 10.f;
-		Chain.RefJoints.Add(Chain.RefJoints[BoneCount - 1] + LastDir * LastLen);
 
+		// Joints are the real bones: the tip is bone _07 itself. Its own direction repeats the one before.
 		for (int32 Bone = 0; Bone < BoneCount; ++Bone)
 		{
-			const float Segment = (Chain.RefJoints[Bone + 1] - Chain.RefJoints[Bone]).Size();
-			Chain.SegLengths.Add(FMath::Max(Segment, KINDA_SMALL_NUMBER));
-			const FVector RefDir = (Chain.RefJoints[Bone + 1] - Chain.RefJoints[Bone]).GetSafeNormal();
-			const FVector LocalDir = Chain.RefComp[Bone].Inverse() * RefDir;
-			Chain.LocalDirs.Add(LocalDir);
-			// Bend about the two axes perpendicular to the bone's dominant axis, whatever the rig's convention is.
-			const float AX = FMath::Abs(LocalDir.X);
-			const float AY = FMath::Abs(LocalDir.Y);
-			if (AX >= AY && AX >= FMath::Abs(LocalDir.Z))
+			FVector RefDir;
+			if (Bone + 1 < BoneCount)
 			{
-				Chain.BendAxisA.Add(1);
-				Chain.BendAxisB.Add(2);
-			}
-			else if (AY >= AX && AY >= FMath::Abs(LocalDir.Z))
-			{
-				Chain.BendAxisA.Add(0);
-				Chain.BendAxisB.Add(2);
+				const FVector Delta = Chain.RefJoints[Bone + 1] - Chain.RefJoints[Bone];
+				Chain.SegLengths.Add(FMath::Max(Delta.Size(), KINDA_SMALL_NUMBER));
+				RefDir = Delta.GetSafeNormal();
+				if (RefDir.IsNearlyZero())
+				{
+					RefDir = Chain.RefDirs.Num() > 0 ? Chain.RefDirs.Last() : FVector::ZAxisVector;
+				}
 			}
 			else
 			{
-				Chain.BendAxisA.Add(0);
-				Chain.BendAxisB.Add(1);
+				RefDir = Chain.RefDirs.Last();
 			}
+			Chain.RefDirs.Add(RefDir);
 		}
 		Chain.FKJoints = Chain.RefJoints;
+		Chain.SimPos.SetNum(BoneCount);
+		Chain.SimPrev.SetNum(BoneCount);
 		Chains.Add(MoveTemp(Chain));
+	}
+
+	// Ring layout: each chain's outward direction and its place round the body. The stroke phase comes from
+	// that angle (an ordered travelling ring), never from a random number.
+	FVector Centre = FVector::ZeroVector;
+	for (const FGBTentacleChain& Chain : Chains)
+	{
+		Centre += FVector(Chain.RefJoints[0].X, Chain.RefJoints[0].Y, 0.f);
+	}
+	if (Chains.Num() > 0)
+	{
+		Centre /= static_cast<float>(Chains.Num());
+	}
+	for (FGBTentacleChain& Chain : Chains)
+	{
+		FVector Out = FVector(Chain.RefJoints[0].X, Chain.RefJoints[0].Y, 0.f) - Centre;
+		if (Out.SizeSquared() < KINDA_SMALL_NUMBER)
+		{
+			Out = FVector(Chain.RefJoints.Last().X, Chain.RefJoints.Last().Y, 0.f) - Centre;
+		}
+		Chain.Radial = Out.GetSafeNormal();
+		if (Chain.Radial.IsNearlyZero())
+		{
+			Chain.Radial = FVector::XAxisVector;
+		}
+		Chain.Tangent = FVector::CrossProduct(FVector::ZAxisVector, Chain.Radial).GetSafeNormal();
+		Chain.RingAngle = FMath::Atan2(Chain.Radial.Y, Chain.Radial.X);
 	}
 
 	UE_LOG(LogGB, Display, TEXT("TentacleRig: %d chains ready"), Chains.Num());
@@ -190,6 +252,11 @@ int32 UGBTentacleRigComponent::GetBoneCount() const
 		Count += Chain.Bones.Num();
 	}
 	return Count;
+}
+
+int32 UGBTentacleRigComponent::GetJointCount(int32 ChainIndex) const
+{
+	return Chains.IsValidIndex(ChainIndex) ? Chains[ChainIndex].FKJoints.Num() : 0;
 }
 
 FVector UGBTentacleRigComponent::GetChainTipPosition(int32 ChainIndex) const
@@ -208,6 +275,15 @@ FVector UGBTentacleRigComponent::GetChainTipWorldPosition(int32 ChainIndex) cons
 		return FVector::ZeroVector;
 	}
 	return TentacleMesh->GetComponentTransform().TransformPosition(GetChainTipPosition(ChainIndex));
+}
+
+FVector UGBTentacleRigComponent::GetChainJointWorldPosition(int32 ChainIndex, int32 JointIndex) const
+{
+	if (!TentacleMesh.IsValid() || !Chains.IsValidIndex(ChainIndex) || !Chains[ChainIndex].FKJoints.IsValidIndex(JointIndex))
+	{
+		return FVector::ZeroVector;
+	}
+	return TentacleMesh->GetComponentTransform().TransformPosition(Chains[ChainIndex].FKJoints[JointIndex]);
 }
 
 void UGBTentacleRigComponent::SetReachTarget(const FVector& WorldTarget, float Weight)
@@ -232,9 +308,60 @@ void UGBTentacleRigComponent::AddRipple(float Strength)
 	RippleStrengthNow = Strength;
 }
 
+void UGBTentacleRigComponent::AddRecoil(const FVector& WorldDirection, float Strength)
+{
+	const FVector Direction = WorldDirection.GetSafeNormal();
+	if (Direction.IsNearlyZero())
+	{
+		return;
+	}
+	RecoilDirWorld = Direction;
+	RecoilEnvelope = FMath::Max(RecoilEnvelope, FMath::Clamp(Strength, 0.f, 1.f));
+}
+
 void UGBTentacleRigComponent::SetLimp(bool bInLimp)
 {
 	bLimp = bInLimp;
+}
+
+void UGBTentacleRigComponent::StartSyncMeasure()
+{
+	for (FGBTentacleChain& Chain : Chains)
+	{
+		Chain.SyncN = 0;
+		Chain.SyncX = Chain.SyncY = Chain.SyncXX = Chain.SyncYY = Chain.SyncXY = 0.0;
+	}
+	bMeasuringSync = true;
+}
+
+float UGBTentacleRigComponent::GetSyncCorrelation() const
+{
+	double Total = 0.0;
+	int32 Used = 0;
+	for (const FGBTentacleChain& Chain : Chains)
+	{
+		if (Chain.SyncN < GBTentacleRigLocal::MinSyncSamples)
+		{
+			continue;
+		}
+		const double N = Chain.SyncN;
+		const double VarX = N * Chain.SyncXX - Chain.SyncX * Chain.SyncX;
+		const double VarY = N * Chain.SyncYY - Chain.SyncY * Chain.SyncY;
+		if (VarX <= 1e-9 || VarY <= 1e-9)
+		{
+			continue;
+		}
+		Total += (N * Chain.SyncXY - Chain.SyncX * Chain.SyncY) / FMath::Sqrt(VarX * VarY);
+		++Used;
+	}
+	return Used > 0 ? static_cast<float>(Total / Used) : 0.f;
+}
+
+float UGBTentacleRigComponent::StrokeValue(const FGBTentacleChain& Chain, const FGBTentacleTuning& Tuning, float BoneDelay) const
+{
+	const float Phase = 2.f * PI * (StrokeCycle - Chain.StrokePhase - BoneDelay);
+	// A sine with a second harmonic: a quicker push out and a slower, gathering recovery.
+	return (FMath::Sin(Phase) + Tuning.StrokeSkew * FMath::Sin(2.f * Phase)) / (1.f + Tuning.StrokeSkew);
 }
 
 int32 UGBTentacleRigComponent::PickReachChain() const
@@ -268,7 +395,8 @@ int32 UGBTentacleRigComponent::PickReachChain() const
 void UGBTentacleRigComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (!IsReady())
+	UPoseableMeshComponent* Mesh = TentacleMesh.Get();
+	if (!IsReady() || !Mesh)
 	{
 		return;
 	}
@@ -276,31 +404,21 @@ void UGBTentacleRigComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	FGBTentacleTuning Tuning;
 	ReadTuning(Tuning);
 
+	// The whole frame is simulated (in sub-steps), so the motion keeps its speed at low FPS; only a huge hitch is cut.
 	const float Dt = FMath::Min(FMath::Max(DeltaTime, 0.f), GBTentacleRigLocal::MaxDeltaTime);
 	Time += Dt;
 
-	// Inertia: actor velocity and yaw rate in the actor frame (X forward, Y right, Z up).
-	FVector LocalVel = FVector::ZeroVector;
-	float YawRate = 0.f;
-	if (AActor* Owner = GetOwner())
-	{
-		const FQuat ActorQuat = Owner->GetActorQuat();
-		LocalVel = ActorQuat.Inverse().RotateVector(Owner->GetVelocity());
-		const float Yaw = Owner->GetActorRotation().Yaw;
-		if (bHasPrevYaw && Dt > KINDA_SMALL_NUMBER)
-		{
-			YawRate = FMath::DegreesToRadians(FMath::FindDeltaAngleDegrees(PrevYaw, Yaw) / Dt);
-		}
-		PrevYaw = Yaw;
-		bHasPrevYaw = true;
-	}
+	// Intent, smoothed: how fast it moves, whether it hunts, whether it winds up.
+	const float SpeedGoal = FMath::Clamp(Intent.WorldVelocity.Size2D() / FMath::Max(Intent.FullSpeed, 1.f), 0.f, 1.f);
+	SpeedBlend = FMath::FInterpTo(SpeedBlend, SpeedGoal, Dt, Tuning.IntentRate);
+	AggroBlend = FMath::FInterpTo(AggroBlend, Intent.bHasTarget ? 1.f : 0.f, Dt, Tuning.IntentRate);
+	WindupBlend = FMath::FInterpTo(WindupBlend, FMath::Clamp(Intent.Windup, 0.f, 1.f), Dt, Tuning.IntentRate * GBTentacleRigLocal::WindupBlendBoost);
+	RecoilEnvelope = FMath::Max(0.f, RecoilEnvelope - Dt / Tuning.RecoilTime);
 
-	const float FwdTarget = FMath::Clamp(LocalVel.X * Tuning.LagStrength,
-		-GBTentacleRigLocal::MaxLagDegrees, GBTentacleRigLocal::MaxLagDegrees);
-	const float SideTarget = FMath::Clamp(-(LocalVel.Y + YawRate * GBTentacleRigLocal::YawLeverCm) * Tuning.LagStrength,
-		-GBTentacleRigLocal::MaxLagDegrees, GBTentacleRigLocal::MaxLagDegrees);
-	GBTentacle::SpringStep(LagFwd, LagFwdVel, FwdTarget, Tuning.LagStiffness, Tuning.LagDamping, Dt);
-	GBTentacle::SpringStep(LagSide, LagSideVel, SideTarget, Tuning.LagStiffness, Tuning.LagDamping, Dt);
+	// ONE stroke for the whole body: it speeds up when the body moves fast or prepares an attack.
+	const float Quicken = 1.f + Tuning.StrokeSpeedGain * SpeedBlend
+		+ Tuning.StrokeWindupGain * FMath::Max(WindupBlend, GBTentacleRigLocal::AggroStrokeShare * AggroBlend);
+	StrokeCycle += Dt * Tuning.StrokeHz * Quicken;
 
 	// Ramps: reach weight and limp.
 	const float BlendIn = FMath::Max(Tuning.ReachBlendIn, KINDA_SMALL_NUMBER);
@@ -317,19 +435,17 @@ void UGBTentacleRigComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	const int32 SolvingChain = (ReachWeight > KINDA_SMALL_NUMBER) ? PickReachChain() : INDEX_NONE;
 	for (int32 Index = 0; Index < Chains.Num(); ++Index)
 	{
-		PoseChain(Chains[Index], Tuning, WaveScale, Index == SolvingChain);
+		PoseChain(Chains[Index], Tuning, WaveScale, Index == SolvingChain, Dt);
 	}
+	// One refresh for all the local rotations written above.
+	Mesh->MarkRefreshTransformDirty();
 }
 
-void UGBTentacleRigComponent::PoseChain(FGBTentacleChain& Chain, const FGBTentacleTuning& Tuning, float WaveScale, bool bSolving)
+void UGBTentacleRigComponent::PoseChain(FGBTentacleChain& Chain, const FGBTentacleTuning& Tuning, float WaveScale, bool bSolving, float Dt)
 {
 	UPoseableMeshComponent* Mesh = TentacleMesh.Get();
-	if (!Mesh)
-	{
-		return;
-	}
-	const int32 BoneCount = Chain.Bones.Num();
-	if (BoneCount == 0)
+	const int32 N = Chain.Bones.Num();
+	if (!Mesh || N < 2)
 	{
 		return;
 	}
@@ -337,92 +453,206 @@ void UGBTentacleRigComponent::PoseChain(FGBTentacleChain& Chain, const FGBTentac
 	// Reach blend of this chain: the other layers fade out by the weight.
 	const float ReachW = bSolving ? ReachWeight : 0.f;
 	const float OtherScale = (1.f - ReachW) * WaveScale;
+	const FTransform ToWorld = Mesh->GetComponentTransform();
 
-	// Hit ripple: a pulse running from the root to the tip over RippleDuration.
+	// Hit ripple: a pulse running from the root to the tip over RippleDuration (the same on every chain).
 	float RippleAmp = 0.f;
-	float RippleFreq = 0.f;
+	float RippleFront = 0.f;
 	const float RippleDuration = FMath::Max(Tuning.RippleDuration, KINDA_SMALL_NUMBER);
-	const float RippleFront = RippleElapsed / RippleDuration;
-	if (RippleFront < 1.5f)
+	if (RippleElapsed / RippleDuration < 1.5f)
 	{
 		RippleAmp = RippleStrengthNow;
-		RippleFreq = RippleFront;
+		RippleFront = RippleElapsed / RippleDuration;
 	}
 
-	// FABRIK for the solving chain, from the current pose towards the target.
-	TArray<FVector> Solved;
-	if (bSolving)
+	// Intent directions in component space.
+	const FVector StreamBack = (-ToWorld.InverseTransformVectorNoScale(FVector(Intent.WorldVelocity.X, Intent.WorldVelocity.Y, 0.f)).GetSafeNormal()
+		+ FVector(0.f, 0.f, -GBTentacleRigLocal::StreamBackDown)).GetSafeNormal();
+	FVector ToTargetH = FVector::ZeroVector;
+	if (Intent.bHasTarget)
 	{
-		Solved = Chain.FKJoints;
-		const FVector TargetLocal = Mesh->GetComponentTransform().InverseTransformPosition(ReachTargetWorld);
-		GBTentacle::SolveFabrik(Solved, TargetLocal, GBTentacleRigLocal::ReachIterations, GBTentacleRigLocal::ReachToleranceCm);
+		ToTargetH = ToWorld.InverseTransformPosition(Intent.WorldTarget);
+		ToTargetH.Z = 0.f;
+		ToTargetH = ToTargetH.GetSafeNormal();
 	}
+	const float Facing = FMath::Clamp(FVector::DotProduct(Chain.Radial, ToTargetH), 0.f, 1.f); // rear chains stay back
+	const FVector AimWant = (ToTargetH * GBTentacleRigLocal::AimForward + FVector(0.f, 0.f, GBTentacleRigLocal::AimLift)).GetSafeNormal();
+	const FVector RecoilWant = (ToWorld.InverseTransformVectorNoScale(RecoilDirWorld).GetSafeNormal()
+		+ FVector(0.f, 0.f, -GBTentacleRigLocal::RecoilDown)).GetSafeNormal();
+	const float RecoilAmount = Tuning.RecoilDeg * FMath::Square(RecoilEnvelope);
 
-	FQuat ParentComp = RootCompQuat;
-	for (int32 Bone = 0; Bone < BoneCount; ++Bone)
+	// 1. Target pose (component space): the shared stroke swings every bone about the chain's tangent
+	// (+ gathers in, - pushes out), then the intent layers tilt the bone directions.
+	TArray<FVector, TInlineAllocator<16>> TargetJoint;
+	TArray<FVector, TInlineAllocator<16>> TargetDir;
+	TargetJoint.SetNum(N);
+	TargetDir.SetNum(N);
+	TargetJoint[0] = Chain.RefJoints[0];
+	float SharedTip = 0.f; // the shared body command (stroke and coil) at the tip bone, for the sync measure
+	for (int32 Bone = 0; Bone < N; ++Bone)
 	{
-		const float Growth = static_cast<float>(Bone + 1) / static_cast<float>(BoneCount);
-		const FVector RefDir = (Chain.RefJoints[Bone + 1] - Chain.RefJoints[Bone]).GetSafeNormal();
+		const float Growth = static_cast<float>(Bone + 1) / static_cast<float>(N);
+		const float Weight = FMath::Pow(Growth, Tuning.TipBias); // more motion towards the tip
 
-		// Layer 1: idle wave, two perpendicular bends, out of step per chain.
-		float BendA = GBTentacle::WaveAngle(Time, Tuning.WaveFreq, Chain.Phase, static_cast<float>(Bone),
-			Tuning.WaveLength, Tuning.WaveAmp, BoneCount);
-		float BendB = GBTentacle::WaveAngle(Time, Tuning.WaveFreq, Chain.Phase + 0.25f, static_cast<float>(Bone),
-			Tuning.WaveLength, Tuning.WaveAmp, BoneCount);
-		// Layer 4: hit ripple on the first bend axis.
+		const float Stroke = StrokeValue(Chain, Tuning, static_cast<float>(Bone) * Tuning.StrokeLag);
+		float Theta = (Tuning.StrokeAmp * Stroke * (1.f - GBTentacleRigLocal::WindupStrokeDamp * WindupBlend) + Tuning.CoilDeg * WindupBlend) * Weight;
+		if (Bone == N - 1)
+		{
+			SharedTip = Theta;
+		}
 		if (RippleAmp != 0.f)
 		{
-			const float D = (RippleFreq - Growth) * GBTentacleRigLocal::RippleWidth;
-			BendA += RippleAmp * FMath::Exp(-D * D)
-				* FMath::Sin(2.f * PI * (GBTentacleRigLocal::RippleWaves * RippleFreq - Growth));
+			const float D = (RippleFront - Growth) * GBTentacleRigLocal::RippleWidth;
+			Theta += RippleAmp * FMath::Exp(-D * D) * FMath::Sin(2.f * PI * (GBTentacleRigLocal::RippleWaves * RippleFront - Growth));
 		}
-		BendA *= OtherScale;
-		BendB *= OtherScale;
-		if (Bone < GBTentacleRigLocal::RootLimitedBones)
+		FVector Dir = GBTentacleRigLocal::AxisAngleQuat(Chain.Tangent, Theta * OtherScale).RotateVector(Chain.RefDirs[Bone]);
+		Dir = GBTentacleRigLocal::TiltToward(Dir, StreamBack, Tuning.StreamDeg * SpeedBlend * Weight * OtherScale);
+		Dir = GBTentacleRigLocal::TiltToward(Dir, AimWant, Tuning.AimDeg * AggroBlend * Facing * (1.f - 0.5f * WindupBlend) * Weight * OtherScale);
+		Dir = GBTentacleRigLocal::TiltToward(Dir, RecoilWant, RecoilAmount * Weight * OtherScale);
+		// Death: droop towards -Z.
+		Dir = GBTentacleRigLocal::TiltToward(Dir, FVector::DownVector, Tuning.LimpDroop * LimpWeight * Growth * GBTentacleRigLocal::LimpDroopScale);
+		TargetDir[Bone] = Dir.GetSafeNormal();
+		if (Bone + 1 < N)
 		{
-			BendA = FMath::Clamp(BendA, -Tuning.RootLimit, Tuning.RootLimit);
-			BendB = FMath::Clamp(BendB, -Tuning.RootLimit, Tuning.RootLimit);
+			TargetJoint[Bone + 1] = TargetJoint[Bone] + TargetDir[Bone] * Chain.SegLengths[Bone];
 		}
-		const FQuat Extra = FQuat(GBTentacleRigLocal::AxisVector(Chain.BendAxisA[Bone]), FMath::DegreesToRadians(BendA))
-			* FQuat(GBTentacleRigLocal::AxisVector(Chain.BendAxisB[Bone]), FMath::DegreesToRadians(BendB));
-		const FQuat Local = Chain.RefLocal[Bone] * Extra;
+	}
 
-		// Layer 2: inertia lag as a small component-space bend (scaled out on the reach chain).
-		const float LagScale = Growth * (1.f - ReachW);
-		const FQuat LagDelta = FQuat(FVector::YAxisVector, FMath::DegreesToRadians(LagFwd * LagScale))
-			* FQuat(FVector::XAxisVector, FMath::DegreesToRadians(LagSide * LagScale));
-		FQuat Comp = LagDelta * ParentComp * Local;
-
-		// Limp droop: rotate the bone direction towards -Z (frame-independent).
-		const float Droop = Tuning.LimpDroop * LimpWeight * Growth * (1.f - ReachW);
-		if (FMath::Abs(Droop) > KINDA_SMALL_NUMBER)
+	// 2. Verlet chain in world space, pulled to the target pose. The root rides the body, so any body motion
+	// (flight, bank, pitch, knockback) reaches the tips late and overshoots; gravity keeps the hang.
+	const float Scale = FMath::Max(ToWorld.GetScale3D().X, KINDA_SMALL_NUMBER);
+	TArray<FVector, TInlineAllocator<16>> TargetWorld;
+	TArray<float, TInlineAllocator<16>> LengthW;
+	TargetWorld.SetNum(N);
+	LengthW.SetNum(N);
+	float ChainLengthW = 0.f;
+	for (int32 Joint = 0; Joint < N; ++Joint)
+	{
+		TargetWorld[Joint] = ToWorld.TransformPosition(TargetJoint[Joint]);
+		LengthW[Joint] = Joint + 1 < N ? Chain.SegLengths[Joint] * Scale : 0.f;
+		ChainLengthW += LengthW[Joint];
+	}
+	if (Chain.bSimReady && (Chain.SimPos[N - 1] - TargetWorld[N - 1]).Size() > ChainLengthW * GBTentacleRigLocal::SimResetDistanceShare)
+	{
+		Chain.bSimReady = false; // teleported or never settled: start again from the pose
+	}
+	if (!Chain.bSimReady)
+	{
+		for (int32 Joint = 0; Joint < N; ++Joint)
 		{
-			const FVector Dir = (Comp * Chain.LocalDirs[Bone]).GetSafeNormal();
-			const FVector Axis = FVector::CrossProduct(Dir, FVector::DownVector);
-			if (!Axis.IsNearlyZero())
+			Chain.SimPos[Joint] = TargetWorld[Joint];
+			Chain.SimPrev[Joint] = TargetWorld[Joint];
+		}
+		Chain.bSimReady = true;
+	}
+
+	const int32 Steps = FMath::Clamp(FMath::CeilToInt(Dt / GBTentacleRigLocal::SimStep), 1, 40);
+	const float H = Dt / static_cast<float>(Steps);
+	const float VelocityKeep = FMath::Exp(-Tuning.FollowDamping * H);
+	const float HangScale = Tuning.Hang * (1.f + 2.f * LimpWeight);
+	for (int32 Step = 0; Step < Steps; ++Step)
+	{
+		Chain.SimPos[0] = TargetWorld[0];
+		Chain.SimPrev[0] = TargetWorld[0];
+		for (int32 Joint = 1; Joint < N; ++Joint)
+		{
+			const float Along = static_cast<float>(Joint) / static_cast<float>(N - 1);
+			const float Stiffness = Tuning.FollowStiffness * (1.f - Tuning.TipSoft * Along)
+				* (1.f + GBTentacleRigLocal::ReachStiffnessBoost * ReachW);
+			const FVector Velocity = (Chain.SimPos[Joint] - Chain.SimPrev[Joint]) * VelocityKeep;
+			FVector Acceleration = (TargetWorld[Joint] - Chain.SimPos[Joint]) * Stiffness;
+			Acceleration.Z -= Stiffness * HangScale * ChainLengthW * Along;
+			Chain.SimPrev[Joint] = Chain.SimPos[Joint];
+			Chain.SimPos[Joint] += Velocity + Acceleration * H * H;
+		}
+		for (int32 Pass = 0; Pass < GBTentacleRigLocal::SimConstraintPasses; ++Pass)
+		{
+			for (int32 Joint = 1; Joint < N; ++Joint)
 			{
-				Comp = GBTentacleRigLocal::AxisAngleQuat(Axis, Droop) * Comp;
+				const FVector Delta = Chain.SimPos[Joint] - Chain.SimPos[Joint - 1];
+				const float Length = Delta.Size();
+				const FVector Direction = Length > KINDA_SMALL_NUMBER ? Delta / Length : FVector(TargetDir[Joint - 1]);
+				Chain.SimPos[Joint] = Chain.SimPos[Joint - 1] + Direction * LengthW[Joint - 1];
 			}
 		}
-
-		if (bSolving && Solved.Num() == Chain.FKJoints.Num())
-		{
-			// Layer 3: turn the solved joint positions back into bone rotations (twist-minimal
-			// against the reference) and blend the composed pose towards them by the weight.
-			// At full weight the FK below reproduces the solved joints exactly.
-			const FVector SolvedDir = (Solved[Bone + 1] - Solved[Bone]).GetSafeNormal();
-			const FQuat SolvedComp = FQuat::FindBetweenNormals(RefDir, SolvedDir) * Chain.RefComp[Bone];
-			Comp = FQuat::Slerp(Comp, SolvedComp, ReachW);
-		}
-		Comp.Normalize();
-
-		Mesh->SetBoneRotationByName(Chain.Bones[Bone], Comp.Rotator(), EBoneSpaces::ComponentSpace);
-
-		// Forward kinematics for the next bone (and the tip queries): exact, from the same rotations.
-		const FVector BoneDir = (Comp * Chain.LocalDirs[Bone]).GetSafeNormal();
-		Chain.FKJoints[Bone + 1] = Chain.FKJoints[Bone] + BoneDir * Chain.SegLengths[Bone];
-		ParentComp = Comp;
 	}
-	// The root joint never moves.
-	Chain.FKJoints[0] = Chain.RefJoints[0];
+
+	// 3. Joints in component space; the reaching chain is blended towards its FABRIK solution.
+	TArray<FVector, TInlineAllocator<16>> Joints;
+	Joints.SetNum(N);
+	for (int32 Joint = 0; Joint < N; ++Joint)
+	{
+		Joints[Joint] = ToWorld.InverseTransformPosition(Chain.SimPos[Joint]);
+	}
+	if (bSolving)
+	{
+		TArray<FVector> Solved = Chain.FKJoints;
+		const FVector TargetLocal = ToWorld.InverseTransformPosition(ReachTargetWorld);
+		GBTentacle::SolveFabrik(Solved, TargetLocal, GBTentacleRigLocal::ReachIterations, GBTentacleRigLocal::ReachToleranceCm);
+		for (int32 Joint = 1; Joint < N && Joint < Solved.Num(); ++Joint)
+		{
+			Joints[Joint] = FMath::Lerp(Joints[Joint], Solved[Joint], ReachW);
+		}
+	}
+
+	// 4. Final pose: directions from the joints, bones _00/_01 limited to a cone around their reference
+	// direction (so hang or reach cannot push them through the shell), lengths kept exactly.
+	TArray<FVector, TInlineAllocator<16>> Final;
+	TArray<FVector, TInlineAllocator<16>> FinalDir;
+	Final.SetNum(N);
+	FinalDir.SetNum(N);
+	Final[0] = Chain.RefJoints[0];
+	for (int32 Bone = 0; Bone + 1 < N; ++Bone)
+	{
+		FVector Direction = (Joints[Bone + 1] - Final[Bone]).GetSafeNormal();
+		if (Direction.IsNearlyZero())
+		{
+			Direction = TargetDir[Bone];
+		}
+		if (Bone < GBTentacleRigLocal::RootLimitedBones)
+		{
+			Direction = GBTentacleRigLocal::LimitToCone(Direction, Chain.RefDirs[Bone], Bone == 0 ? Tuning.RootCone0 : Tuning.RootCone1);
+		}
+		FinalDir[Bone] = Direction;
+		Final[Bone + 1] = Final[Bone] + Direction * Chain.SegLengths[Bone];
+	}
+	FinalDir[N - 1] = FinalDir[N - 2];
+
+	// 5. Bone rotations (twist-minimal against the reference), written as local rotations in one batch.
+	FQuat PrevComp = RootCompQuat;
+	for (int32 Bone = 0; Bone < N; ++Bone)
+	{
+		FQuat Comp = FQuat::FindBetweenNormals(Chain.RefDirs[Bone], FinalDir[Bone]) * Chain.RefComp[Bone];
+		Comp.Normalize();
+		const int32 SkeletonIndex = Chain.BoneIndices[Bone];
+		if (Mesh->BoneSpaceTransforms.IsValidIndex(SkeletonIndex))
+		{
+			Mesh->BoneSpaceTransforms[SkeletonIndex].SetRotation(PrevComp.Inverse() * Comp);
+		}
+		PrevComp = Comp;
+	}
+
+	// 6. Remember the result for the tip queries and as the next sim state.
+	for (int32 Joint = 0; Joint < N; ++Joint)
+	{
+		Chain.FKJoints[Joint] = Final[Joint];
+		Chain.SimPos[Joint] = ToWorld.TransformPosition(Final[Joint]);
+		if (ReachW > 0.5f)
+		{
+			Chain.SimPrev[Joint] = Chain.SimPos[Joint];
+		}
+	}
+
+	// Smoke: the shared stroke against how far this tip really gathers in (radial, towards the body axis).
+	if (bMeasuringSync)
+	{
+		const double X = SharedTip;
+		const double Y = -FVector::DotProduct(Chain.FKJoints.Last() - Chain.RefJoints.Last(), Chain.Radial);
+		Chain.SyncN++;
+		Chain.SyncX += X;
+		Chain.SyncY += Y;
+		Chain.SyncXX += X * X;
+		Chain.SyncYY += Y * Y;
+		Chain.SyncXY += X * Y;
+	}
 }
