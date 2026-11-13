@@ -309,6 +309,9 @@ def build_pack_holo():
     xyz = g.binary(unreal.MaterialExpressionAppendVector, xy, g.mul(s, g.const(0.4, x0 + 1000, y0 + 350), x0 + 1150, y0 + 350),
                    x0 + 1300, y0 + 250)
     g.out(g.mul(xyz, weight, x0 + 1500, y0 + 300), "", unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    # The pack's master is made for static meshes; without this flag the game draws the tentacles with the default
+    # material (smoke 2026-11-13: "missing usage flag SkeletalMesh").
+    m.set_editor_property("used_with_skeletal_mesh", True)
     finish(m, HOLO_MASTER)
     mi = EAL.duplicate_asset(PACK_INSTANCE, mi_path)
     if not isinstance(mi, unreal.MaterialInstanceConstant):

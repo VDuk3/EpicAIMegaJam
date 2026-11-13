@@ -810,6 +810,7 @@ void AGBEnemyCharacter::HandleDamaged(const FGBDamageInfo& Info, float ActualDam
 	{
 		bProvoked = true;
 	}
+	OnDamagedVisual(Info, ActualDamage);
 }
 
 void AGBEnemyCharacter::HandlePresenceChanged()

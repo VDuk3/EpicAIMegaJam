@@ -484,6 +484,7 @@
 			"AttackMode": "Ranged",
 			"Element": "Physical",
 			"bPixelArt": false,
+			"ActorClass": "/Script/Glyphbound.GBEntity",
 			"Stats": {
 				"MaxHealth": 8000,
 				"MoveSpeed": 420,

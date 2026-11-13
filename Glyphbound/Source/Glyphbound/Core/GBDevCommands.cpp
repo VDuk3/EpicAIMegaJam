@@ -18,6 +18,8 @@
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "AI/GBEnemyCharacter.h"
+#include "AI/GBEntity.h"
+#include "AI/GBTentacleRigComponent.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBElementalStatusComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
@@ -74,6 +76,12 @@ namespace GBSmokeRun
 	static FName SmokeSkillNode = NAME_None;
 	static int32 SmokeSkillPointsBefore = 0;
 
+	// Entity step (the final boss, phase 1): the spawned test actor, the component-space tips at
+	// the start of the idle window, and the reach target for chain 0.
+	static TWeakObjectPtr<AGBEntity> SmokeEntity;
+	static TArray<FVector> SmokeEntityTipsA;
+	static FVector SmokeEntityReachTarget = FVector::ZeroVector;
+
 	static AGBGun* RifleInHand(AGBPlayerCharacter* Player)
 	{
 		AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
@@ -89,14 +97,6 @@ namespace GBSmokeRun
 
 	static FGBAmmoState ReloadAmmoBefore;
 
-	// One pinned beat of the reload animation: the gun is away from its rest pose, the magazine is where the beat says.
-	static void CheckReloadBeat(const TCHAR* Gun, AGBGun* Item, float Progress, bool bMagazineVisible)
-	{
-		const bool bVisible = Item->IsViewModelMagazineVisible();
-		const float Magazine = Item->GetViewModelMagazineOffsetCm();
-		const float RootCm = Item->GetViewModelRootOffsetCm();
-		const float RootDeg = Item->GetViewModelRootAngleDeg();
-		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload at %.2f: magazine visible=%d offset=%.1f cm, root %.1f cm and %.1f deg from rest"),
 	// Energy bar blink (the enchant's last seconds). SetEnchantTimeLeft moves the active weapon enchant's clock.
 	static void SetEnchantTimeLeft(AGBPlayerCharacter* Player, float Seconds)
 	{
@@ -132,6 +132,14 @@ namespace GBSmokeRun
 		}
 	}
 
+	// One pinned beat of the reload animation: the gun is away from its rest pose, the magazine is where the beat says.
+	static void CheckReloadBeat(const TCHAR* Gun, AGBGun* Item, float Progress, bool bMagazineVisible)
+	{
+		const bool bVisible = Item->IsViewModelMagazineVisible();
+		const float Magazine = Item->GetViewModelMagazineOffsetCm();
+		const float RootCm = Item->GetViewModelRootOffsetCm();
+		const float RootDeg = Item->GetViewModelRootAngleDeg();
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s reload at %.2f: magazine visible=%d offset=%.1f cm, root %.1f cm and %.1f deg from rest"),
 			Gun, Progress, bVisible ? 1 : 0, Magazine, RootCm, RootDeg);
 		if (!FMath::IsNearlyEqual(Item->GetReloadAnimProgress(), Progress, 0.001f))
 		{
@@ -1415,6 +1423,7 @@ namespace GBSmokeRun
 			}
 			const float Imbue = Gun->GetViewModelImbueSent();
 			UE_LOG(LogGB, Display, TEXT("SMOKE pistol half bar imbue=%.2f"), Imbue);
+			CheckEnchantBlink(TEXT("pistol"), Gun, false, TEXT("at half the enchant"));
 			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
@@ -1423,7 +1432,6 @@ namespace GBSmokeRun
 		});
 		Add(54.5f + S, TEXT("pistol shot kick and muzzle flash"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
-			CheckEnchantBlink(TEXT("pistol"), Gun, false, TEXT("at half the enchant"));
 			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem());
 			if (!Gun || Gun->GetWeaponId() != FName(TEXT("Pistol")))
 			{
@@ -1443,22 +1451,22 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE pistol muzzle flash FAILED: visible=%d kick=%.2f right after a shot (expected visible and a kick)"), bVisible ? 1 : 0, Kick);
 			}
+			SetEnchantTimeLeft(Player, 2.5f);
 		});
 		Add(54.95f + S, TEXT("pistol done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
+			if (const AGBGun* BlinkGun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
+			{
+				CheckEnchantBlink(TEXT("pistol"), BlinkGun, true, TEXT("with 2 seconds left"));
+			}
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
 		});
 		Add(55.2f + S, TEXT("rifle: own it, equip it in the gun slot, full magazine, no enchant"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			Player->GetEquipment()->GiveWeapon(TEXT("Rifle"), false, false);
-			SetEnchantTimeLeft(Player, 2.5f);
 			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Rifle"));
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Gun);
 			if (UGBStatusEffectComponent* Effects = Player->GetStatusEffects())
-			if (const AGBGun* BlinkGun = Cast<AGBGun>(Player->GetEquipment()->GetActiveItem()))
-			{
-				CheckEnchantBlink(TEXT("pistol"), BlinkGun, true, TEXT("with 2 seconds left"));
-			}
 			{
 				Effects->RemoveAllEffects();
 			}
@@ -1714,6 +1722,7 @@ namespace GBSmokeRun
 			}
 			const float Imbue = Gun->GetViewModelImbueSent();
 			UE_LOG(LogGB, Display, TEXT("SMOKE rifle half bar imbue=%.2f"), Imbue);
+			CheckEnchantBlink(TEXT("rifle"), Gun, false, TEXT("at half the enchant"));
 			if (FMath::Abs(Imbue - 0.5f) > 0.05f)
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle half bar FAILED: imbue=%.2f (expected about 0.5)"), Imbue);
@@ -1722,7 +1731,6 @@ namespace GBSmokeRun
 		});
 		Add(61.0f + S, TEXT("rifle shot kick and muzzle flash, screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
-			CheckEnchantBlink(TEXT("rifle"), Gun, false, TEXT("at half the enchant"));
 			AGBGun* Gun = RifleInHand(Player);
 			if (!Gun)
 			{
@@ -1738,23 +1746,219 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE rifle muzzle flash FAILED: visible=%d kick=%.2f right after a shot (expected visible and a kick)"), bVisible ? 1 : 0, Kick);
 			}
+			SetEnchantTimeLeft(Player, 2.5f);
 			Shot(TEXT("14e_rifle_fire"));
 		});
 		Add(61.6f + S, TEXT("rifle done: staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
-			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
-		});
-		Add(62.2f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
-		{
-			SetEnchantTimeLeft(Player, 2.5f);
-			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
-			FPlatformMisc::RequestExit(false);
-		});
-	}
 			if (const AGBGun* BlinkGun = RifleInHand(Player))
 			{
 				CheckEnchantBlink(TEXT("rifle"), BlinkGun, true, TEXT("with 2 seconds left"));
 			}
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+		});
+		Add(61.8f + S, TEXT("entity: spawn where the player can see it, attacks off"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			Player->GetAttributes()->SetInvulnerable(true);
+			const FVector PlayerLoc = Player->GetActorLocation();
+			const FVector EyeLoc = Player->GetAimOrigin();
+			EGBEraPresence Presence = EGBEraPresence::Both;
+			if (UGBEraSubsystem* Era = UGBEraSubsystem::Get(World))
+			{
+				Presence = Era->GetCurrentEra() == EGBEra::Past ? EGBEraPresence::PastOnly : EGBEraPresence::FutureOnly;
+			}
+			// The player may stand anywhere (an earlier step's grenade can throw them); try yaw
+			// offsets until the line from the eyes to the spawn is clear, so no pillar hides the Entity.
+			AGBEntity* Entity = nullptr;
+			float PickedYaw = 0.f;
+			float PickedDist = 0.f;
+			for (float Dist : { 800.f, 500.f })
+			{
+				for (int32 K = 0; K < 8 && !Entity; ++K)
+				{
+					const float Yaw = K * 45.f;
+					const float YawRad = FMath::DegreesToRadians(Yaw);
+					const FVector At = PlayerLoc + FVector(FMath::Cos(YawRad), FMath::Sin(YawRad), 0.f) * Dist;
+					FCollisionQueryParams LOSParams(SCENE_QUERY_STAT(GBSmokeEntityLOS), false, Player);
+					FHitResult LOSHit;
+					if (World->LineTraceSingleByChannel(LOSHit, EyeLoc, At + FVector(0.f, 0.f, 100.f), ECC_Visibility, LOSParams))
+					{
+						continue;
+					}
+					Entity = Cast<AGBEntity>(AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Entity_Phase1")), At, FRotator::ZeroRotator, Presence));
+					if (Entity)
+					{
+						PickedYaw = Yaw;
+						PickedDist = Dist;
+					}
+				}
+				if (Entity)
+				{
+					break;
+				}
+			}
+			if (Entity)
+			{
+				Entity->SetAttackSuppressed(true);
+				SmokeEntity = Entity;
+			}
+			else
+			{
+				SmokeEntity.Reset();
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity: could not spawn Entity_Phase1 with a clear view"));
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity spawned=%d yaw=%.0f dist=%.0f"), Entity ? 1 : 0, PickedYaw, PickedDist);
+		});
+		Add(62.3f + S, TEXT("entity: record the tentacle tips"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			SmokeEntityTipsA.Reset();
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					for (int32 Chain = 0; Chain < Rig->GetChainCount(); ++Chain)
+					{
+						SmokeEntityTipsA.Add(Rig->GetChainTipPosition(Chain));
+					}
+				}
+			}
+		});
+		Add(62.8f + S, TEXT("entity: idle motion between two moments 0.5 s apart"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			float Moved = 0.f;
+			int32 Bones = 0;
+			int32 Chains = 0;
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					Chains = Rig->GetChainCount();
+					Bones = Rig->GetBoneCount();
+					for (int32 Chain = 0; Chain < Chains && Chain < SmokeEntityTipsA.Num(); ++Chain)
+					{
+						Moved = FMath::Max(Moved, FVector::Dist(SmokeEntityTipsA[Chain], Rig->GetChainTipPosition(Chain)));
+					}
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity bones=%d chains=%d tip_moved=%.1f"), Bones, Chains, Moved);
+			if (Chains == 0 || Bones == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity: no tentacle chains (bones=%d chains=%d)"), Bones, Chains);
+			}
+			else if (Moved <= 3.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity FAILED: tips moved %.1f cm in 0.5 s (expected more than 3)"), Moved);
+			}
+		});
+		Add(62.9f + S, TEXT("entity: reach 60 cm in front of the tip of chain 0"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					if (Rig->GetChainCount() > 0)
+					{
+						const FVector Tip = Rig->GetChainTipWorldPosition(0);
+						FVector Out = Tip - Entity->GetActorLocation();
+						Out.Z = 0.f;
+						if (Out.IsNearlyZero())
+						{
+							Out = Entity->GetActorForwardVector();
+						}
+						SmokeEntityReachTarget = Tip + Out.GetSafeNormal() * 60.f;
+						Rig->SetReachChain(0);
+						Rig->SetReachTarget(SmokeEntityReachTarget, 1.f);
+					}
+				}
+			}
+		});
+		Add(63.5f + S, TEXT("entity: reach error, then release"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			float Error = -1.f;
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				if (UGBTentacleRigComponent* Rig = Entity->GetTentacleRig())
+				{
+					if (Rig->GetChainCount() > 0)
+					{
+						Error = FVector::Dist(Rig->GetChainTipWorldPosition(0), SmokeEntityReachTarget);
+					}
+					Rig->ClearReach();
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity reach error=%.1f"), Error);
+			if (!(Error >= 0.f && Error < 15.f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity reach FAILED: error %.1f cm (expected less than 15)"), Error);
+			}
+		});
+		Add(63.8f + S, TEXT("entity: weak point, stand 4 m away, frame it"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			int32 Eye = 0;
+			int32 Shell = 0;
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				Eye = Entity->IsHeadshotLocation(Entity->GetEyeCentreWorld()) ? 1 : 0;
+				Shell = Entity->IsHeadshotLocation(Entity->GetShellTopWorld()) ? 1 : 0;
+				UE_LOG(LogGB, Display, TEXT("SMOKE entity diag %s"), *Entity->DescribeVisual());
+				FVector ToEntity = Entity->GetActorLocation() - Player->GetActorLocation();
+				ToEntity.Z = 0.f;
+				if (ToEntity.IsNearlyZero())
+				{
+					ToEntity = Entity->GetActorForwardVector();
+				}
+				ToEntity.Normalize();
+				// Stand 5 m from it so the whole Entity fits the frame if it renders.
+				const FVector PlayerSpot = Entity->GetActorLocation() - ToEntity * 500.f;
+				Player->SetActorLocation(FVector(PlayerSpot.X, PlayerSpot.Y, Player->GetActorLocation().Z),
+					false, nullptr, ETeleportType::TeleportPhysics);
+				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+				{
+					// Aim from the camera (70 cm above the capsule centre), at a point a little
+					// below the middle so the tall Entity sits in the frame above the HUD.
+					FVector CameraLoc = Player->GetActorLocation() + FVector(0.f, 0.f, 70.f);
+					if (APlayerCameraManager* Camera = PC->PlayerCameraManager)
+					{
+						CameraLoc = Camera->GetCameraLocation();
+					}
+					const FVector Middle = Entity->GetActorLocation() + FVector(0.f, 0.f, 60.f);
+					const FRotator Aim = (Middle - CameraLoc).Rotation();
+					PC->SetControlRotation(Aim);
+					UE_LOG(LogGB, Display, TEXT("SMOKE entity aim yaw=%.1f pitch=%.1f eye=%s control=%s"),
+						Aim.Yaw, Aim.Pitch, *Entity->GetEyeCentreWorld().ToCompactString(),
+						*PC->GetControlRotation().ToCompactString());
+					if (APlayerCameraManager* Camera = PC->PlayerCameraManager)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE entity cam loc=%s rot=%s"),
+							*Camera->GetCameraLocation().ToCompactString(), *Camera->GetCameraRotation().ToCompactString());
+					}
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE entity weakpoint eye=%d shell=%d"), Eye, Shell);
+			if (Eye != 1 || Shell != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE entity weakpoint FAILED: eye=%d (expected 1) shell=%d (expected 0)"), Eye, Shell);
+			}
+		});
+		Add(64.0f + S, TEXT("entity: screenshot with the whole Entity visible"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			Shot(TEXT("15a_entity"));
+		});
+		Add(64.2f + S, TEXT("entity: destroy it, so the smoke steps after it are not affected"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBEntity* Entity = SmokeEntity.Get())
+			{
+				Entity->Destroy();
+			}
+			SmokeEntity.Reset();
+			Player->GetAttributes()->SetInvulnerable(false);
+		});
+		Add(64.8f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+			FPlatformMisc::RequestExit(false);
+		});
+	}
 
 	static bool Tick(float)
 	{
@@ -1865,6 +2069,39 @@ namespace GBSmokeRun
 		TEXT("gb.BuildUp"),
 		TEXT("Adds raw elemental build-up to every living enemy within 1500 cm: gb.BuildUp <Fire|Lightning|Ice> <Amount>"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunBuildUp));
+
+	static void RunSpawnEntity(UWorld* World)
+	{
+		AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+		if (!Player)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.SpawnEntity: no player character"));
+			return;
+		}
+		FVector Aim = Player->GetAimDirection();
+		Aim.Z = 0.f;
+		if (Aim.IsNearlyZero())
+		{
+			Aim = Player->GetActorForwardVector();
+		}
+		const FVector At = Player->GetActorLocation() + Aim.GetSafeNormal() * 1200.f;
+		EGBEraPresence Presence = EGBEraPresence::Both;
+		if (UGBEraSubsystem* Era = UGBEraSubsystem::Get(World))
+		{
+			Presence = Era->GetCurrentEra() == EGBEra::Past ? EGBEraPresence::PastOnly : EGBEraPresence::FutureOnly;
+		}
+		if (!AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Entity_Phase1")), At, FRotator::ZeroRotator, Presence))
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.SpawnEntity: spawn of Entity_Phase1 failed"));
+			return;
+		}
+		UE_LOG(LogGB, Display, TEXT("gb.SpawnEntity: spawned Entity_Phase1 at %s"), *At.ToCompactString());
+	}
+
+	static FAutoConsoleCommandWithWorld SpawnEntityCommand(
+		TEXT("gb.SpawnEntity"),
+		TEXT("Spawns Entity_Phase1 12 m in front of the player, in the player's current era."),
+		FConsoleCommandWithWorldDelegate::CreateStatic(&RunSpawnEntity));
 }
 
 #endif // !UE_BUILD_SHIPPING

@@ -92,7 +92,7 @@ public:
 	UGBEraComponent* GetEraComponent() const { return EraComponent; }
 
 	/** True if a world-space hit location is on the head (top HeadFraction of the capsule). */
-	bool IsHeadshotLocation(const FVector& HitLocation) const;
+	virtual bool IsHeadshotLocation(const FVector& HitLocation) const;
 
 	/** Seconds of control lock left (stun / freeze debug view). */
 	float GetControlLockTime() const { return ControlLockTime; }
@@ -122,6 +122,8 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	void HandleDamaged(const FGBDamageInfo& Info, float ActualDamage);
+	/** Subclass visual reaction to a landed hit (the Entity ripples its tentacles and flashes the eye). */
+	virtual void OnDamagedVisual(const FGBDamageInfo& Info, float ActualDamage) { (void)Info; (void)ActualDamage; }
 	void HandlePresenceChanged();
 	void HandleDataReloaded();
 	void HandleElementalStatusStarted(EGBElement Element, FName Reaction, float Duration);

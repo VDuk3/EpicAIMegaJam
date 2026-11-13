@@ -84,7 +84,19 @@
 		"RespawnRefillAmmo": 1,
 		"EraTravelHealthFraction": 1,
 		"EraTravelManaFraction": 1,
-		"EraTravelRefillAmmo": 1
+		"EraTravelRefillAmmo": 1,
+		"EntityTentacleWaveFreq": 0.6,
+		"EntityTentacleWaveAmp": 6,
+		"EntityTentacleWaveLength": 2.5,
+		"EntityTentacleLagStrength": 0.025,
+		"EntityTentacleLagStiffness": 40,
+		"EntityTentacleLagDamping": 12,
+		"EntityTentacleRootLimit": 10,
+		"EntityTentacleReachBlendIn": 0.3,
+		"EntityTentacleReachBlendOut": 0.4,
+		"EntityTentacleRippleStrength": 10,
+		"EntityTentacleRippleDuration": 0.5,
+		"EntityTentacleLimpDroop": 2
 	},
 	"Strings": {
 		"ElementalDefault.FireStatusReaction": "Ignite",
