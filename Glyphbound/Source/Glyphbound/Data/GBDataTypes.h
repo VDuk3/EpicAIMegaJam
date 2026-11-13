@@ -130,7 +130,7 @@ struct GLYPHBOUND_API FGBWeaponDefinition
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FString ActorClass;
 
-	/** Viewmodel style. Empty = the placeholder shapes; "Pistol" = the real pistol meshes (Weapons/GBGun). */
+	/** Viewmodel style. Empty = the placeholder shapes; "Pistol" or "Rifle" = the real meshes of that model (Weapons/GBGun). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FString ViewModel;
 
