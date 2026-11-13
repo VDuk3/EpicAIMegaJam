@@ -2714,7 +2714,7 @@ namespace GBSmokeRun
 				GEngine->Exec(World, TEXT("pvfx.Spawn FluidFire 0.6 700"));
 			}
 		});
-		Add(68.9f + S, TEXT("pixelvfx: screenshot of the baked fire lighting the room"), [](UWorld* World, AGBPlayerCharacter*)
+		Add(68.7f + S, TEXT("pixelvfx: screenshot of the baked fire lighting the room"), [](UWorld* World, AGBPlayerCharacter*)
 		{
 			if (!IConsoleManager::Get().FindConsoleObject(TEXT("pvfx.Spawn")))
 			{
@@ -2734,7 +2734,85 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx FAILED: %d baked clips in the world (expected 1: is Content/Data/Vfx/FluidFire there?)"), Clips);
 			}
 			Shot(TEXT("16_pixelvfx_fire"));
-		}, 0.5f);
+		}, 0.35f);
+		// The Fireball carries the baked fire clip in flight and plays the baked explosion where it lands (Spells.json:
+		// Strings FlightVfx / ImpactVfx). Aimed at the floor a few metres ahead so it lands inside this block.
+		// Earlier steps change the loadout: the block equips the Fireball in slot 0 and puts the previous spell back at the end.
+		static FName PixelVfxPreviousSlot0;
+		Add(68.72f + S, TEXT("pixelvfx: aim at the floor a few metres ahead"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			PixelVfxPreviousSlot0 = Player->GetSpellbook()->GetSlotSpell(0);
+			Player->GetSpellbook()->EquipSpell(0, FName(TEXT("Fireball")));
+			// The ground fire has had its screenshot: remove it, or it stands right behind the Fireball in the next two.
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				if (It->GetClass()->GetName() == TEXT("GBPixelVfxActor"))
+				{
+					It->Destroy();
+				}
+			}
+			SetQTEEnabled(false);
+			Player->GetAttributes()->RestoreAll();
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(-15.f, PC->GetControlRotation().Yaw, 0.f));
+			}
+			MarkSim(World);
+		});
+		Add(68.8f + S, TEXT("pixelvfx: cast the Fireball"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(0);
+			MarkSim(World);
+			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball cast ok=%d spell=%s"), bOk ? 1 : 0, *Player->GetSpellbook()->GetSlotSpell(0).ToString());
+		}, 0.03f);
+		Add(68.9f + S, TEXT("pixelvfx: screenshot of the Fireball in flight"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			int32 Projectiles = 0;
+			int32 WithClip = 0;
+			for (TActorIterator<AGBProjectile> It(World); It; ++It)
+			{
+				++Projectiles;
+				WithClip += It->HasFlightVfx() ? 1 : 0;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball flight projectiles=%d with_clip=%d"), Projectiles, WithClip);
+			if (WithClip < 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: no projectile in flight carries the baked clip (projectiles=%d)"), Projectiles);
+			}
+			Shot(TEXT("17_pixelvfx_fireball_flight"));
+		}, 0.07f);
+		Add(69.2f + S, TEXT("pixelvfx: screenshot of the Fireball's baked explosion"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			int32 Clips = 0;
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				Clips += It->GetClass()->GetName() == TEXT("GBPixelVfxActor") ? 1 : 0;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE pixelvfx fireball impact clips=%d"), Clips);
+			if (Clips != 1)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE pixelvfx fireball FAILED: %d baked clips in the world (expected 1: the explosion)"), Clips);
+			}
+			Shot(TEXT("18_pixelvfx_fireball_impact"));
+		}, 0.6f);
+		Add(69.3f + S, TEXT("pixelvfx: remove the clips and look ahead again, so the steps after this block are not affected"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				if (It->GetClass()->GetName() == TEXT("GBPixelVfxActor"))
+				{
+					It->Destroy();
+				}
+			}
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(FRotator(0.f, PC->GetControlRotation().Yaw, 0.f));
+			}
+			if (!PixelVfxPreviousSlot0.IsNone() && PixelVfxPreviousSlot0 != FName(TEXT("Fireball")))
+			{
+				Player->GetSpellbook()->EquipSpell(0, PixelVfxPreviousSlot0);
+			}
+		}, 0.7f);
 		Add(69.4f + S, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));

@@ -57,6 +57,17 @@ One JSON file per effect in `Bake/Jobs/`. The main keys:
 The four jobs in the repository bake Epic's Niagara Fluids gas templates (fire, a smoke column with fire at its
 base, an explosion) and a fourth clip, arcane fire, from the same fire simulation with the arcane ramp.
 
+## In the game
+
+- The game module depends on the Runtime module (`Glyphbound.Build.cs`), so the plugin must stay enabled.
+- A projectile spell names its clips in `Content/Data/Spells.json`: Strings `FlightVfx` (shown instead of the sprite
+  while it flies) and `ImpactVfx` (a one-shot where it explodes), with Params `FlightVfxHeight` (cm),
+  `ImpactVfxSize` (frame width as a multiple of the blast diameter) and `ImpactVfxRate` (playback speed).
+  The Fireball uses `FluidFire` and `FluidExplosion`. Without the strings a spell looks as it did before.
+- `UGBPixelVfxComponent::bPivotAtLightAnchor` puts the component at the clip's bright centre instead of its baked
+  pivot (the base): use it for anything that travels or bursts around a point.
+- `Glow` (job key `World.Glow`) brightens only fire-like pixels: saturated ones, or ones as bright as the bone-white
+  core. Greys are left alone, so the smoke in a clip keeps its palette colour.
 ## Limits (known and accepted)
 
 - A baked clip is one view of the effect: it does not react to wind, collisions or the player the way the live

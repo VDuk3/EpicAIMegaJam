@@ -8,7 +8,7 @@
 #   Atlas     (texture object) the baked atlas, sampled with the texture's own sampler so nearest filtering survives
 #   FrameU/V/W/H (scalars)   UV = TexCoord0 * (FrameW, FrameH) + (FrameU, FrameV) (set per frame from C++)
 #   Tint      (vector)         multiplies the texture color
-#   Glow      (scalar)         emissive = sample.rgb * Tint.rgb * (1 + Glow)
+#   Glow      (scalar)         emissive = sample.rgb * Tint.rgb * (1 + Glow * hot); hot = 1 on fire-like pixels, 0 on grey smoke
 #
 # M_PixelVfxSpriteLit: same layout, Masked, Default Lit, for effects that do not emit (smoke). It receives the
 # scene's light and shadows, including the light of a pixel fire next to it. Base color = sample * Tint,
@@ -154,7 +154,41 @@ def add_sprite_sampling(graph, atlas, frame_u, frame_v, frame_w, frame_h):
     return sample
 
 
+def constant(graph, value, x, y):
+    return graph.node(unreal.MaterialExpressionConstant, x, y, r=value)
+
+
+def binary(graph, expression_class, a, a_output, b, b_output, x, y):
+    expression = graph.node(expression_class, x, y)
+    graph.connect(a, a_output, expression, "A")
+    graph.connect(b, b_output, expression, "B")
+    return expression
+
+
+def add_hot_mask(graph, sample):
+    """1 on fire-like pixels (saturated, or very bright like the bone-white core), 0 on greys (smoke).
+    Only those pixels take the Glow, so the smoke of a clip keeps its palette colour.
+    hot = saturate(max(saturation * 2.5 - 0.25, (max_channel - 0.7) * 4))"""
+    max_rg = binary(graph, unreal.MaterialExpressionMax, sample, "R", sample, "G", 150, 420)
+    max_c = binary(graph, unreal.MaterialExpressionMax, max_rg, "", sample, "B", 300, 420)
+    min_rg = binary(graph, unreal.MaterialExpressionMin, sample, "R", sample, "G", 150, 520)
+    min_c = binary(graph, unreal.MaterialExpressionMin, min_rg, "", sample, "B", 300, 520)
+    spread = binary(graph, unreal.MaterialExpressionSubtract, max_c, "", min_c, "", 450, 470)
+    safe_max = binary(graph, unreal.MaterialExpressionMax, max_c, "", constant(graph, 0.001, 300, 620), "", 450, 570)
+    saturation = binary(graph, unreal.MaterialExpressionDivide, spread, "", safe_max, "", 600, 470)
+    sat_scaled = binary(graph, unreal.MaterialExpressionMultiply, saturation, "", constant(graph, 2.5, 600, 570), "", 750, 470)
+    sat_term = binary(graph, unreal.MaterialExpressionSubtract, sat_scaled, "", constant(graph, 0.25, 750, 570), "", 900, 470)
+    bright = binary(graph, unreal.MaterialExpressionSubtract, max_c, "", constant(graph, 0.7, 450, 720), "", 600, 670)
+    bright_term = binary(graph, unreal.MaterialExpressionMultiply, bright, "", constant(graph, 4.0, 600, 770), "", 750, 670)
+    both = binary(graph, unreal.MaterialExpressionMax, sat_term, "", bright_term, "", 1050, 570)
+    hot = graph.node(unreal.MaterialExpressionSaturate, 1200, 570)
+    graph.connect(both, "", hot, ["", "Input"])
+    return hot
+
+
 def add_sprite_color(graph, sample, tint, glow, lit):
+    hot = add_hot_mask(graph, sample)
+    glow = binary(graph, unreal.MaterialExpressionMultiply, glow, "", hot, "", 300, 150)
     tint_r = single_mask(graph, tint, -150, -300, "r")
     tint_g = single_mask(graph, tint, -150, -220, "g")
     tint_b = single_mask(graph, tint, -150, -140, "b")

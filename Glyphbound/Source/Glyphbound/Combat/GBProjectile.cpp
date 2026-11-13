@@ -17,6 +17,9 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "GBPixelVfxActor.h"
+#include "GBPixelVfxComponent.h"
+#include "GBPixelVfxSubsystem.h"
 
 namespace GBProjectileLocal
 {
@@ -134,7 +137,12 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
 	if (Config.bPixelArt)
 	{
 		Mesh->SetVisibility(false);
-		if (UGBPixelSpriteLibrary* SpriteLibrary = UGBPixelSpriteLibrary::Get(this))
+		if (!Config.FlightVfxId.IsNone() && SetupFlightVfx())
+		{
+			Sprite->SetVisibility(false);
+			Sprite->SetHiddenInGame(true);
+		}
+		else if (UGBPixelSpriteLibrary* SpriteLibrary = UGBPixelSpriteLibrary::Get(this))
 		{
 			SpriteLibrary->SetupBillboard(Sprite, Config.SpriteId, VisualSize);
 		}
@@ -172,6 +180,90 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
 		Sprite->SetHiddenInGame(true);
 		GBPlaceholder::SetupShape(Mesh, EGBShape::Sphere, FVector(VisualSize), Config.Color, /*bGlow*/ true);
 	}
+}
+
+namespace GBProjectileLocal
+{
+	const FGBPixelVfxClip* FindVfxClip(const UObject* WorldContext, FName ClipId)
+	{
+		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+		const UGBPixelVfxSubsystem* Vfx = GameInstance ? GameInstance->GetSubsystem<UGBPixelVfxSubsystem>() : nullptr;
+		return Vfx ? Vfx->FindClip(ClipId) : nullptr;
+	}
+}
+
+bool AGBProjectile::SetupFlightVfx()
+{
+	const FGBPixelVfxClip* Clip = GBProjectileLocal::FindVfxClip(this, Config.FlightVfxId);
+	if (!Clip || Clip->WorldHeightCm <= 0.f)
+	{
+		UE_LOG(LogGB, Warning, TEXT("Projectile: baked clip '%s' not found; the sprite is used instead"), *Config.FlightVfxId.ToString());
+		return false;
+	}
+	FlightVfx = NewObject<UGBPixelVfxComponent>(this, NAME_None, RF_Transient);
+	FlightVfx->SizeScale = FMath::Max(Config.FlightVfxHeight, 1.f) / Clip->WorldHeightCm;
+	// Faces the camera fully (a shot can go up or down) and is centred on the bright core of the flame, not on its base.
+	FlightVfx->FacingOverride = TEXT("Billboard");
+	FlightVfx->bPivotAtLightAnchor = true;
+	// A shadow-casting light on every fast projectile is not worth its cost.
+	FlightVfx->bLightCastsShadows = false;
+	FlightVfx->bLightCastsShadowsSet = true;
+	FlightVfx->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	FlightVfx->RegisterComponent();
+	if (!FlightVfx->Play(Config.FlightVfxId))
+	{
+		FlightVfx->DestroyComponent();
+		FlightVfx = nullptr;
+		return false;
+	}
+	return true;
+}
+
+void AGBProjectile::SpawnImpactVfx(const FVector& Origin)
+{
+	UWorld* World = GetWorld();
+	const FGBPixelVfxClip* Clip = GBProjectileLocal::FindVfxClip(this, Config.ImpactVfxId);
+	if (!World || !Clip || Clip->WorldWidthCm <= 0.f)
+	{
+		return;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const float Scale = FMath::Max(Config.ExplosionRadius * 2.f * Config.ImpactVfxSize, 1.f) / Clip->WorldWidthCm;
+	// The clip is centred on its bright centre: on a floor hit half of the burst would be under the floor, so it is
+	// lifted until its centre is a fifth of the frame above the ground (static world only: never an enemy it hit).
+	FVector At = Origin;
+	const float MinHeight = Clip->WorldHeightCm * Scale * 0.2f;
+	FHitResult Floor;
+	const FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(GBImpactVfxFloor), false, this);
+	if (World->LineTraceSingleByObjectType(Floor, Origin + FVector(0.f, 0.f, 5.f), Origin - FVector(0.f, 0.f, MinHeight),
+		FCollisionObjectQueryParams(ECC_WorldStatic), TraceParams))
+	{
+		At.Z = Floor.ImpactPoint.Z + MinHeight;
+	}
+	AGBPixelVfxActor* Actor = World->SpawnActor<AGBPixelVfxActor>(AGBPixelVfxActor::StaticClass(), FTransform(At), Params);
+	if (!Actor || !Actor->PixelVfx)
+	{
+		return;
+	}
+	UGBPixelVfxComponent* Vfx = Actor->PixelVfx;
+	Vfx->SizeScale = Scale;
+	Vfx->PlayRate = FMath::Max(Config.ImpactVfxRate, 0.1f);
+	Vfx->FacingOverride = TEXT("Billboard");
+	Vfx->bPivotAtLightAnchor = true;
+	Vfx->bLightCastsShadows = false;
+	Vfx->bLightCastsShadowsSet = true;
+	Vfx->bAutoDestroyOwnerWhenFinished = true;
+	if (!Vfx->Play(Config.ImpactVfxId))
+	{
+		Actor->Destroy();
+	}
+}
+
+bool AGBProjectile::HasFlightVfx() const
+{
+	return FlightVfx && FlightVfx->IsPlaying();
 }
 
 float AGBProjectile::GetBoltLength() const
@@ -337,6 +429,10 @@ void AGBProjectile::Explode(const FVector& Origin)
 
 	// Seen and felt even when the blast hits nothing.
 	AGBExplosionEffect::Spawn(GetWorld(), Origin, Config.ExplosionRadius, Config.Color, Config.ExplosionEffectTime);
+	if (!Config.ImpactVfxId.IsNone())
+	{
+		SpawnImpactVfx(Origin);
+	}
 	if (Config.ExplosionKnockback > 0.f)
 	{
 		ApplyExplosionKnockback(Origin);

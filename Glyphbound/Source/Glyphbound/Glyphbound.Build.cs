@@ -15,5 +15,8 @@ public class Glyphbound : ModuleRules
 			"Json", "JsonUtilities", "AIModule", "NavigationSystem",
 			"Slate", "SlateCore", "UMG"
 		});
+
+		// Baked pixel VFX clips (Plugins/GBPixelVfx, Runtime module): the flame and the explosion of the Fireball.
+		PrivateDependencyModuleNames.Add("GBPixelVfx");
 	}
 }

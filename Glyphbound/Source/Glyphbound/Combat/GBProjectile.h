@@ -12,6 +12,7 @@ class UBillboardComponent;
 class UStaticMeshComponent;
 class UPrimitiveComponent;
 class UPointLightComponent;
+class UGBPixelVfxComponent;
 
 /** Keys of Game.json "Values" read when a projectile is launched. */
 namespace GBProjectileKey
@@ -65,6 +66,18 @@ struct GLYPHBOUND_API FGBProjectileConfig
 	/** Visual scale relative to the collision radius. */
 	UPROPERTY() float VisualScale = 1.f;
 
+	// ---- Baked pixel VFX (GBPixelVfx plugin, clips in Content/Data/Vfx): optional, pixel-art projectiles only ----
+	/** Clip shown instead of the sprite while it flies, centred on its bright centre. None = the sprite. */
+	UPROPERTY() FName FlightVfxId = NAME_None;
+	/** Height in cm of the whole frame of the flight clip (the flame fills about two thirds of it). */
+	UPROPERTY() float FlightVfxHeight = 110.f;
+	/** One-shot clip played where it explodes, on top of the shockwave. None = the shockwave alone. */
+	UPROPERTY() FName ImpactVfxId = NAME_None;
+	/** Width of the frame of the impact clip as a multiple of the blast diameter (the cloud fills about half the frame). */
+	UPROPERTY() float ImpactVfxSize = 1.4f;
+	/** Playback speed of the impact clip (1 = as baked). */
+	UPROPERTY() float ImpactVfxRate = 1.5f;
+
 	// ---- Energy bolt look (3D bosses): off by default, so every other projectile keeps its look ----
 	/** Non-pixel-art only: an elongated glowing core along the velocity, a dim stretched trail behind it and a point light. */
 	UPROPERTY() bool bEnergyBolt = false;
@@ -99,6 +112,8 @@ public:
 	/** Energy bolts: core length in cm (0 for any other projectile) and whether its point light is on. */
 	float GetBoltLength() const;
 	bool HasBoltLight() const;
+	/** True while a baked pixel VFX clip is playing on it instead of the sprite. */
+	bool HasFlightVfx() const;
 
 	/** Fired once, when it hits something or explodes (before it is destroyed). Spells use it to chain behavior. */
 	FGBOnProjectileImpact OnImpact;
@@ -125,6 +140,10 @@ protected:
 	void Explode(const FVector& Origin);
 	/** Pushes hostile characters in the blast away from Origin (never the instigator; walls block it like the damage). */
 	void ApplyExplosionKnockback(const FVector& Origin);
+	/** Plays Config.FlightVfxId on the projectile. False (and the sprite stays) when the clip is missing. */
+	bool SetupFlightVfx();
+	/** Plays Config.ImpactVfxId at Origin, sized to the blast. */
+	void SpawnImpactVfx(const FVector& Origin);
 	/** Broadcasts OnImpact once and destroys the projectile. */
 	void Finish(AActor* HitActor, const FVector& Location);
 
@@ -135,6 +154,8 @@ protected:
 	/** Only used by energy bolts. */
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> BoltTrail;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UPointLightComponent> BoltLight;
+	/** Only when Config.FlightVfxId names a baked clip. */
+	UPROPERTY(Transient) TObjectPtr<UGBPixelVfxComponent> FlightVfx;
 
 	UPROPERTY() FGBProjectileConfig Config;
 	FVector StartLocation = FVector::ZeroVector;

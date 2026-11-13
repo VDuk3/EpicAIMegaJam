@@ -56,6 +56,12 @@ bool UGBPixelVfxComponent::Play(FName ClipId, bool bRestart)
 		return false;
 	}
 	CurrentClip = MakeShared<FGBPixelVfxClip>(*Found);
+	if (bPivotAtLightAnchor)
+	{
+		// The copy is ours: the clip kept by the subsystem keeps its baked pivot.
+		CurrentClip->PivotU = CurrentClip->Light.AnchorU;
+		CurrentClip->PivotV = CurrentClip->Light.AnchorV;
+	}
 	CurrentClipId = ClipId;
 	if (!bLightCastsShadowsSet)
 	{

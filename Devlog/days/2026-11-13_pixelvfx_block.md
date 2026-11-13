@@ -61,6 +61,13 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
 8. **Sonnet's batch** (11:30 to 11:38, 34 tool calls): the 12 findings fixed, none disputed. The quad ignores inherited scale, the fade-out's last frame is empty in both modes (checked on the baked explosion: 0 opaque pixels in frame 35, 9 and 47 in the two before it), the cluster vote counts each boundary pixel once, a job with `Fps` above `SimFps` is rejected, a missing `Ramps` array warns. Seven tests rewritten with hand-calculated expectations; the implementer really reverted one fix to see its test go red. The architect ran build, tests, the bake of all four clips and the showcase again before accepting.
 9. **Into the game** (11:39 to 11:45, architect). The plugin is enabled in `Glyphbound.uproject`. A smoke step (`gb.Smoke pixelvfx`) spawns the baked fire on the ground 7 m in front of the player through the plugin's console command (the game module has no dependency on the plugin) and takes screenshot `16_pixelvfx_fire`: the sprite stands on the floor of the test arena and its light warms the floor and the two pillars beside it. `pvfx.Spawn` got an optional distance for this.
 
+10. **The Fireball uses the baked fire** (12:05 to 12:35). The owner's answer to "which spells should use the clips?" was *"Fireball con fuego"* ("Fireball with fire"). The architect wrote it directly (exception to the default implementer: about 150 lines, fully designed while reading the code, and another chat was editing two of the same files at that moment, so the change had to be staged by hand).
+    - Any projectile spell can name two clips in `Spells.json`: Strings `FlightVfx` and `ImpactVfx`. The Fireball names `FluidFire` and `FluidExplosion`. In flight the clip replaces the small sprite, always faces the camera and is centred on the flame's bright core (new plugin option `bPivotAtLightAnchor`: the light anchor the bake already computes becomes the pivot). On the explosion the one-shot plays on top of the shockwave, which stays because it shows the real blast radius. The explosion clip was not asked for: it is the architect's addition, marked provisional in the GDD.
+    - Three things the screenshots showed, fixed one at a time: the test's ground fire stood right behind the Fireball in both shots (now removed before the cast); an explosion centred on a floor hit was half under the floor (it is lifted until its centre is a fifth of its frame above the ground, traced against the static world only); and **the smoke came out light grey instead of the palette's dark iron**. That last one was a real fault of the sprite material: `Glow` multiplied every pixel, so it bleached the smoke of any clip that mixes fire and smoke. The material now applies the glow only to fire-like pixels (saturated, or as bright as the bone-white core); greys keep their palette color.
+    - Seen in the arena, the explosion's smoke hid everything behind it for about 2 s. Provisional numbers went from 1.4 times the blast diameter at 1.5 speed to 1.1 times at double speed (1.5 s).
+    - Smoke: the `pixelvfx` block now casts the Fireball at the floor, checks that the projectile in flight carries the clip and that the explosion clip exists, takes `17_pixelvfx_fireball_flight` and `18_pixelvfx_fireball_impact`, and removes its clips so the UI block after it is not affected.
+    - Working next to another chat: `Glyphbound.Build.cs` and `Core/GBDevCommands.cpp` had that chat's unfinished changes. The commit carries "HEAD plus the architect's lines" for those two files, written straight into the git index (`git hash-object -w` + `git update-index --cacheinfo`), so none of the other chat's work in progress was committed and its working files were not touched.
+
 ## Results
 - **15 tests** of the conversion (pure logic), 15 s.
 - **Bake:** four Niagara Fluids clips in 51 s on CENTRAL (RTX 4080 Laptop). Each clip is a PNG of a few kilobytes plus a JSON file; the four PNGs together are 56 KB.
@@ -77,6 +84,7 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
 - `pixelvfx_showcase_FluidFire.png` and the other three close-ups; `pixelvfx_showcase_moved_camera.png`: the same stage from another place (the sprites turn to face the camera).
 - `pixelvfx_in_game_fire.png`: the baked fire in the game's own test arena, from the smoke run.
 - `pixelvfx_showcase_wide_hardware_rt.png`, `pixelvfx_showcase_FluidArcaneFire_hardware_rt.png`: the stage and the arcane fire close-up from the run with hardware ray tracing on.
+- `pixelvfx_fireball_flight.png`, `pixelvfx_fireball_impact.png`: the Fireball in the arena, in flight with the baked fire and at its explosion with the baked explosion (from the smoke run; the HUD in them is the UI chat's work in progress).
 - `pixelvfx_compare_FluidFire.png`: the live simulation (left, inside its red debug bounds) and the baked clip (right) side by side.
 
 ## Third-party material
@@ -87,5 +95,5 @@ Claude Code (Claude Fable 5.2 as architect, Claude Sonnet 5.5 as a subagent), Op
 
 ## Open, for the owner
 - Is the reading of "ray tracing behaviors" the right one?
-- No spell uses a baked clip yet. Which spells should, and at what size and light strength?
+- The Fireball uses the fire clip (owner) and the explosion clip (architect, provisional): keep the explosion? Sizes and speeds are in `Spells.json`. Which other spells should use a clip?
 - The plugin is enabled in the game, but nothing in the gameplay calls it: in a development build, `pvfx.Spawn FluidFire` (or `FluidSmoke`, `FluidExplosion`, `FluidArcaneFire`) in the console shows a clip in front of the player.

@@ -148,6 +148,8 @@ namespace GBString
 	inline const FName OnHitEffect(TEXT("OnHitEffect"));       // status effect id
 	inline const FName ProjectileSprite(TEXT("ProjectileSprite"));
 	inline const FName HandSprite(TEXT("HandSprite"));
+	inline const FName FlightVfx(TEXT("FlightVfx"));           // baked pixel VFX clip (Content/Data/Vfx) shown instead of the projectile sprite
+	inline const FName ImpactVfx(TEXT("ImpactVfx"));           // baked pixel VFX clip played where the projectile explodes
 }
 
 /** Elemental build-up keys (GDD 6): per-enemy stats, Game.json defaults, weapon stats, reactions. */

@@ -81,6 +81,24 @@
 					"Max": 2,
 					"ScaledBy": "None"
 				},
+				"FlightVfxHeight": {
+					"Base": 110,
+					"Min": 110,
+					"Max": 110,
+					"ScaledBy": "None"
+				},
+				"ImpactVfxSize": {
+					"Base": 1.1,
+					"Min": 1.1,
+					"Max": 1.1,
+					"ScaledBy": "None"
+				},
+				"ImpactVfxRate": {
+					"Base": 2,
+					"Min": 2,
+					"Max": 2,
+					"ScaledBy": "None"
+				},
 				"ExplosionFalloff": {
 					"Base": 1,
 					"Min": 1,
@@ -102,6 +120,8 @@
 			},
 			"Strings": {
 				"Sprite": "fireball",
+				"FlightVfx": "FluidFire",
+				"ImpactVfx": "FluidExplosion",
 				"Color": "#FF7A1A"
 			}
 		},

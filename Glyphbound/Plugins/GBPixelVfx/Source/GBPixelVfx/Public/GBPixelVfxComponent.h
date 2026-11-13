@@ -57,6 +57,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PixelVfx")
 	float StartTimeOffset = 0.f;
+	// The component location is the bright centre of the clip (its light anchor) instead of its baked pivot
+	// (usually the base). For effects that travel or burst around a point: a projectile, an impact. Set before Play.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PixelVfx")
+	bool bPivotAtLightAnchor = false;
 
 	// Quad world origin/extent for diagnostics (bake showcase logging).
 	void GetQuadWorldBounds(FVector& OutOrigin, FVector& OutExtent) const;

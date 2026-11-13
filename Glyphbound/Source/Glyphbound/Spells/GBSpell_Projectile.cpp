@@ -30,6 +30,14 @@ void AGBSpell_Projectile::StartSpell()
 	Config.SpriteId = GetSpriteId();
 	Config.Color = GetSpellColor();
 	Config.VisualScale = FMath::Max(0.01f, SpellCast.Get(GBSpellParam::VisualScale, 1.f));
+	// Optional baked clips (GBPixelVfx): Strings "FlightVfx" / "ImpactVfx", sizes in Params. Without them the spell looks as before.
+	const FString FlightVfx = SpellCast.GetString(GBString::FlightVfx);
+	const FString ImpactVfx = SpellCast.GetString(GBString::ImpactVfx);
+	Config.FlightVfxId = FlightVfx.IsEmpty() ? FName(NAME_None) : FName(*FlightVfx);
+	Config.ImpactVfxId = ImpactVfx.IsEmpty() ? FName(NAME_None) : FName(*ImpactVfx);
+	Config.FlightVfxHeight = SpellCast.Get(TEXT("FlightVfxHeight"), Config.FlightVfxHeight);
+	Config.ImpactVfxSize = SpellCast.Get(TEXT("ImpactVfxSize"), Config.ImpactVfxSize);
+	Config.ImpactVfxRate = SpellCast.Get(TEXT("ImpactVfxRate"), Config.ImpactVfxRate);
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	Config.MaxLifetime = Data ? Data->GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime) : Config.MaxLifetime;
 	if (Config.MaxRange > 0.f && Config.Speed > 0.f)
