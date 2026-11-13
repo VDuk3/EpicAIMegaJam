@@ -138,6 +138,7 @@ void UGBInputSet::Build()
 	MenuNavigate = MakeAction(this, TEXT("IA_MenuNavigate"), EType::Axis2D, true);
 	MenuConfirm = MakeAction(this, TEXT("IA_MenuConfirm"), EType::Boolean, true);
 	MenuBack = MakeAction(this, TEXT("IA_MenuBack"), EType::Boolean, true);
+	MenuTabKey = MakeAction(this, TEXT("IA_MenuTabKey"), EType::Boolean, true);
 	MenuTab = MakeAction(this, TEXT("IA_MenuTab"), EType::Axis1D, true);
 	MenuClick = MakeAction(this, TEXT("IA_MenuClick"), EType::Boolean, true);
 	MenuReset = MakeAction(this, TEXT("IA_MenuReset"), EType::Boolean, true);
@@ -223,7 +224,9 @@ void UGBInputSet::Build()
 	MapButton(M, MenuConfirm, EKeys::Gamepad_FaceButton_Bottom);
 
 	MapButton(M, MenuBack, EKeys::Escape);
-	MapButton(M, MenuBack, EKeys::Tab);
+	// Tab is the inventory's own key: there it closes the inventory even from a gun branch page or a sub-choice
+	// (Sol 6.1 review); on the other screens it is still "back".
+	MapButton(M, MenuTabKey, EKeys::Tab);
 	MapButton(M, MenuBack, EKeys::Gamepad_FaceButton_Right);
 
 	MapAxis1D(M, MenuTab, EKeys::Q, true);
@@ -242,7 +245,7 @@ void UGBInputSet::Build()
 	MapButton(M, MenuReset, EKeys::R);
 	MapButton(M, MenuReset, EKeys::Gamepad_FaceButton_Top);
 
-	// Inside menus: the gamepad Menu / View buttons and K still toggle their screens (Esc and Tab are "back" here).
+	// Inside menus: the gamepad Menu / View buttons, I and K still toggle their screens (Esc is "back"; Tab closes the inventory, "back" elsewhere).
 	MapButton(M, Pause, EKeys::Gamepad_Special_Right);
 	MapButton(M, Inventory, EKeys::Gamepad_Special_Left);
 	MapButton(M, Inventory, EKeys::I);

@@ -409,6 +409,13 @@ struct GLYPHBOUND_API FGBSkillNodeDefinition
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FName Tree = NAME_None;
 
+	/**
+	 * Weapon tree only: the gun branch the node lives in ("Pistol", "Rifle", "Shotgun"), shown as its own sub-page.
+	 * None = the hub (the root perk). Column / Row are then positions inside that branch's page.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName Branch = NAME_None;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FString DisplayName;
 

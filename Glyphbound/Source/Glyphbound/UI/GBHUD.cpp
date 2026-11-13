@@ -200,7 +200,14 @@ EGBHudSkin AGBHUD::GetCurrentSkin() const
 
 EGBHudSkin AGBHUD::GetMenuSkin() const
 {
-	// Menus both eras share (inventory, pause, skill trees, death) take the look of the era the player is in
+	// The skill pages (the Skill Trees screen and the inventory's Skills page) take the shown tree's look for the whole
+	// screen (owner, Nov 13): spells = 90s RPG, weapons = cyberpunk, whatever the era.
+	const EGBMenu Menu = GetOpenMenu();
+	if (Menu == EGBMenu::SkillTrees || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills))
+	{
+		return GetShownSkillTree() == 1 ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+	}
+	// Menus both eras share (inventory, pause, death) take the look of the era the player is in
 	// (owner, Nov 13): the past is the 90s RPG, the future is cyberpunk. The in-game HUD keeps following the held item.
 	if (const UGBEraSubsystem* Era = UGBEraSubsystem::Get(this))
 	{

@@ -189,6 +189,8 @@ protected:
 		SkillAddPoint,
 		/** Skill trees: the tab of one tree (Index 0 = spells, 1 = weapons). */
 		SkillTreeTab,
+		/** Weapon tree: the Back button of a gun branch page. */
+		SkillBranchBack,
 		DeathScreen
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */
@@ -251,6 +253,11 @@ protected:
 		int32 Tree = 0;
 		int32 Column = 0;
 		int32 Row = 0;
+		/** Weapon tree: the gun branch page the node is on (None = the hub page). */
+		FName Branch = NAME_None;
+		/** A gun emblem on the weapon hub (not a perk): confirming it opens its Branch page. Its Id is "Branch_<Branch>". */
+		bool bCategory = false;
+		FName OpensBranch = NAME_None;
 	};
 
 	// ======================================================================== painting (GBHUD_Paint.cpp)
@@ -434,6 +441,12 @@ protected:
 	void SelectSkillTree(int32 Tree);
 	/** The tree shown on the skill pages: the selected node's tree. */
 	int32 GetShownSkillTree() const;
+	/** Weapon tree: opens a gun branch page (the cursor goes to its first perk). */
+	void OpenSkillBranch(FName Branch);
+	/** Weapon tree: from a branch page back to the hub, on that branch's emblem. False if no branch page is shown. */
+	bool CloseSkillBranch();
+	/** Weapon hub: one gun emblem (title, ranks owned, its perks). */
+	void DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef& Category, const TArray<FSkillNodeRef>& Nodes, float X, float Y, float W, float H);
 	void ConfirmItem(AGBPlayerCharacter* Player);
 	void ConfirmWeapon(AGBPlayerCharacter* Player);
 	void ConfirmSpellSlot(AGBPlayerCharacter* Player);

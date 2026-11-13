@@ -1,0 +1,14 @@
+ Design/GDD.md                                      |   8 +-
+ ...rsor-66d9f2ce-e76e-448d-aa1c-42434abda7ef.jsonl |  32 ++
+ ...a7ef-66d9f2ce-e76e-448d-aa1c-42434abda7ef.jsonl |  26 ++
+ Devlog/raw/CENTRAL/2026-11-13/agents.jsonl         |   1 +
+ ...aude-924f00ca-194b-43f9-be45-8618761a9e8d.jsonl |  70 +++
+ .../924f00ca-194b-43f9-be45-8618761a9e8d.jsonl     | 496 +++++++++++++++++++++
+ Devlog/raw/_import.log                             |   8 +
+ Glyphbound/Content/Data/Skills.json                |  53 ++-
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |   4 +-
+ Glyphbound/Source/Glyphbound/Data/GBDataTypes.h    |   7 +
+ Glyphbound/Source/Glyphbound/UI/GBHUD.cpp          |   9 +-
+ Glyphbound/Source/Glyphbound/UI/GBHUD.h            |  13 +
+ Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp    | 328 +++++++++++++-
+ 13 files changed, 1004 insertions(+), 51 deletions(-)

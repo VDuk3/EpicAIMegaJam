@@ -164,7 +164,8 @@ int32 AGBHUD::GetShownSkillTree() const
 {
 	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
 	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
-	return Current ? Current->Tree : 0;
+	// No cursor yet: the page draws the first node's tree (DrawSkillTrees), so the look follows the same rule.
+	return Current ? Current->Tree : (Nodes.Num() > 0 ? Nodes[0].Tree : 0);
 }
 
 void AGBHUD::SelectSkillTree(int32 Tree)
@@ -185,6 +186,11 @@ void AGBHUD::SelectSkillTree(int32 Tree)
 	}
 	const FName Remembered = MenuState.TreeCursor[Tree];
 	const FSkillNodeRef* Target = Nodes.FindByPredicate([Remembered, Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree && Node.Id == Remembered; });
+	if (!Target)
+	{
+		// The tree's front page: the weapon tree opens on its hub, not inside a gun branch.
+		Target = Nodes.FindByPredicate([Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree && Node.Branch == NAME_None && !Node.bCategory; });
+	}
 	if (!Target)
 	{
 		Target = Nodes.FindByPredicate([Tree](const FSkillNodeRef& Node) { return Node.Tree == Tree; });
@@ -353,6 +359,9 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 	case EMenuHitKind::SkillTreeTab:
 		SelectSkillTree(Hit.Index);
 		break;
+	case EMenuHitKind::SkillBranchBack:
+		CloseSkillBranch();
+		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
 		// so a click respawns exactly once.
@@ -492,7 +501,14 @@ bool AGBHUD::MenuBack()
 			MenuState.bChoosingSpell = false;
 			return true;
 		}
+		// A gun branch page goes back to the weapon hub first.
+		if (MenuState.Page == PageSkills && CloseSkillBranch())
+		{
+			return true;
+		}
 		return false;
+	case EGBMenu::SkillTrees:
+		return CloseSkillBranch();
 	case EGBMenu::Death:
 		// The death screen only closes by respawning.
 		return true;
@@ -615,10 +631,79 @@ TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
 			Ref.Tree = GBHudMenuLocal::IsWeaponTree(Def.Tree) ? 1 : 0;
 			Ref.Column = FMath::Max(0, Def.Column);
 			Ref.Row = FMath::Max(0, Def.Row);
+			Ref.Branch = Ref.Tree == 1 ? Def.Branch : NAME_None;
 			Result.Add(Ref);
+		}
+		// The weapon hub (owner, Nov 13, "similar to Cyberpunk"): the root perks on top, then one emblem per gun
+		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
+		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
+		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
+		int32 HubRows = 0;
+		for (const FSkillNodeRef& Ref : Result)
+		{
+			if (Ref.Tree == 1)
+			{
+				if (Ref.Branch != NAME_None)
+				{
+					Branches.AddUnique(Ref.Branch);
+				}
+				else
+				{
+					HubRows = FMath::Max(HubRows, Ref.Row + 1);
+				}
+			}
+		}
+		for (int32 i = 0; i < Branches.Num(); ++i)
+		{
+			FSkillNodeRef Category;
+			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
+			Category.Tree = 1;
+			Category.Column = i;
+			Category.Row = HubRows;
+			Category.bCategory = true;
+			Category.OpensBranch = Branches[i];
+			Result.Add(Category);
 		}
 	}
 	return Result;
+}
+
+void AGBHUD::OpenSkillBranch(FName Branch)
+{
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* First = nullptr;
+	for (const FSkillNodeRef& Node : Nodes)
+	{
+		if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Branch
+			&& (!First || Node.Row < First->Row || (Node.Row == First->Row && Node.Column < First->Column)))
+		{
+			First = &Node;
+		}
+	}
+	if (First)
+	{
+		MenuState.SkillCursor = First->Id;
+		// The hub's clickables are stale until the next draw.
+		MenuHits.Reset();
+	}
+}
+
+bool AGBHUD::CloseSkillBranch()
+{
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+	if (!Current || Current->Tree != 1 || Current->Branch == NAME_None)
+	{
+		return false;
+	}
+	const FName Branch = Current->Branch;
+	if (const FSkillNodeRef* Category = Nodes.FindByPredicate([Branch](const FSkillNodeRef& Node) { return Node.bCategory && Node.OpensBranch == Branch; }))
+	{
+		MenuState.SkillCursor = Category->Id;
+		MenuHits.Reset();
+		return true;
+	}
+	return false;
 }
 
 void AGBHUD::NavigateSkills(FIntPoint Direction)
@@ -646,7 +731,7 @@ void AGBHUD::NavigateSkills(FIntPoint Direction)
 	FName Best = NAME_None;
 	for (const FSkillNodeRef& Node : Nodes)
 	{
-		if (Node.Id == Current->Id || Node.Tree != Current->Tree)
+		if (Node.Id == Current->Id || Node.Tree != Current->Tree || Node.Branch != Current->Branch)
 		{
 			continue;
 		}
@@ -834,6 +919,15 @@ void AGBHUD::ConfirmSkill(AGBPlayerCharacter* Player)
 	if (!SkillTree || NodeId == NAME_None)
 	{
 		return;
+	}
+	// A gun emblem on the weapon hub opens its branch page instead of unlocking anything.
+	{
+		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+		if (const FSkillNodeRef* Category = Nodes.FindByPredicate([NodeId](const FSkillNodeRef& Node) { return Node.Id == NodeId && Node.bCategory; }))
+		{
+			OpenSkillBranch(Category->OpensBranch);
+			return;
+		}
 	}
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 	const EGBSkillUnlockResult Result = SkillTree->Unlock(NodeId);
@@ -1254,7 +1348,12 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 		Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Unlock")));
 		Hints.Add(TPair<FString, FString>(TEXT("Q E"), TEXT("Other tree")));
 		Hints.Add(TPair<FString, FString>(TEXT("R"), TEXT("Reset skills")));
-		Hints.Add(TPair<FString, FString>(TEXT("Esc"), TEXT("Close")));
+		{
+			// Inside a gun branch page Esc goes back to the weapon hub.
+			const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+			const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+			Hints.Add(TPair<FString, FString>(TEXT("Esc"), Current && Current->Branch != NAME_None ? TEXT("Back") : TEXT("Close")));
+		}
 		MenuHints(Skin, Hints, Skin == EGBHudSkin::Cyberpunk ? Screen.X : W * 0.5f, Screen.FooterY, Skin == EGBHudSkin::Cyberpunk ? 0.f : 0.5f);
 		break;
 	}
@@ -1522,7 +1621,14 @@ void AGBHUD::DrawInventory(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 	TArray<TPair<FString, FString>> Hints;
 	Hints.Add(TPair<FString, FString>(TEXT("Q E"), TEXT("Page")));
 	Hints.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Select")));
-	Hints.Add(TPair<FString, FString>(TEXT("Esc"), MenuState.bChoosingSpell || MenuState.PendingCombine != NAME_None ? TEXT("Back") : TEXT("Close")));
+	bool bInBranch = false;
+	if (MenuState.Page == PageSkills)
+	{
+		const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+		const FSkillNodeRef* Current = Nodes.FindByPredicate([this](const FSkillNodeRef& Node) { return Node.Id == MenuState.SkillCursor; });
+		bInBranch = Current && Current->Branch != NAME_None;
+	}
+	Hints.Add(TPair<FString, FString>(TEXT("Esc"), MenuState.bChoosingSpell || MenuState.PendingCombine != NAME_None || bInBranch ? TEXT("Back") : TEXT("Close")));
 	if (MenuState.Page == PageSkills)
 	{
 		Hints.Add(TPair<FString, FString>(TEXT("R"), TEXT("Reset skills")));
@@ -2051,6 +2157,82 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 
 // ======================================================================== drawing: skill trees
 
+void AGBHUD::DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef& Category, const TArray<FSkillNodeRef>& Nodes, float X, float Y, float W, float H)
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const UGBSkillTreeComponent* SkillTree = Player->GetSkillTree();
+	const float S = UIScale();
+	const bool bSelected = Category.Id == MenuState.SkillCursor;
+	int32 Owned = 0;
+	int32 Total = 0;
+	for (const FSkillNodeRef& Node : Nodes)
+	{
+		if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Category.OpensBranch)
+		{
+			const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr;
+			Owned += SkillTree ? SkillTree->GetRank(Node.Id) : 0;
+			Total += Def ? FMath::Max(1, Def->MaxRank) : 1;
+		}
+	}
+
+	// An emblem in the weapon tree's cyberpunk look: a cut-corner box, the branch number, the gun's outline, its name,
+	// and one segment per rank of its perks.
+	const FLinearColor Line = bSelected ? GBCy::Cyan : (Owned > 0 ? GBCy::Red : GBAlpha(GBCy::Red, 0.55f));
+	if (bSelected)
+	{
+		DrawGlow(X + W * 0.5f, Y + H * 0.5f, W * 0.8f, H, GBAlpha(GBCy::Cyan, 0.16f));
+	}
+	CyBox(X, Y, W, H, 16.f * S, Owned > 0 ? GBAlpha(GBCy::RedDeep, 0.85f) : GBAlpha(GBCy::Ink, 0.9f), Line, 0x5, bSelected ? 2.f : 1.f);
+	CyBox(X + 6.f * S, Y + 6.f * S, W - 12.f * S, H - 12.f * S, 12.f * S, FLinearColor::Transparent, GBAlpha(Line, 0.35f), 0x5);
+	if (bSelected)
+	{
+		CyBrackets(X - 5.f * S, Y - 5.f * S, W + 10.f * S, H + 10.f * S, 12.f * S, GBCy::Cyan, 2.f * S);
+	}
+	FCyTextStyle Index;
+	Index.Face = ECyFace::Mono;
+	Index.Px = 12.f;
+	Index.Color = GBCy::RedDim;
+	DrawCyText(FString::Printf(TEXT("0%d"), Category.Column + 1), X + 16.f * S, Y + 12.f * S, Index, 0.f);
+
+	// The gun's outline on a 40 x 16 grid (x right, y down), filled in the line color.
+	struct FGlyphRect { float X, Y, W, H; };
+	static const FGlyphRect Pistol[] = { {8,3,20,4}, {8,7,18,2}, {10,9,5,7}, {15,9,5,1}, {19,9,1,3}, {28,4,2,2} };
+	static const FGlyphRect Rifle[] = { {0,4,10,3}, {2,7,6,3}, {10,4,17,5}, {26,5,13,2}, {14,2,6,2}, {18,9,4,6}, {12,9,3,5} };
+	static const FGlyphRect Shotgun[] = { {0,4,8,3}, {1,7,5,3}, {8,3,8,6}, {12,4,27,2}, {14,6,22,2}, {24,6,8,3}, {9,9,3,4} };
+	TArrayView<const FGlyphRect> Glyph;
+	const FString BranchName = Category.OpensBranch.ToString();
+	if (BranchName.Equals(TEXT("Pistol"), ESearchCase::IgnoreCase)) { Glyph = MakeArrayView(Pistol); }
+	else if (BranchName.Equals(TEXT("Rifle"), ESearchCase::IgnoreCase)) { Glyph = MakeArrayView(Rifle); }
+	else if (BranchName.Equals(TEXT("Shotgun"), ESearchCase::IgnoreCase)) { Glyph = MakeArrayView(Shotgun); }
+	const float GlyphUnit = FMath::Max(1.f, FMath::RoundToFloat(FMath::Min(W * 0.55f / 40.f, H * 0.32f / 16.f)));
+	const float GX = FMath::RoundToFloat(X + (W - 40.f * GlyphUnit) * 0.5f);
+	const float GY = FMath::RoundToFloat(Y + H * 0.36f - 8.f * GlyphUnit);
+	const FLinearColor Ink = bSelected ? GBCy::Pale : (Owned > 0 ? GBCy::RedBright : GBCy::Red);
+	for (const FGlyphRect& R : Glyph)
+	{
+		FillRect(GX + R.X * GlyphUnit, GY + R.Y * GlyphUnit, R.W * GlyphUnit, R.H * GlyphUnit, GBAlpha(Ink, 0.9f));
+	}
+
+	FCyTextStyle Title;
+	Title.Face = ECyFace::Condensed;
+	Title.Px = 26.f;
+	Title.Spacing = 220;
+	Title.bUpper = true;
+	Title.Color = bSelected ? GBCy::Pale : GBCy::RedBright;
+	const FVector2D TS = MeasureCyText(BranchName, Title);
+	DrawCyText(BranchName, X + W * 0.5f, Y + H * 0.66f - TS.Y * 0.5f, Title, 0.5f);
+
+	// Rank segments of the whole branch, and the count.
+	const float SegW = 10.f * S;
+	const float SegGap = 3.f * S;
+	const float SegsW = Total * SegW + FMath::Max(0, Total - 1) * SegGap;
+	const float SegY = Y + H - 20.f * S;
+	for (int32 i = 0; i < Total; ++i)
+	{
+		FillRect(X + (W - SegsW) * 0.5f + i * (SegW + SegGap), SegY, SegW, 3.f * S, i < Owned ? GBCy::Red : GBAlpha(GBCy::Grey, 0.35f));
+	}
+}
+
 void AGBHUD::DrawSkillNode(AGBPlayerCharacter* Player, int32 Tree, FName NodeId, float X, float Y, float W, float H)
 {
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
@@ -2337,6 +2519,10 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 	const float AreaY = Y;
 	const float AreaH = FMath::Max(100.f * S, H - DetailH - 12.f * S);
 
+	// Weapon tree: the hub page (Branch None: the root perks and the gun emblems) or one gun branch page.
+	const FName ShownBranch = ShownTree == 1 ? Selected->Branch : NAME_None;
+	auto OnPage = [ShownTree, ShownBranch](const FSkillNodeRef& Node) { return Node.Tree == ShownTree && Node.Branch == ShownBranch; };
+
 	for (int32 Tree = ShownTree; Tree == ShownTree; ++Tree)
 	{
 		const float AX = X;
@@ -2348,14 +2534,50 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 			CyBox(AX, AreaY, AreaW, AreaH, 22.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
 			CyScanlines(AX, AreaY, AreaW, AreaH, 0.25f);
 			DrawGlow(AX + AreaW * 0.5f, AreaY, AreaW * 0.6f, AreaH * 0.4f, GBAlpha(GBCy::Red, 0.08f));
-			// The tab above names the tree; the panel keeps only its small tag and ruler, so the nodes keep their height.
-			FCyTextStyle Sub;
-			Sub.Face = ECyFace::Mono;
-			Sub.Px = 12.f;
-			Sub.Color = GBCy::RedDim;
-			const FVector2D SubSize = DrawCyText(TEXT("// FIREARMS PERKS"), AX + 26.f * S, AreaY + 12.f * S, Sub, 0.f);
-			CyRuler(AX + 26.f * S, AreaY + 12.f * S + SubSize.Y + 6.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
-			GridTop = AreaY + 12.f * S + SubSize.Y + 24.f * S;
+			// The tab above names the tree; the panel keeps only a small tag (the hub) or Back and the gun's name (a
+			// branch page) over its ruler, so the nodes keep their height.
+			float HeadH = 0.f;
+			if (ShownBranch == NAME_None)
+			{
+				FCyTextStyle Sub;
+				Sub.Face = ECyFace::Mono;
+				Sub.Px = 12.f;
+				Sub.Color = GBCy::RedDim;
+				HeadH = DrawCyText(TEXT("// FIREARMS PERKS  -  CHOOSE A GUN"), AX + 26.f * S, AreaY + 12.f * S, Sub, 0.f).Y;
+			}
+			else
+			{
+				// Back: a small cut-corner button, then "WEAPONS // <GUN>".
+				FCyTextStyle BackStyle;
+				BackStyle.Face = ECyFace::Condensed;
+				BackStyle.Px = 18.f;
+				BackStyle.Spacing = 120;
+				BackStyle.bUpper = true;
+				const FString BackText(TEXT("<  Back"));
+				const FVector2D BackSize = MeasureCyText(BackText, BackStyle);
+				const float BX = AX + 26.f * S;
+				const float BY = AreaY + 12.f * S;
+				const float BW = BackSize.X + 30.f * S;
+				const float BH = FMath::RoundToFloat(30.f * S);
+				const bool bHover = IsMouseOver(BX, BY, BW, BH);
+				CyBox(BX, BY, BW, BH, 8.f * S, bHover ? GBAlpha(GBCy::Red, 0.25f) : GBAlpha(GBCy::Ink, 0.9f), bHover ? GBCy::RedBright : GBCy::Red, 0x4);
+				BackStyle.Color = bHover ? GBCy::Pale : GBCy::Red;
+				DrawCyText(BackText, BX + BW * 0.5f, BY + (BH - BackSize.Y) * 0.5f, BackStyle, 0.5f);
+				AddMenuHit(EMenuHitKind::SkillBranchBack, BX, BY, BW, BH);
+				CyKey(BX + BW + 10.f * S, BY + (BH - 22.f * S) * 0.5f, TEXT("Esc"), GBCy::Cyan, 22.f);
+				FCyTextStyle Crumb;
+				Crumb.Face = ECyFace::Condensed;
+				Crumb.Px = 24.f;
+				Crumb.Spacing = 160;
+				Crumb.bUpper = true;
+				Crumb.Color = GBCy::RedDim;
+				const FVector2D CS = DrawCyText(TEXT("Weapons  //  "), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 1.f);
+				Crumb.Color = GBCy::Red;
+				DrawCyText(ShownBranch.ToString(), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 0.f);
+				HeadH = FMath::Max(BH, CS.Y);
+			}
+			CyRuler(AX + 26.f * S, AreaY + 12.f * S + HeadH + 6.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
+			GridTop = AreaY + 12.f * S + HeadH + 24.f * S;
 		}
 		else
 		{
@@ -2363,9 +2585,11 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 			const float PY = FMath::RoundToFloat(AreaY / P) * P;
 			const float PW = FMath::RoundToFloat(AreaW / P) * P;
 			const float PH = FMath::RoundToFloat(AreaH / P) * P;
-			FillRect(PX, PY, PW, PH, GBRpg::Stone1);
-			RpgStone(PX, PY, PW, PH);
-			DrawGlow(PX + PW * 0.5f, PY + PH * 0.35f, PW * 0.6f, PH * 0.6f, FLinearColor(0.35f, 0.2f, 0.1f, 0.12f));
+			// A calm, dark slate under the nodes (owner, Nov 13: the brick pattern fought the gold-framed nodes for
+			// attention): near-black with a faint trace of the masonry and a low ember warmth in the middle.
+			FillRect(PX, PY, PW, PH, GBRpg::StoneDeep);
+			RpgStone(PX, PY, PW, PH, FLinearColor(0.55f, 0.55f, 0.65f, 0.16f));
+			DrawGlow(PX + PW * 0.5f, PY + PH * 0.45f, PW * 0.7f, PH * 0.8f, FLinearColor(0.35f, 0.2f, 0.1f, 0.10f));
 			RpgFrame(PX, PY, PW, PH, ERpgFrame::Iron);
 			DrawOutline(PX + 4.f * P, PY + 4.f * P, PW - 8.f * P, PH - 8.f * P, GBRpg::Gold1, P);
 			// The tab above names the tree, so no title here: the four spell rows keep their height at 720p.
@@ -2376,21 +2600,28 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 		int32 MaxRow = 0;
 		for (const FSkillNodeRef& Node : Nodes)
 		{
-			if (Node.Tree == Tree)
+			if (OnPage(Node))
 			{
 				MaxColumn = FMath::Max(MaxColumn, Node.Column);
 				MaxRow = FMath::Max(MaxRow, Node.Row);
 			}
 		}
+		// The gun emblems are taller than a perk box: they hang into the free space under the hub's last row.
+		const float CategoryScale = 2.3f;
 		const float Pad = bTreeCyber ? 22.f * S : 6.f * P;
 		// The spell tree names its four element columns above the nodes.
 		const float ColumnHeadH = bTreeCyber ? 0.f : 8.f * P;
-		const float GridY = GridTop + ColumnHeadH;
 		// The page is the full width: cap the cell width so the boxes keep their size, and centre the grid.
 		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
 		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
 		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
-		const float CellH = FMath::Min(bTreeCyber ? 104.f * S : 29.f * P, (AreaY + AreaH - Pad - GridY) / (MaxRow + 1));
+		const bool bHub = bTreeCyber && ShownBranch == NAME_None;
+		const float RowsTall = (MaxRow + 1) + (bHub ? CategoryScale - 1.f : 0.f);
+		const float FreeH = AreaY + AreaH - Pad - (GridTop + ColumnHeadH);
+		const float CellH = FMath::Min(bTreeCyber ? 120.f * S : 29.f * P, FreeH / RowsTall);
+		// The weapon pages have few rows: centre them in the panel instead of leaving the bottom empty (only the
+		// spell page's column names stay pinned to the top, since they sit over the grid).
+		const float GridY = FMath::RoundToFloat(GridTop + ColumnHeadH + (bTreeCyber ? FMath::Max(0.f, (FreeH - CellH * RowsTall) * 0.4f) : 0.f));
 		const float BoxW = FMath::Max(20.f * S, CellW - (bTreeCyber ? 18.f * S : 5.f * P));
 		const float BoxH = FMath::Max(20.f * S, CellH - (bTreeCyber ? 22.f * S : 4.f * P));
 		auto BoxPos = [&](const FSkillNodeRef& Node)
@@ -2416,17 +2647,32 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 		}
 
 		// Requirement links first, under the boxes: down from the parent, across in the gap above the child, down.
+		// A gun emblem hangs from the hub's root perks; a link to a node on another page is not drawn.
 		for (const FSkillNodeRef& Node : Nodes)
 		{
-			const FGBSkillNodeDefinition* Def = (Node.Tree == Tree && Data) ? Data->FindSkillNode(Node.Id) : nullptr;
-			if (!Def)
+			if (!OnPage(Node))
 			{
 				continue;
 			}
-			for (const FName& Req : Def->Requires)
+			TArray<FName> Reqs;
+			if (Node.bCategory)
+			{
+				for (const FSkillNodeRef& Root : Nodes)
+				{
+					if (OnPage(Root) && !Root.bCategory)
+					{
+						Reqs.Add(Root.Id);
+					}
+				}
+			}
+			else if (const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr)
+			{
+				Reqs = Def->Requires;
+			}
+			for (const FName& Req : Reqs)
 			{
 				const FSkillNodeRef* ReqNode = Nodes.FindByPredicate([&Req](const FSkillNodeRef& Other) { return Other.Id == Req; });
-				if (!ReqNode || ReqNode->Tree != Tree)
+				if (!ReqNode || !OnPage(*ReqNode))
 				{
 					continue;
 				}
@@ -2478,15 +2724,51 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 		}
 		for (const FSkillNodeRef& Node : Nodes)
 		{
-			if (Node.Tree != Tree)
+			if (!OnPage(Node))
 			{
 				continue;
 			}
 			const FVector2D Pos = BoxPos(Node);
+			if (Node.bCategory)
+			{
+				const float EH = FMath::RoundToFloat(BoxH * CategoryScale);
+				DrawSkillCategory(Player, Node, Nodes, Pos.X, Pos.Y, BoxW, EH);
+				AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, EH, 0, Node.Id);
+				continue;
+			}
 			DrawSkillNode(Player, Tree, Node.Id, Pos.X, Pos.Y, BoxW, BoxH);
 			AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, BoxH, 0, Node.Id);
 		}
 		(void)TreeSkin;
+	}
+
+	// A gun emblem: its name, what the branch is about, its perks and ranks, and "Enter: Open".
+	if (Selected && Selected->bCategory)
+	{
+		const float DY = AreaY + AreaH + 12.f * S;
+		FString PerkNames;
+		int32 Owned = 0;
+		int32 Total = 0;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Selected->OpensBranch)
+			{
+				const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr;
+				PerkNames += (PerkNames.IsEmpty() ? TEXT("") : TEXT(", ")) + SkillName(Data, Node.Id);
+				Owned += SkillTree->GetRank(Node.Id);
+				Total += Def ? Def->MaxRank : 1;
+			}
+		}
+		const FString Meta = FString::Printf(TEXT("%d / %d ranks"), Owned, Total);
+		CyBox(X, DY, W, DetailH, 16.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::Red, 0.9f), 0x5);
+		FillRect(X, DY + 14.f * S, 4.f * S, DetailH - 28.f * S, GBCy::Red);
+		const FVector2D NS = UiText(EGBHudSkin::Cyberpunk, EGBTextSize::Heading, EGBTextTone::Accent, Selected->OpensBranch.ToString().ToUpper(), X + 26.f * S, DY + 14.f * S);
+		UiText(EGBHudSkin::Cyberpunk, EGBTextSize::Small, EGBTextTone::Value, Meta, X + 26.f * S + NS.X + 20.f * S, DY + 24.f * S);
+		UiWrapped(EGBHudSkin::Cyberpunk, EGBTextSize::Body, EGBTextTone::Normal, FString::Printf(TEXT("Perks: %s."), *PerkNames), X + 26.f * S, DY + 22.f * S + NS.Y, W * 0.62f);
+		TArray<TPair<FString, FString>> Actions;
+		Actions.Add(TPair<FString, FString>(TEXT("Enter"), TEXT("Open")));
+		MenuHints(EGBHudSkin::Cyberpunk, Actions, X + W - 26.f * S, DY + DetailH - 40.f * S, 1.f);
+		return;
 	}
 
 	// Details of the selected node, in its tree's skin.

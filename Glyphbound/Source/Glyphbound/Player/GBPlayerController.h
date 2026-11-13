@@ -56,6 +56,7 @@ protected:
 	void InputMenuNavigate(const FInputActionValue& Value);
 	void InputMenuConfirm();
 	void InputMenuBack();
+	void InputMenuTabKey();
 	void InputMenuTab(const FInputActionValue& Value);
 	void InputMenuReset();
 	/** Left click in a menu: the HUD's entry under the cursor; on the death screen a click anywhere respawns. */

@@ -67,7 +67,8 @@ public:
 	// Menus
 	UPROPERTY() TObjectPtr<UInputAction> MenuNavigate; // Axis2D: arrows / WASD / D-pad / left stick
 	UPROPERTY() TObjectPtr<UInputAction> MenuConfirm;  // Enter / Space / Cross (A)
-	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Tab / Circle (B)
+	UPROPERTY() TObjectPtr<UInputAction> MenuBack;     // Esc / Circle (B)
+	UPROPERTY() TObjectPtr<UInputAction> MenuTabKey;   // Tab inside menus: closes the inventory (its own key), "back" elsewhere
 	UPROPERTY() TObjectPtr<UInputAction> MenuTab;      // Axis1D: Q-E / L1-R1, switches menu page
 	UPROPERTY() TObjectPtr<UInputAction> MenuClick;    // left mouse button (menu context only)
 	UPROPERTY() TObjectPtr<UInputAction> MenuReset;    // R / gamepad top face button (menu context only): reset skills

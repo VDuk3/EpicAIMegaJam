@@ -659,7 +659,7 @@ namespace GBSmokeRun
 			// The trees are two pages: show the weapon one.
 			if (AGBHUD* Hud = AGBHUD::Get(Player->GetWorld()))
 			{
-				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_FireRate"), false);
+				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_Damage"), false);
 			}
 			Shot(TEXT("12_weapon_tree"));
 		});
@@ -765,7 +765,7 @@ namespace GBSmokeRun
 			if (Gun && Before > 0.f)
 			{
 				Skills->Unlock(FName(TEXT("Weapon_Damage")));
-				Skills->Unlock(FName(TEXT("Weapon_Headshot")));
+				Skills->Unlock(FName(TEXT("Weapon_ShotgunClose")));
 				for (int32 i = 0; i < 3; ++i)
 				{
 					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));

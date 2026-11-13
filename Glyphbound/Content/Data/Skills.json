@@ -14,78 +14,85 @@
 		{
 			"Id": "Weapon_FireRate",
 			"Tree": "Weapon",
+			"Branch": "Rifle",
 			"DisplayName": "Quick Trigger",
-			"Description": "8% less time between shots per rank.",
+			"Description": "All guns: 8% less time between shots per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
-			"Column": 0,
-			"Row": 1
+			"Column": 1,
+			"Row": 0
 		},
 		{
 			"Id": "Weapon_ReloadSpeed",
 			"Tree": "Weapon",
+			"Branch": "Shotgun",
 			"DisplayName": "Rapid Reload",
-			"Description": "10% faster reloads per rank.",
+			"Description": "All guns: 10% faster reloads per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
-			"Requires": [ "Weapon_FireRate" ],
+			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
-			"Column": 0,
-			"Row": 2
+			"Column": 1,
+			"Row": 0
 		},
 		{
 			"Id": "Weapon_Recoil",
 			"Tree": "Weapon",
+			"Branch": "Rifle",
 			"DisplayName": "Steady Grip",
-			"Description": "20% less recoil per rank.",
+			"Description": "All guns: 20% less recoil per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_FireRate" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.All.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
-			"Column": 0,
-			"Row": 3
+			"Column": 1,
+			"Row": 1
 		},
 		{
 			"Id": "Weapon_Headshot",
 			"Tree": "Weapon",
+			"Branch": "Pistol",
 			"DisplayName": "Marksman",
 			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
 			"Cost": 2,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
-			"Column": 2,
-			"Row": 1
+			"Column": 1,
+			"Row": 0
 		},
 		{
 			"Id": "Weapon_PrecisionRecovery",
 			"Tree": "Weapon",
+			"Branch": "Pistol",
 			"DisplayName": "Precision Recovery",
 			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
 			"Cost": 2,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Headshot" ],
 			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
-			"Column": 2,
-			"Row": 2
+			"Column": 1,
+			"Row": 1
 		},
 		{
 			"Id": "Weapon_EnchantBuildUp",
 			"Tree": "Weapon",
+			"Branch": "Shotgun",
 			"DisplayName": "Arcane Conduit",
 			"Description": "+10% elemental build-up from enchanted weapons per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
-			"Requires": [ "Weapon_Headshot" ],
+			"Requires": [ "Weapon_ShotgunClose" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
-			"Column": 2,
-			"Row": 3
+			"Column": 0,
+			"Row": 1
 		},
 		{
 			"Id": "Weapon_PistolHeadshot",
 			"Tree": "Weapon",
+			"Branch": "Pistol",
 			"DisplayName": "Deadeye",
 			"Description": "Pistol: +0.25x head / weak point damage per rank.",
 			"Cost": 1,
@@ -93,31 +100,33 @@
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
 			"Column": 0,
-			"Row": 4
+			"Row": 0
 		},
 		{
 			"Id": "Weapon_ShotgunClose",
 			"Tree": "Weapon",
+			"Branch": "Shotgun",
 			"DisplayName": "Point Blank",
 			"Description": "Shotgun: +0.2x damage up close per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
-			"Column": 1,
-			"Row": 4
+			"Column": 0,
+			"Row": 0
 		},
 		{
 			"Id": "Weapon_RifleFar",
 			"Tree": "Weapon",
+			"Branch": "Rifle",
 			"DisplayName": "Long Shot",
 			"Description": "Rifle: +0.2x damage at long range per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Damage" ],
 			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.2 } ],
-			"Column": 2,
-			"Row": 4
+			"Column": 0,
+			"Row": 0
 		},
 		{
 			"Id": "Spell_FireballDamage",
