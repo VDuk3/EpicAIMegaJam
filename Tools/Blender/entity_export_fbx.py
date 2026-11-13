@@ -35,7 +35,10 @@ MIN_DECIMATED = 10                             # decimation leaves a few 2-trian
 MIN_ISLAND = 150                             # faces; smaller islands of one side go to the other
 EYE_UV = [((0.374, 0.702), 0.052), ((0.137, 0.121), 0.026)]   # (centre, radius) in UV space: ring + iris, pupil
 EYE_FRONT, EYE_RADIUS = 0.2, 0.09             # eye faces: in front of the shell centre by this much, within this radius
-TENTACLE_RATIO = 0.3                          # decimate: the hologram does not need the panel detail
+BONES_PER_CHAIN = 8                            # rig: bones along each tentacle
+ROOT_BAND = 0.05                               # rig: vertices this close to a tentacle's nearest point to the shell are its root
+DEBUG_BLEND = "--debug-blend" in argv          # also save the scene (rig included) as entity_rig_debug.blend in out_dir
+TENTACLE_RATIO = 0.3                         # decimate: the hologram does not need the panel detail
 TEX_SIZE = 2048
 GLOW_BLUE, GLOW_SOFT = 0.15, 0.1               # albedo blue - max(red, green) above this glows (soft ramp)
 TURN = Matrix.Rotation(math.pi / 2, 4, "Z")
@@ -190,28 +193,147 @@ def decimate(ob):
         p.use_smooth = True                    # the hologram's rim light needs smooth normals
 
 
+VERT_T, VERT_CHAIN = {}, {}       # per tentacle vertex: distance along its tentacle (0 root .. 1 tip), its tentacle
+
+
+def geodesic(b, comp):
+    """Distance from the root over the surface (Dijkstra on edges), normalized to 0..1 for one tentacle. The root is
+    the vertices nearest the shell. Curled tentacles are why this is not the distance from the shell."""
+    import heapq
+    verts = {v for i in comp for v in b.faces[i].verts}
+    rmin = min(shell_r(v.co) for v in verts)
+    dist = {v: (0.0 if shell_r(v.co) <= rmin + ROOT_BAND else float("inf")) for v in verts}
+    heap = [(0.0, v.index, v) for v in verts if dist[v] == 0.0]
+    heapq.heapify(heap)
+    while heap:
+        d, _, v = heapq.heappop(heap)
+        if d > dist[v]:
+            continue
+        for e in v.link_edges:
+            w = e.other_vert(v)
+            if w in dist:
+                nd = d + e.calc_length()
+                if nd < dist[w]:
+                    dist[w] = nd
+                    heapq.heappush(heap, (nd, w.index, w))
+    dmax = max(dist.values())
+    return {v.index: dist[v] / dmax for v in verts}, dmax
+
+
 def set_sway_uv(ob):
-    """UV 1 'Sway' on the tentacles: U = 0 at the shell, 1 at the farthest tip; V = random phase per tentacle."""
+    """UV 1 'Sway' on the tentacles: U = distance along the tentacle over the surface (0 root, 1 tip); V = random
+    phase per tentacle. Also fills VERT_T / VERT_CHAIN for the rig."""
     me = ob.data
     b = bmesh.new()
     b.from_mesh(me)
     b.faces.ensure_lookup_table()
     layer = b.loops.layers.uv.get("Sway") or b.loops.layers.uv.new("Sway")
-    rmax = max(shell_r(v.co) for v in b.verts)
     rng = random.Random(26)
-    count = 0
-    comps = islands(b, set(b.faces))
+    comps = sorted(islands(b, set(b.faces)), key=lambda c: min(f for f in c))   # stable tentacle order
     print("TENTACLE islands after decimate:", sorted(len(c) for c in comps))
-    for comp in comps:
+    lengths = []
+    for chain, comp in enumerate(comps):
         phase = rng.random()
-        count += 1
+        t, dmax = geodesic(b, comp)
+        lengths.append(dmax)
+        for i, tv in t.items():
+            VERT_T[i] = tv
+            VERT_CHAIN[i] = chain
         for i in comp:
             for loop in b.faces[i].loops:
-                w = min(1.0, max(0.0, (shell_r(loop.vert.co) - 1.0) / (rmax - 1.0)))
-                loop[layer].uv = (w, phase)
+                loop[layer].uv = (t[loop.vert.index], phase)
     b.to_mesh(me)
     b.free()
-    return count, rmax
+    return len(comps), lengths
+
+
+def build_rig(mesh_ob):
+    """Armature for the tentacles, in the export frame: a 'root' bone at the origin (centre of the shell) and a chain
+    of BONES_PER_CHAIN bones per tentacle along its centre line (centroids of the vertices at each distance along
+    it). Each vertex is weighted to the two bones nearest its distance along the tentacle. Returns the armature and a
+    skinned copy of the mesh named SK_Entity_Tentacles."""
+    me = mesh_ob.data
+    n = BONES_PER_CHAIN
+    chains = sorted(set(VERT_CHAIN.values()))
+    joints = {}
+    for c in chains:
+        vs = [v for v in me.vertices if VERT_CHAIN.get(v.index) == c]
+        pts = []
+        for j in range(n + 1):
+            lo, hi = (j - 0.5) / n, (j + 0.5) / n
+            band = [v.co for v in vs if lo <= VERT_T[v.index] < hi or (j == n and VERT_T[v.index] >= hi)]
+            pts.append(sum(band, Vector()) / len(band) if band else None)
+        for j in range(n + 1):                      # fill empty bands by interpolation
+            if pts[j] is None:
+                a = max(k for k in range(j) if pts[k] is not None) if any(pts[k] is not None for k in range(j)) else None
+                bnext = next((k for k in range(j + 1, n + 1) if pts[k] is not None), None)
+                pts[j] = pts[a] if bnext is None else pts[bnext] if a is None else \
+                    pts[a].lerp(pts[bnext], (j - a) / (bnext - a))
+        joints[c] = pts
+    arm_data = bpy.data.armatures.new("Armature")
+    arm = bpy.data.objects.new("Armature", arm_data)          # "Armature": Unreal does not add it as an extra bone
+    scene.collection.objects.link(arm)
+    for o in bpy.context.view_layer.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    root = arm_data.edit_bones.new("root")
+    root.head, root.tail = Vector((0, 0, 0)), Vector((0, 0, 0.1))
+    for c in chains:
+        parent = root
+        for i in range(n):
+            eb = arm_data.edit_bones.new("T%02d_%02d" % (c, i))
+            eb.head, eb.tail = joints[c][i], joints[c][i + 1]
+            if (eb.tail - eb.head).length < 1e-4:
+                eb.tail = eb.head + Vector((0, 0, 0.01))
+            eb.parent = parent
+            eb.use_connect = i > 0
+            parent = eb
+    bpy.ops.object.mode_set(mode="OBJECT")
+    sk = mesh_ob.copy()
+    sk.data = me.copy()
+    sk.name = "SK_Entity_Tentacles"
+    scene.collection.objects.link(sk)
+    groups = {}
+    for c in chains:
+        for i in range(n):
+            groups[(c, i)] = sk.vertex_groups.new(name="T%02d_%02d" % (c, i))
+    for v in sk.data.vertices:
+        c, t = VERT_CHAIN[v.index], VERT_T[v.index]
+        f = min(max(t * n - 0.5, 0.0), n - 1.0)       # position between bone centres
+        i0 = int(math.floor(f))
+        i1 = min(i0 + 1, n - 1)
+        w1 = f - i0
+        groups[(c, i0)].add([v.index], 1.0 - w1, "REPLACE")
+        if i1 != i0 and w1 > 0.0:
+            groups[(c, i1)].add([v.index], w1, "REPLACE")
+    sk.parent = arm
+    mod = sk.modifiers.new("Armature", "ARMATURE")
+    mod.object = arm
+    rig = {"bones_per_chain": n, "chains": len(chains), "bone_names": "T<chain 2 digits>_<bone 2 digits>, parent root",
+           "chain_roots_cm": [[round(100 * joints[c][0].x, 1), round(-100 * joints[c][0].y, 1),
+                               round(100 * joints[c][0].z, 1)] for c in chains],
+           "chain_lengths_cm": [round(100 * sum((joints[c][i + 1] - joints[c][i]).length for i in range(n)), 1)
+                                for c in chains]}
+    print("RIG", json.dumps(rig))
+    return arm, sk, rig
+
+
+def export_skeletal(arm, sk):
+    for o in bpy.context.view_layer.objects:
+        o.select_set(False)
+    arm.select_set(True)
+    sk.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    path = os.path.join(out_dir, "Export", sk.name + ".fbx")
+    bpy.ops.export_scene.fbx(filepath=path, use_selection=True, object_types={"ARMATURE", "MESH"},
+                             apply_unit_scale=True, apply_scale_options="FBX_SCALE_NONE", mesh_smooth_type="FACE",
+                             use_mesh_modifiers=False, add_leaf_bones=False, use_armature_deform_only=True,
+                             primary_bone_axis="Y", secondary_bone_axis="X", armature_nodetype="NULL",
+                             bake_anim=False, use_custom_props=False, path_mode="STRIP",
+                             axis_forward="-Z", axis_up="Y")
+    print("WROTE", path)
 
 
 def info(ob):
@@ -245,7 +367,7 @@ parts = [build("SM_Entity_Body", BODY_IDX, "Entity_Body"), build("SM_Entity_Eye"
 source_tris = sum(len(p.vertices) - 2 for p in SRC.data.polygons)
 tent_before = sum(len(p.vertices) - 2 for p in parts[2].data.polygons)
 decimate(parts[2])
-tentacles, rmax = set_sway_uv(parts[2])
+tentacles, lengths = set_sway_uv(parts[2])
 report["tentacle_islands"] = tentacles
 report["source_tris"] = source_tris
 report["tentacle_tris_before_decimate"] = tent_before
@@ -255,6 +377,10 @@ for ob in parts:
     report["parts"][ob.name] = info(ob)
     print("PART", ob.name, json.dumps(report["parts"][ob.name]))
     export(ob)
+arm, sk, report["rig"] = build_rig(parts[2])
+export_skeletal(arm, sk)
+if DEBUG_BLEND:
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out_dir, "entity_rig_debug.blend"), copy=True)
 
 
 # ---- textures ----
