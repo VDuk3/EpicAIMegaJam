@@ -42,6 +42,11 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
 - **Compilar poco:** cambios solo en `.cpp` con Live Coding; build completo solo cuando cambian cabeceras, `UPROPERTY`/`UFUNCTION` o módulos. Una compilación o corrida a la vez por máquina.
 - **No correr la suite entera en cada cambio:** en cada cambio, solo el filtro anclado de lo que se tocó. La suite completa (por debajo de 30 s) una vez antes de empaquetar al final del día.
 - **Arranque del Editor:** mapa inicial casi vacío, `bEnableUncontrolledChangelists=False` y, en corridas sin ventana, `-unattended -nopause -nosplash -NullRHI -nosound -nocrashreports` (detalles en `Devlog/PREJAM_PREP.md`, "Where the time really went").
+- **Prueba automática (smoke) filtrada mientras se itera** (dueño, 2026-11-13: sacar a cada momento una ventana que corre el juego entero es perder el tiempo si no se está tocando todo):
+  - mientras se trabaja en una parte, se corre solo esa parte y sin ventana: `Tools/Jam/Smoke-Jam.ps1 -Only <Paso> -Offscreen` (por ejemplo `-Only Entity`, unos 20 s frente a los 95 s de la completa). Si la parte aún no tiene filtro, se añade su paso a `gb.Smoke <Prefijo>`;
+  - mientras se itera, se compila solo el target del Editor;
+  - el `Smoke-Jam.ps1` completo y `Build-Jam.ps1 -Target Glyphbound` se corren **una sola vez, al final**, antes del commit o del empaquetado;
+  - todo encargo a un implementador (Muse, Sonnet u otro) incluye esta regla.
 - Comandos largos en segundo plano, sin bucles de espera.
 
 ## Tests y verificación
