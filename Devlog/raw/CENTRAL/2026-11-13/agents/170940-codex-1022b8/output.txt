@@ -1,0 +1,3367 @@
+OpenAI Codex v0.167.2
+--------
+workdir: C:\GameJam
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a1d5e2-ef3b-7073-ba18-35c848cddd94
+--------
+user
+# Review: general weapon perks back on the hub, per-gun perk balance — Glyphbound (UE 5.9)
+
+You are reviewing, read-only. Run `git diff HEAD -- Glyphbound/Content/Data Glyphbound/Source Tools/Balance` and read
+what it touches. Ignore Devlog files; `Design/GDD.md` only to check that its new §18 "Weapon tree, v0.41" entry
+matches the data.
+
+What changed (owner's decisions, Nov 13):
+1. `Skills.json`: Marksman (`Weapon.All.HeadshotMult`), Precision Recovery and Arcane Conduit
+   (`Weapon.All.EnchantBuildUpMult`) are general again and have no `Branch` (they sit on the weapon hub page);
+   Arcane Conduit now needs only Heavy Rounds. Deadeye stays in the Pistol branch (stacks with Marksman). Each gun
+   keeps its own Quick Trigger, Rapid Reload (now x0.85 per rank, was x0.9) and Steady Grip. Tight Choke (shotgun
+   spread) is now x0.85 per rank. Heavy Rounds moved to column 2 on the hub.
+2. `UI/GBHUD_Menus.cpp`: the gun emblems (pseudo-nodes) are placed right under the hub's root perk (the hub node with
+   no requirement), centred on its column; emblem links come only from such root perks; the grid height is the
+   tallest of the plain rows and the emblems' extended rows; emblem numbers are their order, not their column.
+3. Smoke (`Core/GBDevCommands.cpp`): Arcane Conduit is checked with the pistol again; Rapid Reload expects
+   0.55 x base at rank 3.
+4. `Tools/Balance/balance_model.js`: a new table "what one point buys"; a provisional accuracy model
+   (`MissFromRecoil`, `MissFromSpread`) so recoil and spread perks change accuracy; pellets and magazine size now go
+   through the perk modifiers like the game's `GetStat`.
+
+## What to look for (ranked)
+1. Data: unreachable nodes, wrong keys, descriptions that do not match the modifiers, rank stacking that does not
+   give the smoke's 0.55 (how do several ranks of Multiply 0.85 combine in `UGBStatsComponent`?), a hub layout where
+   two nodes share a cell (columns 0-4: Marksman col 0 rows 1-2, emblems cols 1-3 row 1, Arcane Conduit col 4 row 1,
+   Heavy Rounds col 2 row 0).
+2. UI: the root detection (`Requires.Num() == 0` on a hub node) with other data (no root, two roots), an emblem
+   overlapping Precision Recovery (emblems are 2.3 rows tall), links drawn through other boxes, `FirstColumn`
+   arithmetic with more or fewer branches.
+3. Balance tool: is the accuracy formula sound (accuracy can never pass 1 or drop below its base for a perk that
+   lowers recoil or spread)? Does the "what one point buys" table compare like with like? Did the pellets / magazine
+   change alter any earlier output that had no such perk (it should not)?
+4. Smoke: point arithmetic in the perk and Arcane Conduit steps with the new prerequisites; the removed rifle swap
+   leaving anything behind.
+
+Do not suggest style rewrites or new features, and do not judge the design choices. For each finding give:
+file:line, what goes wrong, a concrete scenario, and a fix. If you find nothing real, say so plainly.
+
+codex
+I’ll inspect the diff, trace the stat stacking and UI layout logic, and check the balance outputs for regressions. I’ll keep the review read-only and focus on concrete bugs.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'git diff HEAD -- Glyphbound/Content/Data Glyphbound/Source Tools/Balance' in C:\GameJam
+ succeeded in 189ms:
+warning: in the working copy of 'Glyphbound/Content/Data/Skills.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Tools/Balance/balance_model.js', LF will be replaced by CRLF the next time Git touches it
+diff --git a/Glyphbound/Content/Data/Skills.json b/Glyphbound/Content/Data/Skills.json
+index 2f27f0e..d2f890c 100644
+--- a/Glyphbound/Content/Data/Skills.json
++++ b/Glyphbound/Content/Data/Skills.json
+@@ -8,31 +8,17 @@
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"ModifiersPerRank": [ { "Stat": "Weapon.All.Damage", "Op": "Multiply", "Value": 1.1 } ],
+-			"Column": 1,
+-			"Row": 0
+-		},
+-		{
+-			"Id": "Weapon_PistolHeadshot",
+-			"Tree": "Weapon",
+-			"Branch": "Pistol",
+-			"DisplayName": "Deadeye",
+-			"Description": "Pistol: +0.25x head / weak point damage per rank.",
+-			"Cost": 1,
+-			"MaxRank": 3,
+-			"Requires": [ "Weapon_Damage" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+-			"Column": 0,
++			"Column": 2,
+ 			"Row": 0
+ 		},
+ 		{
+ 			"Id": "Weapon_Headshot",
+ 			"Tree": "Weapon",
+-			"Branch": "Pistol",
+ 			"DisplayName": "Marksman",
+ 			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
+ 			"Cost": 2,
+ 			"MaxRank": 3,
+-			"Requires": [ "Weapon_PistolHeadshot" ],
++			"Requires": [ "Weapon_Damage" ],
+ 			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+ 			"Column": 0,
+ 			"Row": 1
+@@ -40,7 +26,6 @@
+ 		{
+ 			"Id": "Weapon_PrecisionRecovery",
+ 			"Tree": "Weapon",
+-			"Branch": "Pistol",
+ 			"DisplayName": "Precision Recovery",
+ 			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
+ 			"Cost": 2,
+@@ -50,6 +35,31 @@
+ 			"Column": 0,
+ 			"Row": 2
+ 		},
++		{
++			"Id": "Weapon_EnchantBuildUp",
++			"Tree": "Weapon",
++			"DisplayName": "Arcane Conduit",
++			"Description": "+10% elemental build-up from enchanted weapons per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_Damage" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
++			"Column": 4,
++			"Row": 1
++		},
++		{
++			"Id": "Weapon_PistolHeadshot",
++			"Tree": "Weapon",
++			"Branch": "Pistol",
++			"DisplayName": "Deadeye",
++			"Description": "Pistol: +0.25x head / weak point damage per rank.",
++			"Cost": 1,
++			"MaxRank": 3,
++			"Requires": [ "Weapon_Damage" ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
++			"Column": 0,
++			"Row": 0
++		},
+ 		{
+ 			"Id": "Weapon_Pistol_FireRate",
+ 			"Tree": "Weapon",
+@@ -68,11 +78,11 @@
+ 			"Tree": "Weapon",
+ 			"Branch": "Pistol",
+ 			"DisplayName": "Rapid Reload",
+-			"Description": "Pistol: 10% faster reloads per rank.",
++			"Description": "Pistol: 15% faster reloads per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"Requires": [ "Weapon_Pistol_FireRate" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+ 			"Column": 1,
+ 			"Row": 1
+ 		},
+@@ -102,19 +112,6 @@
+ 			"Column": 0,
+ 			"Row": 0
+ 		},
+-		{
+-			"Id": "Weapon_Rifle_EnchantBuildUp",
+-			"Tree": "Weapon",
+-			"Branch": "Rifle",
+-			"DisplayName": "Arcane Conduit",
+-			"Description": "Rifle: +10% elemental build-up while enchanted, per rank.",
+-			"Cost": 1,
+-			"MaxRank": 3,
+-			"Requires": [ "Weapon_RifleFar" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
+-			"Column": 0,
+-			"Row": 1
+-		},
+ 		{
+ 			"Id": "Weapon_Rifle_FireRate",
+ 			"Tree": "Weapon",
+@@ -133,11 +130,11 @@
+ 			"Tree": "Weapon",
+ 			"Branch": "Rifle",
+ 			"DisplayName": "Rapid Reload",
+-			"Description": "Rifle: 10% faster reloads per rank.",
++			"Description": "Rifle: 15% faster reloads per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"Requires": [ "Weapon_Rifle_FireRate" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+ 			"Column": 1,
+ 			"Row": 1
+ 		},
+@@ -172,11 +169,11 @@
+ 			"Tree": "Weapon",
+ 			"Branch": "Shotgun",
+ 			"DisplayName": "Tight Choke",
+-			"Description": "Shotgun: 10% tighter pellet spread per rank.",
++			"Description": "Shotgun: 15% tighter pellet spread per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"Requires": [ "Weapon_ShotgunClose" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.Spread", "Op": "Multiply", "Value": 0.9 }, { "Stat": "Weapon.Shotgun.AimSpread", "Op": "Multiply", "Value": 0.9 } ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.Spread", "Op": "Multiply", "Value": 0.85 }, { "Stat": "Weapon.Shotgun.AimSpread", "Op": "Multiply", "Value": 0.85 } ],
+ 			"Column": 0,
+ 			"Row": 1
+ 		},
+@@ -198,11 +195,11 @@
+ 			"Tree": "Weapon",
+ 			"Branch": "Shotgun",
+ 			"DisplayName": "Rapid Reload",
+-			"Description": "Shotgun: 10% faster reloads per rank.",
++			"Description": "Shotgun: 15% faster reloads per rank.",
+ 			"Cost": 1,
+ 			"MaxRank": 3,
+ 			"Requires": [ "Weapon_Shotgun_FireRate" ],
+-			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.ReloadTime", "Op": "Multiply", "Value": 0.9 } ],
++			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+ 			"Column": 1,
+ 			"Row": 1
+ 		},
+diff --git a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+index 1ad3cc0..2c4cb03 100644
+--- a/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
++++ b/Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp
+@@ -575,12 +575,12 @@ namespace GBSmokeRun
+ 			UnlockRanks(FName(TEXT("Weapon_Damage")), 1);
+ 			UnlockRanks(FName(TEXT("Weapon_Pistol_FireRate")), 1);
+ 			UnlockRanks(FName(TEXT("Weapon_Pistol_Reload")), 3);
+-			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2); // Marksman hangs from Deadeye (per-gun trees)
++			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2);
+ 			UnlockRanks(FName(TEXT("Weapon_Headshot")), 1);
+ 			UnlockRanks(FName(TEXT("Weapon_PrecisionRecovery")), 1);
+ 			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reload=%d precision=%d conduit=%d deadeye=%d points=%d"),
+ 				Skills->GetRank(FName(TEXT("Weapon_Pistol_Reload"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
+-				Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
++				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
+ 		});
+ 		Add(15.8f + S, TEXT("precision recovery: weak point kill heals, second kill is on cooldown"), [](UWorld* World, AGBPlayerCharacter* Player)
+ 		{
+@@ -645,9 +645,9 @@ namespace GBSmokeRun
+ 					Base = Def->Stats.FindRef(GBStat::ReloadTime);
+ 				}
+ 			}
+-			if (!FMath::IsNearlyEqual(ReloadTime, 0.7f * Base, 0.01f))
++			if (!FMath::IsNearlyEqual(ReloadTime, 0.55f * Base, 0.01f))
+ 			{
+-				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.7 x base (%.2f s)"), ReloadTime, 0.7f * Base);
++				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.55 x base (3 ranks of -15%%) (%.2f s)"), ReloadTime, 0.55f * Base);
+ 			}
+ 		});
+ 		Add(16.4f + S, TEXT("screenshot: weapon tree with the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+@@ -679,7 +679,7 @@ namespace GBSmokeRun
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: points=%d (expected %d)"), Points, SmokeSkillPointsBefore);
+ 			}
+ 			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_Pistol_FireRate")), FName(TEXT("Weapon_Pistol_Reload")),
+-				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_Rifle_EnchantBuildUp")),
++				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
+ 				FName(TEXT("Weapon_PistolHeadshot")) })
+ 			{
+ 				if (Skills->GetRank(Node) != 0)
+@@ -740,9 +740,6 @@ namespace GBSmokeRun
+ 			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+ 			const int32 PointsBefore = Skills->GetPoints();
+ 			Skills->AddPoints(8);
+-			// Arcane Conduit is the rifle's perk (per-gun trees): check it with the rifle in hand, then put the pistol back.
+-			Equipment->GiveWeapon(TEXT("Rifle"), false, false);
+-			Equipment->EquipOwnedWeapon(TEXT("Rifle"));
+ 			Equipment->SwitchTo(EGBHeldSlot::Gun);
+ 			UGBSpellbookComponent* Book = Player->GetSpellbook();
+ 			const FName EnchantId = Book->GetEnchantSpell();
+@@ -768,14 +765,13 @@ namespace GBSmokeRun
+ 			if (Gun && Before > 0.f)
+ 			{
+ 				Skills->Unlock(FName(TEXT("Weapon_Damage")));
+-				Skills->Unlock(FName(TEXT("Weapon_RifleFar")));
+ 				for (int32 i = 0; i < 3; ++i)
+ 				{
+-					Skills->Unlock(FName(TEXT("Weapon_Rifle_EnchantBuildUp")));
++					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
+ 				}
+-				if (Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))) != 3)
++				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
+ 				{
+-					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))));
++					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
+ 				}
+ 				else
+ 				{
+@@ -791,11 +787,10 @@ namespace GBSmokeRun
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: enchanted build-up is 0, the enchant is not active"));
+ 			}
+-			Equipment->EquipOwnedWeapon(TEXT("Pistol"));
+ 			Equipment->SwitchTo(EGBHeldSlot::Staff);
+ 			Skills->ResetAll();
+ 			Skills->AddPoints(-8); // take back the test points added for this step
+-			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_Rifle_EnchantBuildUp"))) != 0)
++			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
+ 			{
+ 				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit reset FAILED: points=%d (expected %d)"), Skills->GetPoints(), PointsBefore);
+ 			}
+diff --git a/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp b/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+index 31b18d8..f4ca443 100644
+--- a/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
++++ b/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp
+@@ -638,28 +638,38 @@ TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
+ 		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
+ 		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
+ 		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
+-		int32 HubRows = 0;
++		// The emblems hang right under the hub's root perk (the one with no requirement: Heavy Rounds), centred on its
++		// column; the general perks sit beside them in the data's own columns.
++		int32 RootColumn = -1;
++		int32 RootRow = 0;
+ 		for (const FSkillNodeRef& Ref : Result)
+ 		{
+-			if (Ref.Tree == 1)
++			if (Ref.Tree != 1)
+ 			{
+-				if (Ref.Branch != NAME_None)
+-				{
+-					Branches.AddUnique(Ref.Branch);
+-				}
+-				else
++				continue;
++			}
++			if (Ref.Branch != NAME_None)
++			{
++				Branches.AddUnique(Ref.Branch);
++			}
++			else if (RootColumn < 0)
++			{
++				const FGBSkillNodeDefinition* Def = Data->FindSkillNode(Ref.Id);
++				if (Def && Def->Requires.Num() == 0)
+ 				{
+-					HubRows = FMath::Max(HubRows, Ref.Row + 1);
++					RootColumn = Ref.Column;
++					RootRow = Ref.Row;
+ 				}
+ 			}
+ 		}
++		const int32 FirstColumn = FMath::Max(0, (RootColumn < 0 ? 1 : RootColumn) - (Branches.Num() - 1) / 2);
+ 		for (int32 i = 0; i < Branches.Num(); ++i)
+ 		{
+ 			FSkillNodeRef Category;
+ 			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
+ 			Category.Tree = 1;
+-			Category.Column = i;
+-			Category.Row = HubRows;
++			Category.Column = FirstColumn + i;
++			Category.Row = RootRow + 1;
+ 			Category.bCategory = true;
+ 			Category.OpensBranch = Branches[i];
+ 			Result.Add(Category);
+@@ -2192,7 +2202,16 @@ void AGBHUD::DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef&
+ 	Index.Face = ECyFace::Mono;
+ 	Index.Px = 12.f;
+ 	Index.Color = GBCy::RedDim;
+-	DrawCyText(FString::Printf(TEXT("0%d"), Category.Column + 1), X + 16.f * S, Y + 12.f * S, Index, 0.f);
++	// The emblem's number among the emblems (01, 02, 03), not its grid column.
++	int32 Ordinal = 1;
++	for (const FSkillNodeRef& Other : Nodes)
++	{
++		if (Other.bCategory && Other.Column < Category.Column)
++		{
++			++Ordinal;
++		}
++	}
++	DrawCyText(FString::Printf(TEXT("%02d"), Ordinal), X + 16.f * S, Y + 12.f * S, Index, 0.f);
+ 
+ 	// The gun's outline on a 40 x 16 grid (x right, y down), filled in the line color.
+ 	struct FGlyphRect { float X, Y, W, H; };
+@@ -2615,8 +2634,15 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
+ 		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
+ 		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
+ 		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
+-		const bool bHub = bTreeCyber && ShownBranch == NAME_None;
+-		const float RowsTall = (MaxRow + 1) + (bHub ? CategoryScale - 1.f : 0.f);
++		// Rows the grid needs: an emblem reaches CategoryScale rows down from its own row.
++		float RowsTall = MaxRow + 1.f;
++		for (const FSkillNodeRef& Node : Nodes)
++		{
++			if (OnPage(Node) && Node.bCategory)
++			{
++				RowsTall = FMath::Max(RowsTall, Node.Row + CategoryScale);
++			}
++		}
+ 		const float FreeH = AreaY + AreaH - Pad - (GridTop + ColumnHeadH);
+ 		const float CellH = FMath::Min(bTreeCyber ? 120.f * S : 29.f * P, FreeH / RowsTall);
+ 		// The weapon pages have few rows: centre them in the panel instead of leaving the bottom empty (only the
+@@ -2657,9 +2683,12 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
+ 			TArray<FName> Reqs;
+ 			if (Node.bCategory)
+ 			{
++				// An emblem hangs from the hub's root perks only (those with no requirement: Heavy Rounds), not from the
++				// general perks beside it.
+ 				for (const FSkillNodeRef& Root : Nodes)
+ 				{
+-					if (OnPage(Root) && !Root.bCategory)
++					const FGBSkillNodeDefinition* RootDef = (OnPage(Root) && !Root.bCategory && Data) ? Data->FindSkillNode(Root.Id) : nullptr;
++					if (RootDef && RootDef->Requires.Num() == 0)
+ 					{
+ 						Reqs.Add(Root.Id);
+ 					}
+diff --git a/Tools/Balance/balance_model.js b/Tools/Balance/balance_model.js
+index 1997dc0..435644e 100644
+--- a/Tools/Balance/balance_model.js
++++ b/Tools/Balance/balance_model.js
+@@ -27,6 +27,10 @@ const ASSUME = {
+ 	WeaponAccuracy: { Rifle: 0.6, Shotgun: 0.75, Pistol: 0.75 }, // automatic fire and recoil miss more
+ 	Uptime: 0.7,          // share of the game time spent attacking (the rest: dodging, switching, looking for targets)
+ 	HeadShare: 0.25,      // share of the hits that land on the head / weak point
++	// Where a gun's misses come from (shares of its misses; the rest is moving targets and aim). Recoil perks shrink the
++	// first part, spread perks the second, in proportion to the stat. Provisional (architect, Nov 13), to weigh the handling perks.
++	MissFromRecoil: { Pistol: 0.3, Rifle: 0.5, Shotgun: 0.15 },
++	MissFromSpread: { Pistol: 0.15, Rifle: 0.2, Shotgun: 0.5 },
+ 	QteScore: 0.75,       // typical QTE score; the game maps 0 -> Min and 1 -> Max in a straight line (Base = QTE off)
+ 	QteRealSeconds: 2,    // real seconds a player spends in one QTE (the limit is QTE.TimeLimit)
+ 	SpellTargets: 1.8,    // enemies an average spell hits in a wave (1 against a boss)
+@@ -103,7 +107,7 @@ function enchant(ranks) {
+ function weaponRow(w, ranks, useEnchant) {
+ 	const stat = (name) => applyMods(w.Stats[name] === undefined ? (name.indexOf('Mult') >= 0 ? 1 : 0) : w.Stats[name],
+ 		['Weapon.All.' + name, 'Weapon.' + w.Slot + '.' + name, 'Weapon.' + w.Id + '.' + name], ranks);
+-	const pellets = w.Stats.Pellets || 1;
++	const pellets = Math.max(1, Math.round(stat('Pellets'))) || 1; // perks can add pellets (the game reads it through GetStat)
+ 	const near = w.Stats.FalloffNearMult === undefined ? 1 : stat('FalloffNearMult');
+ 	const far = w.Stats.FalloffFarMult === undefined ? 1 : stat('FalloffFarMult');
+ 	const best = Math.max(near, far);
+@@ -112,13 +116,16 @@ function weaponRow(w, ranks, useEnchant) {
+ 	const burst = hit / interval;
+ 	let sustained = burst;
+ 	let rounds = Infinity;
+-	const mag = w.Stats.MagazineSize || 0;
++	const mag = w.Stats.MagazineSize ? Math.round(stat('MagazineSize')) : 0; // perks can enlarge it
+ 	if (mag) {
+ 		sustained = hit * mag / (mag * interval + stat('ReloadTime'));
+ 		rounds = mag * (1 + (w.Stats.SpareMagazines || 0));
+ 	}
+ 	const head = stat('HeadshotMult') || 1;
+-	const accuracy = ASSUME.WeaponAccuracy[w.Id] || ASSUME.Accuracy;
++	const baseAccuracy = ASSUME.WeaponAccuracy[w.Id] || ASSUME.Accuracy;
++	const ratio = (name) => (w.Stats[name] ? stat(name) / w.Stats[name] : 1);
++	const missShrink = (ASSUME.MissFromRecoil[w.Id] || 0) * (1 - ratio('RecoilPitch')) + (ASSUME.MissFromSpread[w.Id] || 0) * (1 - ratio('Spread'));
++	const accuracy = 1 - (1 - baseAccuracy) * (1 - missShrink);
+ 	const headFactor = 1 + ASSUME.HeadShare * (head - 1);
+ 	const en = useEnchant && w.Slot === 'Gun' ? enchant(ranks) : { mult: 1, uptime: 0 };
+ 	const enchantFactor = 1 + en.uptime * (en.mult - 1);
+@@ -144,6 +151,30 @@ for (const r of baseRows) {
+ }
+ console.log('Hit, Burst, Sustained: every shot hitting the body. Sustained includes reloads. Expected: with accuracy, uptime and head share.');
+ 
++// ---- Weapon perks: what one point buys ----
++// Each perk alone at its full rank, on top of Heavy Rounds 3, against the same gun without it: expected damage per
++// second (accuracy, uptime, head share; best range, so Point Blank and Long Shot count in full). Perks that do not
++// change damage show their own effect instead.
++title('Weapon perks: what one point buys (alone at full rank, on top of Heavy Rounds 3, best range)');
++W = [26, 8, 7, 9, 9, 9, 12, 30];
++line(['Perk', 'Page', 'Points', 'Pistol', 'Rifle', 'Shotgun', 'Best / point', 'Other effect'], W);
++{
++	const ref = { Weapon_Damage: 3 };
++	const guns = ['Pistol', 'Rifle', 'Shotgun'].map((id) => weapons.find((w) => w.Id === id)).filter(Boolean);
++	for (const s of skills.filter((n) => n.Tree === 'Weapon' && n.Id !== 'Weapon_Damage')) {
++		const points = s.Cost * s.MaxRank;
++		const withIt = Object.assign({}, ref, { [s.Id]: s.MaxRank });
++		const gains = guns.map((w) => weaponRow(w, withIt, false).expected / weaponRow(w, ref, false).expected - 1);
++		const best = Math.max.apply(null, gains);
++		let other = '';
++		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('EnchantBuildUpMult') >= 0)) { other = 'build-up +' + num(100 * (applyMods(1, s.ModifiersPerRank.map((m) => m.Stat), { [s.Id]: s.MaxRank }) - 1), 0) + '%'; }
++		if (s.ModifiersPerRank.some((m) => m.Stat === 'PrecisionRecovery')) { other = 'heal 3% on weak-point kills'; }
++		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('HeadshotMult') >= 0 && m.Stat.indexOf('Weapon.All') === 0)) { other = 'also staff and sword'; }
++		line([s.Id.replace('Weapon_', ''), s.Branch || 'hub', points, ...gains.map((g) => g > 0.0005 ? '+' + num(100 * g, 1) + '%' : '-'), best > 0.0005 ? '+' + num(100 * best / points, 1) + '%' : '-', other], W);
++	}
++}
++console.log('Heavy Rounds itself: +33.1% on every gun for 3 points = +11% per point (on all three guns at once).');
++
+ // ---- Spells ----
+ title('Spells (damage on ONE target; Min / Base / Max by QTE; damage per mana at Base)');
+ W = [16, 6, 9, 22, 10, 22];
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'rg --files -g AGENTS.md -g GDD.md' in C:\GameJam
+ succeeded in 644ms:
+Design\GDD.md
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Content/Data/Skills.json' in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n 'GetStat|Multiply|Rebuild' Glyphbound/Source/Glyphbound/Components/GBStatsComponent.cpp; rg -n '18\\.|v0.41|Weapon tree' Design/GDD.md" in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Tools/Balance/balance_model.js' in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp | Select-Object -Skip 575 -First 125; Get-Content Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp | Select-Object -Skip 2520 -First 260' in C:\GameJam
+ succeeded in 0ms:
+{
+	"Skills": [
+		{
+			"Id": "Weapon_Damage",
+			"Tree": "Weapon",
+			"DisplayName": "Heavy Rounds",
+			"Description": "+10% gun damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.Damage", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 2,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Headshot",
+			"Tree": "Weapon",
+			"DisplayName": "Marksman",
+			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_PrecisionRecovery",
+			"Tree": "Weapon",
+			"DisplayName": "Precision Recovery",
+			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Headshot" ],
+			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
+			"Id": "Weapon_EnchantBuildUp",
+			"Tree": "Weapon",
+			"DisplayName": "Arcane Conduit",
+			"Description": "+10% elemental build-up from enchanted weapons per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 4,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_PistolHeadshot",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Deadeye",
+			"Description": "Pistol: +0.25x head / weak point damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Pistol_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Quick Trigger",
+			"Description": "Pistol: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Pistol_Reload",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Rapid Reload",
+			"Description": "Pistol: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Pistol_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Pistol_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Steady Grip",
+			"Description": "Pistol: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Pistol_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Pistol.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_RifleFar",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Long Shot",
+			"Description": "Rifle: +0.2x damage at long range per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.2 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Rifle_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Quick Trigger",
+			"Description": "Rifle: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Rifle_Reload",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Rapid Reload",
+			"Description": "Rifle: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Rifle_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Rifle_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Steady Grip",
+			"Description": "Rifle: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Rifle_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Rifle.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_ShotgunClose",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Point Blank",
+			"Description": "Shotgun: +0.2x damage up close per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Shotgun_Spread",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Tight Choke",
+			"Description": "Shotgun: 15% tighter pellet spread per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_ShotgunClose" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.Spread", "Op": "Multiply", "Value": 0.85 }, { "Stat": "Weapon.Shotgun.AimSpread", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Shotgun_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Quick Trigger",
+			"Description": "Shotgun: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Shotgun_Reload",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Rapid Reload",
+			"Description": "Shotgun: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Shotgun_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Shotgun_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Steady Grip",
+			"Description": "Shotgun: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Shotgun_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Shotgun.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_FireballDamage",
+			"Tree": "Spell",
+			"DisplayName": "Searing Fireball",
+			"Description": "+15% fireball damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_FireballBlast",
+			"Tree": "Spell",
+			"DisplayName": "Wide Blast",
+			"Description": "+20% fireball blast radius per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Spell_FireballDamage" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.ExplosionRadius", "Op": "Multiply", "Value": 1.2 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_LightningDamage",
+			"Tree": "Spell",
+			"DisplayName": "Overcharge",
+			"Description": "+15% lightning bolt damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.LightningBolt.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_IceWallHealth",
+			"Tree": "Spell",
+			"DisplayName": "Glacier Wall",
+			"Description": "+25% ice wall health per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceWall.Health", "Op": "Multiply", "Value": 1.25 } ],
+			"Column": 2,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_ManaCost",
+			"Tree": "Spell",
+			"DisplayName": "Frugal Casting",
+			"Description": "10% less mana cost for every spell per rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.All.ManaCost", "Op": "Multiply", "Value": 0.9 } ],
+			"Column": 3,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_Cooldown",
+			"Tree": "Spell",
+			"DisplayName": "Quick Recall",
+			"Description": "10% shorter cooldowns for every spell per rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Spell_ManaCost" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.All.Cooldown", "Op": "Multiply", "Value": 0.9 } ],
+			"Column": 3,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_FireWallDuration",
+			"Tree": "Spell",
+			"DisplayName": "Lingering Flames",
+			"Description": "+15% fire wall duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.FireWall.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
+			"Id": "Spell_FlamethrowerDamage",
+			"Tree": "Spell",
+			"DisplayName": "Intense Heat",
+			"Description": "+12% flamethrower damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.Flamethrower.DamagePerSecond", "Op": "Multiply", "Value": 1.12 } ],
+			"Column": 0,
+			"Row": 3
+		},
+		{
+			"Id": "Spell_RuneRadius",
+			"Tree": "Spell",
+			"DisplayName": "Expanded Sigil",
+			"Description": "+10% lightning rune blast radius per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.LightningRune.Radius", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_OrbDuration",
+			"Tree": "Spell",
+			"DisplayName": "Persistent Charge",
+			"Description": "+15% static orb duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.StaticOrb.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 1,
+			"Row": 2
+		},
+		{
+			"Id": "Spell_ShieldDuration",
+			"Tree": "Spell",
+			"DisplayName": "Enduring Guard",
+			"Description": "+15% ice shield duration per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceShield.Duration", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_IceFloorSlow",
+			"Tree": "Spell",
+			"DisplayName": "Deep Freeze",
+			"Description": "Ice floor slows 5 points more per rank (up to 80%).",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceFloor.EffectStrength", "Op": "Add", "Value": 0.1 } ],
+			"Column": 2,
+			"Row": 2
+		}
+	]
+}
+
+ succeeded in 0ms:
+rg: Glyphbound/Source/Glyphbound/Components/GBStatsComponent.cpp: IO error for operation on Glyphbound/Source/Glyphbound/Components/GBStatsComponent.cpp: El sistema no puede encontrar la ruta especificada. (os error 3)
+4:> Status: **v0.41, 2026-11-13** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+9:- v0.41 (2026-11-13): owner: **Marksman, Precision Recovery and Arcane Conduit are general again, as at first** (they work on every gun, Marksman also on the staff and the sword) and sit on the weapon hub with Heavy Rounds; Deadeye stays next to Marksman (they stack, as before); Tight Choke stays. The architect measured every weapon perk with the balance tool (new table "what one point buys") and tuned the new per-gun perks to the existing ones: **Rapid Reload -15% per rank** on each gun (was -10% on all guns at once), **Tight Choke -15%** per rank. Arcane Conduit needs only Heavy Rounds now. Details in §18 "Weapon tree".
+10:- v0.40 (2026-11-13): owner chose **perks per gun**: each gun page has its own perks, and the shared ones ("All guns") are gone. Every gun gets its own Quick Trigger, Rapid Reload and Steady Grip; the pistol keeps Deadeye -> Marksman -> Precision Recovery, the rifle Long Shot -> Arcane Conduit (now rifle-only), the shotgun Point Blank -> a new Tight Choke (tighter pellet spread). The weapon tree goes from 36 to 57 points. Side effect found with the balance tool: the old "All" fire-rate and reload perks also sped up the staff and the sword, so the Entity fight grew from about 191 to 214 s; **each Entity phase goes from 8,000 to 7,300 health** (about 193 s again). Details in §18 "Weapon tree" and §19.
+11:- v0.39 (2026-11-13): owner, after playing the package: **the skill trees are two pages** (tabs; Q / E, L1 / L2 / R1), and each page takes its tree's whole look (spells = RPG, weapons = cyberpunk); the other menus both eras share take **the current era's look** (past = RPG, future = cyberpunk) instead of the held item's; I opens the inventory; the spell page gets a calmer, darker background. **The weapon tree becomes a hub with three gun branches, Cyberpunk style:** Heavy Rounds on top, then Pistol, Rifle and Shotgun; choosing one opens that gun's page, with a Back button. Architect, provisional: the nine existing perks are regrouped by theme with their effects unchanged (§18 "Weapon tree").
+15:- v0.35 (2026-11-13): a tool for the game's magic effects, the **GBPixelVfx** plugin (owner's idea; the architect built the minimal version): it bakes a realistic Niagara Fluids effect (fire, smoke, explosion) into a pixel-art flipbook in the master palette and plays it in the game as a camera-facing sprite with a real light. Four clips are baked. **None is used by a spell yet: that waits for the owner's OK.** Rules in §3 "The pixel-art look" and §18.
+26:- v0.24 (2026-11-12): owner: the weapon tree is reorganized (Heavy Rounds on top; a handling branch and a precision branch; three weapon specializations on one row) and gets four new perks: Rapid Reload, Precision Recovery, Arcane Conduit, Deadeye. See §18 "Weapon tree".
+148:  - **Weapon tree:** damage, fire rate, **recoil** (better aim), **damage by distance** (shotgun stronger up close, rifle stronger far away), **headshot damage**, reload speed, healing on precise kills, enchant build-up. Layout in §18 "Weapon tree".
+150:- **Perks can be reset** (owner, 2026-11-12, to test them): a "Reset skills" option on the skill tree screen removes every unlocked node and gives back all the points spent on them. Provisional details in section 18.
+266:- **Moving costs accuracy (owner, 2026-11-12):** shots spread more while the player moves than while standing still; the crosshair opens to show it. See §18.
+464:## 18. Provisional rules and numbers picked by the architect (2026-11-12)
+480:- **Weapon tree, v0.41 (owner: the three general perks stay general):** **Hub page:** Heavy Rounds (+10% gun damage, all guns) in the middle; Marksman (+0.25x head / weak point damage with every weapon, staff and sword included, 2 points per rank) -> Precision Recovery (2 points per rank) on the left; Arcane Conduit (+10% elemental build-up from enchanted weapons per rank, needs Heavy Rounds) on the right; the three gun emblems hang from Heavy Rounds. **Every gun page:** its own Quick Trigger (-8% time between shots of that gun per rank) -> Rapid Reload (**-15%** reload time per rank, -45% at 3) and Steady Grip (-20% recoil). **Pistol:** Deadeye (+0.25x pistol head damage; it stacks with Marksman as it always did). **Rifle:** Long Shot. **Shotgun:** Point Blank -> Tight Choke (**-15%** pellet spread, hip and aimed, per rank). All 3 ranks, 1 point per rank unless said.
+482:- **Weapon tree, v0.40 (superseded by v0.41 above; owner: "perks per gun"):** the hub of v0.39 stays (Heavy Rounds, then the Pistol, Rifle and Shotgun pages), and every perk now belongs to one gun. Each gun page: **Quick Trigger** (-8% time between shots of that gun per rank) -> **Rapid Reload** (-10% reload time, -30% at 3) and **Steady Grip** (-20% recoil); plus its signature chain. **Pistol:** Deadeye (+0.25x pistol head / weak point damage) -> Marksman (+0.25x head / weak point damage with every weapon, staff and sword included, 2 points per rank) -> Precision Recovery (2 points per rank). **Rifle:** Long Shot (+0.2x damage far) -> Arcane Conduit (+10% elemental build-up of the enchanted rifle per rank). **Shotgun:** Point Blank (+0.2x damage up close) -> **Tight Choke** (new, provisional: -10% pellet spread, hip and aimed, per rank). All 3 ranks, 1 point per rank unless said. The first perk of each chain needs Heavy Rounds. Marksman stays global on purpose: it is the one weak-point perk of the staff and the sword. The weapon tree costs 57 points (was 36), so a player can finish about one gun and a half, as the owner wanted.
+483:- **Weapon tree, v0.39 (superseded by v0.40 above; owner: a hub with gun branches, "similar to Cyberpunk"):** Heavy Rounds stays the first perk, on the hub page. Under it, three gun emblems: **Pistol**, **Rifle**, **Shotgun**. Choosing one (Enter or a click) opens that gun's page; a Back button (and Esc / B) returns to the hub. **Provisional (architect):** the nine perks below keep their effects, costs and ranks exactly (so §19's balance and the 36-point budget are unchanged) and are regrouped by theme: **Pistol** (precision) = Deadeye, Marksman -> Precision Recovery; **Rifle** (sustained fire) = Long Shot, Quick Trigger -> Steady Grip; **Shotgun** (close range) = Point Blank -> Arcane Conduit, Rapid Reload. The first perks of every branch need only Heavy Rounds. Two prerequisites changed so each branch stands alone: Rapid Reload now needs Heavy Rounds (was Quick Trigger) and Arcane Conduit needs Point Blank (was Marksman). The perks that work on every gun say "All guns" in their description. Gun-specific versions of the shared perks are a possible next step if the owner wants each branch to touch only its gun.
+484:- **Weapon tree (owner, v0.24, superseded by v0.39 above):** Heavy Rounds (+10% gun damage) on top. **Handling** branch (left): Quick Trigger (-8% time between shots) -> Rapid Reload (-10% reload time per rank, -30% at 3) and Steady Grip (-20% recoil per rank, now pitch and yaw). **Precision** branch (right): Marksman (+0.25x head / weak point damage) -> Precision Recovery and Arcane Conduit (+10% elemental build-up from enchanted weapons per rank, +30% at 3; the sword's own element does not count). **Specializations** (bottom row, all needing only Heavy Rounds, so no gun is favored): Deadeye (pistol, +0.25x head / weak point damage per rank: 2.0 -> 2.25 / 2.5 / 2.75), Point Blank (shotgun, +0.2x up close), Long Shot (rifle, +0.2x far; owner, v0.29, was +0.15x). Every perk: 3 ranks, 1 point per rank (Marksman 2, Precision Recovery 2 since v0.27). **Precision Recovery:** killing an enemy with a head / weak point hit heals a fixed **3% of max health**, with an internal cooldown of **6 / 5 / 4 s** by rank; once per enemy death (a shotgun's pellets never heal more than once), never for a head hit that does not kill (in a horde game that would be near-unlimited healing). Provisional (architect): the prerequisites inside each branch (the owner's sketch only shows the arrows Heavy Rounds -> both branches, Quick Trigger -> Rapid Reload, Marksman -> Precision Recovery; Steady Grip hangs from Quick Trigger and Arcane Conduit from Marksman); only the killing blow counts, from any weapon, spells excluded (they never flag weak points).
+
+ succeeded in 0ms:
+// balance_model.js - reads Glyphbound/Content/Data/*.json and prints the balance tables.
+// Usage (from the repo root):  node Tools/Balance/balance_model.js
+// It changes nothing: it is the calculator behind the numbers in Design/GDD.md section 19.
+// Every assumption of the model is in the ASSUME and BUILDS blocks below; everything else comes from the data.
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const dataDir = path.join(__dirname, '..', '..', 'Glyphbound', 'Content', 'Data');
+const load = (name) => JSON.parse(fs.readFileSync(path.join(dataDir, name), 'utf8'));
+
+const player = load('Player.json');
+const weapons = load('Weapons.json').Weapons;
+const spells = load('Spells.json').Spells;
+const enemies = load('Enemies.json').Enemies;
+const skills = load('Skills.json').Skills;
+const encounters = load('Encounters.json').Encounters;
+const effects = load('StatusEffects.json').StatusEffects;
+const items = load('Items.json').Items;
+const game = load('Game.json').Values;
+const qte = load('QTE.json').Stats;
+const ps = player.Stats;
+
+// ---- Model assumptions (not game data) ----
+const ASSUME = {
+	Accuracy: 0.7,        // share of shots that hit (default; per weapon below)
+	WeaponAccuracy: { Rifle: 0.6, Shotgun: 0.75, Pistol: 0.75 }, // automatic fire and recoil miss more
+	Uptime: 0.7,          // share of the game time spent attacking (the rest: dodging, switching, looking for targets)
+	HeadShare: 0.25,      // share of the hits that land on the head / weak point
+	// Where a gun's misses come from (shares of its misses; the rest is moving targets and aim). Recoil perks shrink the
+	// first part, spread perks the second, in proportion to the stat. Provisional (architect, Nov 13), to weigh the handling perks.
+	MissFromRecoil: { Pistol: 0.3, Rifle: 0.5, Shotgun: 0.15 },
+	MissFromSpread: { Pistol: 0.15, Rifle: 0.2, Shotgun: 0.5 },
+	QteScore: 0.75,       // typical QTE score; the game maps 0 -> Min and 1 -> Max in a straight line (Base = QTE off)
+	QteRealSeconds: 2,    // real seconds a player spends in one QTE (the limit is QTE.TimeLimit)
+	SpellTargets: 1.8,    // enemies an average spell hits in a wave (1 against a boss)
+	AvoidMelee: 0.85,     // share of melee damage a moving player avoids (the player is much faster than most enemies)
+	AvoidRanged: 0.6,     // share of enemy shots a moving player dodges
+	WaveOverhead: 6,      // game seconds lost per sub-wave: spawn delay, enemies walking in, finding targets
+	SkillPointBudget: 36, // points the player should own before the final boss
+	Targets: { Wave: [60, 90], SubBoss: [40, 60], Valkyrie: [105, 135], Entity: [160, 200], Opening: [15, 40] } // real seconds
+};
+
+// Reference builds: what a player who mixes both trees owns at each point of the game (skill id -> rank).
+// Since the per-gun weapon trees (GDD v0.40) the builds are pistol builds; the gun specialist adds the shotgun.
+const BUILDS = {
+	Start: { points: 2, ranks: { Weapon_Damage: 2 } },
+	Early: { points: 8, ranks: { Weapon_Damage: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 2 } },
+	Mid: { points: 16, ranks: { Weapon_Damage: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Weapon_Pistol_FireRate: 1, Spell_FireballDamage: 3, Spell_LightningDamage: 3 } },
+	ValkyriePast: { points: 24, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Headshot: 2, Weapon_PistolHeadshot: 2, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3 } },
+	ValkyrieFuture: { points: 29, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 2 } },
+	Entity: { points: 34, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 3, Spell_RuneRadius: 1 } },
+	// The two extremes at the full budget, to see how far apart specialists land.
+	GunSpecialist36: { points: 36, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Weapon_PrecisionRecovery: 3, Weapon_Pistol_Recoil: 3, Weapon_ShotgunClose: 3, Weapon_Shotgun_Spread: 3 } },
+	PureMage36: { points: 36, sword: true, ranks: { Spell_FireballDamage: 3, Spell_FireballBlast: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_Cooldown: 3, Spell_FlamethrowerDamage: 3, Spell_RuneRadius: 3, Spell_OrbDuration: 3, Spell_FireWallDuration: 3, Spell_IceFloorSlow: 3 } }
+};
+// Which build an encounter is fought with (by id prefix, first match wins).
+const STAGE = [['Opening', 'Start'], ['Test_', 'Mid'], ['Wave_Past_1', 'Early'], ['Wave_Future_1', 'Early'], ['Wave_Past_2', 'Mid'], ['Wave_Future_2', 'Mid'],
+	['SubBoss', 'Mid'], ['Zone_', 'Mid'], ['Wave_', 'ValkyriePast'], ['Valkyrie_Past', 'ValkyriePast'], ['Valkyrie_Future', 'ValkyrieFuture'], ['Entity', 'Entity']];
+const KIND = [['Opening', 'Opening'], ['SubBoss', 'SubBoss'], ['Valkyrie', 'Valkyrie'], ['Entity', 'Entity'], ['', 'Wave']];
+
+const pad = (s, n) => String(s).padEnd(n);
+const num = (v, d = 1) => (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toString();
+const line = (cols, widths) => console.log(cols.map((c, i) => pad(c, widths[i])).join(' '));
+const title = (t) => console.log('\n=== ' + t + ' ===');
+const skillById = {};
+for (const s of skills) { skillById[s.Id] = s; }
+const spellById = {};
+for (const s of spells) { spellById[s.Id] = s; }
+const enemyById = {};
+for (const e of enemies) { enemyById[e.Id] = e; }
+
+// ---- Modifiers: (base + adds) x product of multipliers; a perk's Multiply stacks in a straight line with its rank ----
+function applyMods(base, keys, ranks) {
+	let add = 0;
+	let mult = 1;
+	for (const id of Object.keys(ranks || {})) {
+		const node = skillById[id];
+		if (!node) { throw new Error('unknown skill ' + id); }
+		const rank = Math.min(ranks[id], node.MaxRank);
+		for (const m of node.ModifiersPerRank) {
+			if (keys.indexOf(m.Stat) < 0) { continue; }
+			if (m.Op === 'Add') { add += m.Value * rank; }
+			else if (m.Op === 'Multiply') { mult *= 1 + (m.Value - 1) * rank; }
+		}
+	}
+	return (base + add) * mult;
+}
+function buildCost(ranks) {
+	return Object.keys(ranks).reduce((a, id) => a + skillById[id].Cost * ranks[id], 0);
+}
+const qteParam = (p) => p.ScaledBy === 'None' ? p.Base : p.Min + (p.Max - p.Min) * ASSUME.QteScore;
+
+// ---- Weapon enchant at a typical QTE ----
+const enchantSpell = spellById[player.EnchantSpell];
+const enchantEffect = effects.find((f) => f.Id.indexOf('Enchant_') === 0);
+const enchantBonus = enchantEffect ? enchantEffect.Modifiers[0].Value - 1 : 0;
+function enchant(ranks) {
+	if (!enchantSpell) { return { mult: 1, uptime: 0 }; }
+	const p = enchantSpell.Params;
+	const cooldown = applyMods(p.Cooldown.Base, ['Spell.All.Cooldown', 'Spell.WeaponEnchant.Cooldown'], ranks);
+	const uptime = Math.min(1, qteParam(p.Duration) / cooldown);
+	return { mult: 1 + enchantBonus * qteParam(p.EffectStrength), uptime, cooldown };
+}
+
+// ---- Weapons ----
+function weaponRow(w, ranks, useEnchant) {
+	const stat = (name) => applyMods(w.Stats[name] === undefined ? (name.indexOf('Mult') >= 0 ? 1 : 0) : w.Stats[name],
+		['Weapon.All.' + name, 'Weapon.' + w.Slot + '.' + name, 'Weapon.' + w.Id + '.' + name], ranks);
+	const pellets = Math.max(1, Math.round(stat('Pellets'))) || 1; // perks can add pellets (the game reads it through GetStat)
+	const near = w.Stats.FalloffNearMult === undefined ? 1 : stat('FalloffNearMult');
+	const far = w.Stats.FalloffFarMult === undefined ? 1 : stat('FalloffFarMult');
+	const best = Math.max(near, far);
+	const hit = stat('Damage') * pellets * best;
+	const interval = stat('FireInterval');
+	const burst = hit / interval;
+	let sustained = burst;
+	let rounds = Infinity;
+	const mag = w.Stats.MagazineSize ? Math.round(stat('MagazineSize')) : 0; // perks can enlarge it
+	if (mag) {
+		sustained = hit * mag / (mag * interval + stat('ReloadTime'));
+		rounds = mag * (1 + (w.Stats.SpareMagazines || 0));
+	}
+	const head = stat('HeadshotMult') || 1;
+	const baseAccuracy = ASSUME.WeaponAccuracy[w.Id] || ASSUME.Accuracy;
+	const ratio = (name) => (w.Stats[name] ? stat(name) / w.Stats[name] : 1);
+	const missShrink = (ASSUME.MissFromRecoil[w.Id] || 0) * (1 - ratio('RecoilPitch')) + (ASSUME.MissFromSpread[w.Id] || 0) * (1 - ratio('Spread'));
+	const accuracy = 1 - (1 - baseAccuracy) * (1 - missShrink);
+	const headFactor = 1 + ASSUME.HeadShare * (head - 1);
+	const en = useEnchant && w.Slot === 'Gun' ? enchant(ranks) : { mult: 1, uptime: 0 };
+	const enchantFactor = 1 + en.uptime * (en.mult - 1);
+	const perShot = hit * accuracy * headFactor * enchantFactor; // expected damage of one trigger pull
+	const buildUp = Math.max(w.Stats.FireBuildUp || 0, w.Stats.LightningBuildUp || 0, w.Stats.IceBuildUp || 0);
+	return {
+		id: w.Id, slot: w.Slot, hit, burst, sustained, head, accuracy, mag, perShot,
+		nearSustained: sustained * near / best, farSustained: sustained * far / best,
+		expected: sustained * accuracy * ASSUME.Uptime * headFactor * enchantFactor,
+		carried: rounds === Infinity ? Infinity : rounds * hit,          // paper damage carried
+		carriedExpected: rounds === Infinity ? Infinity : rounds * perShot, // damage it really deals before running dry
+		magExpected: mag * perShot,
+		buildUpPerSecond: buildUp / interval
+	};
+}
+const baseRows = weapons.map((w) => weaponRow(w, {}, false));
+
+title('Weapons (at their best range, no perks, no enchant)');
+let W = [18, 8, 8, 10, 12, 10, 9, 6, 9];
+line(['Weapon', 'Hit', 'Burst', 'Sustained', 'Near / far', 'Expected', 'Carried', 'Head', 'BuildUp/s'], W);
+for (const r of baseRows) {
+	line([r.id, num(r.hit), num(r.burst), num(r.sustained), num(r.nearSustained, 0) + ' / ' + num(r.farSustained, 0), num(r.expected), r.carried === Infinity ? 'free' : num(r.carried, 0), 'x' + r.head, num(r.buildUpPerSecond)], W);
+}
+console.log('Hit, Burst, Sustained: every shot hitting the body. Sustained includes reloads. Expected: with accuracy, uptime and head share.');
+
+// ---- Weapon perks: what one point buys ----
+// Each perk alone at its full rank, on top of Heavy Rounds 3, against the same gun without it: expected damage per
+// second (accuracy, uptime, head share; best range, so Point Blank and Long Shot count in full). Perks that do not
+// change damage show their own effect instead.
+title('Weapon perks: what one point buys (alone at full rank, on top of Heavy Rounds 3, best range)');
+W = [26, 8, 7, 9, 9, 9, 12, 30];
+line(['Perk', 'Page', 'Points', 'Pistol', 'Rifle', 'Shotgun', 'Best / point', 'Other effect'], W);
+{
+	const ref = { Weapon_Damage: 3 };
+	const guns = ['Pistol', 'Rifle', 'Shotgun'].map((id) => weapons.find((w) => w.Id === id)).filter(Boolean);
+	for (const s of skills.filter((n) => n.Tree === 'Weapon' && n.Id !== 'Weapon_Damage')) {
+		const points = s.Cost * s.MaxRank;
+		const withIt = Object.assign({}, ref, { [s.Id]: s.MaxRank });
+		const gains = guns.map((w) => weaponRow(w, withIt, false).expected / weaponRow(w, ref, false).expected - 1);
+		const best = Math.max.apply(null, gains);
+		let other = '';
+		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('EnchantBuildUpMult') >= 0)) { other = 'build-up +' + num(100 * (applyMods(1, s.ModifiersPerRank.map((m) => m.Stat), { [s.Id]: s.MaxRank }) - 1), 0) + '%'; }
+		if (s.ModifiersPerRank.some((m) => m.Stat === 'PrecisionRecovery')) { other = 'heal 3% on weak-point kills'; }
+		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('HeadshotMult') >= 0 && m.Stat.indexOf('Weapon.All') === 0)) { other = 'also staff and sword'; }
+		line([s.Id.replace('Weapon_', ''), s.Branch || 'hub', points, ...gains.map((g) => g > 0.0005 ? '+' + num(100 * g, 1) + '%' : '-'), best > 0.0005 ? '+' + num(100 * best / points, 1) + '%' : '-', other], W);
+	}
+}
+console.log('Heavy Rounds itself: +33.1% on every gun for 3 points = +11% per point (on all three guns at once).');
+
+// ---- Spells ----
+title('Spells (damage on ONE target; Min / Base / Max by QTE; damage per mana at Base)');
+W = [16, 6, 9, 22, 10, 22];
+line(['Spell', 'Mana', 'Cooldown', 'Damage', 'Dmg/mana', 'Notes'], W);
+const allRanks = {};
+for (const s of skills) { allRanks[s.Id] = s.MaxRank; }
+for (const sp of spells) {
+	const p = sp.Params;
+	if (sp.bPassive || !p.ManaCost) { continue; }
+	const mana = p.ManaCost.Base;
+	let dmg = null;
+	let note = '';
+	let cost = mana;
+	if (p.Damage) {
+		dmg = [p.Damage.Min, p.Damage.Base, p.Damage.Max];
+	} else if (p.DamagePerSecond && p.DamagePerSecond.Base > 0 && p.ManaPerSecond) {
+		const seconds = (ps.MaxMana - mana) / p.ManaPerSecond.Base;
+		dmg = [p.DamagePerSecond.Min, p.DamagePerSecond.Base, p.DamagePerSecond.Max].map((d) => d * seconds);
+		cost = ps.MaxMana;
+		note = 'full mana bar, ' + num(seconds) + ' s';
+	} else if (p.DamagePerSecond && p.DamagePerSecond.Base > 0 && p.Duration) {
+		dmg = [p.DamagePerSecond.Min * p.Duration.Min, p.DamagePerSecond.Base * p.Duration.Base, p.DamagePerSecond.Max * p.Duration.Max];
+		note = 'if the enemy stays inside';
+	}
+	if (p.Duration && p.Duration.Base > 0 && p.Cooldown.Base > 0 && sp.Id !== 'LightningRune') {
+		// Worst case for "always up": every duration and cooldown perk at rank 3.
+		const durKeys = ['Spell.' + sp.Id + '.Duration'];
+		const maxDur = applyMods(p.Duration.Max, durKeys, allRanks);
+		const typDur = applyMods(qteParam(p.Duration), durKeys, allRanks);
+		const minCd = applyMods(p.Cooldown.Base, ['Spell.All.Cooldown', 'Spell.' + sp.Id + '.Cooldown'], allRanks);
+		note += (note ? '; ' : '') + 'up ' + num(100 * p.Duration.Base / p.Cooldown.Base, 0) + '% of the time (every perk: ' + num(100 * typDur / minCd, 0) + '% typical QTE, ' + num(100 * maxDur / minCd, 0) + '% perfect)';
+	}
+	line([sp.Id, mana, p.Cooldown.Base, dmg ? dmg.map((d) => num(d, 0)).join(' / ') : '-', dmg ? num(dmg[1] / cost, 2) : '-', note], W);
+}
+
+// ---- Casting schedule: mana only comes back after ManaRegenDelay without spending ----
+// A player who casts as often as the mana allows: one cast of cost C every C / regen + delay game seconds.
+function casting(ranks, fightSeconds, targets) {
+	const direct = ['Fireball', 'LightningBolt', 'LightningRune'].map((id) => spellById[id]).filter(Boolean);
+	let cost = 0;
+	let damage = 0;
+	for (const sp of direct) {
+		cost += applyMods(sp.Params.ManaCost.Base, ['Spell.All.ManaCost', 'Spell.' + sp.Id + '.ManaCost'], ranks);
+		damage += applyMods(qteParam(sp.Params.Damage), ['Spell.All.Damage', 'Spell.' + sp.Id + '.Damage'], ranks);
+	}
+	cost /= direct.length;
+	damage /= direct.length;
+	const period = cost / ps.ManaRegen + ps.ManaRegenDelay;     // game seconds between casts once the bar is empty
+	const castsPerSecond = 1 / period + (ps.MaxMana / cost) / Math.max(fightSeconds, 1); // plus the starting bar
+	return { cost, damage, period, castsPerSecond, dps: damage * castsPerSecond * (targets || 1) };
+}
+// Real seconds each QTE adds: it runs in real time while the world crawls.
+const qteExtra = ASSUME.QteRealSeconds * (1 - (qte['QTE.TimeDilation'] || 0.1));
+
+title('Casting');
+const baseCast = casting({}, 75, 1);
+console.log('Mana ' + ps.MaxMana + ', +' + ps.ManaRegen + '/s after ' + ps.ManaRegenDelay + ' s without spending. Average direct spell: ' + num(baseCast.cost) + ' mana, ' + num(baseCast.damage) + ' damage at a typical QTE.');
+console.log('Sustained: one cast every ' + num(baseCast.period) + ' game s; with the starting bar over a 75 s fight, about ' + num(baseCast.dps) + ' damage/s on one target (' + num(baseCast.dps * ASSUME.SpellTargets) + ' in a wave).');
+console.log('Each QTE adds about ' + num(qteExtra) + ' real seconds on top of the game time.');
+
+// ---- Builds ----
+function evaluateBuild(name) {
+	const b = BUILDS[name];
+	const rows = weapons.map((w) => weaponRow(w, b.ranks, true));
+	const guns = rows.filter((r) => r.slot === 'Gun');
+	const gun = guns.reduce((a, r) => (r.expected > a.expected ? r : a), guns[0]);
+	const free = rows.filter((r) => r.slot === 'Staff' || (b.sword && r.slot === 'Sword')).reduce((a, r) => (!a || r.expected > a.expected ? r : a), null);
+	return { name, points: b.points, cost: buildCost(b.ranks), rows, gun, free, ranks: b.ranks };
+}
+const builds = {};
+for (const name of Object.keys(BUILDS)) { builds[name] = evaluateBuild(name); }
+
+title('Reference builds (best gun with its enchant, free weapon, spells on one target)');
+W = [18, 8, 10, 12, 14, 18, 10];
+line(['Build', 'Points', 'Best gun', 'Gun dmg/s', 'Ammo damage', 'Free weapon', 'Spells'], W);
+for (const name of Object.keys(builds)) {
+	const b = builds[name];
+	if (b.cost > b.points) { console.log('  BUILD ' + name + ' costs ' + b.cost + ' points, more than its ' + b.points); }
+	line([name, b.cost + '/' + b.points, b.gun.id, num(b.gun.expected, 0), num(b.gun.carriedExpected, 0), b.free.id.replace('Staff_', '') + ' ' + num(b.free.expected, 0), num(casting(b.ranks, 120, 1).dps, 0)], W);
+}
+console.log('Gun dmg/s is expected damage (accuracy, uptime, ' + num(ASSUME.HeadShare * 100, 0) + '% of hits on the head). Ammo damage: what the full load really deals before the gun runs dry.');
+
+// ---- Fight simulation ----
+// The gun fires until its ammo (carried + what the enemies drop) is gone, then the free weapon takes over. Spells run all the time.
+function simulate(health, build, opts) {
+	const cast = casting(build.ranks, opts.guessSeconds || 90, opts.targets || 1);
+	const gunDps = build.gun.expected;
+	const freeDps = build.free.expected;
+	const ammo = build.gun.carriedExpected + (opts.dropMagazines || 0) * build.gun.magExpected;
+	const gunSeconds = ammo / gunDps;
+	let seconds;
+	let ammoShare;
+	if ((gunDps + cast.dps) * gunSeconds >= health) {
+		seconds = health / (gunDps + cast.dps);
+		ammoShare = (gunDps * seconds) / ammo;
+	} else {
+		seconds = gunSeconds + (health - (gunDps + cast.dps) * gunSeconds) / (freeDps + cast.dps);
+		ammoShare = 1;
+	}
+	const real = seconds * (1 + qteExtra * cast.castsPerSecond) + (opts.subWaves || 0) * ASSUME.WaveOverhead;
+	return { game: seconds + (opts.subWaves || 0) * ASSUME.WaveOverhead, real, ammoShare };
+}
+
+// ---- Enemies ----
+const fighters = enemies.filter((e) => e.AttackMode !== 'None');
+const cycle = (e) => (e.Stats.AttackInterval || 1) + (e.Stats.AttackWindup || 0); // windup, hit, then the interval
+const enemyDps = (e) => (e.Stats.AttackDamage || 0) / cycle(e);
+const baseGunDps = baseRows.filter((r) => r.slot === 'Gun').reduce((a, r) => Math.max(a, r.expected), 0);
+title('Enemies (one attack every AttackWindup + AttackInterval)');
+W = [22, 8, 7, 5, 7, 7, 19, 30];
+line(['Enemy', 'Health', 'Speed', 'Hit', 'Cycle', 'Dmg/s', 'Hit = % of player', 'Seconds to kill: base gun / Mid build'], W);
+for (const e of fighters) {
+	const s = e.Stats;
+	const share = 100 * s.AttackDamage / ps.MaxHealth;
+	line([e.Id, s.MaxHealth, s.MoveSpeed, s.AttackDamage, num(cycle(e)), num(enemyDps(e)), num(share, 0) + '%' + (share >= 30 ? ' (strong hit)' : ''),
+		num(s.MaxHealth / baseGunDps) + ' / ' + num(s.MaxHealth / (builds.Mid.gun.expected + casting(builds.Mid.ranks, 75, 1).dps))], W);
+}
+
+title('Hits to kill, body / head (no perks, best range)');
+W = [22].concat(baseRows.map(() => 18));
+line(['Enemy'].concat(baseRows.map((r) => r.id)), W);
+for (const e of fighters.filter((x) => x.Stats.MaxHealth < 1000)) {
+	const hp = e.Stats.MaxHealth;
+	line([e.Id].concat(baseRows.map((r) => Math.ceil(hp / r.hit) + ' / ' + Math.ceil(hp / (r.hit * r.head)))), W);
+}
+
+// ---- Ammo economy ----
+title('Ammo economy: rounds a kill gives back / rounds it costs (1 = the gun never runs dry). Base gun / Mid build');
+const ammoItem = items.find((i) => i.Id === 'Ammo_Magazine');
+const magsPerPickup = ammoItem && ammoItem.Stats ? ammoItem.Stats.SpareMagazines : 1;
+const dropMags = (e) => (e.Drops || []).filter((d) => d.ItemId === 'Ammo_Magazine').reduce((a, d) => a + d.Count * d.Chance, 0) * magsPerPickup;
+const baseGuns = baseRows.filter((r) => r.mag > 0);
+W = [22].concat(baseGuns.map(() => 16));
+line(['Enemy'].concat(baseGuns.map((g) => g.id)), W);
+for (const e of fighters.filter((x) => x.Stats.MaxHealth < 4000)) {
+	line([e.Id].concat(baseGuns.map((g) => {
+		const withBuild = builds.Mid.rows.find((r) => r.id === g.id);
+		// Whole shots: a kill never costs less than one trigger pull that hits.
+		const ratio = (row) => dropMags(e) * row.mag / Math.max(1 / row.accuracy, e.Stats.MaxHealth / row.perShot);
+		return num(ratio(g), 2) + ' / ' + num(ratio(withBuild), 2);
+	})), W);
+}
+
+// ---- Elemental ----
+title('Elemental per enemy: threshold, x build-up taken, x damage taken; Ignite as a share of its health');
+const ignite = effects.find((f) => f.Id === 'Ignite');
+const igniteTotal = ignite ? -ignite.HealthPerTick * (ignite.Duration / ignite.TickInterval) : 0;
+for (const e of fighters) {
+	const parts = ['Fire', 'Lightning', 'Ice'].map((el) => {
+		const get = (k) => e.Stats[el + k] === undefined ? game['ElementalDefault.' + el + k] : e.Stats[el + k];
+		return el + ' ' + get('BuildUpThreshold') + ' x' + get('BuildUpTaken') + ' x' + get('DamageTaken');
+	});
+	const mult = e.Stats.IgniteDamageMult === undefined ? game['ElementalDefault.IgniteDamageMult'] : e.Stats.IgniteDamageMult;
+	console.log(pad(e.Id, 22) + pad(parts.join(' | '), 66) + ' Ignite ' + num(100 * igniteTotal * mult / e.Stats.MaxHealth, 1) + '%' + (e.Stats.SlowTaken !== undefined ? ', slow taken x' + e.Stats.SlowTaken : ''));
+}
+
+// ---- Encounters ----
+title('Encounters: length with the build of that point of the game, and the pressure on the player');
+W = [16, 3, 6, 7, 15, 7, 11, 6, 50];
+line(['Encounter', 'SP', 'Kills', 'Health', 'Build', 'Game s', 'Real s', 'Ammo', 'Per sub-wave: kills, expected damage taken per second (seconds to die)'], W);
+for (const enc of encounters) {
+	const stage = STAGE.find(([prefix]) => enc.Id.indexOf(prefix) === 0);
+	const kind = KIND.find(([prefix]) => enc.Id.indexOf(prefix) === 0)[1];
+	const build = builds[stage ? stage[1] : 'Mid'];
+	let kills = 0;
+	let health = 0;
+	let mags = 0;
+	const parts = [];
+	for (const wave of enc.Waves) {
+		let wk = 0;
+		let exp = 0;
+		for (const sp of wave.Spawns) {
+			const e = enemyById[sp.EnemyId];
+			if (!e) { console.log('  UNKNOWN ENEMY ' + sp.EnemyId + ' in ' + enc.Id); continue; }
+			wk += sp.Count;
+			health += sp.Count * e.Stats.MaxHealth;
+			mags += sp.Count * dropMags(e);
+			exp += sp.Count * enemyDps(e) * (1 - (e.AttackMode === 'Ranged' ? ASSUME.AvoidRanged : ASSUME.AvoidMelee));
+		}
+		kills += wk;
+		parts.push(wk + 'k ' + num(exp, 1) + ' (' + num(ps.MaxHealth / Math.max(exp, 0.01), 0) + ' s)');
+	}
+	const boss = kills <= 2;
+	const sim = simulate(health, build, { targets: boss ? 1 : ASSUME.SpellTargets, dropMagazines: mags, subWaves: boss ? 0 : enc.Waves.length, guessSeconds: boss ? 120 : 75 });
+	const target = ASSUME.Targets[kind];
+	const flag = sim.real < target[0] ? ' SHORT' : sim.real > target[1] ? ' LONG' : '';
+	line([enc.Id, enc.SkillPoints, kills, health, build.name, num(sim.game, 0), num(sim.real, 0) + flag, num(sim.ammoShare * 100, 0) + '%', parts.join(' | ')], W);
+}
+console.log('Real s = game seconds plus the QTEs. Targets (real s): waves 60-90, sub-bosses 40-60, Valkyries about 120, Entity about 180.');
+console.log('Ammo = share of the ammo (carried + dropped) the fight uses; 100% = the gun ran dry and the free weapon finished.');
+
+title('Bosses against every build (real seconds, share of the ammo used)');
+W = [20].concat(Object.keys(builds).map(() => 16));
+line(['Boss'].concat(Object.keys(builds)), W);
+for (const id of ['Orc_Past_Brute', 'Orc_Future_Warlord', 'Valkyrie_Past', 'Valkyrie_Future', 'Entity']) {
+	const hp = id === 'Entity' ? enemies.filter((e) => e.Id.indexOf('Entity') === 0).reduce((a, e) => a + e.Stats.MaxHealth, 0) : enemyById[id].Stats.MaxHealth;
+	line([id].concat(Object.keys(builds).map((name) => {
+		const sim = simulate(hp, builds[name], { targets: 1, guessSeconds: 120 });
+		return num(sim.real, 0) + ' s, ' + num(sim.ammoShare * 100, 0) + '%';
+	})), W);
+}
+
+// ---- Skill points ----
+title('Skill points');
+const treeCost = (tree) => skills.filter((s) => s.Tree === tree).reduce((a, s) => a + s.Cost * s.MaxRank, 0);
+const total = treeCost('Weapon') + treeCost('Spell');
+console.log('Weapon tree: ' + treeCost('Weapon') + ' points. Spell tree: ' + treeCost('Spell') + ' points. Both: ' + total + '.');
+const real = encounters.filter((e) => e.Id.indexOf('Test_') !== 0);
+const fromEncounters = real.reduce((a, e) => a + (e.SkillPoints || 0), 0);
+const sum = player.StartingSkillPoints + fromEncounters;
+console.log('Starting points: ' + player.StartingSkillPoints + '. Encounters (without Test_*) give: ' + fromEncounters + '. Sum: ' + sum + ' (budget ' + ASSUME.SkillPointBudget + ' = ' + num(100 * ASSUME.SkillPointBudget / total, 0) + '% of both trees)' + (sum === ASSUME.SkillPointBudget ? ' OK' : '  <-- OFF BUDGET'));
+
+ succeeded in 0ms:
+	}
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	static const EGBHeldSlot Order[] = { EGBHeldSlot::Staff, EGBHeldSlot::Gun, EGBHeldSlot::Sword };
+	for (const EGBHeldSlot Slot : Order)
+	{
+		for (const FName& WeaponId : Equipment->GetOwnedWeapons())
+		{
+			const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr;
+			if (Def && Def->Slot == Slot)
+			{
+				Result.AddUnique(WeaponId);
+			}
+		}
+	}
+	// Weapons no longer in the data (after a reload) are still listed, at the end.
+	for (const FName& WeaponId : Equipment->GetOwnedWeapons())
+	{
+		if (WeaponId != NAME_None)
+		{
+			Result.AddUnique(WeaponId);
+		}
+	}
+	return Result;
+}
+
+TArray<FName> AGBHUD::GetAssignableSpells(AGBPlayerCharacter* Player) const
+{
+	TArray<FName> Result;
+	Result.Add(NAME_None);
+	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	if (!Spellbook || !Data)
+	{
+		return Result;
+	}
+	for (const FName& SpellId : Spellbook->GetKnownSpells())
+	{
+		const FGBSpellDefinition* Def = Data->FindSpell(SpellId);
+		if (Def && !Def->bPassive && !Def->bRequiresGun && SpellId != Spellbook->GetEnchantSpell())
+		{
+			Result.Add(SpellId);
+		}
+	}
+	return Result;
+}
+
+TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
+{
+	TArray<FSkillNodeRef> Result;
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		for (const FGBSkillNodeDefinition& Def : Data->GetSkillNodes())
+		{
+			FSkillNodeRef Ref;
+			Ref.Id = Def.Id;
+			Ref.Tree = GBHudMenuLocal::IsWeaponTree(Def.Tree) ? 1 : 0;
+			Ref.Column = FMath::Max(0, Def.Column);
+			Ref.Row = FMath::Max(0, Def.Row);
+			Ref.Branch = Ref.Tree == 1 ? Def.Branch : NAME_None;
+			Result.Add(Ref);
+		}
+		// The weapon hub (owner, Nov 13, "similar to Cyberpunk"): the root perks on top, then one emblem per gun
+		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
+		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
+		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
+		// The emblems hang right under the hub's root perk (the one with no requirement: Heavy Rounds), centred on its
+		// column; the general perks sit beside them in the data's own columns.
+		int32 RootColumn = -1;
+		int32 RootRow = 0;
+		for (const FSkillNodeRef& Ref : Result)
+		{
+			if (Ref.Tree != 1)
+			{
+				continue;
+			}
+			if (Ref.Branch != NAME_None)
+			{
+				Branches.AddUnique(Ref.Branch);
+			}
+			else if (RootColumn < 0)
+			{
+				const FGBSkillNodeDefinition* Def = Data->FindSkillNode(Ref.Id);
+				if (Def && Def->Requires.Num() == 0)
+				{
+					RootColumn = Ref.Column;
+					RootRow = Ref.Row;
+				}
+			}
+		}
+		const int32 FirstColumn = FMath::Max(0, (RootColumn < 0 ? 1 : RootColumn) - (Branches.Num() - 1) / 2);
+		for (int32 i = 0; i < Branches.Num(); ++i)
+		{
+			FSkillNodeRef Category;
+			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
+			Category.Tree = 1;
+			Category.Column = FirstColumn + i;
+			Category.Row = RootRow + 1;
+			Category.bCategory = true;
+			Category.OpensBranch = Branches[i];
+			Result.Add(Category);
+		}
+	}
+	return Result;
+}
+
+void AGBHUD::OpenSkillBranch(FName Branch)
+{
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* First = nullptr;
+	for (const FSkillNodeRef& Node : Nodes)
+	{
+		if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Branch
+			&& (!First || Node.Row < First->Row || (Node.Row == First->Row && Node.Column < First->Column)))
+		{
+			First = &Node;
+		}
+	}
+	if (First)
+	{
+		MenuState.SkillCursor = First->Id;
+		// The hub's clickables are stale until the next draw.
+		MenuHits.Reset();
+	}
+}
+
+			{
+				CyKey(TabX0 - 36.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("Q"), GBCy::Cyan, 22.f);
+				CyKey(TabX0 + SpellW + TabGap + WeaponW + 12.f * S, TabY + (TabH - 22.f * S) * 0.5f, TEXT("E"), GBCy::Cyan, 22.f);
+			}
+			else
+			{
+				RpgKeyCap(TabX0 - 13.f * P, TabY + 3.f * P, TEXT("Q"));
+				RpgKeyCap(TabX0 + SpellW + TabGap + WeaponW + 3.f * P, TabY + 3.f * P, TEXT("E"));
+			}
+		}
+		const float Below = TabH + (bCyber ? 14.f * S : 3.f * P);
+		Y += Below;
+		H -= Below;
+	}
+
+	const float DetailH = FMath::RoundToFloat(FMath::Max(110.f * S, 26.f * P));
+	const float AreaW = W;
+	const float AreaY = Y;
+	const float AreaH = FMath::Max(100.f * S, H - DetailH - 12.f * S);
+
+	// Weapon tree: the hub page (Branch None: the root perks and the gun emblems) or one gun branch page.
+	const FName ShownBranch = ShownTree == 1 ? Selected->Branch : NAME_None;
+	auto OnPage = [ShownTree, ShownBranch](const FSkillNodeRef& Node) { return Node.Tree == ShownTree && Node.Branch == ShownBranch; };
+
+	for (int32 Tree = ShownTree; Tree == ShownTree; ++Tree)
+	{
+		const float AX = X;
+		const bool bTreeCyber = Tree == 1;
+		const EGBHudSkin TreeSkin = bTreeCyber ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+		float GridTop = AreaY;
+		if (bTreeCyber)
+		{
+			CyBox(AX, AreaY, AreaW, AreaH, 22.f * S, GBAlpha(GBCy::Ink, 0.92f), GBAlpha(GBCy::RedDim, 0.9f), 0x5);
+			CyScanlines(AX, AreaY, AreaW, AreaH, 0.25f);
+			DrawGlow(AX + AreaW * 0.5f, AreaY, AreaW * 0.6f, AreaH * 0.4f, GBAlpha(GBCy::Red, 0.08f));
+			// The tab above names the tree; the panel keeps only a small tag (the hub) or Back and the gun's name (a
+			// branch page) over its ruler, so the nodes keep their height.
+			float HeadH = 0.f;
+			if (ShownBranch == NAME_None)
+			{
+				FCyTextStyle Sub;
+				Sub.Face = ECyFace::Mono;
+				Sub.Px = 12.f;
+				Sub.Color = GBCy::RedDim;
+				HeadH = DrawCyText(TEXT("// FIREARMS PERKS  -  CHOOSE A GUN"), AX + 26.f * S, AreaY + 12.f * S, Sub, 0.f).Y;
+			}
+			else
+			{
+				// Back: a small cut-corner button, then "WEAPONS // <GUN>".
+				FCyTextStyle BackStyle;
+				BackStyle.Face = ECyFace::Condensed;
+				BackStyle.Px = 18.f;
+				BackStyle.Spacing = 120;
+				BackStyle.bUpper = true;
+				const FString BackText(TEXT("<  Back"));
+				const FVector2D BackSize = MeasureCyText(BackText, BackStyle);
+				const float BX = AX + 26.f * S;
+				const float BY = AreaY + 12.f * S;
+				const float BW = BackSize.X + 30.f * S;
+				const float BH = FMath::RoundToFloat(30.f * S);
+				const bool bHover = IsMouseOver(BX, BY, BW, BH);
+				CyBox(BX, BY, BW, BH, 8.f * S, bHover ? GBAlpha(GBCy::Red, 0.25f) : GBAlpha(GBCy::Ink, 0.9f), bHover ? GBCy::RedBright : GBCy::Red, 0x4);
+				BackStyle.Color = bHover ? GBCy::Pale : GBCy::Red;
+				DrawCyText(BackText, BX + BW * 0.5f, BY + (BH - BackSize.Y) * 0.5f, BackStyle, 0.5f);
+				AddMenuHit(EMenuHitKind::SkillBranchBack, BX, BY, BW, BH);
+				CyKey(BX + BW + 10.f * S, BY + (BH - 22.f * S) * 0.5f, TEXT("Esc"), GBCy::Cyan, 22.f);
+				FCyTextStyle Crumb;
+				Crumb.Face = ECyFace::Condensed;
+				Crumb.Px = 24.f;
+				Crumb.Spacing = 160;
+				Crumb.bUpper = true;
+				Crumb.Color = GBCy::RedDim;
+				const FVector2D CS = DrawCyText(TEXT("Weapons  //  "), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 1.f);
+				Crumb.Color = GBCy::Red;
+				DrawCyText(ShownBranch.ToString(), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 0.f);
+				HeadH = FMath::Max(BH, CS.Y);
+			}
+			CyRuler(AX + 26.f * S, AreaY + 12.f * S + HeadH + 6.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
+			GridTop = AreaY + 12.f * S + HeadH + 24.f * S;
+		}
+		else
+		{
+			const float PX = FMath::RoundToFloat(AX / P) * P;
+			const float PY = FMath::RoundToFloat(AreaY / P) * P;
+			const float PW = FMath::RoundToFloat(AreaW / P) * P;
+			const float PH = FMath::RoundToFloat(AreaH / P) * P;
+			// A calm, dark slate under the nodes (owner, Nov 13: the brick pattern fought the gold-framed nodes for
+			// attention): near-black with a faint trace of the masonry and a low ember warmth in the middle.
+			FillRect(PX, PY, PW, PH, GBRpg::StoneDeep);
+			RpgStone(PX, PY, PW, PH, FLinearColor(0.55f, 0.55f, 0.65f, 0.16f));
+			DrawGlow(PX + PW * 0.5f, PY + PH * 0.45f, PW * 0.7f, PH * 0.8f, FLinearColor(0.35f, 0.2f, 0.1f, 0.10f));
+			RpgFrame(PX, PY, PW, PH, ERpgFrame::Iron);
+			DrawOutline(PX + 4.f * P, PY + 4.f * P, PW - 8.f * P, PH - 8.f * P, GBRpg::Gold1, P);
+			// The tab above names the tree, so no title here: the four spell rows keep their height at 720p.
+			GridTop = PY + 6.f * P;
+		}
+
+		int32 MaxColumn = 0;
+		int32 MaxRow = 0;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (OnPage(Node))
+			{
+				MaxColumn = FMath::Max(MaxColumn, Node.Column);
+				MaxRow = FMath::Max(MaxRow, Node.Row);
+			}
+		}
+		// The gun emblems are taller than a perk box: they hang into the free space under the hub's last row.
+		const float CategoryScale = 2.3f;
+		const float Pad = bTreeCyber ? 22.f * S : 6.f * P;
+		// The spell tree names its four element columns above the nodes.
+		const float ColumnHeadH = bTreeCyber ? 0.f : 8.f * P;
+		// The page is the full width: cap the cell width so the boxes keep their size, and centre the grid.
+		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
+		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
+		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
+		// Rows the grid needs: an emblem reaches CategoryScale rows down from its own row.
+		float RowsTall = MaxRow + 1.f;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (OnPage(Node) && Node.bCategory)
+			{
+				RowsTall = FMath::Max(RowsTall, Node.Row + CategoryScale);
+			}
+		}
+		const float FreeH = AreaY + AreaH - Pad - (GridTop + ColumnHeadH);
+		const float CellH = FMath::Min(bTreeCyber ? 120.f * S : 29.f * P, FreeH / RowsTall);
+		// The weapon pages have few rows: centre them in the panel instead of leaving the bottom empty (only the
+		// spell page's column names stay pinned to the top, since they sit over the grid).
+		const float GridY = FMath::RoundToFloat(GridTop + ColumnHeadH + (bTreeCyber ? FMath::Max(0.f, (FreeH - CellH * RowsTall) * 0.4f) : 0.f));
+		const float BoxW = FMath::Max(20.f * S, CellW - (bTreeCyber ? 18.f * S : 5.f * P));
+		const float BoxH = FMath::Max(20.f * S, CellH - (bTreeCyber ? 22.f * S : 4.f * P));
+		auto BoxPos = [&](const FSkillNodeRef& Node)
+		{
+			return FVector2D(GridX + Node.Column * CellW + (CellW - BoxW) * 0.5f, GridY + Node.Row * CellH);
+		};
+		if (!bTreeCyber)
+		{
+			for (int32 Column = 0; Column <= MaxColumn; ++Column)
+			{
+				const float ColX = GridX + Column * CellW + CellW * 0.5f;
+				const FLinearColor EC = GBHudText::ElementColor(GBHudMenuDraw::SpellColumnElement(Column));
+				const FString Label = FString(GBHudMenuDraw::SpellColumnName(Column)).ToUpper();
+				const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+				const float LW = MeasurePixelText(Label, Small).X;
+				RpgGem(ColX - LW * 0.5f - 5.f * P, GridTop + 2.5f * P, EC, true);
+				FPixelTextStyle Lab;
+				Lab.Scale = Small;
+				Lab.Color = EC;
+				Lab.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+				DrawPixelText(Label, ColX + 2.f * P, GridTop, Lab, 0.5f);
+			}
+		}
+
+		// Requirement links first, under the boxes: down from the parent, across in the gap above the child, down.
+		// A gun emblem hangs from the hub's root perks; a link to a node on another page is not drawn.
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (!OnPage(Node))
+			{
+				continue;
+			}
+			TArray<FName> Reqs;
+			if (Node.bCategory)
+			{
+				// An emblem hangs from the hub's root perks only (those with no requirement: Heavy Rounds), not from the
+				// general perks beside it.
+				for (const FSkillNodeRef& Root : Nodes)
+				{
+					const FGBSkillNodeDefinition* RootDef = (OnPage(Root) && !Root.bCategory && Data) ? Data->FindSkillNode(Root.Id) : nullptr;
+					if (RootDef && RootDef->Requires.Num() == 0)
+					{
+						Reqs.Add(Root.Id);
+					}
+				}
+			}
+			else if (const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr)
+			{
+				Reqs = Def->Requires;
+			}
+			for (const FName& Req : Reqs)
+			{
+				const FSkillNodeRef* ReqNode = Nodes.FindByPredicate([&Req](const FSkillNodeRef& Other) { return Other.Id == Req; });
+				if (!ReqNode || !OnPage(*ReqNode))
+				{
+					continue;
+				}
+				const FVector2D A = BoxPos(*ReqNode) + FVector2D(BoxW * 0.5f, BoxH);
+				const FVector2D B = BoxPos(Node) + FVector2D(BoxW * 0.5f, 0.f);
+				const bool bOwned = SkillTree->GetRank(Req) > 0;
+				const float ElbowY = FMath::RoundToFloat(B.Y - (CellH - BoxH) * 0.5f);
+				if (bTreeCyber)
+				{
+					const FLinearColor LinkColor = bOwned ? GBCy::Red : GBAlpha(GBCy::Grey, 0.45f);
+					const float T = FMath::Max(1.f, FMath::RoundToFloat((bOwned ? 2.f : 1.f) * S));
+					FillRect(A.X - T * 0.5f, A.Y, T, ElbowY - A.Y, LinkColor);
+					FillRect(FMath::Min(A.X, B.X) - T * 0.5f, ElbowY - T * 0.5f, FMath::Abs(B.X - A.X) + T, T, LinkColor);
+					FillRect(B.X - T * 0.5f, ElbowY, T, B.Y - ElbowY, LinkColor);
+					FillRect(B.X - 3.f * S, B.Y - 6.f * S, 6.f * S, 6.f * S, LinkColor);
+					if (bOwned)
+					{
+						// A data pulse running down the owned link.
+						const float Len = (ElbowY - A.Y) + FMath::Abs(B.X - A.X) + (B.Y - ElbowY);
+						const float D = FMath::Frac((float)GetRealTime() * 0.6f + A.X * 0.001f) * Len;
+						FVector2D Dot;
+						if (D < ElbowY - A.Y) { Dot = FVector2D(A.X, A.Y + D); }
+						else if (D < ElbowY - A.Y + FMath::Abs(B.X - A.X)) { Dot = FVector2D(A.X + FMath::Sign(B.X - A.X) * (D - (ElbowY - A.Y)), ElbowY); }
+						else { Dot = FVector2D(B.X, ElbowY + (D - (ElbowY - A.Y) - FMath::Abs(B.X - A.X))); }
+						DrawGlow(Dot.X, Dot.Y, 8.f * S, 8.f * S, GBAlpha(GBCy::RedBright, 0.9f));
+					}
+				}
+				else
+				{
+					// A gilt chain two art pixels wide with a dark keyline.
+					const float T = 2.f * P;
+					const float AX2 = FMath::RoundToFloat((A.X - P) / P) * P;
+					const float BX2 = FMath::RoundToFloat((B.X - P) / P) * P;
+					const float EY = FMath::RoundToFloat(ElbowY / P) * P;
+					const FLinearColor Core = bOwned ? GBRpg::Gold3 : GBRpg::Iron1;
+					auto Seg = [&](float SX, float SY, float SW, float SH)
+					{
+						FillRect(SX - P, SY - P, SW + 2.f * P, SH + 2.f * P, GBRpg::Outline);
+					};
+					auto SegCore = [&](float SX, float SY, float SW, float SH) { FillRect(SX, SY, SW, SH, Core); };
+					Seg(AX2, A.Y, T, EY - A.Y);
+					Seg(FMath::Min(AX2, BX2), EY, FMath::Abs(BX2 - AX2) + T, T);
+					Seg(BX2, EY, T, B.Y - EY);
+					SegCore(AX2, A.Y, T, EY - A.Y);
+					SegCore(FMath::Min(AX2, BX2), EY, FMath::Abs(BX2 - AX2) + T, T);
+					SegCore(BX2, EY, T, B.Y - EY);
+				}
+			}
+		}
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (!OnPage(Node))
+			{
+				continue;
+			}
+			const FVector2D Pos = BoxPos(Node);
+			if (Node.bCategory)
+			{
+				const float EH = FMath::RoundToFloat(BoxH * CategoryScale);
+				DrawSkillCategory(Player, Node, Nodes, Pos.X, Pos.Y, BoxW, EH);
+				AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, EH, 0, Node.Id);
+				continue;
+			}
+			DrawSkillNode(Player, Tree, Node.Id, Pos.X, Pos.Y, BoxW, BoxH);
+			AddMenuHit(EMenuHitKind::SkillNode, Pos.X, Pos.Y, BoxW, BoxH, 0, Node.Id);
+		}
+		(void)TreeSkin;
+	}
+
+	// A gun emblem: its name, what the branch is about, its perks and ranks, and "Enter: Open".
+	if (Selected && Selected->bCategory)
+	{
+		const float DY = AreaY + AreaH + 12.f * S;
+		FString PerkNames;
+		int32 Owned = 0;
+		int32 Total = 0;
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp | Select-Object -Skip 525 -First 285' in C:\GameJam
+ succeeded in 400ms:
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::SkillTrees);
+			}
+			SmokeSkillNode = NAME_None;
+			SmokeSkillPointsBefore = Player->GetSkillTree()->GetPoints();
+			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
+				if (Data->GetSkillNodes().Num() != 29)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 29 skill nodes, found %d"), Data->GetSkillNodes().Num());
+				}
+				if (Data->GetSkillNodes().Num() > 0)
+				{
+					const FName Node = Data->GetSkillNodes()[0].Id;
+					SmokeSkillNode = Node;
+					const EGBSkillUnlockResult Result = Player->GetSkillTree()->Unlock(Node);
+					UE_LOG(LogGB, Display, TEXT("SMOKE unlock %s result=%d rank=%d points=%d"), *Node.ToString(), static_cast<int32>(Result), Player->GetSkillTree()->GetRank(Node), Player->GetSkillTree()->GetPoints());
+				}
+			}
+		});
+		Add(13.9f + S, TEXT("screenshot: skill trees"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5_skills")); });
+		Add(14.9f + S, TEXT("reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			const int32 Refunded = Player->GetSkillTree()->ResetAll();
+			const int32 Points = Player->GetSkillTree()->GetPoints();
+			const int32 Rank = SmokeSkillNode == NAME_None ? 0 : Player->GetSkillTree()->GetRank(SmokeSkillNode);
+			UE_LOG(LogGB, Display, TEXT("SMOKE skill reset refunded=%d points=%d rank=%d"), Refunded, Points, Rank);
+			if (Points != SmokeSkillPointsBefore || Rank != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE skill reset FAILED: points=%d (expected %d) rank=%d (expected 0)"), Points, SmokeSkillPointsBefore, Rank);
+			}
+		});
+		Add(15.4f + S, TEXT("screenshot: skills reset"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("5b_skills_reset")); });
+		Add(15.6f + S, TEXT("weapon perks: unlock the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			Skills->AddPoints(30);
+			auto UnlockRanks = [Skills](FName Node, int32 Ranks)
+			{
+				for (int32 i = 0; i < Ranks; ++i)
+				{
+					if (Skills->Unlock(Node) != EGBSkillUnlockResult::Ok)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks: could not unlock '%s' (rank %d)"), *Node.ToString(), Skills->GetRank(Node) + 1);
+					}
+				}
+			};
+			UnlockRanks(FName(TEXT("Weapon_Damage")), 1);
+			UnlockRanks(FName(TEXT("Weapon_Pistol_FireRate")), 1);
+			UnlockRanks(FName(TEXT("Weapon_Pistol_Reload")), 3);
+			UnlockRanks(FName(TEXT("Weapon_PistolHeadshot")), 2);
+			UnlockRanks(FName(TEXT("Weapon_Headshot")), 1);
+			UnlockRanks(FName(TEXT("Weapon_PrecisionRecovery")), 1);
+			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reload=%d precision=%d conduit=%d deadeye=%d points=%d"),
+				Skills->GetRank(FName(TEXT("Weapon_Pistol_Reload"))), Skills->GetRank(FName(TEXT("Weapon_PrecisionRecovery"))),
+				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
+		});
+		Add(15.8f + S, TEXT("precision recovery: weak point kill heals, second kill is on cooldown"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			UGBAttributeComponent* Attributes = Player->GetAttributes();
+			const float MaxHealth = Attributes->GetMaxHealth();
+			Attributes->SetHealthAndMana(0.5f * MaxHealth, Attributes->GetMana());
+			auto KillWeakEnemy = [World, Player](bool bHeadshot) -> AGBEnemyCharacter*
+			{
+				const FVector At = Player->GetActorLocation() + Player->GetAimDirection() * 500.f;
+				AGBEnemyCharacter* Enemy = AGBEnemyCharacter::SpawnEnemy(World, FName(TEXT("Orc_Past")), At, FRotator::ZeroRotator, EGBEraPresence::Both);
+				if (!Enemy)
+				{
+					return nullptr;
+				}
+				FGBDamageInfo Info;
+				Info.Amount = 100000.f;
+				Info.Instigator = Player;
+				Info.bHeadshot = bHeadshot;
+				UGBCombatLibrary::DealDamage(Enemy, Info);
+				return Enemy;
+			};
+			const float Before = Attributes->GetHealth();
+			AGBEnemyCharacter* First = KillWeakEnemy(true);
+			const float Healed = Attributes->GetHealth() - Before;
+			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery healed=%.1f"), Healed);
+			if (!First || !First->IsDead())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery: the test orc did not die"));
+			}
+			else if (FMath::Abs(Healed - 0.03f * MaxHealth) > 0.5f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery FAILED: healed %.1f, expected %.1f (3%% of max health)"), Healed, 0.03f * MaxHealth);
+			}
+			const float BeforeSecond = Attributes->GetHealth();
+			AGBEnemyCharacter* Second = KillWeakEnemy(true);
+			const float HealedSecond = Attributes->GetHealth() - BeforeSecond;
+			UE_LOG(LogGB, Display, TEXT("SMOKE precision recovery cooldown healed=%.1f"), HealedSecond);
+			if (!Second || !Second->IsDead())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown: the second test orc did not die"));
+			}
+			else if (FMath::Abs(HealedSecond) > 0.001f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE precision recovery cooldown FAILED: healed %.1f right after the first kill"), HealedSecond);
+			}
+		});
+		Add(16.0f + S, TEXT("rapid reload: pistol reload time"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBHeldItem* Pistol = Player->GetEquipment()->GetItemInSlot(EGBHeldSlot::Gun);
+			if (!Pistol || Pistol->GetWeaponId() != FName(TEXT("Pistol")))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload: the player has no pistol in the gun slot"));
+				return;
+			}
+			const float ReloadTime = Pistol->GetStat(GBStat::ReloadTime, 0.f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE rapid reload pistol=%.2f"), ReloadTime);
+			float Base = 0.f;
+			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
+			{
+				if (const FGBWeaponDefinition* Def = Data->FindWeapon(Pistol->GetWeaponId()))
+				{
+					Base = Def->Stats.FindRef(GBStat::ReloadTime);
+				}
+			}
+			if (!FMath::IsNearlyEqual(ReloadTime, 0.55f * Base, 0.01f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE rapid reload FAILED: %.2f s, expected 0.55 x base (3 ranks of -15%%) (%.2f s)"), ReloadTime, 0.55f * Base);
+			}
+		});
+		Add(16.4f + S, TEXT("screenshot: weapon tree with the new nodes"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::SkillTrees);
+			}
+			// The trees are two pages: show the weapon one.
+			if (AGBHUD* Hud = AGBHUD::Get(Player->GetWorld()))
+			{
+				Hud->DebugSetMenuCursor(0, 0, TEXT("Weapon_Damage"), false);
+			}
+			Shot(TEXT("12_weapon_tree"));
+		});
+		Add(16.6f + S, TEXT("weapon perks: reset the skills"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::None);
+			}
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			const int32 Refunded = Skills->ResetAll();
+			Skills->AddPoints(-30); // take back the test points added for this block
+			const int32 Points = Skills->GetPoints();
+			UE_LOG(LogGB, Display, TEXT("SMOKE weapon perks reset refunded=%d points=%d"), Refunded, Points);
+			if (Points != SmokeSkillPointsBefore)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: points=%d (expected %d)"), Points, SmokeSkillPointsBefore);
+			}
+			for (const FName Node : { FName(TEXT("Weapon_Damage")), FName(TEXT("Weapon_Pistol_FireRate")), FName(TEXT("Weapon_Pistol_Reload")),
+				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
+				FName(TEXT("Weapon_PistolHeadshot")) })
+			{
+				if (Skills->GetRank(Node) != 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE weapon perks reset FAILED: '%s' still at rank %d"), *Node.ToString(), Skills->GetRank(Node));
+				}
+			}
+		});
+		Add(17.1f + S, TEXT("close the menu, staff in hand, cast with the QTE on"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetMenu(EGBMenu::None);
+			}
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+			Player->GetAttributes()->RestoreAll();
+			SetQTEEnabled(true);
+			const bool bOk = Player->GetSpellbook()->TryCastSlot(3);
+			UE_LOG(LogGB, Display, TEXT("SMOKE cast slot3 (%s) with QTE ok=%d qteActive=%d"), *Player->GetSpellbook()->GetSlotSpell(3).ToString(), bOk ? 1 : 0, Player->GetQTE()->IsActive() ? 1 : 0);
+		});
+		Add(17.5f + S, TEXT("QTE: press one key"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			if (Player->GetQTE()->IsActive() && Player->GetQTE()->GetSession().Sequence.Num() > 0)
+			{
+				Player->GetQTE()->HandleKey(Player->GetQTE()->GetSession().Sequence[0]);
+			}
+		});
+		Add(17.8f + S, TEXT("screenshot: QTE"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("6_qte")); });
+		Add(21.9f + S, TEXT("after the QTE time limit"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			// 4.8 s after the cast with the QTE on (the limit is 4 s of real time): it must be over by now.
+			const FGBQTEResult& Result = Player->GetQTE()->GetLastResult();
+			UE_LOG(LogGB, Display, TEXT("SMOKE qte finished active=%d power=%.2f reach=%.2f success=%d timedOut=%d dilation=%.2f"),
+				Player->GetQTE()->IsActive() ? 1 : 0, Result.Power, Result.Reach, Result.bSuccess ? 1 : 0, Result.bTimedOut ? 1 : 0,
+				World->GetWorldSettings() ? World->GetWorldSettings()->GetEffectiveTimeDilation() : -1.f);
+		});
+		Add(22.3f + S, TEXT("kill the player"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			FGBDamageInfo Info;
+			Info.Amount = 10000000.f;
+			UGBCombatLibrary::DealDamage(Player, Info, true);
+			UE_LOG(LogGB, Display, TEXT("SMOKE player dead=%d"), Player->IsDead() ? 1 : 0);
+		});
+		Add(23.0f + S, TEXT("screenshot: death"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("7_death")); });
+		Add(26.0f + S, TEXT("after the respawn"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			LogState(World, Player, TEXT("after respawn"));
+			UE_LOG(LogGB, Display, TEXT("SMOKE owned weapons=%d known spells=%d"),
+				Player->GetEquipment()->GetOwnedWeapons().Num(), Player->GetSpellbook()->GetKnownSpells().Num());
+			Shot(TEXT("8_respawn"));
+		});
+		Add(26.6f + S, TEXT("arcane conduit: enchanted build-up before and after"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			// The weapon enchant has a 15 s world-time cooldown and the smoke clock runs ahead of the
+			// world clock, so this runs after the respawn: the earlier cast is long over by now.
+			SetQTEEnabled(false);
+			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			const int32 PointsBefore = Skills->GetPoints();
+			Skills->AddPoints(8);
+			Equipment->SwitchTo(EGBHeldSlot::Gun);
+			UGBSpellbookComponent* Book = Player->GetSpellbook();
+			const FName EnchantId = Book->GetEnchantSpell();
+			UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit diag holdingGun=%d busy=%d cd=%.1f mana=%.0f knows=%d cost=%.0f cancast=%d"),
+				Equipment->IsHoldingGun() ? 1 : 0, Book->IsBusy() ? 1 : 0, Book->GetCooldownRemaining(EnchantId),
+				Player->GetAttributes()->GetMana(), Book->KnowsSpell(EnchantId) ? 1 : 0, Book->GetManaCost(EnchantId),
+				static_cast<int32>(Book->CanCast(EnchantId)));
+			AGBHeldItem* Gun = nullptr;
+			float Before = 0.f;
+			if (!Book->TryCastEnchant())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: could not cast the weapon enchant"));
+			}
+			else if ((Gun = Equipment->GetActiveItem()) == nullptr || Gun->GetSlot() != EGBHeldSlot::Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: no gun in hand after SwitchTo"));
+				Gun = nullptr;
+			}
+			else
+			{
+				Before = Gun->MakeDamageInfo().BuildUp;
+			}
+			if (Gun && Before > 0.f)
+			{
+				Skills->Unlock(FName(TEXT("Weapon_Damage")));
+				for (int32 i = 0; i < 3; ++i)
+				{
+					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
+				}
+				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
+				}
+				else
+				{
+					const float After = Gun->MakeDamageInfo().BuildUp;
+					UE_LOG(LogGB, Display, TEXT("SMOKE arcane conduit buildup=%.2f base=%.2f"), After, Before);
+					if (!FMath::IsNearlyEqual(After, 1.3f * Before, 0.01f))
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit FAILED: %.2f, expected 1.3 x base (%.2f)"), After, 1.3f * Before);
+					}
+				}
+			}
+			else if (Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: enchanted build-up is 0, the enchant is not active"));
+			}
+			Equipment->SwitchTo(EGBHeldSlot::Staff);
+			Skills->ResetAll();
+			Skills->AddPoints(-8); // take back the test points added for this step
+			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit reset FAILED: points=%d (expected %d)"), Skills->GetPoints(), PointsBefore);
+			}
+			SetQTEEnabled(true);
+		});
+		Add(27.2f + S, TEXT("second staff goes to the inventory, equip by hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			UGBEquipmentComponent* Equipment = Player->GetEquipment();
+			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+			const AGBHeldItem* InSlot = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+			UE_LOG(LogGB, Display, TEXT("SMOKE staff in slot=%s emberOwned=%d returnedItem=%d"),
+				InSlot ? *InSlot->GetWeaponId().ToString() : TEXT("none"),
+				Equipment->OwnsWeapon(TEXT("Staff_Ember")) ? 1 : 0, Returned ? 1 : 0);
+			const bool bEquipped = Equipment->EquipOwnedWeapon(TEXT("Staff_Ember"));
+			const AGBHeldItem* InSlotAfter = Equipment->GetItemInSlot(EGBHeldSlot::Staff);
+			UE_LOG(LogGB, Display, TEXT("SMOKE equip ember ok=%d staff in slot=%s emberEquipped=%d"),
+				bEquipped ? 1 : 0,
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files Glyphbound/Source | rg 'StatsComponent|SkillTreeComponent|HeldItem'; rg -n 'v0.41|Weapon tree' Design/GDD.md; Get-Content Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp | Select-Object -Skip 2570 -First 145" in C:\GameJam
+ succeeded in 459ms:
+Glyphbound/Source\Glyphbound\Weapons\GBHeldItem.h
+Glyphbound/Source\Glyphbound\Weapons\GBHeldItem.cpp
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.h
+Glyphbound/Source\Glyphbound\Progression\GBSkillTreeComponent.cpp
+Glyphbound/Source\Glyphbound\Stats\GBStatsComponent.h
+Glyphbound/Source\Glyphbound\Stats\GBStatsComponent.cpp
+4:> Status: **v0.41, 2026-11-13** — owner's vision plus thirteen rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+9:- v0.41 (2026-11-13): owner: **Marksman, Precision Recovery and Arcane Conduit are general again, as at first** (they work on every gun, Marksman also on the staff and the sword) and sit on the weapon hub with Heavy Rounds; Deadeye stays next to Marksman (they stack, as before); Tight Choke stays. The architect measured every weapon perk with the balance tool (new table "what one point buys") and tuned the new per-gun perks to the existing ones: **Rapid Reload -15% per rank** on each gun (was -10% on all guns at once), **Tight Choke -15%** per rank. Arcane Conduit needs only Heavy Rounds now. Details in §18 "Weapon tree".
+10:- v0.40 (2026-11-13): owner chose **perks per gun**: each gun page has its own perks, and the shared ones ("All guns") are gone. Every gun gets its own Quick Trigger, Rapid Reload and Steady Grip; the pistol keeps Deadeye -> Marksman -> Precision Recovery, the rifle Long Shot -> Arcane Conduit (now rifle-only), the shotgun Point Blank -> a new Tight Choke (tighter pellet spread). The weapon tree goes from 36 to 57 points. Side effect found with the balance tool: the old "All" fire-rate and reload perks also sped up the staff and the sword, so the Entity fight grew from about 191 to 214 s; **each Entity phase goes from 8,000 to 7,300 health** (about 193 s again). Details in §18 "Weapon tree" and §19.
+11:- v0.39 (2026-11-13): owner, after playing the package: **the skill trees are two pages** (tabs; Q / E, L1 / L2 / R1), and each page takes its tree's whole look (spells = RPG, weapons = cyberpunk); the other menus both eras share take **the current era's look** (past = RPG, future = cyberpunk) instead of the held item's; I opens the inventory; the spell page gets a calmer, darker background. **The weapon tree becomes a hub with three gun branches, Cyberpunk style:** Heavy Rounds on top, then Pistol, Rifle and Shotgun; choosing one opens that gun's page, with a Back button. Architect, provisional: the nine existing perks are regrouped by theme with their effects unchanged (§18 "Weapon tree").
+26:- v0.24 (2026-11-12): owner: the weapon tree is reorganized (Heavy Rounds on top; a handling branch and a precision branch; three weapon specializations on one row) and gets four new perks: Rapid Reload, Precision Recovery, Arcane Conduit, Deadeye. See §18 "Weapon tree".
+148:  - **Weapon tree:** damage, fire rate, **recoil** (better aim), **damage by distance** (shotgun stronger up close, rifle stronger far away), **headshot damage**, reload speed, healing on precise kills, enchant build-up. Layout in §18 "Weapon tree".
+480:- **Weapon tree, v0.41 (owner: the three general perks stay general):** **Hub page:** Heavy Rounds (+10% gun damage, all guns) in the middle; Marksman (+0.25x head / weak point damage with every weapon, staff and sword included, 2 points per rank) -> Precision Recovery (2 points per rank) on the left; Arcane Conduit (+10% elemental build-up from enchanted weapons per rank, needs Heavy Rounds) on the right; the three gun emblems hang from Heavy Rounds. **Every gun page:** its own Quick Trigger (-8% time between shots of that gun per rank) -> Rapid Reload (**-15%** reload time per rank, -45% at 3) and Steady Grip (-20% recoil). **Pistol:** Deadeye (+0.25x pistol head damage; it stacks with Marksman as it always did). **Rifle:** Long Shot. **Shotgun:** Point Blank -> Tight Choke (**-15%** pellet spread, hip and aimed, per rank). All 3 ranks, 1 point per rank unless said.
+482:- **Weapon tree, v0.40 (superseded by v0.41 above; owner: "perks per gun"):** the hub of v0.39 stays (Heavy Rounds, then the Pistol, Rifle and Shotgun pages), and every perk now belongs to one gun. Each gun page: **Quick Trigger** (-8% time between shots of that gun per rank) -> **Rapid Reload** (-10% reload time, -30% at 3) and **Steady Grip** (-20% recoil); plus its signature chain. **Pistol:** Deadeye (+0.25x pistol head / weak point damage) -> Marksman (+0.25x head / weak point damage with every weapon, staff and sword included, 2 points per rank) -> Precision Recovery (2 points per rank). **Rifle:** Long Shot (+0.2x damage far) -> Arcane Conduit (+10% elemental build-up of the enchanted rifle per rank). **Shotgun:** Point Blank (+0.2x damage up close) -> **Tight Choke** (new, provisional: -10% pellet spread, hip and aimed, per rank). All 3 ranks, 1 point per rank unless said. The first perk of each chain needs Heavy Rounds. Marksman stays global on purpose: it is the one weak-point perk of the staff and the sword. The weapon tree costs 57 points (was 36), so a player can finish about one gun and a half, as the owner wanted.
+483:- **Weapon tree, v0.39 (superseded by v0.40 above; owner: a hub with gun branches, "similar to Cyberpunk"):** Heavy Rounds stays the first perk, on the hub page. Under it, three gun emblems: **Pistol**, **Rifle**, **Shotgun**. Choosing one (Enter or a click) opens that gun's page; a Back button (and Esc / B) returns to the hub. **Provisional (architect):** the nine perks below keep their effects, costs and ranks exactly (so §19's balance and the 36-point budget are unchanged) and are regrouped by theme: **Pistol** (precision) = Deadeye, Marksman -> Precision Recovery; **Rifle** (sustained fire) = Long Shot, Quick Trigger -> Steady Grip; **Shotgun** (close range) = Point Blank -> Arcane Conduit, Rapid Reload. The first perks of every branch need only Heavy Rounds. Two prerequisites changed so each branch stands alone: Rapid Reload now needs Heavy Rounds (was Quick Trigger) and Arcane Conduit needs Point Blank (was Marksman). The perks that work on every gun say "All guns" in their description. Gun-specific versions of the shared perks are a possible next step if the owner wants each branch to touch only its gun.
+484:- **Weapon tree (owner, v0.24, superseded by v0.39 above):** Heavy Rounds (+10% gun damage) on top. **Handling** branch (left): Quick Trigger (-8% time between shots) -> Rapid Reload (-10% reload time per rank, -30% at 3) and Steady Grip (-20% recoil per rank, now pitch and yaw). **Precision** branch (right): Marksman (+0.25x head / weak point damage) -> Precision Recovery and Arcane Conduit (+10% elemental build-up from enchanted weapons per rank, +30% at 3; the sword's own element does not count). **Specializations** (bottom row, all needing only Heavy Rounds, so no gun is favored): Deadeye (pistol, +0.25x head / weak point damage per rank: 2.0 -> 2.25 / 2.5 / 2.75), Point Blank (shotgun, +0.2x up close), Long Shot (rifle, +0.2x far; owner, v0.29, was +0.15x). Every perk: 3 ranks, 1 point per rank (Marksman 2, Precision Recovery 2 since v0.27). **Precision Recovery:** killing an enemy with a head / weak point hit heals a fixed **3% of max health**, with an internal cooldown of **6 / 5 / 4 s** by rank; once per enemy death (a shotgun's pellets never heal more than once), never for a head hit that does not kill (in a horde game that would be near-unlimited healing). Provisional (architect): the prerequisites inside each branch (the owner's sketch only shows the arrows Heavy Rounds -> both branches, Quick Trigger -> Rapid Reload, Marksman -> Precision Recovery; Steady Grip hangs from Quick Trigger and Arcane Conduit from Marksman); only the killing blow counts, from any weapon, spells excluded (they never flag weak points).
+				BackStyle.Face = ECyFace::Condensed;
+				BackStyle.Px = 18.f;
+				BackStyle.Spacing = 120;
+				BackStyle.bUpper = true;
+				const FString BackText(TEXT("<  Back"));
+				const FVector2D BackSize = MeasureCyText(BackText, BackStyle);
+				const float BX = AX + 26.f * S;
+				const float BY = AreaY + 12.f * S;
+				const float BW = BackSize.X + 30.f * S;
+				const float BH = FMath::RoundToFloat(30.f * S);
+				const bool bHover = IsMouseOver(BX, BY, BW, BH);
+				CyBox(BX, BY, BW, BH, 8.f * S, bHover ? GBAlpha(GBCy::Red, 0.25f) : GBAlpha(GBCy::Ink, 0.9f), bHover ? GBCy::RedBright : GBCy::Red, 0x4);
+				BackStyle.Color = bHover ? GBCy::Pale : GBCy::Red;
+				DrawCyText(BackText, BX + BW * 0.5f, BY + (BH - BackSize.Y) * 0.5f, BackStyle, 0.5f);
+				AddMenuHit(EMenuHitKind::SkillBranchBack, BX, BY, BW, BH);
+				CyKey(BX + BW + 10.f * S, BY + (BH - 22.f * S) * 0.5f, TEXT("Esc"), GBCy::Cyan, 22.f);
+				FCyTextStyle Crumb;
+				Crumb.Face = ECyFace::Condensed;
+				Crumb.Px = 24.f;
+				Crumb.Spacing = 160;
+				Crumb.bUpper = true;
+				Crumb.Color = GBCy::RedDim;
+				const FVector2D CS = DrawCyText(TEXT("Weapons  //  "), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 1.f);
+				Crumb.Color = GBCy::Red;
+				DrawCyText(ShownBranch.ToString(), AX + AreaW * 0.5f - 4.f * S, BY + (BH - 24.f * S) * 0.5f - 2.f * S, Crumb, 0.f);
+				HeadH = FMath::Max(BH, CS.Y);
+			}
+			CyRuler(AX + 26.f * S, AreaY + 12.f * S + HeadH + 6.f * S, AreaW - 52.f * S, GBAlpha(GBCy::RedDim, 0.7f));
+			GridTop = AreaY + 12.f * S + HeadH + 24.f * S;
+		}
+		else
+		{
+			const float PX = FMath::RoundToFloat(AX / P) * P;
+			const float PY = FMath::RoundToFloat(AreaY / P) * P;
+			const float PW = FMath::RoundToFloat(AreaW / P) * P;
+			const float PH = FMath::RoundToFloat(AreaH / P) * P;
+			// A calm, dark slate under the nodes (owner, Nov 13: the brick pattern fought the gold-framed nodes for
+			// attention): near-black with a faint trace of the masonry and a low ember warmth in the middle.
+			FillRect(PX, PY, PW, PH, GBRpg::StoneDeep);
+			RpgStone(PX, PY, PW, PH, FLinearColor(0.55f, 0.55f, 0.65f, 0.16f));
+			DrawGlow(PX + PW * 0.5f, PY + PH * 0.45f, PW * 0.7f, PH * 0.8f, FLinearColor(0.35f, 0.2f, 0.1f, 0.10f));
+			RpgFrame(PX, PY, PW, PH, ERpgFrame::Iron);
+			DrawOutline(PX + 4.f * P, PY + 4.f * P, PW - 8.f * P, PH - 8.f * P, GBRpg::Gold1, P);
+			// The tab above names the tree, so no title here: the four spell rows keep their height at 720p.
+			GridTop = PY + 6.f * P;
+		}
+
+		int32 MaxColumn = 0;
+		int32 MaxRow = 0;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (OnPage(Node))
+			{
+				MaxColumn = FMath::Max(MaxColumn, Node.Column);
+				MaxRow = FMath::Max(MaxRow, Node.Row);
+			}
+		}
+		// The gun emblems are taller than a perk box: they hang into the free space under the hub's last row.
+		const float CategoryScale = 2.3f;
+		const float Pad = bTreeCyber ? 22.f * S : 6.f * P;
+		// The spell tree names its four element columns above the nodes.
+		const float ColumnHeadH = bTreeCyber ? 0.f : 8.f * P;
+		// The page is the full width: cap the cell width so the boxes keep their size, and centre the grid.
+		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
+		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
+		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
+		// Rows the grid needs: an emblem reaches CategoryScale rows down from its own row.
+		float RowsTall = MaxRow + 1.f;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (OnPage(Node) && Node.bCategory)
+			{
+				RowsTall = FMath::Max(RowsTall, Node.Row + CategoryScale);
+			}
+		}
+		const float FreeH = AreaY + AreaH - Pad - (GridTop + ColumnHeadH);
+		const float CellH = FMath::Min(bTreeCyber ? 120.f * S : 29.f * P, FreeH / RowsTall);
+		// The weapon pages have few rows: centre them in the panel instead of leaving the bottom empty (only the
+		// spell page's column names stay pinned to the top, since they sit over the grid).
+		const float GridY = FMath::RoundToFloat(GridTop + ColumnHeadH + (bTreeCyber ? FMath::Max(0.f, (FreeH - CellH * RowsTall) * 0.4f) : 0.f));
+		const float BoxW = FMath::Max(20.f * S, CellW - (bTreeCyber ? 18.f * S : 5.f * P));
+		const float BoxH = FMath::Max(20.f * S, CellH - (bTreeCyber ? 22.f * S : 4.f * P));
+		auto BoxPos = [&](const FSkillNodeRef& Node)
+		{
+			return FVector2D(GridX + Node.Column * CellW + (CellW - BoxW) * 0.5f, GridY + Node.Row * CellH);
+		};
+		if (!bTreeCyber)
+		{
+			for (int32 Column = 0; Column <= MaxColumn; ++Column)
+			{
+				const float ColX = GridX + Column * CellW + CellW * 0.5f;
+				const FLinearColor EC = GBHudText::ElementColor(GBHudMenuDraw::SpellColumnElement(Column));
+				const FString Label = FString(GBHudMenuDraw::SpellColumnName(Column)).ToUpper();
+				const int32 Small = FMath::Max(2, FMath::RoundToInt(P * 0.5f));
+				const float LW = MeasurePixelText(Label, Small).X;
+				RpgGem(ColX - LW * 0.5f - 5.f * P, GridTop + 2.5f * P, EC, true);
+				FPixelTextStyle Lab;
+				Lab.Scale = Small;
+				Lab.Color = EC;
+				Lab.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
+				DrawPixelText(Label, ColX + 2.f * P, GridTop, Lab, 0.5f);
+			}
+		}
+
+		// Requirement links first, under the boxes: down from the parent, across in the gap above the child, down.
+		// A gun emblem hangs from the hub's root perks; a link to a node on another page is not drawn.
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (!OnPage(Node))
+			{
+				continue;
+			}
+			TArray<FName> Reqs;
+			if (Node.bCategory)
+			{
+				// An emblem hangs from the hub's root perks only (those with no requirement: Heavy Rounds), not from the
+				// general perks beside it.
+				for (const FSkillNodeRef& Root : Nodes)
+				{
+					const FGBSkillNodeDefinition* RootDef = (OnPage(Root) && !Root.bCategory && Data) ? Data->FindSkillNode(Root.Id) : nullptr;
+					if (RootDef && RootDef->Requires.Num() == 0)
+					{
+						Reqs.Add(Root.Id);
+					}
+				}
+			}
+			else if (const FGBSkillNodeDefinition* Def = Data ? Data->FindSkillNode(Node.Id) : nullptr)
+			{
+				Reqs = Def->Requires;
+			}
+			for (const FName& Req : Reqs)
+			{
+				const FSkillNodeRef* ReqNode = Nodes.FindByPredicate([&Req](const FSkillNodeRef& Other) { return Other.Id == Req; });
+				if (!ReqNode || !OnPage(*ReqNode))
+				{
+					continue;
+				}
+				const FVector2D A = BoxPos(*ReqNode) + FVector2D(BoxW * 0.5f, BoxH);
+				const FVector2D B = BoxPos(Node) + FVector2D(BoxW * 0.5f, 0.f);
+				const bool bOwned = SkillTree->GetRank(Req) > 0;
+				const float ElbowY = FMath::RoundToFloat(B.Y - (CellH - BoxH) * 0.5f);
+				if (bTreeCyber)
+				{
+					const FLinearColor LinkColor = bOwned ? GBCy::Red : GBAlpha(GBCy::Grey, 0.45f);
+					const float T = FMath::Max(1.f, FMath::RoundToFloat((bOwned ? 2.f : 1.f) * S));
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Content/Data/Skills.json | Select-Object -First 260; Get-Content Glyphbound/Content/Data/Weapons.json | Select-Object -First 190' in C:\GameJam
+ succeeded in 407ms:
+{
+	"Skills": [
+		{
+			"Id": "Weapon_Damage",
+			"Tree": "Weapon",
+			"DisplayName": "Heavy Rounds",
+			"Description": "+10% gun damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.Damage", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 2,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Headshot",
+			"Tree": "Weapon",
+			"DisplayName": "Marksman",
+			"Description": "+0.25x head / weak point damage per rank, with every weapon (guns, staff, sword).",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_PrecisionRecovery",
+			"Tree": "Weapon",
+			"DisplayName": "Precision Recovery",
+			"Description": "Defeating an enemy with a head or weak point hit restores 3% of your max health. Cooldown 6 / 5 / 4 s by rank.",
+			"Cost": 2,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Headshot" ],
+			"ModifiersPerRank": [ { "Stat": "PrecisionRecovery", "Op": "Add", "Value": 1 } ],
+			"Column": 0,
+			"Row": 2
+		},
+		{
+			"Id": "Weapon_EnchantBuildUp",
+			"Tree": "Weapon",
+			"DisplayName": "Arcane Conduit",
+			"Description": "+10% elemental build-up from enchanted weapons per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.All.EnchantBuildUpMult", "Op": "Multiply", "Value": 1.1 } ],
+			"Column": 4,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_PistolHeadshot",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Deadeye",
+			"Description": "Pistol: +0.25x head / weak point damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.HeadshotMult", "Op": "Add", "Value": 0.25 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Pistol_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Quick Trigger",
+			"Description": "Pistol: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Pistol_Reload",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Rapid Reload",
+			"Description": "Pistol: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Pistol_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Pistol_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Pistol",
+			"DisplayName": "Steady Grip",
+			"Description": "Pistol: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Pistol_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Pistol.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_RifleFar",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Long Shot",
+			"Description": "Rifle: +0.2x damage at long range per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.2 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Rifle_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Quick Trigger",
+			"Description": "Rifle: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Rifle_Reload",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Rapid Reload",
+			"Description": "Rifle: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Rifle_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Rifle_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Steady Grip",
+			"Description": "Rifle: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Rifle_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Rifle.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_ShotgunClose",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Point Blank",
+			"Description": "Shotgun: +0.2x damage up close per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FalloffNearMult", "Op": "Add", "Value": 0.2 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Shotgun_Spread",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Tight Choke",
+			"Description": "Shotgun: 15% tighter pellet spread per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_ShotgunClose" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.Spread", "Op": "Multiply", "Value": 0.85 }, { "Stat": "Weapon.Shotgun.AimSpread", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Shotgun_FireRate",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Quick Trigger",
+			"Description": "Shotgun: 8% less time between shots per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Damage" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.FireInterval", "Op": "Multiply", "Value": 0.92 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Weapon_Shotgun_Reload",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Rapid Reload",
+			"Description": "Shotgun: 15% faster reloads per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Shotgun_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.ReloadTime", "Op": "Multiply", "Value": 0.85 } ],
+			"Column": 1,
+			"Row": 1
+		},
+		{
+			"Id": "Weapon_Shotgun_Recoil",
+			"Tree": "Weapon",
+			"Branch": "Shotgun",
+			"DisplayName": "Steady Grip",
+			"Description": "Shotgun: 20% less recoil per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_Shotgun_FireRate" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Shotgun.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"Column": 2,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_FireballDamage",
+			"Tree": "Spell",
+			"DisplayName": "Searing Fireball",
+			"Description": "+15% fireball damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 0,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_FireballBlast",
+			"Tree": "Spell",
+			"DisplayName": "Wide Blast",
+			"Description": "+20% fireball blast radius per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Spell_FireballDamage" ],
+			"ModifiersPerRank": [ { "Stat": "Spell.Fireball.ExplosionRadius", "Op": "Multiply", "Value": 1.2 } ],
+			"Column": 0,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_LightningDamage",
+			"Tree": "Spell",
+			"DisplayName": "Overcharge",
+			"Description": "+15% lightning bolt damage per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.LightningBolt.Damage", "Op": "Multiply", "Value": 1.15 } ],
+			"Column": 1,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_IceWallHealth",
+			"Tree": "Spell",
+			"DisplayName": "Glacier Wall",
+			"Description": "+25% ice wall health per rank.",
+			"Cost": 1,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "Spell.IceWall.Health", "Op": "Multiply", "Value": 1.25 } ],
+{
+	"Weapons": [
+		{
+			"Id": "Staff_Apprentice",
+			"DisplayName": "Apprentice Staff",
+			"Slot": "Staff",
+			"Element": "Arcane",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 12,
+				"FireInterval": 0.35,
+				"ProjectileSpeed": 3500,
+				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0,
+				"HeadshotMult": 1.5
+			},
+			"Strings": {
+				"Sprite": "staff_apprentice",
+				"ProjectileSprite": "bolt_arcane"
+			}
+		},
+		{
+			"Id": "Staff_Ember",
+			"DisplayName": "Ember Staff",
+			"Slot": "Staff",
+			"Element": "Fire",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 22,
+				"FireInterval": 0.6,
+				"ProjectileSpeed": 2800,
+				"ProjectileRadius": 14,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0,
+				"HeadshotMult": 1.5,
+				"FireBuildUp": 18
+			},
+			"Strings": {
+				"Sprite": "staff_ember",
+				"ProjectileSprite": "fireball"
+			}
+		},
+		{
+			"Id": "Pistol",
+			"DisplayName": "Pistol",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"ViewModel": "Pistol",
+			"FireMode": "Hitscan",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 20,
+				"FireInterval": 0.25,
+				"MagazineSize": 15,
+				"SpareMagazines": 6,
+				"ReloadTime": 1.2,
+				"Range": 8000,
+				"Spread": 1.2,
+				"AimSpread": 0.25,
+				"MoveSpread": 2.5,
+				"AimMoveSpread": 1,
+				"RecoilPitch": 0.9,
+				"RecoilYaw": 0.4,
+				"RecoilRecovery": 9,
+				"Pellets": 1,
+				"FalloffStart": 2000,
+				"FalloffEnd": 5000,
+				"FalloffNearMult": 1,
+				"FalloffFarMult": 0.6,
+				"HeadshotMult": 2,
+				"AimFOV": 70,
+				"AimMoveSpeedMult": 0.7,
+				"AimTime": 0.15,
+				"EnchantBuildUpMult": 1,
+				"FireBuildUp": 15,
+				"LightningBuildUp": 15,
+				"IceBuildUp": 15
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "Shotgun",
+			"DisplayName": "Shotgun",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"ViewModel": "Shotgun",
+			"FireMode": "Hitscan",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 10,
+				"FireInterval": 0.8,
+				"MagazineSize": 6,
+				"SpareMagazines": 4,
+				"ReloadTime": 2,
+				"ReloadPerRound": 1,
+				"Range": 3000,
+				"Spread": 6,
+				"AimSpread": 4.5,
+				"MoveSpread": 3,
+				"AimMoveSpread": 2,
+				"RecoilPitch": 3.5,
+				"RecoilYaw": 1.2,
+				"RecoilRecovery": 12,
+				"Pellets": 8,
+				"FalloffStart": 600,
+				"FalloffEnd": 1800,
+				"FalloffNearMult": 1,
+				"FalloffFarMult": 0.2,
+				"HeadshotMult": 1.5,
+				"AimFOV": 75,
+				"AimMoveSpeedMult": 0.75,
+				"AimTime": 0.18,
+				"EnchantBuildUpMult": 1,
+				"FireBuildUp": 40,
+				"LightningBuildUp": 40,
+				"IceBuildUp": 40
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "Rifle",
+			"DisplayName": "Assault Rifle",
+			"Slot": "Gun",
+			"Element": "Physical",
+			"ActorClass": "",
+			"ViewModel": "Rifle",
+			"FireMode": "Hitscan",
+			"bAutomatic": true,
+			"Stats": {
+				"Damage": 12,
+				"FireInterval": 0.1,
+				"MagazineSize": 30,
+				"SpareMagazines": 5,
+				"ReloadTime": 1.8,
+				"Range": 12000,
+				"Spread": 1.8,
+				"AimSpread": 0.35,
+				"MoveSpread": 3,
+				"AimMoveSpread": 1.2,
+				"RecoilPitch": 0.6,
+				"RecoilYaw": 0.35,
+				"RecoilRecovery": 10,
+				"Pellets": 1,
+				"FalloffStart": 1500,
+				"FalloffEnd": 4000,
+				"FalloffNearMult": 0.8,
+				"FalloffFarMult": 1.15,
+				"HeadshotMult": 1.5,
+				"AimFOV": 60,
+				"AimMoveSpeedMult": 0.65,
+				"AimTime": 0.2,
+				"EnchantBuildUpMult": 1,
+				"FireBuildUp": 6,
+				"LightningBuildUp": 6,
+				"IceBuildUp": 6
+			},
+			"Strings": {}
+		},
+		{
+			"Id": "ElementalSword",
+			"DisplayName": "Elemental Sword",
+			"Slot": "Sword",
+			"Element": "Fire",
+			"ActorClass": "",
+			"FireMode": "Melee",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 50,
+				"FireInterval": 0.5,
+				"MeleeRange": 260,
+				"MeleeArc": 90,
+				"HeadshotMult": 1.5,
+				"FireBuildUp": 25,
+				"LightningBuildUp": 25,
+				"IceBuildUp": 25
+			},
+			"Strings": {
+				"Sprite": "sword_blade"
+			}
+		}
+	]
+
+codex
+The current hub coordinates keep the emblems clear of Marksman and Precision Recovery. I found a likely error in the balance table’s Heavy Rounds summary; I’m checking it against the runtime stacking code and comparing the old and new calculator outputs.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n 'GetStat|MagazineSize|Pellets|EnchantBuildUpMult' Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp; Get-Content Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp | Select-Object -Skip 582 -First 110" in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'node Tools/Balance/balance_model.js' in C:\GameJam
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content Glyphbound/Source/Glyphbound/Stats/GBStatsComponent.cpp; Get-Content Glyphbound/Source/Glyphbound/Progression/GBSkillTreeComponent.cpp' in C:\GameJam
+ succeeded in 253ms:
+
+=== Weapons (at their best range, no perks, no enchant) ===
+Weapon             Hit      Burst    Sustained  Near / far   Expected   Carried   Head   BuildUp/s
+Staff_Apprentice   12       34.3     34.3       34 / 34      18.9       free      x1.5   0        
+Staff_Ember        22       36.7     36.7       37 / 37      20.2       free      x1.5   30       
+Pistol             20       80       60.6       61 / 36      39.8       2100      x2     60       
+Shotgun            80       100      70.6       71 / 14      41.7       2400      x1.5   50       
+Rifle              13.8     138      86.2       60 / 86      40.8       2484      x1.5   60       
+ElementalSword     50       100      100        100 / 100    55.1       free      x1.5   50       
+Hit, Burst, Sustained: every shot hitting the body. Sustained includes reloads. Expected: with accuracy, uptime and head share.
+
+=== Weapon perks: what one point buys (alone at full rank, on top of Heavy Rounds 3, best range) ===
+Perk                       Page     Points  Pistol    Rifle     Shotgun   Best / point Other effect                  
+Headshot                   hub      6       +15%      +16.7%    +16.7%    +2.8%        also staff and sword          
+PrecisionRecovery          hub      6       -         -         -         -            heal 3% on weak-point kills   
+EnchantBuildUp             hub      3       -         -         -         -            build-up +30%                 
+PistolHeadshot             Pistol   3       +15%      -         -         +5%                                        
+Pistol_FireRate            Pistol   3       +22.2%    -         -         +7.4%                                      
+Pistol_Reload              Pistol   3       +12.2%    -         -         +4.1%                                      
+Pistol_Recoil              Pistol   3       +6%       -         -         +2%                                        
+RifleFar                   Rifle    3       -         +52.2%    -         +17.4%                                     
+Rifle_FireRate             Rifle    3       -         +17.6%    -         +5.9%                                      
+Rifle_Reload               Rifle    3       -         +20.3%    -         +6.8%                                      
+Rifle_Recoil               Rifle    3       -         +20%      -         +6.7%                                      
+ShotgunClose               Shotgun  3       -         -         +60%      +20%                                       
+Shotgun_Spread             Shotgun  3       -         -         +7.5%     +2.5%                                      
+Shotgun_FireRate           Shotgun  3       -         -         +20.4%    +6.8%                                      
+Shotgun_Reload             Shotgun  3       -         -         +15.3%    +5.1%                                      
+Shotgun_Recoil             Shotgun  3       -         -         +3%       +1%                                        
+Heavy Rounds itself: +33.1% on every gun for 3 points = +11% per point (on all three guns at once).
+
+=== Spells (damage on ONE target; Min / Base / Max by QTE; damage per mana at Base) ===
+Spell            Mana   Cooldown  Damage                 Dmg/mana   Notes                 
+Fireball         15     1.5       20 / 40 / 60           2.67                             
+FireWall         25     10        120 / 360 / 720        14.4       if the enemy stays inside; up 60% of the time (every perk: 145% typical QTE, 166% perfect)
+Flamethrower     10     6         180 / 300 / 420        3          full mana bar, 6 s    
+LightningBolt    10     0.8       15 / 30 / 45           3                                
+LightningRune    20     6         45 / 80 / 115          4                                
+StaticOrb        25     7         80 / 210 / 400         8.4        if the enemy stays inside; up 86% of the time (every perk: 207% typical QTE, 237% perfect)
+IceWall          20     16        -                      -          up 50% of the time (every perk: 85% typical QTE, 98% perfect)
+IceShield        20     24        -                      -          up 50% of the time (every perk: 121% typical QTE, 138% perfect)
+IceFloor         20     12        -                      -          up 50% of the time (every perk: 83% typical QTE, 95% perfect)
+WeaponEnchant    20     18        -                      -          up 83% of the time (every perk: 147% typical QTE, 175% perfect)
+
+=== Casting ===
+Mana 100, +6/s after 1.5 s without spending. Average direct spell: 15 mana, 61.7 damage at a typical QTE.
+Sustained: one cast every 4 game s; with the starting bar over a 75 s fight, about 20.9 damage/s on one target (37.6 in a wave).
+Each QTE adds about 1.8 real seconds on top of the game time.
+
+=== Reference builds (best gun with its enchant, free weapon, spells on one target) ===
+Build              Points   Best gun   Gun dmg/s    Ammo damage    Free weapon        Spells    
+Start              2/2      Shotgun    65           3159           Ember 24           19        
+Early              8/8      Shotgun    70           3422           Ember 26           22        
+Mid                16/16    Pistol     86           3993           Ember 29           23        
+ValkyriePast       24/24    Pistol     99           3993           Ember 29           29        
+ValkyrieFuture     29/29    Pistol     107          4325           Ember 31           29        
+Entity             34/34    Pistol     123          4325           ElementalSword 84  29        
+GunSpecialist36    33/36    Shotgun    141          6867           ElementalSword 84  19        
+PureMage36         36/36    Shotgun    54           2633           ElementalSword 55  29        
+Gun dmg/s is expected damage (accuracy, uptime, 25% of hits on the head). Ammo damage: what the full load really deals before the gun runs dry.
+
+=== Enemies (one attack every AttackWindup + AttackInterval) ===
+Enemy                  Health   Speed   Hit   Cycle   Dmg/s   Hit = % of player   Seconds to kill: base gun / Mid build
+Imp_Past               30       600     6     1.3     4.6     6%                  0.7 / 0.3                     
+Orc_Past               60       450     10    1.5     6.9     10%                 1.4 / 0.5                     
+Orc_Past_Shaman        50       380     8     2.2     3.6     8%                  1.2 / 0.4                     
+Orc_Past_Champion      180      400     18    1.9     9.7     18%                 4.3 / 1.6                     
+Orc_Past_Juggernaut    480      260     20    3.1     6.5     20%                 11.5 / 4.3                    
+Orc_Past_Brute         2700     340     32    2.3     13.9    32% (strong hit)    64.8 / 24.3                   
+Drone_Future           30       600     6     1.3     4.6     6%                  0.7 / 0.3                     
+Orc_Future             70       400     8     1.9     4.2     8%                  1.7 / 0.6                     
+Orc_Future_Enforcer    180      380     16    2.2     7.3     16%                 4.3 / 1.6                     
+Orc_Future_Siege       480      260     20    3.1     6.5     20%                 11.5 / 4.3                    
+Orc_Future_Warlord     3000     360     32    2.2     14.9    32% (strong hit)    72 / 27                       
+Valkyrie_Past          7200     480     22    1.7     12.9    22%                 172.7 / 64.7                  
+Valkyrie_Future        7600     480     18    1.5     12.4    18%                 182.3 / 68.3                  
+Entity_Phase1          7300     420     20    1.5     13.8    20%                 175.1 / 65.6                  
+Entity_Phase2          7300     520     26    1.7     15.3    26%                 175.1 / 65.6                  
+
+=== Hits to kill, body / head (no perks, best range) ===
+Enemy                  Staff_Apprentice   Staff_Ember        Pistol             Shotgun            Rifle              ElementalSword    
+Imp_Past               3 / 2              2 / 1              2 / 1              1 / 1              3 / 2              1 / 1             
+Orc_Past               5 / 4              3 / 2              3 / 2              1 / 1              5 / 3              2 / 1             
+Orc_Past_Shaman        5 / 3              3 / 2              3 / 2              1 / 1              4 / 3              1 / 1             
+Orc_Past_Champion      15 / 10            9 / 6              9 / 5              3 / 2              14 / 9             4 / 3             
+Orc_Past_Juggernaut    40 / 27            22 / 15            24 / 12            6 / 4              35 / 24            10 / 7            
+Drone_Future           3 / 2              2 / 1              2 / 1              1 / 1              3 / 2              1 / 1             
+Orc_Future             6 / 4              4 / 3              4 / 2              1 / 1              6 / 4              2 / 1             
+Orc_Future_Enforcer    15 / 10            9 / 6              9 / 5              3 / 2              14 / 9             4 / 3             
+Orc_Future_Siege       40 / 27            22 / 15            24 / 12            6 / 4              35 / 24            10 / 7            
+
+=== Ammo economy: rounds a kill gives back / rounds it costs (1 = the gun never runs dry). Base gun / Mid build ===
+Enemy                  Pistol           Shotgun          Rifle           
+Imp_Past               0.28 / 0.34      0.14 / 0.14      0.28 / 0.52     
+Orc_Past               0.28 / 0.57      0.27 / 0.27      0.28 / 0.52     
+Orc_Past_Shaman        0.34 / 0.68      0.27 / 0.27      0.34 / 0.63     
+Orc_Past_Champion      0.23 / 0.48      0.34 / 0.63      0.23 / 0.44     
+Orc_Past_Juggernaut    0.21 / 0.42      0.3 / 0.55       0.2 / 0.38      
+Orc_Past_Brute         0.21 / 0.42      0.3 / 0.56       0.21 / 0.39     
+Drone_Future           0.56 / 0.68      0.27 / 0.27      0.56 / 1.05     
+Orc_Future             0.48 / 0.98      0.54 / 0.54      0.48 / 0.9      
+Orc_Future_Enforcer    0.47 / 0.95      0.68 / 1.27      0.47 / 0.87     
+Orc_Future_Siege       0.41 / 0.83      0.59 / 1.11      0.41 / 0.77     
+Orc_Future_Warlord     0.28 / 0.57      0.41 / 0.76      0.28 / 0.52     
+
+=== Elemental per enemy: threshold, x build-up taken, x damage taken; Ignite as a share of its health ===
+Imp_Past              Fire 60 x1 x1 | Lightning 60 x1 x1 | Ice 60 x1.5 x1.25             Ignite 133.3%
+Orc_Past              Fire 100 x1.5 x1.25 | Lightning 100 x1 x1 | Ice 100 x1 x1          Ignite 66.7%
+Orc_Past_Shaman       Fire 100 x1.5 x1.25 | Lightning 100 x1 x1 | Ice 100 x1 x1          Ignite 80%
+Orc_Past_Champion     Fire 150 x1.5 x1.25 | Lightning 150 x1 x1 | Ice 150 x0.5 x0.75     Ignite 22.2%
+Orc_Past_Juggernaut   Fire 200 x1.5 x1.25 | Lightning 200 x0.5 x0.75 | Ice 200 x1 x1     Ignite 16.7%, slow taken x0.6
+Orc_Past_Brute        Fire 250 x0.5 x0.75 | Lightning 250 x1 x1 | Ice 250 x1.5 x1.25     Ignite 5.9%, slow taken x0.6
+Drone_Future          Fire 60 x1 x1 | Lightning 60 x1.5 x1.25 | Ice 60 x1 x1             Ignite 133.3%
+Orc_Future            Fire 100 x0.5 x0.75 | Lightning 100 x1.5 x1.25 | Ice 100 x1 x1     Ignite 57.1%
+Orc_Future_Enforcer   Fire 150 x0.5 x0.75 | Lightning 150 x1.5 x1.25 | Ice 150 x1 x1     Ignite 22.2%
+Orc_Future_Siege      Fire 200 x0.5 x0.75 | Lightning 200 x1.5 x1.25 | Ice 200 x1 x1     Ignite 16.7%, slow taken x0.6
+Orc_Future_Warlord    Fire 250 x0.5 x0.75 | Lightning 250 x1.5 x1.25 | Ice 250 x1 x1     Ignite 5.3%, slow taken x0.6
+Valkyrie_Past         Fire 400 x1 x1 | Lightning 400 x0.5 x0.75 | Ice 400 x1.5 x1.25     Ignite 4.4%, slow taken x0.4
+Valkyrie_Future       Fire 400 x1.5 x1.25 | Lightning 400 x1 x1 | Ice 400 x0.5 x0.75     Ignite 4.2%, slow taken x0.4
+Entity_Phase1         Fire 400 x0.5 x0.75 | Lightning 400 x1.5 x1.25 | Ice 400 x1 x1     Ignite 4.4%, slow taken x0.4
+Entity_Phase2         Fire 400 x1.5 x1.25 | Lightning 400 x1 x1 | Ice 400 x0.5 x0.75     Ignite 4.4%, slow taken x0.4
+
+=== Encounters: length with the build of that point of the game, and the pressure on the player ===
+Encounter        SP  Kills  Health  Build           Game s  Real s      Ammo   Per sub-wave: kills, expected damage taken per second (seconds to die)
+Test_PastWave    1   19     1450    Mid             29      36 SHORT    20%    7k 5.9 (17 s) | 6k 7.5 (13 s) | 6k 5.1 (20 s)     
+Test_FutureWave  1   18     1500    Mid             29      36 SHORT    18%    7k 7.8 (13 s) | 5k 9.6 (10 s) | 6k 6.4 (16 s)     
+Opening_Past     1   8      390     Start           16      18          7%     5k 4.1 (24 s) | 3k 3.1 (32 s)                     
+Opening_Future   1   8      480     Start           17      20          8%     3k 5.1 (20 s) | 5k 6.4 (16 s)                     
+Wave_Past_1      1   35     2160    Early           49      60          27%    8k 6.6 (15 s) | 6k 7 (14 s) | 7k 6.6 (15 s) | 7k 8.5 (12 s) | 7k 8.5 (12 s)
+Wave_Past_2      1   40     2840    Mid             52      65          34%    8k 7.1 (14 s) | 7k 8.5 (12 s) | 7k 5.8 (17 s) | 9k 8.8 (11 s) | 9k 8.8 (11 s)
+Wave_Past_3      1   36     3790    ValkyriePast    54      73          41%    7k 8.5 (12 s) | 6k 5.7 (18 s) | 7k 8.4 (12 s) | 8k 7.3 (14 s) | 8k 7.3 (14 s)
+Wave_Future_1    1   35     2260    Early           50      62          23%    7k 7.8 (13 s) | 5k 8.4 (12 s) | 7k 10 (10 s) | 8k 11.7 (9 s) | 8k 11.7 (9 s)
+Wave_Future_2    1   38     2900    Mid             52      66          28%    8k 7.5 (13 s) | 5k 9.6 (10 s) | 7k 7.1 (14 s) | 9k 13.6 (7 s) | 9k 13.6 (7 s)
+Wave_Future_3    1   37     3910    ValkyriePast    55      74          32%    8k 9.5 (11 s) | 5k 10.9 (9 s) | 8k 11 (9 s) | 8k 10.2 (10 s) | 8k 10.2 (10 s)
+SubBoss_Past     2   4      2880    Mid             28      41          36%    4k 5.2 (19 s)                                     
+SubBoss_Future   2   5      3200    Mid             30      45          35%    5k 7 (14 s)                                       
+Zone_Fire        3   35     3540    Mid             57      73          40%    8k 6.9 (14 s) | 6k 7.9 (13 s) | 7k 6.7 (15 s) | 7k 8 (12 s) | 7k 8 (12 s)
+Zone_Lightning   3   40     3320    Mid             55      71          38%    9k 8.5 (12 s) | 6k 7.1 (14 s) | 5k 6.3 (16 s) | 10k 10 (10 s) | 10k 10 (10 s)
+Zone_Ice         3   41     3440    Mid             56      72          39%    7k 8.1 (12 s) | 9k 7 (14 s) | 5k 6.8 (15 s) | 10k 8.2 (12 s) | 10k 8.2 (12 s)
+Zone_Air         3   45     3410    Mid             56      72          39%    8k 5.5 (18 s) | 9k 10 (10 s) | 10k 11.5 (9 s) | 9k 9.6 (10 s) | 9k 9.6 (10 s)
+Valkyrie_Past    5   1      7200    ValkyriePast    75      128         100%   1k 1.9 (52 s)                                     
+Valkyrie_Future  5   1      7600    ValkyrieFuture  76      129         100%   1k 5 (20 s)                                       
+Entity           0   2      14600   Entity          112     190         100%   1k 5.5 (18 s) | 1k 2.3 (44 s)                     
+Real s = game seconds plus the QTEs. Targets (real s): waves 60-90, sub-bosses 40-60, Valkyries about 120, Entity about 180.
+Ammo = share of the ammo (carried + dropped) the fight uses; 100% = the gun ran dry and the free weapon finished.
+
+=== Bosses against every build (real seconds, share of the ammo used) ===
+Boss                 Start            Early            Mid              ValkyriePast     ValkyrieFuture   Entity           GunSpecialist36  PureMage36      
+Orc_Past_Brute       50 s, 66%        45 s, 60%        38 s, 53%        36 s, 52%        34 s, 49%        30 s, 51%        26 s, 35%        55 s, 67%       
+Orc_Future_Warlord   55 s, 74%        50 s, 67%        43 s, 59%        40 s, 58%        37 s, 55%        33 s, 56%        29 s, 39%        61 s, 74%       
+Valkyrie_Past        188 s, 100%      161 s, 100%      136 s, 100%      128 s, 100%      117 s, 100%      88 s, 100%       70 s, 93%        146 s, 100%     
+Valkyrie_Future      202 s, 100%      174 s, 100%      148 s, 100%      140 s, 100%      129 s, 100%      94 s, 100%       74 s, 98%        154 s, 100%     
+Entity               454 s, 100%      398 s, 100%      356 s, 100%      344 s, 100%      328 s, 100%      199 s, 100%      178 s, 100%      296 s, 100%     
+
+=== Skill points ===
+Weapon tree: 57 points. Spell tree: 42 points. Both: 99.
+Starting points: 2. Encounters (without Test_*) give: 34. Sum: 36 (budget 36 = 36% of both trees) OK
+
+ succeeded in 447ms:
+#include "Stats/GBStatsComponent.h"
+
+#include "GameFramework/Actor.h"
+
+UGBStatsComponent::UGBStatsComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+UGBStatsComponent* UGBStatsComponent::Find(const AActor* Actor)
+{
+	return Actor ? Actor->FindComponentByClass<UGBStatsComponent>() : nullptr;
+}
+
+void UGBStatsComponent::SetBaseStats(const TMap<FName, float>& InBaseStats)
+{
+	BaseStats = InBaseStats;
+	OnStatsChanged.Broadcast();
+}
+
+void UGBStatsComponent::SetBaseStat(FName Stat, float Value)
+{
+	BaseStats.Add(Stat, Value);
+	OnStatsChanged.Broadcast();
+}
+
+bool UGBStatsComponent::HasBaseStat(FName Stat) const
+{
+	return BaseStats.Contains(Stat);
+}
+
+float UGBStatsComponent::GetStat(FName Stat, float DefaultValue) const
+{
+	const float* Base = BaseStats.Find(Stat);
+	return Evaluate(Stat, Base ? *Base : DefaultValue);
+}
+
+float UGBStatsComponent::Evaluate(FName Key, float Base) const
+{
+	return EvaluateKeys(MakeArrayView(&Key, 1), Base);
+}
+
+float UGBStatsComponent::EvaluateKeys(TConstArrayView<FName> Keys, float Base) const
+{
+	TArray<FGBModifierDef, TInlineAllocator<8>> Matching;
+	for (const FSourcedModifier& Entry : ActiveModifiers)
+	{
+		if (Keys.Contains(Entry.Modifier.Stat))
+		{
+			Matching.Add(Entry.Modifier);
+		}
+	}
+	return ApplyModifiers(Base, Matching);
+}
+
+void UGBStatsComponent::AddModifiers(FName Source, TConstArrayView<FGBModifierDef> Modifiers, float ValueScale)
+{
+	ActiveModifiers.RemoveAll([Source](const FSourcedModifier& Entry) { return Entry.Source == Source; });
+
+	for (const FGBModifierDef& Modifier : Modifiers)
+	{
+		FSourcedModifier& Entry = ActiveModifiers.AddDefaulted_GetRef();
+		Entry.Source = Source;
+		Entry.Modifier = Modifier;
+		switch (Modifier.Op)
+		{
+		case EGBModOp::Add:
+			Entry.Modifier.Value = Modifier.Value * ValueScale;
+			break;
+		case EGBModOp::Multiply:
+			// Scaled around 1, so a x1.5 buff at half strength is x1.25, not x0.75.
+			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
+			break;
+		case EGBModOp::MultiplyMin:
+			// Same scaling as Multiply: the strongest slow at partial strength stays a slow.
+			Entry.Modifier.Value = 1.f + (Modifier.Value - 1.f) * ValueScale;
+			break;
+		case EGBModOp::Override:
+			break;
+		}
+	}
+
+	OnStatsChanged.Broadcast();
+}
+
+void UGBStatsComponent::RemoveModifiers(FName Source)
+{
+	if (ActiveModifiers.RemoveAll([Source](const FSourcedModifier& Entry) { return Entry.Source == Source; }) > 0)
+	{
+		OnStatsChanged.Broadcast();
+	}
+}
+
+bool UGBStatsComponent::HasModifierSource(FName Source) const
+{
+	return ActiveModifiers.ContainsByPredicate([Source](const FSourcedModifier& Entry) { return Entry.Source == Source; });
+}
+
+float UGBStatsComponent::ApplyModifiers(float Base, TConstArrayView<FGBModifierDef> Modifiers)
+{
+	float Sum = Base;
+	float Product = 1.f;
+	float LowestMin = 1.f;
+	bool bHasMin = false;
+	const FGBModifierDef* LastOverride = nullptr;
+
+	for (const FGBModifierDef& Modifier : Modifiers)
+	{
+		switch (Modifier.Op)
+		{
+		case EGBModOp::Add:
+			Sum += Modifier.Value;
+			break;
+		case EGBModOp::Multiply:
+			Product *= Modifier.Value;
+			break;
+		case EGBModOp::MultiplyMin:
+			if (!bHasMin || Modifier.Value < LowestMin)
+			{
+				LowestMin = Modifier.Value;
+				bHasMin = true;
+			}
+			break;
+		case EGBModOp::Override:
+			LastOverride = &Modifier;
+			break;
+		}
+	}
+
+	return LastOverride ? LastOverride->Value : Sum * Product * (bHasMin ? LowestMin : 1.f);
+}
+#include "Progression/GBSkillTreeComponent.h"
+
+#include "Data/GBDataSubsystem.h"
+#include "Stats/GBStatsComponent.h"
+#include "World/GBProgressSubsystem.h"
+
+UGBSkillTreeComponent::UGBSkillTreeComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UGBSkillTreeComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &UGBSkillTreeComponent::HandleDataReloaded);
+	}
+}
+
+void UGBSkillTreeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		Data->OnDataReloaded.Remove(DataReloadedHandle);
+	}
+	DataReloadedHandle.Reset();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UGBSkillTreeComponent::InitializeFromData()
+{
+	RemoveAllModifiers();
+	Ranks.Reset();
+	PointsSpent = 0;
+
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	if (!Data)
+	{
+		UE_LOG(LogGB, Warning, TEXT("Skill tree: no data subsystem, starting with 0 points."));
+	}
+	Points = Data ? FMath::Max(0, Data->GetPlayer().StartingSkillPoints) : 0;
+	OnSkillsChanged.Broadcast();
+}
+
+void UGBSkillTreeComponent::AddPoints(int32 Amount)
+{
+	if (Amount == 0)
+	{
+		return;
+	}
+	Points = FMath::Max(0, Points + Amount);
+	OnSkillsChanged.Broadcast();
+}
+
+int32 UGBSkillTreeComponent::GetRank(FName NodeId) const
+{
+	return Ranks.FindRef(NodeId);
+}
+
+EGBSkillUnlockResult UGBSkillTreeComponent::CanUnlock(FName NodeId) const
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+	if (!Node)
+	{
+		return EGBSkillUnlockResult::UnknownNode;
+	}
+	return EvaluateUnlock(*Node, Ranks, Points);
+}
+
+EGBSkillUnlockResult UGBSkillTreeComponent::Unlock(FName NodeId)
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+	if (!Node)
+	{
+		UE_LOG(LogGB, Warning, TEXT("Unlock: unknown skill node '%s'."), *NodeId.ToString());
+		return EGBSkillUnlockResult::UnknownNode;
+	}
+
+	const EGBSkillUnlockResult Result = EvaluateUnlock(*Node, Ranks, Points);
+	if (Result != EGBSkillUnlockResult::Ok)
+	{
+		return Result;
+	}
+
+	Points -= FMath::Max(0, Node->Cost);
+	PointsSpent += FMath::Max(0, Node->Cost);
+	Ranks.FindOrAdd(NodeId) += 1;
+	ApplyNodeModifiers(NodeId);
+	OnSkillsChanged.Broadcast();
+	return EGBSkillUnlockResult::Ok;
+}
+
+int32 UGBSkillTreeComponent::ResetAll()
+{
+	if (Ranks.Num() == 0)
+	{
+		return 0;
+	}
+	RemoveAllModifiers();
+	const int32 Refunded = PointsSpent;
+	Points += PointsSpent;
+	PointsSpent = 0;
+	Ranks.Reset();
+	OnSkillsChanged.Broadcast();
+	return Refunded;
+}
+
+EGBSkillUnlockResult UGBSkillTreeComponent::EvaluateUnlock(const FGBSkillNodeDefinition& Node, const TMap<FName, int32>& InRanks, int32 AvailablePoints)
+{
+	if (InRanks.FindRef(Node.Id) >= Node.MaxRank)
+	{
+		return EGBSkillUnlockResult::MaxRank;
+	}
+	for (const FName& Required : Node.Requires)
+	{
+		if (!Required.IsNone() && InRanks.FindRef(Required) <= 0)
+		{
+			return EGBSkillUnlockResult::MissingRequirement;
+		}
+	}
+	if (AvailablePoints < Node.Cost)
+	{
+		return EGBSkillUnlockResult::NotEnoughPoints;
+	}
+	return EGBSkillUnlockResult::Ok;
+}
+
+FName UGBSkillTreeComponent::ModifierSource(FName NodeId)
+{
+	return FName(*FString::Printf(TEXT("Skill.%s"), *NodeId.ToString()));
+}
+
+void UGBSkillTreeComponent::ApplyNodeModifiers(FName NodeId)
+{
+	UGBStatsComponent* Stats = UGBStatsComponent::Find(GetOwner());
+	if (!Stats)
+	{
+		return;
+	}
+
+	const FName Source = ModifierSource(NodeId);
+	const int32 Rank = GetRank(NodeId);
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const FGBSkillNodeDefinition* Node = Data ? Data->FindSkillNode(NodeId) : nullptr;
+	if (!Node || Rank <= 0)
+	{
+		if (!Node && Rank > 0)
+		{
+			UE_LOG(LogGB, Warning, TEXT("Skill node '%s' is owned but missing from Skills.json; its modifiers are off."), *NodeId.ToString());
+		}
+		Stats->RemoveModifiers(Source);
+		return;
+	}
+
+	// ValueScale = rank: Add modifiers count once per rank, Multiply modifiers stack linearly (not compounding).
+	Stats->AddModifiers(Source, Node->ModifiersPerRank, static_cast<float>(Rank));
+}
+
+void UGBSkillTreeComponent::RemoveAllModifiers()
+{
+	UGBStatsComponent* Stats = UGBStatsComponent::Find(GetOwner());
+	if (!Stats)
+	{
+		return;
+	}
+	for (const TPair<FName, int32>& Pair : Ranks)
+	{
+		Stats->RemoveModifiers(ModifierSource(Pair.Key));
+	}
+}
+
+void UGBSkillTreeComponent::ReapplyAllModifiers()
+{
+	for (const TPair<FName, int32>& Pair : Ranks)
+	{
+		ApplyNodeModifiers(Pair.Key);
+	}
+}
+
+void UGBSkillTreeComponent::SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const
+{
+	Snapshot.SkillPoints = Points;
+	Snapshot.SkillPointsSpent = PointsSpent;
+	Snapshot.SkillRanks = Ranks;
+}
+
+void UGBSkillTreeComponent::LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot)
+{
+	RemoveAllModifiers();
+
+	Points = FMath::Max(0, Snapshot.SkillPoints);
+	PointsSpent = FMath::Max(0, Snapshot.SkillPointsSpent);
+	Ranks.Reset();
+	for (const TPair<FName, int32>& Pair : Snapshot.SkillRanks)
+	{
+		if (Pair.Value > 0)
+		{
+			Ranks.Add(Pair.Key, Pair.Value);
+		}
+	}
+
+	ReapplyAllModifiers();
+	OnSkillsChanged.Broadcast();
+}
+
+void UGBSkillTreeComponent::HandleDataReloaded()
+{
+	ReapplyAllModifiers();
+	OnSkillsChanged.Broadcast();
+}
+
+ succeeded in 546ms:
+47:float AGBHeldItem::GetStat(FName Stat, float DefaultValue) const
+103:	return Player ? Player->GetStats() : nullptr;
+109:	const UGBStatusEffectComponent* Effects = Player ? Player->GetStatusEffects() : nullptr;
+145:	Info.Amount = GetStat(GBStat::Damage);
+179:		Info.BuildUp = GetStat(GBElemental::WeaponBuildUpKey(ElementIndex), 0.f);
+182:			Info.BuildUp *= GetStat(GBStat::EnchantBuildUpMult, 1.f);
+186:		Info.WeakPointBuildUpMult = GetStat(GBStat::WeakPointBuildUpMult, DefaultMult);
+207:	return GetTimeSinceLastAttack() >= GetStat(GBStat::FireInterval, 0.f);
+			const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(WeaponId) : nullptr;
+			if (Def && Def->Slot == Slot)
+			{
+				Result.AddUnique(WeaponId);
+			}
+		}
+	}
+	// Weapons no longer in the data (after a reload) are still listed, at the end.
+	for (const FName& WeaponId : Equipment->GetOwnedWeapons())
+	{
+		if (WeaponId != NAME_None)
+		{
+			Result.AddUnique(WeaponId);
+		}
+	}
+	return Result;
+}
+
+TArray<FName> AGBHUD::GetAssignableSpells(AGBPlayerCharacter* Player) const
+{
+	TArray<FName> Result;
+	Result.Add(NAME_None);
+	const UGBSpellbookComponent* Spellbook = Player ? Player->GetSpellbook() : nullptr;
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	if (!Spellbook || !Data)
+	{
+		return Result;
+	}
+	for (const FName& SpellId : Spellbook->GetKnownSpells())
+	{
+		const FGBSpellDefinition* Def = Data->FindSpell(SpellId);
+		if (Def && !Def->bPassive && !Def->bRequiresGun && SpellId != Spellbook->GetEnchantSpell())
+		{
+			Result.Add(SpellId);
+		}
+	}
+	return Result;
+}
+
+TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
+{
+	TArray<FSkillNodeRef> Result;
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		for (const FGBSkillNodeDefinition& Def : Data->GetSkillNodes())
+		{
+			FSkillNodeRef Ref;
+			Ref.Id = Def.Id;
+			Ref.Tree = GBHudMenuLocal::IsWeaponTree(Def.Tree) ? 1 : 0;
+			Ref.Column = FMath::Max(0, Def.Column);
+			Ref.Row = FMath::Max(0, Def.Row);
+			Ref.Branch = Ref.Tree == 1 ? Def.Branch : NAME_None;
+			Result.Add(Ref);
+		}
+		// The weapon hub (owner, Nov 13, "similar to Cyberpunk"): the root perks on top, then one emblem per gun
+		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
+		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
+		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
+		// The emblems hang right under the hub's root perk (the one with no requirement: Heavy Rounds), centred on its
+		// column; the general perks sit beside them in the data's own columns.
+		int32 RootColumn = -1;
+		int32 RootRow = 0;
+		for (const FSkillNodeRef& Ref : Result)
+		{
+			if (Ref.Tree != 1)
+			{
+				continue;
+			}
+			if (Ref.Branch != NAME_None)
+			{
+				Branches.AddUnique(Ref.Branch);
+			}
+			else if (RootColumn < 0)
+			{
+				const FGBSkillNodeDefinition* Def = Data->FindSkillNode(Ref.Id);
+				if (Def && Def->Requires.Num() == 0)
+				{
+					RootColumn = Ref.Column;
+					RootRow = Ref.Row;
+				}
+			}
+		}
+		const int32 FirstColumn = FMath::Max(0, (RootColumn < 0 ? 1 : RootColumn) - (Branches.Num() - 1) / 2);
+		for (int32 i = 0; i < Branches.Num(); ++i)
+		{
+			FSkillNodeRef Category;
+			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
+			Category.Tree = 1;
+			Category.Column = FirstColumn + i;
+			Category.Row = RootRow + 1;
+			Category.bCategory = true;
+			Category.OpensBranch = Branches[i];
+			Result.Add(Category);
+		}
+	}
+	return Result;
+}
+
+void AGBHUD::OpenSkillBranch(FName Branch)
+{
+	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
+	const FSkillNodeRef* First = nullptr;
+	for (const FSkillNodeRef& Node : Nodes)
+	{
+		if (Node.Tree == 1 && !Node.bCategory && Node.Branch == Branch
+			&& (!First || Node.Row < First->Row || (Node.Row == First->Row && Node.Column < First->Column)))
+		{
+			First = &Node;
+		}
+	}
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n 'Weapon_Rifle_EnchantBuildUp|Weapon_EnchantBuildUp|GiveWeapon|EquipOwnedWeapon|ResetAll|Load' Glyphbound/Source/Glyphbound/Core/GBDevCommands.cpp" in C:\GameJam
+ succeeded in 127ms:
+459:			AGBHeldItem* Gun = Player->GetEquipment()->GiveWeapon(TEXT("Pistol"), true, false);
+551:			const int32 Refunded = Player->GetSkillTree()->ResetAll();
+583:				Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))), Skills->GetRank(FName(TEXT("Weapon_PistolHeadshot"))), Skills->GetPoints());
+673:			const int32 Refunded = Skills->ResetAll();
+682:				FName(TEXT("Weapon_Headshot")), FName(TEXT("Weapon_PrecisionRecovery")), FName(TEXT("Weapon_EnchantBuildUp")),
+770:					Skills->Unlock(FName(TEXT("Weapon_EnchantBuildUp")));
+772:				if (Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 3)
+774:					UE_LOG(LogGB, Error, TEXT("SMOKE arcane conduit: conduit rank is %d, expected 3"), Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))));
+791:			Skills->ResetAll();
+793:			if (Skills->GetPoints() != PointsBefore || Skills->GetRank(FName(TEXT("Weapon_EnchantBuildUp"))) != 0)
+802:			AGBHeldItem* Returned = Equipment->GiveWeapon(TEXT("Staff_Ember"), true, false);
+807:			const bool bEquipped = Equipment->EquipOwnedWeapon(TEXT("Staff_Ember"));
+1517:			Player->GetEquipment()->GiveWeapon(TEXT("Rifle"), false, false);
+1518:			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Rifle"));
+1815:			Player->GetEquipment()->GiveWeapon(TEXT("Shotgun"), false, false);
+1816:			Player->GetEquipment()->EquipOwnedWeapon(TEXT("Shotgun"));
+2956:			Player->GetEquipment()->GiveWeapon(TEXT("Pistol"), true, false);
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+const fs=require('fs'),vm=require('vm'),path=require('path'),cp=require('child_process');
+const file='Tools/Balance/balance_model.js',current=fs.readFileSync(file,'utf8'),old=cp.execFileSync('git',['show','HEAD:'+file],{encoding:'utf8'});
+function run(code){const out=[]; const ctx={require,__dirname:path.resolve('Tools/Balance'),console:{log:(...a)=>out.push(a.join(' '))}};vm.createContext(ctx);vm.runInContext(code,ctx);return {out,ctx};}
+const a=run(old),b=run(current);
+const extraStart=b.out.findIndex(x=>x.includes('=== Weapon perks:'));
+const extraEnd=b.out.findIndex(x=>x.includes('=== Spells'));
+const filtered=b.out.slice(0,extraStart).concat(b.out.slice(extraEnd));
+console.log('Earlier output differences using identical current data:'); a.out.forEach((x,i)=>{if(x"'!==filtered[i]) console.log(JSON.stringify({old:x,new:filtered[i]}));});
+console.log(vm.runInContext(`JSON.stringify(weapons.filter(w=>w.Slot==='"'Gun').map(w=>{const ranks={};for(const s of skills.filter(s=>s.Tree==='Weapon'))ranks[s.Id]=s.MaxRank;return {id:w.Id,base:weaponRow(w,{},false).accuracy,maxPerks:weaponRow(w,ranks,false).accuracy};}))"'`,b.ctx));
+console.log(vm.runInContext(`JSON.stringify({heavyRoundsMult:applyMods(1,['"'Weapon.All.Damage'],{Weapon_Damage:3}),reload:applyMods(1,['Weapon.Pistol.ReloadTime'],{Weapon_Pistol_Reload:3}),skillCount:skills.length,missingRequires:skills.flatMap(s=>(s.Requires||[]).filter(r=>"'!skillById[r]).map(r=>[s.Id,r]))})`,b.ctx));
+'"'@ | node" in C:\GameJam
+ succeeded in 567ms:
+Earlier output differences using identical current data:
+{"old":"GunSpecialist36    33/36    Shotgun    132          6388           ElementalSword 84  19        ","new":"GunSpecialist36    33/36    Shotgun    141          6867           ElementalSword 84  19        "}
+{"old":"Orc_Past_Brute       50 s, 66%        45 s, 60%        38 s, 53%        36 s, 52%        34 s, 49%        30 s, 51%        28 s, 37%        55 s, 67%       ","new":"Orc_Past_Brute       50 s, 66%        45 s, 60%        38 s, 53%        36 s, 52%        34 s, 49%        30 s, 51%        26 s, 35%        55 s, 67%       "}
+{"old":"Orc_Future_Warlord   55 s, 74%        50 s, 67%        43 s, 59%        40 s, 58%        37 s, 55%        33 s, 56%        31 s, 41%        61 s, 74%       ","new":"Orc_Future_Warlord   55 s, 74%        50 s, 67%        43 s, 59%        40 s, 58%        37 s, 55%        33 s, 56%        29 s, 39%        61 s, 74%       "}
+{"old":"Valkyrie_Past        188 s, 100%      161 s, 100%      136 s, 100%      128 s, 100%      117 s, 100%      88 s, 100%       74 s, 99%        146 s, 100%     ","new":"Valkyrie_Past        188 s, 100%      161 s, 100%      136 s, 100%      128 s, 100%      117 s, 100%      88 s, 100%       70 s, 93%        146 s, 100%     "}
+{"old":"Valkyrie_Future      202 s, 100%      174 s, 100%      148 s, 100%      140 s, 100%      129 s, 100%      94 s, 100%       80 s, 100%       154 s, 100%     ","new":"Valkyrie_Future      202 s, 100%      174 s, 100%      148 s, 100%      140 s, 100%      129 s, 100%      94 s, 100%       74 s, 98%        154 s, 100%     "}
+{"old":"Entity               454 s, 100%      398 s, 100%      356 s, 100%      344 s, 100%      328 s, 100%      199 s, 100%      186 s, 100%      296 s, 100%     ","new":"Entity               454 s, 100%      398 s, 100%      356 s, 100%      344 s, 100%      328 s, 100%      199 s, 100%      178 s, 100%      296 s, 100%     "}
+[{"id":"Pistol","base":0.75,"maxPerks":0.7949999999999999},{"id":"Shotgun","base":0.75,"maxPerks":0.82875},{"id":"Rifle","base":0.6,"maxPerks":0.72}]
+{"heavyRoundsMult":1.3000000000000003,"reload":0.5499999999999999,"skillCount":29,"missingRequires":[]}
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content Glyphbound/Source/Glyphbound/Weapons/GBHeldItem.cpp | Select-Object -Skip 45 -First 60; rg -n 'MagazineSize|Pellets' Glyphbound/Source/Glyphbound/Weapons; rg -n 'Skills|Requires|Column|Branch' Glyphbound/Source/Glyphbound/Data/GBDataSubsystem.cpp | Select-Object -Last 30; rg -n 'Heavy Rounds itself|const ref|const points|withIt|gains' Tools/Balance/balance_model.js" in C:\GameJam
+ succeeded in 506ms:
+
+float AGBHeldItem::GetStat(FName Stat, float DefaultValue) const
+{
+	float Base = DefaultValue;
+	if (const FGBWeaponDefinition* Def = GetDefinition())
+	{
+		if (const float* Value = Def->Stats.Find(Stat))
+		{
+			Base = *Value;
+		}
+	}
+
+	if (const UGBStatsComponent* Stats = GetOwnerStats())
+	{
+		TArray<FName, TInlineAllocator<3>> Keys;
+		Keys.Add(GBStat::WeaponKey(WeaponId, Stat));
+		Keys.Add(GBStat::WeaponSlotKey(Slot, Stat));
+		Keys.Add(GBStat::WeaponAllKey(Stat));
+		return Stats->EvaluateKeys(Keys, Base);
+	}
+	return Base;
+}
+
+void AGBHeldItem::OnEquipped()
+{
+	bEquipped = true;
+	SetActorHiddenInGame(false);
+}
+
+void AGBHeldItem::OnUnequipped()
+{
+	bEquipped = false;
+	bTriggerHeld = false;
+	bAttackQueued = false;
+	SetActorHiddenInGame(true);
+}
+
+EGBHudSkin AGBHeldItem::GetHudSkin() const
+{
+	return Slot == EGBHeldSlot::Gun ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+}
+
+float AGBHeldItem::GetTimeSinceLastAttack() const
+{
+	const UWorld* World = GetWorld();
+	return World ? static_cast<float>(World->GetTimeSeconds() - LastAttackTime) : 1000.f;
+}
+
+bool AGBHeldItem::IsAutomatic() const
+{
+	const FGBWeaponDefinition* Def = GetDefinition();
+	return Def && Def->bAutomatic;
+}
+
+UGBStatsComponent* AGBHeldItem::GetOwnerStats() const
+{
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	return Player ? Player->GetStats() : nullptr;
+}
+
+Glyphbound/Source/Glyphbound/Weapons\GBEquipmentComponent.cpp:117:	Full.InMagazine = FMath::Max(0, FMath::RoundToInt(ReadStat(GBStat::MagazineSize, 1.f)));
+Glyphbound/Source/Glyphbound/Weapons\GBGun.h:74: * Every number through GetStat: Damage, FireInterval, MagazineSize, SpareMagazines, ReloadTime, Range, Spread,
+Glyphbound/Source/Glyphbound/Weapons\GBGun.h:75: * AimSpread, RecoilPitch, RecoilYaw, RecoilRecovery, Pellets, Falloff*, HeadshotMult, AimFOV, AimMoveSpeedMult,
+Glyphbound/Source/Glyphbound/Weapons\GBGun.h:108:	int32 GetMagazineSize() const;
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:322:	const FName Required[] = { GBStat::Damage, GBStat::FireInterval, GBStat::MagazineSize, GBStat::SpareMagazines, GBStat::ReloadTime, GBStat::Range };
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1158:	const int32 Capacity = GetMagazineSize();
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1179:	const float* PelletStat = Definition.Stats.Find(GBStat::Pellets);
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1209:int32 AGBGun::GetMagazineSize() const
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1211:	return FMath::Max(0, FMath::RoundToInt(GetStat(GBStat::MagazineSize, 1.f)));
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1218:	return ReloadsPerRound() ? Magazines * GetMagazineSize() : Magazines;
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1225:	Ammo.InMagazine = FMath::Clamp(InAmmo.InMagazine, 0, GetMagazineSize());
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1234:	Ammo.InMagazine = GetMagazineSize();
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1248:		const int32 PerMagazine = FMath::Max(1, GetMagazineSize());
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1274:	if (Ammo.InMagazine >= GetMagazineSize() || Ammo.SpareMagazines <= 0)
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1284:		PerRound.Begin(Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), ReloadDuration);
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1327:		Ammo.InMagazine = GetMagazineSize();
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1449:		const int32 Moved = PerRound.Advance(DeltaSeconds, Ammo.InMagazine, Ammo.SpareMagazines, GetMagazineSize(), MaxRounds);
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1570:	const int32 Pellets = FMath::Max(1, FMath::RoundToInt(GetStat(GBStat::Pellets, 1.f)));
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1580:	for (int32 Index = 0; Index < Pellets; ++Index)
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1628:	const int32 Pellets = FMath::Max(1, FMath::RoundToInt(GetStat(GBStat::Pellets, 1.f)));
+Glyphbound/Source/Glyphbound/Weapons\GBGun.cpp:1629:	for (int32 Index = 0; Index < Pellets; ++Index)
+172:	LoadArray(TEXT("Skills.json"), TEXT("Skills"), SkillNodes);
+181:	BuildIndex(SkillNodes, SkillNodeIndex, TEXT("Skills.json"));
+36:	SpellTargets: 1.8,    // enemies an average spell hits in a wave (1 against a boss)
+155:// Each perk alone at its full rank, on top of Heavy Rounds 3, against the same gun without it: expected damage per
+162:	const ref = { Weapon_Damage: 3 };
+165:		const points = s.Cost * s.MaxRank;
+166:		const withIt = Object.assign({}, ref, { [s.Id]: s.MaxRank });
+167:		const gains = guns.map((w) => weaponRow(w, withIt, false).expected / weaponRow(w, ref, false).expected - 1);
+168:		const best = Math.max.apply(null, gains);
+173:		line([s.Id.replace('Weapon_', ''), s.Branch || 'hub', points, ...gains.map((g) => g > 0.0005 ? '+' + num(100 * g, 1) + '%' : '-'), best > 0.0005 ? '+' + num(100 * best / points, 1) + '%' : '-', other], W);
+176:console.log('Heavy Rounds itself: +33.1% on every gun for 3 points = +11% per point (on all three guns at once).');
+369:title('Bosses against every build (real seconds, share of the ammo used)');
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const src=fs.readFileSync('Tools/Balance/balance_model.js','utf8');
+function run(code){const logs=[];const ctx={require,__dirname:path.resolve('Tools/Balance'),console:{log:(...a)=>logs.push(a.join(' '))}};vm.createContext(ctx);vm.runInContext(code,ctx);return {logs,ctx};}
+const a=run(src),b=run(src.replace(/const pellets = Math.max["'^'"\\n]+/,\"const pellets = w.Stats.Pellets || 1;\").replace(/const mag = w.Stats.MagazineSize["'^'"\\n]+/,\"const mag = w.Stats.MagazineSize || 0;\"));
+console.log('Pellet/magazine changes alone leave all current output identical:',JSON.stringify(a.logs)===JSON.stringify(b.logs));
+console.log(vm.runInContext("'`(()=>{const reached=new Set();let prev=-1;while(prev!==reached.size){prev=reached.size;for(const s of skills)if((s.Requires||[]).every(r=>reached.has(r)))reached.add(s.Id);}return JSON.stringify({unreachable:skills.filter(s=>!reached.has(s.Id)).map(s=>s.Id),duplicateIds:skills.filter((s,i)=>skills.findIndex(t=>t.Id===s.Id)!==i).map(s=>s.Id)});})()`,a.ctx));
+const skills=JSON.parse(fs.readFileSync('"'Glyphbound/Content/Data/Skills.json','utf8')).Skills;
+const hub=skills.filter(s=>s.Tree==='Weapon'&&"'!s.Branch);const root=hub.find(s=>!(s.Requires||[]).length);
+for(const n of [1,2,3,4,5]){const first=Math.max(0,root.Column-Math.trunc((n-1)/2));const emblems=Array.from({length:n},(_,i)=>({Column:first+i,Row:root.Row+1}));console.log(JSON.stringify({branches:n,emblems,collisions:hub.filter(s=>emblems.some(e=>s.Column===e.Column&&s.Row>=e.Row&&s.Row<e.Row+2.3)).map(s=>s.Id)}));}
+'"'@ | node" in C:\GameJam
+ succeeded in 510ms:
+Pellet/magazine changes alone leave all current output identical: true
+{"unreachable":[],"duplicateIds":[]}
+{"branches":1,"emblems":[{"Column":2,"Row":1}],"collisions":[]}
+{"branches":2,"emblems":[{"Column":2,"Row":1},{"Column":3,"Row":1}],"collisions":[]}
+{"branches":3,"emblems":[{"Column":1,"Row":1},{"Column":2,"Row":1},{"Column":3,"Row":1}],"collisions":[]}
+{"branches":4,"emblems":[{"Column":1,"Row":1},{"Column":2,"Row":1},{"Column":3,"Row":1},{"Column":4,"Row":1}],"collisions":["Weapon_EnchantBuildUp"]}
+{"branches":5,"emblems":[{"Column":0,"Row":1},{"Column":1,"Row":1},{"Column":2,"Row":1},{"Column":3,"Row":1},{"Column":4,"Row":1}],"collisions":["Weapon_Headshot","Weapon_PrecisionRecovery","Weapon_EnchantBuildUp"]}
+
+codex
+The data and smoke arithmetic check out: rank 3 reload is `1 + (0.85 − 1) × 3 = 0.55`, and Arcane Conduit spends four points before refunding them. The pellets/magazine changes leave all current calculator output unchanged. I confirmed the incorrect Heavy Rounds summary and a layout collision if a fourth branch is added; the shipped three-branch layout is clear.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n 'const int32 FirstColumn|Category.Column =|Category.Row =' Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp" in C:\GameJam
+ succeeded in 119ms:
+665:		const int32 FirstColumn = FMath::Max(0, (RootColumn < 0 ? 1 : RootColumn) - (Branches.Num() - 1) / 2);
+671:			Category.Column = FirstColumn + i;
+672:			Category.Row = RootRow + 1;
+
+codex
+Two findings:
+
+- **[P3] Incorrect Heavy Rounds comparison** — [balance_model.js:176](/C:/GameJam/Tools/Balance/balance_model.js:176). The new table prints **+33.1%, +11% per point**, but ranks stack linearly: `1 + (1.1 − 1) × 3 = 1.3`. Running the tool therefore overstates Heavy Rounds when comparing it with other perks. **Fix:** calculate this summary through `applyMods`; the correct figures are **+30%, +10% per point**.
+
+- **[P3, conditional] A fourth branch overlaps Arcane Conduit** — [GBHUD_Menus.cpp:665](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:665). With four branches, `FirstColumn` remains 1, placing emblems in columns **1–4, row 1**. The fourth emblem occupies Arcane Conduit’s cell. Five branches also overlap Marksman and Precision Recovery. **Fix:** account for occupied hub rectangles when placing emblems and adjust the surrounding layout when the branch count changes. The current three-branch data is unaffected.
+
+No other concrete issues found. Prerequisites are reachable, current hub boxes and links are clear, §18 matches the data, and the smoke’s point refunds and `0.55 × base` expectation are correct. Accuracy stays between base and 1 for current perks; pellets/magazine changes alone leave existing output identical. Verification was read-only source inspection and Node execution; UE smoke was not run.
+tokens used
+63,326
+Two findings:
+
+- **[P3] Incorrect Heavy Rounds comparison** — [balance_model.js:176](/C:/GameJam/Tools/Balance/balance_model.js:176). The new table prints **+33.1%, +11% per point**, but ranks stack linearly: `1 + (1.1 − 1) × 3 = 1.3`. Running the tool therefore overstates Heavy Rounds when comparing it with other perks. **Fix:** calculate this summary through `applyMods`; the correct figures are **+30%, +10% per point**.
+
+- **[P3, conditional] A fourth branch overlaps Arcane Conduit** — [GBHUD_Menus.cpp:665](/C:/GameJam/Glyphbound/Source/Glyphbound/UI/GBHUD_Menus.cpp:665). With four branches, `FirstColumn` remains 1, placing emblems in columns **1–4, row 1**. The fourth emblem occupies Arcane Conduit’s cell. Five branches also overlap Marksman and Precision Recovery. **Fix:** account for occupied hub rectangles when placing emblems and adjust the surrounding layout when the branch count changes. The current three-branch data is unaffected.
+
+No other concrete issues found. Prerequisites are reachable, current hub boxes and links are clear, §18 matches the data, and the smoke’s point refunds and `0.55 × base` expectation are correct. Accuracy stays between base and 1 for current perks; pellets/magazine changes alone leave existing output identical. Verification was read-only source inspection and Node execution; UE smoke was not run.

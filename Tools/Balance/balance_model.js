@@ -27,6 +27,10 @@ const ASSUME = {
 	WeaponAccuracy: { Rifle: 0.6, Shotgun: 0.75, Pistol: 0.75 }, // automatic fire and recoil miss more
 	Uptime: 0.7,          // share of the game time spent attacking (the rest: dodging, switching, looking for targets)
 	HeadShare: 0.25,      // share of the hits that land on the head / weak point
+	// Where a gun's misses come from (shares of its misses; the rest is moving targets and aim). Recoil perks shrink the
+	// first part, spread perks the second, in proportion to the stat. Provisional (architect, Nov 13), to weigh the handling perks.
+	MissFromRecoil: { Pistol: 0.3, Rifle: 0.5, Shotgun: 0.15 },
+	MissFromSpread: { Pistol: 0.15, Rifle: 0.2, Shotgun: 0.5 },
 	QteScore: 0.75,       // typical QTE score; the game maps 0 -> Min and 1 -> Max in a straight line (Base = QTE off)
 	QteRealSeconds: 2,    // real seconds a player spends in one QTE (the limit is QTE.TimeLimit)
 	SpellTargets: 1.8,    // enemies an average spell hits in a wave (1 against a boss)
@@ -103,7 +107,7 @@ function enchant(ranks) {
 function weaponRow(w, ranks, useEnchant) {
 	const stat = (name) => applyMods(w.Stats[name] === undefined ? (name.indexOf('Mult') >= 0 ? 1 : 0) : w.Stats[name],
 		['Weapon.All.' + name, 'Weapon.' + w.Slot + '.' + name, 'Weapon.' + w.Id + '.' + name], ranks);
-	const pellets = w.Stats.Pellets || 1;
+	const pellets = Math.max(1, Math.round(stat('Pellets'))) || 1; // perks can add pellets (the game reads it through GetStat)
 	const near = w.Stats.FalloffNearMult === undefined ? 1 : stat('FalloffNearMult');
 	const far = w.Stats.FalloffFarMult === undefined ? 1 : stat('FalloffFarMult');
 	const best = Math.max(near, far);
@@ -112,13 +116,16 @@ function weaponRow(w, ranks, useEnchant) {
 	const burst = hit / interval;
 	let sustained = burst;
 	let rounds = Infinity;
-	const mag = w.Stats.MagazineSize || 0;
+	const mag = w.Stats.MagazineSize ? Math.round(stat('MagazineSize')) : 0; // perks can enlarge it
 	if (mag) {
 		sustained = hit * mag / (mag * interval + stat('ReloadTime'));
 		rounds = mag * (1 + (w.Stats.SpareMagazines || 0));
 	}
 	const head = stat('HeadshotMult') || 1;
-	const accuracy = ASSUME.WeaponAccuracy[w.Id] || ASSUME.Accuracy;
+	const baseAccuracy = ASSUME.WeaponAccuracy[w.Id] || ASSUME.Accuracy;
+	const ratio = (name) => (w.Stats[name] ? stat(name) / w.Stats[name] : 1);
+	const missShrink = (ASSUME.MissFromRecoil[w.Id] || 0) * (1 - ratio('RecoilPitch')) + (ASSUME.MissFromSpread[w.Id] || 0) * (1 - ratio('Spread'));
+	const accuracy = 1 - (1 - baseAccuracy) * (1 - missShrink);
 	const headFactor = 1 + ASSUME.HeadShare * (head - 1);
 	const en = useEnchant && w.Slot === 'Gun' ? enchant(ranks) : { mult: 1, uptime: 0 };
 	const enchantFactor = 1 + en.uptime * (en.mult - 1);
@@ -143,6 +150,35 @@ for (const r of baseRows) {
 	line([r.id, num(r.hit), num(r.burst), num(r.sustained), num(r.nearSustained, 0) + ' / ' + num(r.farSustained, 0), num(r.expected), r.carried === Infinity ? 'free' : num(r.carried, 0), 'x' + r.head, num(r.buildUpPerSecond)], W);
 }
 console.log('Hit, Burst, Sustained: every shot hitting the body. Sustained includes reloads. Expected: with accuracy, uptime and head share.');
+
+// ---- Weapon perks: what one point buys ----
+// Each perk alone at its full rank, on top of Heavy Rounds 3, against the same gun without it: expected damage per
+// second (accuracy, uptime, head share; best range, so Point Blank and Long Shot count in full). Perks that do not
+// change damage show their own effect instead.
+title('Weapon perks: what one point buys (alone at full rank, on top of Heavy Rounds 3, best range)');
+W = [26, 8, 7, 9, 9, 9, 12, 30];
+line(['Perk', 'Page', 'Points', 'Pistol', 'Rifle', 'Shotgun', 'Best / point', 'Other effect'], W);
+{
+	const ref = { Weapon_Damage: 3 };
+	const guns = ['Pistol', 'Rifle', 'Shotgun'].map((id) => weapons.find((w) => w.Id === id)).filter(Boolean);
+	for (const s of skills.filter((n) => n.Tree === 'Weapon' && n.Id !== 'Weapon_Damage')) {
+		const points = s.Cost * s.MaxRank;
+		const withIt = Object.assign({}, ref, { [s.Id]: s.MaxRank });
+		const gains = guns.map((w) => weaponRow(w, withIt, false).expected / weaponRow(w, ref, false).expected - 1);
+		const best = Math.max.apply(null, gains);
+		let other = '';
+		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('EnchantBuildUpMult') >= 0)) { other = 'build-up +' + num(100 * (applyMods(1, s.ModifiersPerRank.map((m) => m.Stat), { [s.Id]: s.MaxRank }) - 1), 0) + '%'; }
+		if (s.ModifiersPerRank.some((m) => m.Stat === 'PrecisionRecovery')) { other = 'heal 3% on weak-point kills'; }
+		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('HeadshotMult') >= 0 && m.Stat.indexOf('Weapon.All') === 0)) { other = 'also staff and sword'; }
+		line([s.Id.replace('Weapon_', ''), s.Branch || 'hub', points, ...gains.map((g) => g > 0.0005 ? '+' + num(100 * g, 1) + '%' : '-'), best > 0.0005 ? '+' + num(100 * best / points, 1) + '%' : '-', other], W);
+	}
+}
+{
+	const hr = skillById.Weapon_Damage;
+	const gain = hr ? applyMods(1, ['Weapon.All.Damage'], { Weapon_Damage: hr.MaxRank }) - 1 : 0;
+	const pts = hr ? hr.Cost * hr.MaxRank : 1;
+	console.log('Heavy Rounds itself: +' + num(100 * gain, 1) + '% on every gun for ' + pts + ' points = +' + num(100 * gain / pts, 1) + '% per point (on all three guns at once).');
+}
 
 // ---- Spells ----
 title('Spells (damage on ONE target; Min / Base / Max by QTE; damage per mana at Base)');

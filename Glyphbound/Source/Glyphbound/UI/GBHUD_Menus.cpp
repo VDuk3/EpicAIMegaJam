@@ -638,28 +638,60 @@ TArray<AGBHUD::FSkillNodeRef> AGBHUD::GetSkillNodes() const
 		// branch on the row under them. Known guns first in a fixed order, any other branch after them.
 		TArray<FName> Branches = { FName(TEXT("Pistol")), FName(TEXT("Rifle")), FName(TEXT("Shotgun")) };
 		Branches.RemoveAll([&Result](FName Branch) { return !Result.ContainsByPredicate([Branch](const FSkillNodeRef& Ref) { return Ref.Branch == Branch; }); });
-		int32 HubRows = 0;
+		// The emblems hang right under the hub's root perk (the one with no requirement: Heavy Rounds), centred on its
+		// column; the general perks sit beside them in the data's own columns.
+		int32 RootColumn = -1;
+		int32 RootRow = 0;
 		for (const FSkillNodeRef& Ref : Result)
 		{
-			if (Ref.Tree == 1)
+			if (Ref.Tree != 1)
 			{
-				if (Ref.Branch != NAME_None)
+				continue;
+			}
+			if (Ref.Branch != NAME_None)
+			{
+				Branches.AddUnique(Ref.Branch);
+			}
+			else if (RootColumn < 0)
+			{
+				const FGBSkillNodeDefinition* Def = Data->FindSkillNode(Ref.Id);
+				if (Def && Def->Requires.Num() == 0)
 				{
-					Branches.AddUnique(Ref.Branch);
-				}
-				else
-				{
-					HubRows = FMath::Max(HubRows, Ref.Row + 1);
+					RootColumn = Ref.Column;
+					RootRow = Ref.Row;
 				}
 			}
 		}
-		for (int32 i = 0; i < Branches.Num(); ++i)
+		// Each emblem takes the free column nearest the root's (an emblem is about two rows tall, so a perk in its row
+		// or the row under it blocks the column), then the emblems keep their order left to right (Sol 6.1 review: a
+		// fourth gun must not land on a general perk).
+		const int32 Center = RootColumn < 0 ? 1 : RootColumn;
+		auto Blocked = [&Result, RootRow](int32 Column)
+		{
+			return Result.ContainsByPredicate([Column, RootRow](const FSkillNodeRef& Ref)
+			{
+				return Ref.Tree == 1 && Ref.Branch == NAME_None && !Ref.bCategory && Ref.Column == Column && (Ref.Row == RootRow + 1 || Ref.Row == RootRow + 2);
+			});
+		};
+		TArray<int32> Columns;
+		for (int32 Distance = 0; Columns.Num() < Branches.Num() && Distance < 64; ++Distance)
+		{
+			for (const int32 Column : { Center - Distance, Center + Distance })
+			{
+				if (Column >= 0 && Columns.Num() < Branches.Num() && !Columns.Contains(Column) && !Blocked(Column))
+				{
+					Columns.Add(Column);
+				}
+			}
+		}
+		Columns.Sort();
+		for (int32 i = 0; i < Branches.Num() && i < Columns.Num(); ++i)
 		{
 			FSkillNodeRef Category;
 			Category.Id = FName(*(TEXT("Branch_") + Branches[i].ToString()));
 			Category.Tree = 1;
-			Category.Column = i;
-			Category.Row = HubRows;
+			Category.Column = Columns[i];
+			Category.Row = RootRow + 1;
 			Category.bCategory = true;
 			Category.OpensBranch = Branches[i];
 			Result.Add(Category);
@@ -2192,7 +2224,16 @@ void AGBHUD::DrawSkillCategory(AGBPlayerCharacter* Player, const FSkillNodeRef& 
 	Index.Face = ECyFace::Mono;
 	Index.Px = 12.f;
 	Index.Color = GBCy::RedDim;
-	DrawCyText(FString::Printf(TEXT("0%d"), Category.Column + 1), X + 16.f * S, Y + 12.f * S, Index, 0.f);
+	// The emblem's number among the emblems (01, 02, 03), not its grid column.
+	int32 Ordinal = 1;
+	for (const FSkillNodeRef& Other : Nodes)
+	{
+		if (Other.bCategory && Other.Column < Category.Column)
+		{
+			++Ordinal;
+		}
+	}
+	DrawCyText(FString::Printf(TEXT("%02d"), Ordinal), X + 16.f * S, Y + 12.f * S, Index, 0.f);
 
 	// The gun's outline on a 40 x 16 grid (x right, y down), filled in the line color.
 	struct FGlyphRect { float X, Y, W, H; };
@@ -2615,8 +2656,15 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 		const float MaxCellW = bTreeCyber ? FMath::Max(330.f * S, AreaW * 0.2f) : FMath::Max(52.f * P, AreaW * 0.2f);
 		const float CellW = FMath::Min(MaxCellW, (AreaW - 2.f * Pad) / (MaxColumn + 1));
 		const float GridX = FMath::RoundToFloat(AX + (AreaW - CellW * (MaxColumn + 1)) * 0.5f);
-		const bool bHub = bTreeCyber && ShownBranch == NAME_None;
-		const float RowsTall = (MaxRow + 1) + (bHub ? CategoryScale - 1.f : 0.f);
+		// Rows the grid needs: an emblem reaches CategoryScale rows down from its own row.
+		float RowsTall = MaxRow + 1.f;
+		for (const FSkillNodeRef& Node : Nodes)
+		{
+			if (OnPage(Node) && Node.bCategory)
+			{
+				RowsTall = FMath::Max(RowsTall, Node.Row + CategoryScale);
+			}
+		}
 		const float FreeH = AreaY + AreaH - Pad - (GridTop + ColumnHeadH);
 		const float CellH = FMath::Min(bTreeCyber ? 120.f * S : 29.f * P, FreeH / RowsTall);
 		// The weapon pages have few rows: centre them in the panel instead of leaving the bottom empty (only the
@@ -2657,9 +2705,12 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 			TArray<FName> Reqs;
 			if (Node.bCategory)
 			{
+				// An emblem hangs from the hub's root perks only (those with no requirement: Heavy Rounds), not from the
+				// general perks beside it.
 				for (const FSkillNodeRef& Root : Nodes)
 				{
-					if (OnPage(Root) && !Root.bCategory)
+					const FGBSkillNodeDefinition* RootDef = (OnPage(Root) && !Root.bCategory && Data) ? Data->FindSkillNode(Root.Id) : nullptr;
+					if (RootDef && RootDef->Requires.Num() == 0)
 					{
 						Reqs.Add(Root.Id);
 					}
