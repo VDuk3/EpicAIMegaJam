@@ -4,7 +4,7 @@ Pipeline agreed 2026-11-13 (architect). The LAPTOP draws and checks the animatio
 
 ## Rules
 - The pixels are drawn by hand in Pixelorama. The AI on the LAPTOP (Sonnet 5.5 in Cursor) writes only tooling (import, check, preview); it never generates or edits pixels.
-- SpriteLab is a throwaway UE 5.9.0 project on the LAPTOP, only to preview timing, silhouette and angles. Its .uasset files are NOT sent: CENTRAL rebuilds everything from the PNG + JSON.
+- SpriteLab is a throwaway UE project on the LAPTOP (5.8 is fine: nothing built in it reaches the game, so the 5.9.0 pin does not apply), only to preview timing, silhouette and angles. Its .uasset files are NOT sent: CENTRAL rebuilds everything from the PNG + JSON.
 - Cursor on the LAPTOP is logged by the user-level Cursor hooks (Glass Box). Check they are installed before starting.
 
 ## Delivery contract (what arrives in `\\CENTRAL\Incoming\LAPTOP\anims\<sprite_id>\`)
