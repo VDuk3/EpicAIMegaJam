@@ -98,10 +98,12 @@ The same pose mechanism as the magazine guns, but the middle repeats once per sh
 Every other smoke line must stay as it is.
 
 ## How to verify (from `C:\GameJam`)
-- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1`: must end in `Result: Succeeded`.
+Project rule (`CLAUDE.md`, "Tiempo de iteración", owner, 2026-11-13): while iterating, run only your part of the smoke, with no window, and build only the Editor target. The full smoke and the game-target build are run once, at the end, by the architect. (Added to this brief after it was first handed over; the implementer was told by message.)
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Build-Jam.ps1`: the Editor target; must end in `Result: Succeeded`. Do not build `-Target Glyphbound`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Test-Jam.ps1` with the anchored filter of the weapons tests (read the script's header for its parameters; filters look like `^Glyphbound.Weapons.`): all green.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1`: must end in `done=True crashed=False LogGB errors=0`.
-- Open your four screenshots in `Glyphbound/Saved/Screenshots/Smoke/` (the PNG files; enlarge the gun's area if you need to) and tune the framing and the poses until: the gun reads like the rifle's framing, the hologram and the energy bar are visible in `15a`, the pump is clearly back in `15b`, and `15d` shows the underside with the port and a shell on its way in. The first screenshot after a material change can come out tan and grainy (shaders compiling): run the smoke again before judging it.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Smoke-Jam.ps1 -Only shotgun -Offscreen`: must end in `done=True crashed=False LogGB errors=0`. `-Only` keeps the steps whose name starts with that prefix, plus the quit step: name every step of your block `shotgun: ...`, and make the block work on its own (its first step gives the player the shotgun and equips it; it sets up its own enchant, targets and weapon switches). Do not run the full `Smoke-Jam.ps1`.
+- Open your four screenshots in `Glyphbound/Saved/Screenshots/Smoke/` (the PNG files; enlarge the gun's area if you need to) and tune the framing and the poses until: the gun reads like the rifle's framing, the hologram and the energy bar are visible in `15a`, the pump is clearly back in `15b`, and `15d` shows the underside with the port and a shell on its way in. The first screenshot after a material change can come out tan and grainy (shaders compiling): run the filtered smoke again before judging it.
+- You will not have run the full smoke, so you cannot confirm that the pistol's and the rifle's lines are unchanged: say so in your report and list every code path of theirs that you touched.
 - Do not package.
 
 ## Final report
