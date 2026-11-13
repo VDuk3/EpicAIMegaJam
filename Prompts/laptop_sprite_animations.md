@@ -35,25 +35,26 @@ Pipeline agreed 2026-11-13 (architect). The LAPTOP draws and checks the animatio
 - Names in English, lower case, no spaces.
 
 ## One-time setup on the LAPTOP (by hand)
-1. UE 5.8 (already installed). New project **SpriteLab**: Blank, Blueprint, no Starter Content, in `C:\SpriteLab`.
+Status reported by the LAPTOP agent (`_de_LAPTOP\20261113-1948_setup-spritelab-anims.md`): steps 1, 3, 4 and 5 done; the project already exists at the long path below (there is no `C:\SpriteLab`, and no junction is wanted).
+1. UE 5.8 project **SpriteLab** (Blank, Blueprint, no Starter Content): `C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab`.
 2. Edit > Plugins: enable **Paper2D** and **Python Editor Script Plugin**; restart the Editor.
-3. Check the Cursor devlog hooks are installed (Glass Box).
-4. Create `\\CENTRAL\Incoming\LAPTOP\anims\`.
-5. Art goes in `C:\SpriteLab\Art\<sprite_id>\`. Pixelorama export: File > Export > Spritesheet, 1 row, only the frames of one animation and one angle (tags help).
+3. Cursor devlog hooks: installed (`C:\JamLog\bin\`); do not reinstall.
+4. `\\192.168.31.188\Incoming\LAPTOP\anims\` (animations) and `...\arte\` (other art): created.
+5. Art goes in `C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Art\<sprite_id>\`. Pixelorama export: File > Export > Spritesheet, 1 row, only the frames of one animation and one angle (tags help).
 
-## Prompts for Sonnet 5.5 in Cursor (folder `C:\SpriteLab` open). Kept in Spanish as given to the team.
+## Prompts for Sonnet 5.5 in Cursor (folder `C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab` open). Kept in Spanish as given to the team.
 
 ### Prompt 1: build the tool (once)
 
 ```
 Proyecto: SpriteLab, un proyecto vacío de Unreal Engine 5.8 con Paper2D y el Python Editor Script Plugin activados. Sirve solo para previsualizar animaciones de pixel art antes de enviarlas a otra máquina (el juego final está en UE 5.9, pero de aquí solo salen PNG y JSON, nunca .uasset). Tú escribes herramientas; NUNCA generes ni modifiques píxeles: el arte lo dibuja a mano una persona en Pixelorama.
 
-Formato de entrada (contrato fijo, no lo cambies), en C:\SpriteLab\Art\<sprite_id>\:
+Formato de entrada (contrato fijo, no lo cambies), en C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Art\<sprite_id>\:
 - <sprite_id>.anim.json con: Id, FrameWidth, FrameHeight, Pivot [x,y] (píxel que toca el suelo, origen arriba a la izquierda), Angles (1, 5 u 8) y Animations [{Name, Fps, Loop, Frames, Events opcional [{Frame, Name}]}].
 - Un PNG por animación y ángulo: <sprite_id>__<anim>__a<angle>.png (doble guion bajo), tira horizontal de frames de izquierda a derecha, fondo transparente, escala 1:1.
 - Índice de ángulo = hacia dónde mira el personaje en pantalla: 0 frente, 1 frente-derecha, 2 derecha, 3 espalda-derecha, 4 espalda, 5 espalda-izquierda, 6 izquierda, 7 frente-izquierda. Con Angles=5 solo existen los PNG 0 a 4; los ángulos 5, 6 y 7 se muestran reflejando el 3, el 2 y el 1. Con Angles=1 solo existe a0.
 
-Escribe C:\SpriteLab\Scripts\spritelab.py (Python dentro de Unreal 5.8; no instales nada con pip) con dos modos:
+Escribe C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Scripts\spritelab.py (Python dentro de Unreal 5.8; no instales nada con pip) con dos modos:
 
 1) check: no crea assets. Por cada sprite_id comprueba y lista OK/ERROR por archivo:
    - JSON válido y todos los PNG esperados presentes (y avisa de PNG que sobran);
@@ -71,8 +72,8 @@ Escribe C:\SpriteLab\Scripts\spritelab.py (Python dentro de Unreal 5.8; no insta
    Volver a correrlo reemplaza lo anterior sin duplicar assets ni actores.
 
 Uso desde el Output Log del Editor (cambia el desplegable de Cmd a Python o usa el comando py):
-  py "C:/SpriteLab/Scripts/spritelab.py" check [sprite_id]
-  py "C:/SpriteLab/Scripts/spritelab.py" import [sprite_id]
+  py "C:/Users/Romelt/Documents/PixeloramaAIWorkspace/SpriteLab/Scripts/spritelab.py" check [sprite_id]
+  py "C:/Users/Romelt/Documents/PixeloramaAIWorkspace/SpriteLab/Scripts/spritelab.py" import [sprite_id]
 Sin sprite_id procesa todos. Escribe un README.md corto en Scripts con estos comandos.
 
 Si una llamada de la API de Python de Unreal no existe en la 5.8, busca la equivalente en la 5.8; no inventes nombres. Itera barato: prueba primero el modo check, y la importación una vez al final. Cuando acabes, dime paso a paso qué hago en el Editor para probarlo.
@@ -81,13 +82,13 @@ Si una llamada de la API de Python de Unreal no existe en la 5.8, busca la equiv
 ### Prompt 2: check new art (every time)
 
 ```
-Hay arte nuevo o cambiado en C:\SpriteLab\Art\<sprite_id>\. Dime el comando de check de spritelab.py para correrlo en el Output Log; cuando te pegue el resultado, explícame cada ERROR en palabras sencillas (qué archivo, qué frame, qué está mal y cómo se arregla en Pixelorama). No toques los PNG. Cuando todo esté OK, dame el comando de import para verlo en el nivel Preview.
+Hay arte nuevo o cambiado en C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Art\<sprite_id>\. Dime el comando de check de spritelab.py para correrlo en el Output Log; cuando te pegue el resultado, explícame cada ERROR en palabras sencillas (qué archivo, qué frame, qué está mal y cómo se arregla en Pixelorama). No toques los PNG. Cuando todo esté OK, dame el comando de import para verlo en el nivel Preview.
 ```
 
 ### Prompt 3: send to CENTRAL
 
 ```
-Copia la carpeta C:\SpriteLab\Art\<sprite_id>\ (el .pxo, los PNG y el .anim.json; nada de .uasset) a \\192.168.31.188\Incoming\LAPTOP\anims\<sprite_id>\. Si ya existe, crea dentro una subcarpeta con fecha y hora (en ese recurso no se puede borrar ni sobrescribir con seguridad). Luego escribe en la carpeta copiada un NOTES.md en inglés con: animaciones, frames y fps de cada una, ángulos, qué cambió respecto a la versión anterior y que el arte se dibujó a mano en Pixelorama. Copia también C:\SpriteLab\Scripts\ a \\192.168.31.188\Incoming\LAPTOP\spritelab_tools\ (con subcarpeta de fecha si ya existe) para la bitácora.
+Copia la carpeta C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Art\<sprite_id>\ (el .pxo, los PNG y el .anim.json; nada de .uasset) a \\192.168.31.188\Incoming\LAPTOP\anims\<sprite_id>\. Si ya existe, crea dentro una subcarpeta con fecha y hora (en ese recurso no se puede borrar ni sobrescribir con seguridad). Luego escribe en la carpeta copiada un NOTES.md en inglés con: animaciones, frames y fps de cada una, ángulos, qué cambió respecto a la versión anterior y que el arte se dibujó a mano en Pixelorama. Copia también C:\Users\Romelt\Documents\PixeloramaAIWorkspace\SpriteLab\Scripts\ a \\192.168.31.188\Incoming\LAPTOP\spritelab_tools\ (con subcarpeta de fecha si ya existe) para la bitácora.
 ```
 
 ## After sending
