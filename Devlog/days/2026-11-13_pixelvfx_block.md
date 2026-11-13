@@ -72,6 +72,12 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
     - The smoke step for the impact now expects **no** baked clip and no projectile left after the Fireball lands, so putting the explosion back by accident turns the run red.
     - Its screenshot came out empty on the first try: taken 0.4 s after the cast, the shockwave (0.35 s) was already gone. Guessing times was the mistake; the screenshot is now requested by the Fireball's own impact event, on the frame it lands.
 
+12. **Package, and what the packaged run found** (13:00 to 13:12, owner: "Sí, empaqueta", "Yes, package it"). From `main` at 4c88ed9 with a clean tree (the HUD rework of the other chat included).
+    - First package: `TeamTBD_Glyphbound.zip`, 277.3 MB, 98 s. The scripted run on the **packaged** exe passed every `pixelvfx` step: the cooked game finds the plugin's materials (always-cook directory), the loose clip files (`Data/Vfx`, 8 files in the zip) and plays the Fireball's flame. That was the one thing no Editor run could prove.
+    - The same run failed six **Entity** checks: `Entity art missing (body=0 eye=0 tentacles=0 material=0), keeping the placeholder look`. The boss's meshes and materials live in `/Game/Glyphbound/Enemies/Entity`, the code loads them by path, and that folder was not in `DirectoriesToAlwaysCook` (only `Materials` and `Weapons` were), so the cook left them out and the packaged boss was its placeholder. In the Editor everything on disk loads, so no uncooked run could see it. One line in `Config/DefaultGame.ini`.
+    - Second package: **299.7 MB** (the 22 MB are the Entity's art), 61 s, 65 files, no `.pdb`. Packaged run: 192 steps, no errors, the Entity with its body, eye and 10 tentacle chains.
+    - Lesson kept: the packaged scripted run is the only check that sees what the cook leaves out. Anything loaded by path needs its folder in the always-cook list.
+
 ## Results
 - **15 tests** of the conversion (pure logic), 15 s.
 - **Bake:** four Niagara Fluids clips in 51 s on CENTRAL (RTX 4080 Laptop). Each clip is a PNG of a few kilobytes plus a JSON file; the four PNGs together are 56 KB.
@@ -90,6 +96,7 @@ Translation: "let's do the minimal version you suggest. You are the architect. C
 - `pixelvfx_showcase_wide_hardware_rt.png`, `pixelvfx_showcase_FluidArcaneFire_hardware_rt.png`: the stage and the arcane fire close-up from the run with hardware ray tracing on.
 - `pixelvfx_fireball_flight.png`, `pixelvfx_fireball_impact.png`: the Fireball in the arena as it is now, in flight with the baked fire and on the frame it lands, with the shockwave alone (from the smoke run).
 - `pixelvfx_fireball_impact_cut.png`: the baked explosion on impact that the owner removed, kept here as the take that did not make the cut.
+- `pixelvfx_packaged_fireball_flight.png`, `pixelvfx_packaged_entity.png`: from the scripted run on the packaged exe: the Fireball with its baked flame, and the Entity with its art after the cook fix.
 - `pixelvfx_compare_FluidFire.png`: the live simulation (left, inside its red debug bounds) and the baked clip (right) side by side.
 
 ## Third-party material
