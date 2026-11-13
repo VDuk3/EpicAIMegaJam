@@ -10,15 +10,15 @@
 #                  of the albedo (GlowMask) are electronic lights with a slow pulse and a fast flicker.
 #                  Parameters: GlowColor (vector), Glow (scalar), Flash (scalar, 0..1, weak-point hit), FlashGlow.
 #   MI_EntityEye   instance of M_EntityBody for the eye, brighter (Glow EYE_GLOW).
-#   M_EntityHolo   the tentacles: additive, unlit, two-sided hologram. Rim light, a faint fill, the albedo's lights,
-#                  scanlines running up in world Z, flicker, fading towards the tips. World position offset sways each
-#                  tentacle (UV 1: U = 0 root .. 1 tip, V = phase per tentacle). Parameters: HoloColor, HoloGlow,
-#                  SwayAmount (cm), SwaySpeed (cycles per second), Flash (shared with the body: the hit flash).
+#   M_EntityHologram    copy of the Fab pack's M_Hologram (translucent, unlit) plus world position offset that sways
+#                       each tentacle (UV 1: U = 0 root .. 1 tip, V = phase per tentacle). Parameter SwayAmount (cm).
+#   MI_EntityTentacles  copy of the pack's MI_Hologram_7 on that master, recoloured green.
+# GB_ENTITY_DIR overrides the output folder (Import-Entity.ps1 -Preview: a scratch folder for the owner's review).
 import os
 import re
 import unreal
 
-MESH_DIR = "/Game/Glyphbound/Enemies/Entity"
+MESH_DIR = os.environ.get("GB_ENTITY_DIR", "/Game/Glyphbound/Enemies/Entity")   # -Preview imports elsewhere
 SOURCE_DIR = os.environ.get("GB_ENTITY_STAGE", "")
 MESHES = ["SM_Entity_Body", "SM_Entity_Eye", "SM_Entity_Tentacles"]
 TEXTURES = {
@@ -32,12 +32,20 @@ GLOW_COLOR = (0.12, 0.3, 1.0)       # the model's own blue
 BODY_GLOW = 6.0
 EYE_GLOW = 18.0
 FLASH_GLOW = 30.0
-HOLO_COLOR = (0.1, 1.0, 0.3)        # hologram green (owner, 2026-11-12: green, as holograms usually are, not blue)
-HOLO_GLOW = 2.5
+# Tentacles: the owner's Fab "Hologram Shader", instance 7 (blue dashes), recoloured green (owner, 2026-11-12: green,
+# as holograms usually are, not blue). Its blue values (0.10,0.39,0.90), (0.03,0.16,0.24), (0.05,0.26,0.34) become green.
+PACK_MASTER = "/Game/HologramShader/Materials/HologramShader/M_Hologram"
+PACK_INSTANCE = "/Game/HologramShader/Materials/HologramShader/MI/MI_Hologram_7"
+HOLO_MASTER = "M_EntityHologram"
+HOLO_INSTANCE = "MI_EntityTentacles"
+HOLO_GREEN = {
+    "Hologram Color": (0.10, 0.90, 0.25),
+    "Shell Color 1": (0.03, 0.24, 0.08),
+    "Shell Color 2": (0.05, 0.34, 0.12),
+}
+HOLO_SCALARS = {"Hologram Intensity": 2.5}   # the pack's 0.65 was the dimmest of the 25; barely visible on a tentacle
 SWAY_CM = 14.0
 SWAY_SPEED = 0.3
-SCAN_SPACING_CM = 7.0
-SCAN_SPEED = 0.5                    # lines per second, upwards
 
 MEL = unreal.MaterialEditingLibrary
 EAL = unreal.EditorAssetLibrary
@@ -268,50 +276,51 @@ def build_body(textures):
     return m
 
 
-def build_holo(textures):
-    m = get_or_create_material("M_EntityHolo")
-    m.set_editor_property("blend_mode", unreal.BlendMode.BLEND_ADDITIVE)
-    m.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
-    m.set_editor_property("two_sided", True)
+def build_pack_holo():
+    """The tentacles use the owner's Fab hologram (MI_Hologram_7, picked 2026-11-12) in green. Its master is copied
+    into our folder (the pack stays untouched) and gets the sway as world position offset: each tentacle circles
+    slowly, the tip most (UV 1 U squared), out of step by its phase (UV 1 V)."""
+    master_path = MESH_DIR + "/" + HOLO_MASTER
+    mi_path = MESH_DIR + "/" + HOLO_INSTANCE
+    for path in (mi_path, master_path, MESH_DIR + "/M_EntityHolo"):   # M_EntityHolo: our first, hand-made hologram
+        if EAL.does_asset_exist(path) and not EAL.delete_asset(path):
+            fail("could not delete %s" % path)
+    if not EAL.does_asset_exist(PACK_MASTER) or not EAL.does_asset_exist(PACK_INSTANCE):
+        fail("the Fab pack is missing (%s, %s)" % (PACK_MASTER, PACK_INSTANCE))
+    m = EAL.duplicate_asset(PACK_MASTER, master_path)
+    if not isinstance(m, unreal.Material):
+        fail("could not copy %s" % PACK_MASTER)
+    if MEL.get_material_property_input_node(m, unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET) is not None:
+        fail("%s already drives world position offset" % PACK_MASTER)
     g = Graph(m)
-    S = unreal.MaterialSamplerType
-    sway_uv = g.node(unreal.MaterialExpressionTextureCoordinate, -2400, 900, coordinate_index=1)
-    tip = g.mask(sway_uv, -2200, 900, "r")                   # 0 root .. 1 tip
-    phase = g.mask(sway_uv, -2200, 1000, "g")                # per tentacle
-    # Shape of the light: rim + faint fill + the albedo's lights (dots along each tentacle).
-    fres = g.node(unreal.MaterialExpressionFresnel, -1900, -500, exponent=2.5, base_reflect_fraction=0.0)
-    rim = g.mul(fres, g.scalar("Rim", -1900, -380, 1.0), -1700, -500)
-    dots = g.mul(g.mask(tex(g, textures, "T_Entity_GlowMask", -2200, -200, S.SAMPLERTYPE_MASKS), -1950, -200, "r"),
-                 g.scalar("Dots", -1900, -80, 1.6), -1700, -200)
-    shape = g.add(g.add(rim, g.scalar("Fill", -1700, -350, 0.1), -1500, -450), dots, -1300, -350)
-    # Scanlines in world Z, moving up: 0.55 + 0.45 * sin(2 pi * (z / spacing - t * speed)).
-    world = g.node(unreal.MaterialExpressionWorldPosition, -2400, 200)
-    z = g.mask(world, -2200, 200, "b")
-    lines = g.binary(unreal.MaterialExpressionSubtract,
-                     g.mul(z, g.scalar("ScanDensity", -2200, 300, 1.0 / SCAN_SPACING_CM), -2000, 200),
-                     g.time_times(SCAN_SPEED, -2200, 400), -1800, 250)
-    scan = g.wave(lines, -1650, 250, 0.45, 0.55)
-    # Flicker: 9 Hz shimmer and a slow 1.3 Hz breath.
-    flicker = g.mul(g.wave(g.time_times(9.0, -2200, 550), -1950, 550, 0.08, 0.92),
-                    g.wave(g.time_times(1.3, -2200, 700), -1950, 700, 0.1, 0.9), -1600, 600)
-    fade = g.unary(unreal.MaterialExpressionOneMinus, g.mul(tip, g.const(0.45, -2000, 820), -1800, 800), -1600, 800)
-    level = g.mul(g.mul(scan, flicker, -1350, 400), fade, -1150, 500)
-    bright = g.add(g.scalar("HoloGlow", -1150, 650, HOLO_GLOW),
-                   g.mul(g.scalar("Flash", -1150, 750, 0.0), g.const(6.0, -1150, 830), -950, 750), -800, 650)
-    color = g.mul(g.vector("HoloColor", -1000, 0, HOLO_COLOR), bright, -700, 100)
-    g.out(g.mul(g.mul(shape, level, -1000, -300), color, -450, -100), "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-    # Sway (world position offset): each tentacle circles slowly, the tip most (tip^2), out of step by its phase.
-    t = g.add(g.add(g.time_times(SWAY_SPEED, -2200, 1200), phase, -1900, 1150),
-              g.mul(tip, g.const(0.35, -2000, 1300), -1900, 1300), -1700, 1200)
-    s = g.unary(unreal.MaterialExpressionSine, t, -1500, 1150, period=1.0)
-    c = g.unary(unreal.MaterialExpressionCosine, t, -1500, 1300, period=1.0)
-    weight = g.mul(g.mul(tip, tip, -1500, 1450), g.scalar("SwayAmount", -1500, 1550, SWAY_CM), -1300, 1450)
-    xy = g.binary(unreal.MaterialExpressionAppendVector, s, c, -1300, 1200)
-    xyz = g.binary(unreal.MaterialExpressionAppendVector, xy, g.mul(s, g.const(0.4, -1300, 1350), -1150, 1350),
-                   -1000, 1250)
-    g.out(g.mul(xyz, weight, -800, 1300), "", unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
-    finish(m, "M_EntityHolo")
-    return m
+    x0, y0 = -3000, 3000
+    sway_uv = g.node(unreal.MaterialExpressionTextureCoordinate, x0, y0, coordinate_index=1)
+    tip = g.mask(sway_uv, x0 + 200, y0, "r")
+    phase = g.mask(sway_uv, x0 + 200, y0 + 100, "g")
+    t = g.add(g.add(g.time_times(SWAY_SPEED, x0, y0 + 250), phase, x0 + 400, y0 + 150),
+              g.mul(tip, g.const(0.35, x0 + 300, y0 + 350), x0 + 400, y0 + 300), x0 + 600, y0 + 200)
+    s = g.unary(unreal.MaterialExpressionSine, t, x0 + 800, y0 + 150, period=1.0)
+    c = g.unary(unreal.MaterialExpressionCosine, t, x0 + 800, y0 + 300, period=1.0)
+    weight = g.mul(g.mul(tip, tip, x0 + 800, y0 + 450), g.scalar("SwayAmount", x0 + 800, y0 + 550, SWAY_CM),
+                   x0 + 1000, y0 + 450)
+    xy = g.binary(unreal.MaterialExpressionAppendVector, s, c, x0 + 1000, y0 + 200)
+    xyz = g.binary(unreal.MaterialExpressionAppendVector, xy, g.mul(s, g.const(0.4, x0 + 1000, y0 + 350), x0 + 1150, y0 + 350),
+                   x0 + 1300, y0 + 250)
+    g.out(g.mul(xyz, weight, x0 + 1500, y0 + 300), "", unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    finish(m, HOLO_MASTER)
+    mi = EAL.duplicate_asset(PACK_INSTANCE, mi_path)
+    if not isinstance(mi, unreal.MaterialInstanceConstant):
+        fail("could not copy %s" % PACK_INSTANCE)
+    MEL.set_material_instance_parent(mi, m)
+    for name, rgb in HOLO_GREEN.items():
+        if not MEL.set_material_instance_vector_parameter_value(mi, name, unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0)):
+            fail("%s has no vector parameter '%s'" % (HOLO_INSTANCE, name))
+    for name, value in HOLO_SCALARS.items():
+        if not MEL.set_material_instance_scalar_parameter_value(mi, name, value):
+            fail("%s has no scalar parameter '%s'" % (HOLO_INSTANCE, name))
+    MEL.update_material_instance(mi)
+    log("material %s (copy of %s, green, sway)" % (HOLO_INSTANCE, PACK_INSTANCE))
+    return mi
 
 
 def make_instance(name, parent, params):
@@ -371,7 +380,7 @@ def main():
     textures = import_textures()
     meshes = import_meshes()
     body = build_body(textures)
-    holo = build_holo(textures)
+    holo = build_pack_holo()
     eye = make_instance("MI_EntityEye", body, {"Glow": EYE_GLOW})
     assign(meshes, {key("Entity_Body"): body, key("Entity_Eye"): eye, key("Entity_Holo"): holo})
     if not EAL.save_directory(MESH_DIR, only_if_is_dirty=False, recursive=True):

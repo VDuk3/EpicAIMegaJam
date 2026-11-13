@@ -13,7 +13,9 @@ param(
     [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
     [string]$Blender = 'C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe',
-    [int]$TimeoutSeconds = 900
+    [int]$TimeoutSeconds = 900,
+    # Import into /Game/Glyphbound/Enemies/Entity_Preview instead, for the owner's review before the real import.
+    [switch]$Preview
 )
 $Project = (Resolve-Path $Project).Path
 $projDir = Split-Path $Project -Parent
@@ -45,7 +47,11 @@ if ($LASTEXITCODE -ne 0 -or $out -notmatch 'REPORT' -or $out -match 'Traceback')
     Write-Host 'Blender step entity_export_fbx.py failed:'; Write-Host $out; Remove-Item -Recurse -Force $stage; exit 1
 }
 ($out -split "`n") | Where-Object { $_ -match '^(SPLIT|EYE|PART)' } | ForEach-Object { Write-Host "Blender: $($_.Trim())" }
-Copy-Item (Join-Path $stage 'export_report.json') (Join-Path $source 'export_report.json') -Force
+if ($Preview) { $env:GB_ENTITY_DIR = '/Game/Glyphbound/Enemies/Entity_Preview' }
+else {
+    $env:GB_ENTITY_DIR = '/Game/Glyphbound/Enemies/Entity'
+    Copy-Item (Join-Path $stage 'export_report.json') (Join-Path $source 'export_report.json') -Force
+}
 
 # 2. Import into Unreal from the temporary folder.
 $env:GB_ENTITY_STAGE = $stage
