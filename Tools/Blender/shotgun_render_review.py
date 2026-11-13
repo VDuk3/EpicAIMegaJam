@@ -3,8 +3,10 @@
 # Survey views are framed from the model's bounds, so they need no knowledge of the gun: top, bottom, left, right,
 # front, rear (orthographic, scale printed) and four three-quarter views. First-person views are added by name once
 # the gun's frame is known (see FP below).
-# Usage: blender -b --factory-startup --python shotgun_render_review.py -- <model.fbx|Shotgun.blend> <out_dir>
-#        [prefix] [view,view,...] [samples]
+# With "flat" as the last argument the gun is drawn unlit, its colour texture as it is: what the texture holds, with no
+# help from the lights (used to judge the cables' texels).
+# Usage: blender -b --factory-startup --python shotgun_render_review.py -- <model.fbx|model.glb|Shotgun.blend> <out_dir>
+#        [prefix] [view,view,...] [samples] [flat]
 import bpy, sys, os, math, glob
 from mathutils import Vector
 
@@ -13,12 +15,16 @@ path, out_dir = argv[0], argv[1]
 prefix = argv[2] if len(argv) > 2 else "v"
 views = argv[3].split(",") if len(argv) > 3 and argv[3] else None
 samples = int(argv[4]) if len(argv) > 4 else 64
+flat = len(argv) > 5 and argv[5] == "flat"
 os.makedirs(out_dir, exist_ok=True)
 if path.lower().endswith(".blend"):
     bpy.ops.wm.open_mainfile(filepath=path)
 else:
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.fbx(filepath=path)
+    if path.lower().endswith(".fbx"):
+        bpy.ops.import_scene.fbx(filepath=path)
+    else:
+        bpy.ops.import_scene.gltf(filepath=path)
     for im in bpy.data.images:
         if im.size[0] == 0:
             hits = glob.glob(os.path.join(os.path.dirname(path), "*.fbm", "*"))
@@ -32,12 +38,24 @@ else:
     xy = np.array([(ob.matrix_world @ v.co)[:2] for v in ob.data.vertices])
     best = min((np.ptp(xy[:, 0] * math.cos(a) - xy[:, 1] * math.sin(a)), a)
                for a in np.radians(np.arange(-25, 25, 0.05)))
-    ob.rotation_euler.z += best[1]
+    ob.rotation_mode = "XYZ"                            # the glTF importer leaves quaternions
+    ob.rotation_euler = (0.0, 0.0, best[1])
     bpy.context.view_layer.update()
     xs = [(ob.matrix_world @ v.co).x for v in ob.data.vertices]
     ob.location.x -= (min(xs) + max(xs)) / 2
     bpy.context.view_layer.update()
     print("STRAIGHTEN yaw_deg", round(math.degrees(best[1]), 2), "width_m", round(float(best[0]), 4))
+
+if flat:
+    for m in bpy.data.materials:
+        nt = m.node_tree
+        tex = next((n for n in nt.nodes if n.bl_idname == "ShaderNodeTexImage"), None)
+        out = next((n for n in nt.nodes if n.bl_idname == "ShaderNodeOutputMaterial"), None)
+        if tex and out:
+            tex.interpolation = "Closest"
+            em = nt.nodes.new("ShaderNodeEmission")
+            nt.links.new(tex.outputs["Color"], em.inputs["Color"])
+            nt.links.new(em.outputs[0], out.inputs["Surface"])
 
 sc = bpy.context.scene
 sc.render.engine = "CYCLES"
@@ -132,6 +150,13 @@ FP = {
     "left_receiver": ((0.34, 0.06, 0.24), (0.0, -0.06, 0.20), 50),
     "left_front": ((0.34, -0.22, 0.24), (0.0, -0.32, 0.17), 50),
     "left_stock": ((0.40, 0.36, 0.22), (0.0, 0.30, 0.17), 50),
+    # the cables: the bundle on the left of the receiver, and the two at the front (left and right of the handguard)
+    "cables_receiver": ((0.30, 0.13, 0.30), (0.035, 0.125, 0.245), 85),
+    "cables_receiver_fp": ((0.13, 0.42, 0.42), (0.035, 0.12, 0.245), 85),
+    "cables_receiver_top": ((0.10, 0.125, 0.50), (0.035, 0.125, 0.245), 85),
+    "cables_front_left": ((0.32, -0.36, 0.22), (0.04, -0.36, 0.155), 85),
+    "cables_front_right": ((-0.32, -0.36, 0.22), (-0.04, -0.36, 0.155), 85),
+    "cables_front_fp": ((0.13, 0.42, 0.42), (0.04, -0.36, 0.16), 130),
 }
 
 for v in (views or list(SURVEY) + list(QUARTER)):

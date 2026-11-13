@@ -1,6 +1,8 @@
-# Headless inventory of the shotgun's Tripo FBX as it comes: objects, size, axes, triangles, loose pieces before and
-# after welding vertices, open edges, materials, images and UV maps. Read-only: nothing is saved.
-# Usage: blender -b --factory-startup --python shotgun_inspect.py -- <model.fbx> [weld_mm]
+# Headless inventory of the shotgun's Tripo model (FBX or GLB) as it comes: objects, size, axes, triangles, loose
+# pieces before and after welding vertices, open edges, materials, images and UV maps. Read-only: nothing is saved,
+# except the textures when a dump folder is given (PNG, full size, one file per image, and one per channel for
+# packed maps).
+# Usage: blender -b --factory-startup --python shotgun_inspect.py -- <model.fbx|model.glb> [weld_mm] [texture_dump_dir]
 import bpy, bmesh, sys, os, glob
 from mathutils import Vector
 
@@ -8,7 +10,11 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 fbx = argv[0]
 weld = (float(argv[1]) if len(argv) > 1 else 0.01) / 1000.0
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.fbx(filepath=fbx)
+if fbx.lower().endswith(".fbx"):
+    bpy.ops.import_scene.fbx(filepath=fbx)
+else:
+    bpy.ops.import_scene.gltf(filepath=fbx)
+dump_dir = argv[2] if len(argv) > 2 else None
 print("BLENDER", bpy.app.version_string)
 
 for im in bpy.data.images:
@@ -19,6 +25,26 @@ for im in bpy.data.images:
             im.filepath = hits[0]
             im.reload()
     print("IMAGE", im.name, tuple(im.size), im.colorspace_settings.name, im.filepath)
+
+if dump_dir:
+    import numpy as np
+    os.makedirs(dump_dir, exist_ok=True)
+    for im in bpy.data.images:
+        if im.size[0] == 0 or im.name in ("Render Result", "Viewer Node"):
+            continue
+        w, h = im.size
+        px = np.empty(w * h * 4, dtype=np.float32)
+        im.pixels.foreach_get(px)
+        px = px.reshape(h, w, 4)
+        stats = ["%s min %.3f mean %.3f max %.3f std %.3f" % (c, px[..., i].min(), px[..., i].mean(), px[..., i].max(), px[..., i].std())
+                 for i, c in enumerate("RGBA")]
+        print("IMAGE_STATS", im.name, "channels", im.channels, "depth", im.depth, "|", " | ".join(stats))
+        safe = "".join(ch if ch.isalnum() else "_" for ch in im.name)
+        c = im.copy()
+        c.filepath_raw = os.path.join(dump_dir, safe + ".png")
+        c.file_format = "PNG"
+        c.save()
+        print("DUMP", c.filepath_raw)
 
 for ob in bpy.data.objects:
     print("OBJECT", ob.name, ob.type, "parent", ob.parent.name if ob.parent else "-",
@@ -34,7 +60,7 @@ for m in bpy.data.materials:
             print("   link", l.from_node.name, l.from_socket.identifier, "->", l.to_node.name, l.to_socket.identifier)
         b = m.node_tree.nodes.get("Principled BSDF")
         if b:
-            for k in ("Metallic", "Roughness"):
+            for k in ("Metallic", "Roughness", "Emission Strength", "Alpha"):
                 print("   ", k, b.inputs[k].default_value, "linked" if b.inputs[k].is_linked else "")
 
 
