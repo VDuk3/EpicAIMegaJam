@@ -5,8 +5,9 @@
 #   SM_Entity_Tentacles  every tentacle, simplified (decimated): a hologram. Slot "Entity_Holo".
 #                        UV 1 ("Sway"): U = 0 at the root, 1 at the tip (how much the tip sways);
 #                        V = a random phase per tentacle, so they do not move in step.
-# How the fused mesh is split: a face is body if its centre is inside a tilted ellipsoid fitted to the shell (picked by
-# eye on coloured renders); small islands of either side are given to the other. The eye is the body faces whose UVs
+# How the fused mesh is split: a face is tentacle if its centre is outside a tilted ellipsoid fitted to the shell
+# (picked by eye on coloured renders); then every UV chart that is at least CHART_SHARE tentacle becomes tentacle whole
+# (this carries each tentacle's root into the shell); small islands of either side are given to the other. The eye is the body faces whose UVs
 # fall in the eye's two islands of the albedo atlas.
 # Source frame: eye towards -Y, up +Z, metres, ~1 m tall. Export frame: turned +90 deg around Z so the eye looks to +X
 # (Unreal forward), scaled by SCALE, origin at the centre of the shell. Same FBX settings as the guns.
@@ -29,7 +30,9 @@ BODY_C = Vector((0.0, 0.05, 0.70))             # centre of the shell (source fra
 BODY_R = Vector((0.25, 0.33, 0.27))            # ellipsoid radii
 BODY_TILT = math.radians(25.0)                 # the shell leans forward: its long axis rises towards the back
 TILT = Matrix.Rotation(-BODY_TILT, 3, "X")
-MIN_ISLAND = 150                               # faces; smaller islands of one side go to the other
+CHART_SHARE = 0.3                              # a UV chart this much outside the shell is tentacle, whole
+MIN_DECIMATED = 10                             # decimation leaves a few 2-triangle crumbs; islands under this are deleted
+MIN_ISLAND = 150                             # faces; smaller islands of one side go to the other
 EYE_UV = [((0.374, 0.702), 0.052), ((0.137, 0.121), 0.026)]   # (centre, radius) in UV space: ring + iris, pupil
 EYE_FRONT, EYE_RADIUS = 0.2, 0.09             # eye faces: in front of the shell centre by this much, within this radius
 TENTACLE_RATIO = 0.3                          # decimate: the hologram does not need the panel detail
@@ -64,13 +67,51 @@ def islands(bm, faces):
     return out
 
 
+def uv_charts(bm, uv):
+    """Face islands connected by edges whose two faces share the same UVs (no seam)."""
+    def joined(e):
+        if len(e.link_faces) != 2:
+            return False
+        f1, f2 = e.link_faces
+        for v in e.verts:
+            u1 = next(l[uv].uv for l in f1.loops if l.vert == v)
+            u2 = next(l[uv].uv for l in f2.loops if l.vert == v)
+            if (u1 - u2).length > 1e-4:
+                return False
+        return True
+    seen, out = set(), []
+    for f in bm.faces:
+        if f.index in seen:
+            continue
+        stack, comp = [f], []
+        seen.add(f.index)
+        while stack:
+            a = stack.pop()
+            comp.append(a.index)
+            for e in a.edges:
+                if joined(e):
+                    for b in e.link_faces:
+                        if b.index not in seen:
+                            seen.add(b.index)
+                            stack.append(b)
+        out.append(comp)
+    return out
+
+
 # ---- classify the faces ----
 bm = bmesh.new()
 bm.from_mesh(SRC.data)
 bm.faces.ensure_lookup_table()
 uv = bm.loops.layers.uv.active
-body = {f for f in bm.faces if shell_r(f.calc_center_median()) < 1.0}
-tent = set(bm.faces) - body
+tent = {f for f in bm.faces if shell_r(f.calc_center_median()) >= 1.0}
+# The ellipsoid alone left the first ~5% of each tentacle on the body (owner, 2026-11-12). Tripo's atlas cuts the mesh
+# into UV charts that follow the parts, so a chart that is mostly tentacle goes to the tentacles whole, its root
+# inside the shell included.
+charts = uv_charts(bm, uv)
+for chart in charts:
+    if sum(bm.faces[i] in tent for i in chart) >= CHART_SHARE * len(chart):
+        tent.update(bm.faces[i] for i in chart)
+body = set(bm.faces) - tent
 moved = 0
 for comp in islands(bm, tent):
     if len(comp) < MIN_ISLAND:
@@ -137,6 +178,14 @@ def decimate(ob):
     mod.ratio = TENTACLE_RATIO
     mod.use_collapse_triangulate = True
     bpy.ops.object.modifier_apply(modifier=mod.name)
+    b = bmesh.new()
+    b.from_mesh(ob.data)
+    b.faces.ensure_lookup_table()
+    crumbs = [b.faces[i] for c in islands(b, set(b.faces)) if len(c) < MIN_DECIMATED for i in c]
+    bmesh.ops.delete(b, geom=crumbs, context="FACES")
+    b.to_mesh(ob.data)
+    b.free()
+    print("DECIMATE removed %d crumb faces" % len(crumbs))
     for p in ob.data.polygons:
         p.use_smooth = True                    # the hologram's rim light needs smooth normals
 
@@ -151,7 +200,9 @@ def set_sway_uv(ob):
     rmax = max(shell_r(v.co) for v in b.verts)
     rng = random.Random(26)
     count = 0
-    for comp in islands(b, set(b.faces)):
+    comps = islands(b, set(b.faces))
+    print("TENTACLE islands after decimate:", sorted(len(c) for c in comps))
+    for comp in comps:
         phase = rng.random()
         count += 1
         for i in comp:

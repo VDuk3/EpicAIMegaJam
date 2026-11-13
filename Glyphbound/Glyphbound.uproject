@@ -302,7 +302,7 @@
 		},
 		{
 			"Name": "Fab",
-			"Enabled": false
+			"Enabled": true
 		},
 		{
 			"Name": "FacialAnimation",
