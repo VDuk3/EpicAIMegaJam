@@ -48,7 +48,11 @@ Prompt: `Prompts/perks_per_gun_review_sol.md`. **No findings.** Sol checked six 
 - Full smoke: `done=True crashed=False LogGB errors=0`, 60 screenshots.
 - Tests: 44 run, 0 failed.
 - Builds: the Editor build and the game target build both succeeded.
-- **Not packaged in this block.**
+- **Package** (owner: "Yes, package"), made from `e427900` with a clean tree while holding the machine lock: `TeamTBD_Glyphbound.zip`, **299.7 MB**, BuildCookRun 130 s.
+- **Full smoke on the packaged game:** `done=True crashed=False LogGB errors=0`, no LogGB warnings, 60 screenshots, 131 s.
+  - The packaged data has the 29 skill nodes.
+  - The pistol's Rapid Reload gives 0.84 s, and the rifle's Arcane Conduit gives 7.8 build-up.
+  - The shotgun has its 6 meshes, and the Entity loads its real art.
 - **Implementer:** the architect, not Muse Spark. This was a data rewrite with a balance check and a few smoke lines, faster to do directly than to hand over.
 
 ## Screenshot
