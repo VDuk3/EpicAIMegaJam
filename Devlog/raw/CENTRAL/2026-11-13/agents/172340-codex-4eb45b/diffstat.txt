@@ -1,0 +1,8 @@
+ Design/GDD.md                                      |  6 +++--
+ Devlog/raw/CENTRAL/2026-11-13/agents.jsonl         |  1 +
+ ...aude-924f00ca-194b-43f9-be45-8618761a9e8d.jsonl | 12 +++++++++
+ Devlog/raw/_import.log                             |  2 ++
+ Glyphbound/Content/Data/Skills.json                | 29 ++++++++++++++++------
+ .../Source/Glyphbound/Core/GBDevCommands.cpp       |  4 +--
+ Tools/Balance/balance_model.js                     |  8 +++++-
+ 7 files changed, 49 insertions(+), 13 deletions(-)

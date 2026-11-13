@@ -117,6 +117,7 @@ namespace GBSmokeRun
 	}
 	static TWeakObjectPtr<AGBEnemyCharacter> ShotgunFlashTarget;
 	static FGBAmmoState ShotgunAmmoBefore;
+	static int32 ShotgunTubePointsBefore = 0;
 	// The reload from 3 shells: the game time it started and the time one shell takes (ReloadTime moves with the Rapid Reload perk).
 	static double ShotgunReloadStartSim = 0.0;
 	static float ShotgunCycleSeconds = 0.333f;
@@ -532,9 +533,9 @@ namespace GBSmokeRun
 			if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World))
 			{
 				UE_LOG(LogGB, Display, TEXT("SMOKE skills loaded=%d"), Data->GetSkillNodes().Num());
-				if (Data->GetSkillNodes().Num() != 29)
+				if (Data->GetSkillNodes().Num() != 30)
 				{
-					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 29 skill nodes, found %d"), Data->GetSkillNodes().Num());
+					UE_LOG(LogGB, Error, TEXT("SMOKE skills: expected 30 skill nodes, found %d"), Data->GetSkillNodes().Num());
 				}
 				if (Data->GetSkillNodes().Num() > 0)
 				{
@@ -2327,6 +2328,72 @@ namespace GBSmokeRun
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun cancel FAILED: %d / %d after the switch, was %d / %d (expected the shells already loaded to stay, at least 2)"),
 					Ammo.InMagazine, Ammo.SpareMagazines, ShotgunAmmoBefore.InMagazine, ShotgunAmmoBefore.SpareMagazines);
+			}
+		});
+		// Extended Tube changes the tube size while the game runs (Sol 6.1 review): buy it, fill the bigger tube, start a
+		// reload, then reset the skills mid-reload. The gun must drop back to its own size at once, with the same result
+		// a weapon swap would give, and the reload planned for the old size must stop.
+		Add(SC + 0.7f, TEXT("shotgun tube perk: Extended Tube 3, tube refilled to 9"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			if (!Gun || !Skills)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tube perk: no shotgun in hand"));
+				return;
+			}
+			ShotgunTubePointsBefore = Skills->GetPoints();
+			Skills->AddPoints(5);
+			Skills->Unlock(FName(TEXT("Weapon_Damage")));
+			Skills->Unlock(FName(TEXT("Weapon_Shotgun_FireRate")));
+			for (int32 i = 0; i < 3; ++i)
+			{
+				Skills->Unlock(FName(TEXT("Weapon_Shotgun_Shells")));
+			}
+			Gun->RefillAmmo();
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun tube perk: size %d, ammo %d / %d"), Gun->GetMagazineSize(), Ammo.InMagazine, Ammo.SpareMagazines);
+			if (Gun->GetMagazineSize() != 9 || Ammo.InMagazine != 9 || Ammo.SpareMagazines != 36)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tube perk FAILED: size %d, ammo %d / %d (expected 9, 9 / 36)"), Gun->GetMagazineSize(), Ammo.InMagazine, Ammo.SpareMagazines);
+			}
+			// Two shells out, then a reload toward the 9-shell tube.
+			FGBAmmoState Partial = Ammo;
+			Partial.InMagazine = 7;
+			Gun->SetAmmo(Partial);
+			Gun->Reload();
+		});
+		Add(SC + 0.8f, TEXT("shotgun tube perk: reset the skills in the middle of the reload"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			if (!Gun || !Skills)
+			{
+				return;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun tube perk: reloading=%d ammo %d / %d before the reset"), Gun->IsReloading() ? 1 : 0, Gun->GetAmmo().InMagazine, Gun->GetAmmo().SpareMagazines);
+			if (!Gun->IsReloading())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tube perk FAILED: not reloading before the reset, so the mid-reload case is not tested"));
+			}
+			Skills->ResetAll();
+			Skills->AddPoints(-5);
+		});
+		Add(SC + 0.95f, TEXT("shotgun tube perk: back to 6 shells, reload stopped, reserve capped"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBGun* Gun = ShotgunInHand(Player);
+			UGBSkillTreeComponent* Skills = Player->GetSkillTree();
+			if (!Gun || !Skills)
+			{
+				return;
+			}
+			const FGBAmmoState Ammo = Gun->GetAmmo();
+			UE_LOG(LogGB, Display, TEXT("SMOKE shotgun tube perk: after the reset size %d, ammo %d / %d, reloading=%d, points %d (were %d)"),
+				Gun->GetMagazineSize(), Ammo.InMagazine, Ammo.SpareMagazines, Gun->IsReloading() ? 1 : 0, Skills->GetPoints(), ShotgunTubePointsBefore);
+			if (Gun->GetMagazineSize() != 6 || Ammo.InMagazine != 6 || Ammo.SpareMagazines != 24 || Gun->IsReloading() || Skills->GetPoints() != ShotgunTubePointsBefore)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE shotgun tube perk FAILED: size %d, ammo %d / %d, reloading=%d, points %d (expected 6, 6 / 24, no reload, %d points)"),
+					Gun->GetMagazineSize(), Ammo.InMagazine, Ammo.SpareMagazines, Gun->IsReloading() ? 1 : 0, Skills->GetPoints(), ShotgunTubePointsBefore);
 			}
 		});
 		Add(SC + 1.2f, TEXT("shotgun done: pump, shell and root at rest; staff back in hand; clock back"), [SC, SG](UWorld*, AGBPlayerCharacter* Player)

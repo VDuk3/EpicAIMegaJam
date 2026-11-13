@@ -87,15 +87,15 @@
 			"Row": 1
 		},
 		{
-			"Id": "Weapon_Pistol_Recoil",
+			"Id": "Weapon_Pistol_QuickDraw",
 			"Tree": "Weapon",
 			"Branch": "Pistol",
-			"DisplayName": "Steady Grip",
-			"Description": "Pistol: 20% less recoil per rank.",
+			"DisplayName": "Quick Draw",
+			"Description": "Pistol: aim 20% faster and move 10% faster while aiming, per rank.",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Pistol_FireRate" ],
-			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Pistol.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Pistol.AimTime", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Pistol.AimMoveSpeedMult", "Op": "Add", "Value": 0.1 } ],
 			"Column": 2,
 			"Row": 1
 		},
@@ -111,6 +111,19 @@
 			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.FalloffFarMult", "Op": "Add", "Value": 0.2 } ],
 			"Column": 0,
 			"Row": 0
+		},
+		{
+			"Id": "Weapon_Rifle_ExtendedMag",
+			"Tree": "Weapon",
+			"Branch": "Rifle",
+			"DisplayName": "Extended Mag",
+			"Description": "Rifle: 5 more rounds per magazine per rank (spare magazines too).",
+			"Cost": 1,
+			"MaxRank": 3,
+			"Requires": [ "Weapon_RifleFar" ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Rifle.MagazineSize", "Op": "Add", "Value": 5 } ],
+			"Column": 0,
+			"Row": 1
 		},
 		{
 			"Id": "Weapon_Rifle_FireRate",
@@ -204,15 +217,15 @@
 			"Row": 1
 		},
 		{
-			"Id": "Weapon_Shotgun_Recoil",
+			"Id": "Weapon_Shotgun_Shells",
 			"Tree": "Weapon",
 			"Branch": "Shotgun",
-			"DisplayName": "Steady Grip",
-			"Description": "Shotgun: 20% less recoil per rank.",
+			"DisplayName": "Extended Tube",
+			"Description": "Shotgun: the tube holds 1 more shell per rank (and the reserve grows with it).",
 			"Cost": 1,
 			"MaxRank": 3,
 			"Requires": [ "Weapon_Shotgun_FireRate" ],
-			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.RecoilPitch", "Op": "Multiply", "Value": 0.8 }, { "Stat": "Weapon.Shotgun.RecoilYaw", "Op": "Multiply", "Value": 0.8 } ],
+			"ModifiersPerRank": [ { "Stat": "Weapon.Shotgun.MagazineSize", "Op": "Add", "Value": 1 } ],
 			"Column": 2,
 			"Row": 1
 		},

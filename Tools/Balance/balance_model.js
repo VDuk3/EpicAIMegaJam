@@ -51,7 +51,7 @@ const BUILDS = {
 	ValkyrieFuture: { points: 29, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 2 } },
 	Entity: { points: 34, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Spell_FireballDamage: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_FireballBlast: 3, Spell_RuneRadius: 1 } },
 	// The two extremes at the full budget, to see how far apart specialists land.
-	GunSpecialist36: { points: 36, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Weapon_PrecisionRecovery: 3, Weapon_Pistol_Recoil: 3, Weapon_ShotgunClose: 3, Weapon_Shotgun_Spread: 3 } },
+	GunSpecialist36: { points: 36, sword: true, ranks: { Weapon_Damage: 3, Weapon_Pistol_FireRate: 3, Weapon_Pistol_Reload: 3, Weapon_Headshot: 3, Weapon_PistolHeadshot: 3, Weapon_PrecisionRecovery: 3, Weapon_Pistol_QuickDraw: 3, Weapon_ShotgunClose: 3, Weapon_Shotgun_Spread: 3 } },
 	PureMage36: { points: 36, sword: true, ranks: { Spell_FireballDamage: 3, Spell_FireballBlast: 3, Spell_LightningDamage: 3, Spell_ManaCost: 3, Spell_Cooldown: 3, Spell_FlamethrowerDamage: 3, Spell_RuneRadius: 3, Spell_OrbDuration: 3, Spell_FireWallDuration: 3, Spell_IceFloorSlow: 3 } }
 };
 // Which build an encounter is fought with (by id prefix, first match wins).
@@ -170,6 +170,12 @@ line(['Perk', 'Page', 'Points', 'Pistol', 'Rifle', 'Shotgun', 'Best / point', 'O
 		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('EnchantBuildUpMult') >= 0)) { other = 'build-up +' + num(100 * (applyMods(1, s.ModifiersPerRank.map((m) => m.Stat), { [s.Id]: s.MaxRank }) - 1), 0) + '%'; }
 		if (s.ModifiersPerRank.some((m) => m.Stat === 'PrecisionRecovery')) { other = 'heal 3% on weak-point kills'; }
 		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('HeadshotMult') >= 0 && m.Stat.indexOf('Weapon.All') === 0)) { other = 'also staff and sword'; }
+		// Magazine perks also change the ammo a gun carries (spare magazines hold the bigger magazine; a round-by-round gun's
+		// reserve is magazines x tube size): show the change of the damage the full load deals before the gun runs dry.
+		const ammo = guns.map((w) => { const a0 = weaponRow(w, ref, false).carriedExpected; const a1 = weaponRow(w, withIt, false).carriedExpected; return isFinite(a0) && a0 > 0 ? a1 / a0 - 1 : 0; });
+		const ammoBest = Math.max.apply(null, ammo);
+		if (ammoBest > 0.005) { other = (other ? other + ', ' : '') + 'ammo damage +' + num(100 * ammoBest, 0) + '%'; }
+		if (s.ModifiersPerRank.some((m) => m.Stat.indexOf('AimTime') >= 0)) { other = 'aim ' + num(100 * (1 - applyMods(1, ['Weapon.Pistol.AimTime'], { [s.Id]: s.MaxRank })), 0) + '% faster, move while aiming +' + num(100 * 0.1 * s.MaxRank, 0) + ' pts'; }
 		line([s.Id.replace('Weapon_', ''), s.Branch || 'hub', points, ...gains.map((g) => g > 0.0005 ? '+' + num(100 * g, 1) + '%' : '-'), best > 0.0005 ? '+' + num(100 * best / points, 1) + '%' : '-', other], W);
 	}
 }

@@ -450,6 +450,7 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	// Holographic ammo display: the text is drawn into a small render target, only when it changes (UpdateViewModel).
 	ViewModelDisplayTarget = nullptr;
 	ShownDisplayText.Reset();
+	ShownDisplayCapacity = -1;
 	if (ViewModelDisplayMID && FApp::CanEverRender())
 	{
 		ViewModelDisplayTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), AmmoDisplayWidth, AmmoDisplayHeight);
@@ -1086,9 +1087,12 @@ void AGBGun::UpdateViewModel(float DeltaSeconds)
 	{
 		// A round-by-round gun shows the live count while it loads; a magazine gun shows -- until the new magazine is in.
 		const FString Wanted = (bReloading && !ReloadsPerRound()) ? FString(AmmoDisplayReloadText) : FString::FromInt(Ammo.InMagazine);
-		if (Wanted != ShownDisplayText)
+		// The pips depend on the capacity too, which a perk can change with the count unchanged.
+		const int32 Capacity = GetMagazineSize();
+		if (Wanted != ShownDisplayText || Capacity != ShownDisplayCapacity)
 		{
 			ShownDisplayText = Wanted;
+			ShownDisplayCapacity = Capacity;
 			ViewModelDisplayTarget->UpdateResource();
 		}
 	}
@@ -1218,12 +1222,57 @@ int32 AGBGun::GetMaxSpareMagazines() const
 	return ReloadsPerRound() ? Magazines * GetMagazineSize() : Magazines;
 }
 
+void AGBGun::ClampAmmoToCapacity(FGBAmmoState& InOut) const
+{
+	const int32 Capacity = GetMagazineSize();
+	InOut.InMagazine = FMath::Max(0, InOut.InMagazine);
+	InOut.SpareMagazines = FMath::Max(0, InOut.SpareMagazines);
+	if (InOut.InMagazine > Capacity)
+	{
+		if (ReloadsPerRound())
+		{
+			InOut.SpareMagazines += InOut.InMagazine - Capacity;
+		}
+		InOut.InMagazine = Capacity;
+	}
+	InOut.SpareMagazines = FMath::Min(InOut.SpareMagazines, GetMaxSpareMagazines());
+}
+
+void AGBGun::ReconcileCapacity()
+{
+	const int32 Capacity = GetMagazineSize();
+	if (Capacity == LastKnownCapacity)
+	{
+		return;
+	}
+	const bool bFirstLook = LastKnownCapacity < 0;
+	LastKnownCapacity = Capacity;
+	// A perk changed the magazine (bought or reset): a reload in progress was planned for the old size, so it stops
+	// (rounds already loaded stay) and the player reloads again; the ammo follows the same rule as a restore (SetAmmo),
+	// so keeping the gun in hand or swapping it away gives the same result (Sol 6.1 review).
+	// The first look has no earlier plan to stop, but the ammo is still held to the size (a gun spawned full under a perk
+	// that was reset before its first tick).
+	if (!bFirstLook)
+	{
+		CancelReload();
+	}
+	FGBAmmoState Clamped = Ammo;
+	ClampAmmoToCapacity(Clamped);
+	if (Clamped.InMagazine != Ammo.InMagazine || Clamped.SpareMagazines != Ammo.SpareMagazines)
+	{
+		Ammo = Clamped;
+	}
+	NotifyEquipmentChanged();
+}
+
 void AGBGun::SetAmmo(const FGBAmmoState& InAmmo)
 {
 	CancelReload();
 	bFireWhenLoaded = false;
-	Ammo.InMagazine = FMath::Clamp(InAmmo.InMagazine, 0, GetMagazineSize());
-	Ammo.SpareMagazines = FMath::Clamp(InAmmo.SpareMagazines, 0, GetMaxSpareMagazines());
+	FGBAmmoState Clamped = InAmmo;
+	ClampAmmoToCapacity(Clamped);
+	Ammo = Clamped;
+	LastKnownCapacity = GetMagazineSize();
 	NotifyEquipmentChanged();
 }
 
@@ -1233,6 +1282,7 @@ void AGBGun::RefillAmmo()
 	bFireWhenLoaded = false;
 	Ammo.InMagazine = GetMagazineSize();
 	Ammo.SpareMagazines = GetMaxSpareMagazines();
+	LastKnownCapacity = Ammo.InMagazine; // the full load is the current size: nothing left to reconcile
 	NotifyEquipmentChanged();
 }
 
@@ -1267,6 +1317,9 @@ int32 AGBGun::AddSpareMagazines(int32 Count)
 
 void AGBGun::Reload()
 {
+	// A perk may have changed the size since the last tick: settle it first, so the plan below uses the new size and
+	// the next tick does not cancel it as a stale one (Sol 6.1 re-review).
+	ReconcileCapacity();
 	if (bReloading || !bEquipped)
 	{
 		return;
@@ -1436,6 +1489,7 @@ void AGBGun::StartPrimary()
 
 void AGBGun::Tick(float DeltaSeconds)
 {
+	ReconcileCapacity();
 	if (bReloading && ReloadsPerRound())
 	{
 		ReloadElapsed += DeltaSeconds;

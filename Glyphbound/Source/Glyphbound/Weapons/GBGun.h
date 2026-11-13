@@ -243,6 +243,15 @@ protected:
 	UPROPERTY() TObjectPtr<UCanvasRenderTarget2D> ViewModelDisplayTarget = nullptr;
 	/** Text last drawn into the render target (the cache that decides whether a redraw is needed). */
 	FString ShownDisplayText;
+	/** Magazine capacity the display was last drawn for (its pips depend on it). */
+	int32 ShownDisplayCapacity = -1;
+	/** Magazine capacity seen on the last tick. Perks can change it while the game runs (Extended Mag, Extended Tube). */
+	int32 LastKnownCapacity = -1;
+	/** The one rule for ammo against the current capacity: loaded rounds above it go back to a round-by-round gun's
+	 *  reserve (a magazine gun cannot store loose rounds), then the reserve is capped. Used by SetAmmo and on a change. */
+	void ClampAmmoToCapacity(FGBAmmoState& InOut) const;
+	/** Called every tick: when the capacity changed (a perk bought or reset) the reload stops and the ammo is clamped. */
+	void ReconcileCapacity();
 	/** Seconds since the last weak-point hit. Negative = the light is off. */
 	float WeakPointFlashElapsed = -1.f;
 	float LastFlashSent = -1.f;
