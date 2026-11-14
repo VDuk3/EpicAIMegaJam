@@ -74,3 +74,15 @@ Still imperfect, and said to the owner: boots keep some blotched texture; set B'
 Media: `media/2026-11-14/orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim` (four sets side by side), `orc_refit_gauntlets.png`, `_heads`, `_torsos`, `_arms`, `_legs` (the same zone of each set).
 
 Next, only on the owner's yes: import (`SK_Orc`, `SK_Orc_Armored`, 36 armor meshes, the body's textures), point the five armed orcs at `SK_Orc_Armored`, look at them in the game.
+
+## The owner's review of the renders: three corrections
+
+> 1. Esta el pulgar del lado que no es. 2. Esta torcido. 3. Quita la parte superior de las botas
+
+Translation: (1, on set B's gauntlet) the thumb is on the wrong side; (2, on set B's helmet) it is crooked; (3) take the upper part of the boots off.
+
+- **Thumb.** Set B's glove is a left one in the line-up (the other three are right ones), and it had been used for the right hand, its mirror for the left. Two fixes failed before one worked: mirroring the piece before registering it (it was laid palm outwards, cuff twisted 46 degrees) and letting the registration choose between the piece and its mirror (right for A, C and D by 3.5 against 7.5, wrong for B by 5.7 against 7.1; a mitten is nearly its own mirror image). What works: register the piece as it is, which lays it well, then reflect it side to side in the hand's own frame, which moves the thumb across and nothing else. The registration also got a thumb term (distance from the orc's thumb to the glove's surface).
+- **Helmet.** Set B's helmet stands 13.5 degrees off the front in the line-up. Every helmet is now turned to its own plane of symmetry before it is fitted (the turn that makes it most alike to its mirror image): B -13.5, D -5, C -2.5, A 0.
+- **Boots.** Cut with a plane at 18.5 cm (the ankle); the greaves slide down and stretch up to 20 % to end there. Cuts are real cuts through the faces now; deleting vertices had left ragged edges.
+
+Media, replaced: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_heads`, `_legs`; new: `orc_refit_B_gauntlet.png` (set B's right hand from outside, front and inside, and its left hand).

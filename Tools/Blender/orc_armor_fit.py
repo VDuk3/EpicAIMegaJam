@@ -17,11 +17,13 @@ from mathutils.bvhtree import BVHTree
 
 HANDY = ("hand", "index", "middle", "ring", "pinky", "thumb")
 # per set and slot: hand-set numbers, each one read off a review render (armor_review_render.py)
+BOOT_TOP = 0.185     # m above the floor: the boots are cut here (ankle); the greaves come down to this height
 TUNE = {
     ("A", "Helmet"): {"s": 2.75}, ("B", "Helmet"): {"s": 2.85, "dy": -0.025}, ("C", "Helmet"): {"s": 3.15, "dz": 0.07, "dy": 0.015}, ("D", "Helmet"): {"s": 2.75},
     ("D", "Chest"): {"top": 1.87},
     ("A", "Shin"): {"cut": 0.38}, ("B", "Shin"): {"cut": 0.20, "cap": 2.2}, ("C", "Shin"): {"cut": 0.25}, ("D", "Shin"): {"cut": 0.36},
     ("A", "Knee"): {"kind": "tube"}, ("C", "Knee"): {"kind": "cap"},
+    ("B", "Hand"): {"left_glove": True},
     ("A", "Shoulder"): {"keep": 0.55}, ("B", "Shoulder"): {"keep": 0.55}, ("D", "Shoulder"): {"keep": 0.55},
 }
 
@@ -107,21 +109,48 @@ def _inside_body(tree, p):
     return loc is not None and (p - loc).dot(nrm) < 0
 
 
-def _cut_below(piece, frac):
-    """Removes the part of a piece below `frac` of its height (the foot of a greave that is really a tall boot)."""
-    zs = [v.co.z for v in piece.data.vertices]
-    zc = min(zs) + (max(zs) - min(zs)) * frac
+def _cut(piece, z, keep_above):
+    """Cuts the piece with a horizontal plane at height z and keeps one side. A real cut through the faces: deleting
+    the vertices on the other side left the edge as ragged as the mesh is coarse."""
     bm = bmesh.new()
     bm.from_mesh(piece.data)
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < zc], context="VERTS")
+    bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, z), plane_no=(0, 0, 1),
+                           clear_inner=keep_above, clear_outer=not keep_above)
     bm.to_mesh(piece.data)
     bm.free()
     piece.data.update()
 
 
+def _cut_below(piece, frac):
+    """Removes the part of a piece below `frac` of its height (the foot of a greave that is really a tall boot)."""
+    zs = [v.co.z for v in piece.data.vertices]
+    _cut(piece, min(zs) + (max(zs) - min(zs)) * frac, keep_above=True)
+
+
+def _sym_yaw(piece):
+    """The turn about the vertical that makes the piece most alike to its own mirror image, in degrees. Set B's
+    helmet stands a few degrees off the front in the line-up; fitted as it stood, it sat crooked on the head."""
+    from mathutils.kdtree import KDTree
+    S = _surface_samples(piece, 3000)
+    S = S - S.mean(0)
+
+    def score(deg):
+        c, sn = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+        P = np.stack([S[:, 0] * c - S[:, 1] * sn, S[:, 0] * sn + S[:, 1] * c, S[:, 2]], axis=1)
+        x0 = (np.percentile(P[:, 0], 2) + np.percentile(P[:, 0], 98)) / 2
+        kd = KDTree(len(P))
+        for i, p in enumerate(P):
+            kd.insert(p, i)
+        kd.balance()
+        return sum(kd.find((2 * x0 - p[0], p[1], p[2]))[2] for p in P[::4]) / len(P[::4])
+
+    best = min(range(-40, 41, 2), key=score)
+    return min((best + d / 2 for d in range(-4, 5)), key=score)
+
+
 # ------------------------------------------------------------------------------------------------------ tubes
 def fit_tube(piece, body, arm, sd, bone_a, bone_b, pts, tree, top_t, max_len, margin=1.10, bind=None, part=(0.0, 1.0),
-             test=None, force=None, rounds=5, cap=1.7):
+             test=None, force=None, rounds=5, cap=1.7, bottom_z=None, stretch=1.0):
     """A closed tube round a limb. The piece stands as in the line-up (top up); it is turned so that "down" runs
     along the bone (shortest rotation: nothing is turned upside down), its top put top_t metres past the bone's head,
     and scaled: cross-section to the limb's own cross-section over the stretch `part` of the tube's length times
@@ -165,9 +194,13 @@ def fit_tube(piece, body, arm, sd, bone_a, bone_b, pts, tree, top_t, max_len, ma
             s1, s2 = (u1 - u0) * margin / psize.x, (w1 - w0) * margin / psize.y
             g = (s1 * s2) ** 0.5
             s1, s2 = max(g * 0.85, min(g * 1.18, s1)), max(g * 0.85, min(g * 1.18, s2))
-            st = min(g, max_len / psize.z)
-    cu, cw = (u0 + u1) / 2, (w0 + w1) / 2
+            st = min(g * stretch, max_len / psize.z)
     L = psize.z * st
+    if bottom_z is not None:
+        # the tube's lower edge at a given height (the top of the cut boots): it slides down the limb as far as needed
+        top_t = max(top_t, (A.z - bottom_z) / max(0.2, -ax.z) - L)
+        u0, u1, w0, w1 = section(top_t + part[0] * L, top_t + part[1] * L)
+    cu, cw = (u0 + u1) / 2, (w0 + w1) / 2
     test = test or part
     fp = _face_points(piece)
     frac_v = [(pmax.z - p.z) / psize.z for p in src_v]
@@ -347,10 +380,13 @@ def fit_chest(piece, body, arm, dom, top=1.80, bottom=1.16, mx=1.08, my=1.08, ba
 
 
 # ------------------------------------------------------------------------------------------------------- helmet
-def fit_helmet(piece, body, arm, dom, s=2.75, dy=0.0, dz=0.0):
+def fit_helmet(piece, body, arm, dom, s=2.75, dy=0.0, dz=0.0, yaw=None):
     """Upright on the skull (the first fit laid it along the neck bone, which leans forward: every helmet looked
     at the floor), one scale, bound to the head bone. The dome is centred over the cranium; crests, spikes and the
     halo are left out of the measure."""
+    yaw = _sym_yaw(piece) if yaw is None else yaw
+    piece.data.transform(Matrix.Rotation(math.radians(yaw), 4, "Z"))
+    piece.data.update()
     head = _pts(body, dom, lambda b: b == "head")
     top = max(p.z for p in head)
     cran = [p for p in head if p.z > top - 0.20]
@@ -365,7 +401,7 @@ def fit_helmet(piece, body, arm, dom, s=2.75, dy=0.0, dz=0.0):
         v.co = Vector((hx + (p.x - px) * s, hy + dy + (p.y - py) * s, top + 0.02 + dz + (p.z - zt) * s))
     piece.data.update()
     _rigid(piece, "head")
-    return {"scale": s, "top_cm": round((top + 0.02 + dz) * 100, 1)}
+    return {"scale": s, "top_cm": round((top + 0.02 + dz) * 100, 1), "yaw_deg": round(yaw, 1)}
 
 
 # --------------------------------------------------------------------------------------------------------- belt
@@ -440,7 +476,7 @@ def _frame(a, n):
     return Matrix((a, n, a.cross(n))).transposed()
 
 
-def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margin=1.05, cuff_share=0.80):
+def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margin=1.05, cuff_share=0.80, left_glove=False):
     """The gauntlet is a glove with a long cuff. The first fit boxed it onto forearm and hand along the bone and so
     put it on backwards: fingers up the forearm, the cuff's mouth open round the hand.
     Here it is read as two parts joined at its narrowest section (the wrist): the cuff is laid along the forearm
@@ -506,6 +542,8 @@ def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margi
     ov = np.linalg.svd(Hp - oc, full_matrices=False)[2]
     a_g = gv[0] if gv[0] @ gc > 0 else -gv[0]
     a_o = ov[0] if ov[0] @ (oc - np.array(W)) > 0 else -ov[0]
+    from mathutils.kdtree import KDTree
+    thumb = [p for p in _pts(whole, whole_dom, lambda b: b.startswith("thumb") and b.endswith(sd))]
     best = None
     for sign, turn in ((1.0, 0.0), (-1.0, 0.0), (1.0, 90.0), (-1.0, 90.0)):
         # four starts: the two ways up, each also a quarter turn round the hand's length (a mitten is nearly round)
@@ -528,15 +566,42 @@ def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margi
         # a good registration also leaves the glove's wrist at the orc's wrist and its cuff along the forearm;
         # judged on the surface distance alone, set B's mitten was laid across the hand
         swing = (Matrix(R.tolist()) @ cg).angle(co)
-        cost = err / 0.006 + (Vector(tv) - W).length / 0.06 + swing / math.radians(25)
+        # ... and the glove's thumb on the orc's thumb: how far the orc's thumb is from the glove's surface. Without
+        # this term set B's mitten was registered palm outwards, its thumb on the little finger's side.
+        P = G @ R.T + tv
+        kd = KDTree(len(P))
+        for i, p in enumerate(P):
+            kd.insert(p, i)
+        kd.balance()
+        d_thumb = sum(kd.find(p)[2] for p in thumb) / len(thumb)
+        cost = err / 0.006 + (Vector(tv) - W).length / 0.06 + swing / math.radians(25) + d_thumb / 0.012
         if best is None or cost < best[3]:
-            best = (err, R.copy(), tv.copy(), cost)
+            best = (err, R.copy(), tv.copy(), cost, d_thumb, (sign, turn))
     Rh, Wh = Matrix(best[1].tolist()), Vector(best[2])          # Wh: where the glove's wrist ends up
+    if left_glove:
+        # The line-up has one glove per set and nothing says for which hand. Sets A, C and D have a right one; set
+        # B's is a LEFT one (its thumb is on the other side on the contact sheet, and the owner saw it on the fitted
+        # orc: "the thumb is on the wrong side"). Registered as it is, it lies well (back of the hand out, cuff along
+        # the forearm) with the thumb on the little finger's side; so it is registered as it is and then reflected
+        # side to side in the hand's own frame (the plane of the hand's length and the palm's normal), which moves
+        # the thumb across and nothing else. Tried first: mirroring the piece before registering it (it was then laid
+        # palm outwards, cuff twisted 46 degrees), and letting the registration choose between the piece and its
+        # mirror (right for A, C and D by 3.5 against 7.5, wrong for B by 5.7 against 7.1).
+        n_hand = Vector(gv[2]) - Vector(a_g) * float(np.dot(gv[2], a_g))
+        lat = Vector(a_g).cross(n_hand).normalized()
+        for v in piece.data.vertices:
+            d = v.co - Wg
+            v.co = Wg + d - lat * (2 * d.dot(lat))
+        piece.data.flip_normals()
+        piece.data.update()
+        cg = (cg - lat * (2 * cg.dot(lat))).normalized()
+        X = np.array([v.co[:] for v in piece.data.vertices], dtype=float)
+        t = (X - c) @ ax
     # the cuff takes the hand's turn and is then swung onto the forearm (no twist between the two parts)
     Rc = (Rh @ cg).rotation_difference(co).to_matrix() @ Rh
     info = {"scale": round(s, 2), "wrist_cm": round(float(wrist_g * s) * 100, 1),
             "hand_len_cm": [round(float(hand_len_g * s) * 100, 1), round((tip - W).length * 100, 1)],
-            "hand_fit_mm": round(best[0] * 1000, 1), "wrist_off_cm": round((Wh - W).length * 100, 1),
+            "hand_fit_mm": round(best[0] * 1000, 1), "thumb_mm": round(best[4] * 1000, 1), "cost": float(best[3]), "wrist_off_cm": round((Wh - W).length * 100, 1),
             "cuff_swing_deg": round(math.degrees((Rh @ cg).angle(co)), 1)}
     if os.environ.get("GAUNTLET_DEBUG"):
         print("GAUNTLET", sd, "kw", kw, "Lg_cm", round(Lg * 100, 1), "area_cm2", [round(float(a) * 1e4) for a in area])
@@ -655,6 +720,7 @@ def fit_piece(piece, body, arm, dom, st, slot, side, mirror, whole, whole_dom):
         return fit_belt(piece, body, dom)
     if slot == "Foot":
         info = fit_boot(piece, body, arm, dom, sd)
+        _cut(piece, BOOT_TOP, keep_above=False)        # owner, 2026-11-14: "take the upper part of the boots off"
         transfer_weights(piece, body)
         return info
     if slot == "Helmet":
@@ -676,8 +742,8 @@ def fit_piece(piece, body, arm, dom, st, slot, side, mirror, whole, whole_dom):
                         tn.get("len", 0.26), part=(0.35, 0.85), force=force)
     elif slot == "Shin":
         _cut_below(piece, tn.get("cut", 0.3))
-        info = fit_tube(piece, body, arm, sd, "calf", "foot", limb("calf"), tree("calf"), tn.get("top", 0.05), tn.get("len", 0.30),
-                        test=(0.0, 0.85), force=force, cap=tn.get("cap", 1.7))
+        info = fit_tube(piece, body, arm, sd, "calf", "foot", limb("calf"), tree("calf"), tn.get("top", 0.05), tn.get("len", 0.33),
+                        test=(0.0, 0.85), force=force, cap=tn.get("cap", 1.7), bottom_z=BOOT_TOP - 0.015, stretch=1.2)
     elif slot == "Knee" and tn.get("kind") == "cap":
         return fit_knee_cap(piece, body, arm, dom, sd)
     elif slot == "Knee":
