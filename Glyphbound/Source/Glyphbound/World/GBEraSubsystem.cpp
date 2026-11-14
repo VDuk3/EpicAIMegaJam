@@ -3,6 +3,8 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Engine/LevelStreaming.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerStart.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/MovementComponent.h"
@@ -40,6 +42,15 @@ TStatId UGBEraSubsystem::GetStatId() const
 void UGBEraSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
+	// A map that is only the future (the base, while the castle has no map) says so on its player start.
+	for (TActorIterator<APlayerStart> It(&InWorld); It; ++It)
+	{
+		if (It->ActorHasTag(FName(TEXT("GBStartFuture"))))
+		{
+			CurrentEra = EGBEra::Future;
+			break;
+		}
+	}
 	ApplyEra();
 }
 

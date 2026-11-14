@@ -108,3 +108,37 @@ The owner asked for a package that starts on the new map, so he can walk it.
   - `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/FutureBase -Only tour -Offscreen`: `SMOKE tour block passed: 17 spots, 0 without floor`, no errors, 66 s.
   - `Smoke-Jam.ps1 -Packaged -Offscreen` (full arena smoke): `done=True crashed=False LogGB errors=0`, 148 s.
 - **Still true:** nobody has walked the map by hand; the tour teleports.
+
+## The owner's first walk: five notes
+The owner played the package and sent five screenshots with five notes (Spanish):
+
+> *"1. En el pasillo, primera sala a la izquierda hay un hueco, revisa todas las conexiones a pasillos que hay huecos. 2. Quita lo de la derecha que bloquea las escaleras. 3. Coloca una puerta hacia una habitacion mediana donde haya algo de combate. 4. Coloca una puerta funcional y que siga el camino. 5. Haz estas estructuras escalables por si cae un jugador al comienzo y no tiene doble salto aun."*
+
+Translation: (1) there is a hole at the first room on the left of the corridor; check every connection to the corridors for holes. (2) Remove the thing on the right that blocks the stairs. (3) Put a door (in the air plant's gallery wall) to a medium room with some fighting. (4) Make this (the freight door) a working door, and let the way go on. (5) Make these structures (the alcove's service pit) climbable, in case a player falls in early and has no double jump yet.
+
+| Note | What was wrong | What was done |
+|---|---|---|
+| 1 | The kit's corridor floor stops at its wall line and each side room's floor starts behind its own wall: 2 m of nothing in the store room's doorway | A steel threshold plate in both side doorways and at the lab's gate. A new check in the builder (`check_walks`) traces the floor every 20 cm along seven walks through every connection and reports holes; it now reports none (one sample falls on the 1 cm seam between two floor pieces of the bay) |
+| 2 | The bay's west stair began right behind the wing of the corridor's last frame. The wing is part of the frame's mesh, so it cannot be taken away without removing the frame | The stair now starts 2.5 m inside the bay, clear of the frame, and the catwalk starts where the stair arrives |
+| 3 | The gallery ended in a wall | The gallery's far door is open again and leads to the **specimen lab**: the lab kit's own room (dark skin, 29 x 22 m, the kit's alien specimens in stasis capsules), placed whole as its author built it, 4 m above the corridor. The encounter `Opening_Future` starts when the player is well inside |
+| 4 | The freight door was a wall piece | New class `AGBDoor`: a leaf that slides open while the player is near and shuts behind them (optional progress flag to keep it locked). The freight door lifts. Beyond it: one more bay of the kit's corridor, to a second freight door that stays shut, where the next slice will continue |
+| 5 | The alcove's service pit is 2.9 m deep and fenced: no way out without the double jump | Crate steps on both sides of the bridge, under the gaps the railing leaves at the corridor's edge (1.05 m, 1.05 m, then 0.8 m: single jumps). A crate step at each end of the bay's trench too |
+
+**Also needed for note 3:** the map now starts in the future (`UGBEraSubsystem` reads the tag `GBStartFuture` on the player start), so the future's enemies exist on it.
+
+**Code (architect, directly; small and tied to the map work):** `World/GBDoor.h/.cpp`, the era start in `World/GBEraSubsystem.cpp`, test `Glyphbound.World.DoorLeaf` (the leaf is shut at 0, open at 1, never past either end, eased at both ends).
+
+**Self-review in the game** (`gb.Smoke tour`, 21 spots): passed, no errors. Screenshots: `media/2026-11-13/futurebase_v3_notes.png`. Seen in them: the freight door open with the corridor behind it; the threshold in the store doorway; the lab through the gallery's door; the fight starting in the lab (the player's health drops during the tour).
+
+**Known and left:**
+- The lab is far brighter than the rest of the base. It is the kit author's own lighting and it reads as a clean lab; say if it should come down.
+- The gallery's door to the lab is 1.3 m wide: large enemies cannot follow the player out of the lab through it.
+- The two small doors of the corridor still have no leaf.
+
+**Checks for this round (once, at the end):**
+- Editor target `Succeeded` (52 s); game target `Succeeded` (37 s).
+- Whole test suite: `50 run, 0 failed` (1.10 s of tests), including the new `Glyphbound.World.DoorLeaf`.
+- Full arena smoke, offscreen: `done=True crashed=False LogGB errors=0`, 156 s.
+- Package: `BUILD SUCCESSFUL`; `TeamTBD_Glyphbound.zip` is **1,445.4 MB** (the lab kit's room is now in the cook; still over the jam's 1 GB, which the owner has set aside for now).
+- On the package: tour `passed: 21 spots, 0 without floor` (80 s); full arena smoke `LogGB errors=0` (148 s).
+- **Not checked by a person yet:** climbing out of the pits on the crate steps, walking through the doorways, the fight in the lab, the freight door seen from both sides.

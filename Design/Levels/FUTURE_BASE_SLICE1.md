@@ -115,8 +115,16 @@ Map: `/Game/Glyphbound/Maps/FutureBase`, built by `Tools/Jam/Build-FutureBase.py
 | 3.5 Store room and the second side room | **Air plant** behind the right alcove's door (over the bridge that crosses the service pit): the Modular SciFi Station demo's stair module, whole: vent drums and cable trays on the lower floor, a stair 4 m up to a control gallery that rings the room. **Store room** behind a new door in the first bay's left wall: the same module's lower story, closed by the module's own roof assembly brought down 4 m, with seven crates stacked against the back wall, three glass-door cabinets, the storeman's desk, barrels and two drums. Both lit cold white against the corridor's amber | The plan had a monitoring room (now part of the arrival room) and a store 0.4 m below the corridor; the store is level with it, and the second room is an air plant with its own stair |
 | 3.6 Transfer bay | The kit's hangar (lane X 2100..5300, Y -450..300; branch to the freight door at Y 2401; service trench 1 m down behind a railing) with our level design: a **catwalk** 3 m up along the north wall that crosses the branch mouth as a bridge, a **stair** at each end, a **cross bridge** over the lane to a **lookout** above the trench (its lane side is open: a drop closes the loop), ten **crates** as low cover in four groups and two **machine blocks** that break the 32 m lane | T-shaped (two lanes), not one 30 x 24 m room. No entry landing and no walkable pit: two walkable heights (0 and +3 m) plus the trench seen behind its railing |
 
+**Added after the owner's first walk (2026-11-13):**
+- **Specimen lab**, through the far door of the air plant's gallery, 4 m above the corridor: the lab kit's own room (dark skin, 29 x 22 m, specimens in stasis capsules), placed whole. The first fight of the future (`Opening_Future`) starts when the player is well inside.
+- **The freight door works** (`AGBDoor`: it lifts while the player is near). Beyond it, one more corridor bay to a second freight door that stays shut: the next slice starts there.
+- **The bay's west stair** starts 2.5 m inside the bay, clear of the corridor's last frame.
+- **Thresholds:** a steel plate in every doorway where one kit's floor meets another's. The builder checks seven walks through every connection for holes.
+- **Pits have a way out on foot:** crate steps in the alcove's service pit (both sides of the bridge) and at both ends of the bay's trench.
+- **The map starts in the future** (tag `GBStartFuture` on its player start).
+
 **Materials.** High Tech Base pieces keep the materials their author gave each piece. The Modular SciFi Station is painted white in its pack (a Mars station); here every one of its materials except glass, lamps and signs uses a darker instance of itself (`MI_GB_*` in `/Game/Glyphbound/Materials/Kit`), so its steel reads as service steel and its rooms as painted grey-blue, not as a clean room.
 
 **Collision.** Every kit piece blocks exactly as it looks (complex collision used as simple), except decals, cables and lamps.
 
-**Review.** `gb.Smoke tour` (new) puts the player on each of the map's seventeen review spots, checks the floor and takes a screenshot through the real game camera.
+**Review.** `gb.Smoke tour` (new) puts the player on each of the map's twenty-one review spots, checks the floor and takes a screenshot through the real game camera.

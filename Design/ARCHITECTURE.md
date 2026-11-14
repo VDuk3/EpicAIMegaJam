@@ -26,7 +26,7 @@ Includes are relative to the module root: `#include "Stats/GBStatsComponent.h"`.
 | `Weapons/` | Held items and slots | `UGBEquipmentComponent`, `AGBHeldItem`, `AGBStaff`, `AGBGun`, `AGBSword` |
 | `Spells/` | Spellbook, cast resolution, behaviors | `UGBSpellbookComponent`, `FGBSpellCast`, `AGBSpellActor`, `AGBSpell_*` |
 | `QTE/` | Quick-time event | `FGBQTESession`, `FGBGestureRecognizer`, `UGBQTEComponent` |
-| `World/` | Eras, progress, interactables, test arena | `UGBEraSubsystem`, `UGBEraComponent`, `UGBProgressSubsystem`, `IGBInteractable`, `AGBPortal`, `AGBChest`, `AGBPickup`, `AGBCheckpointVolume`, `AGBTestArena` |
+| `World/` | Eras, progress, interactables, test arena | `UGBEraSubsystem`, `UGBEraComponent`, `UGBProgressSubsystem`, `IGBInteractable`, `AGBPortal`, `AGBChest`, `AGBPickup`, `AGBCheckpointVolume`, `AGBDoor` (a leaf that slides open while the player is near, optional progress flag), `AGBTestArena` |
 | `AI/` | Enemies (navmesh path, local steering fallback, stuck check) and encounters | `AGBEnemyCharacter`, `GBSteering` (pure decision, tested), `AGBEncounter` |
 | `Items/` | Inventory, consumables, armor, recipes | `UGBInventoryComponent` |
 | `Progression/` | Skill trees | `UGBSkillTreeComponent` |

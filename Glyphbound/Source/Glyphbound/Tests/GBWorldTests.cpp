@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "AI/GBEncounter.h"
+#include "World/GBDoor.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -53,6 +54,26 @@ bool FGBRequiredFlagsTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Single requirement, nothing set"), AGBEncounter::AreRequiredFlagsMet(Single, TSet<FName>()));
 	TestFalse(TEXT("Single requirement, another flag set"), AGBEncounter::AreRequiredFlagsMet(Single, TSet<FName>({ B })));
 	TestTrue(TEXT("Single requirement, set"), AGBEncounter::AreRequiredFlagsMet(Single, TSet<FName>({ A })));
+	return true;
+}
+
+// A door leaf: shut at 0, fully open at 1, never past either end, and eased (a leaf that moved in a straight line
+// would be at a quarter of the way after a quarter of the time; the eased one is still behind).
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBDoorLeafTest, "Glyphbound.World.DoorLeaf",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBDoorLeafTest::RunTest(const FString& Parameters)
+{
+	const FVector Slide(0.f, 110.f, 300.f);
+	TestTrue(TEXT("Shut at 0"), AGBDoor::ComputeLeafOffset(Slide, 0.f).IsNearlyZero());
+	TestTrue(TEXT("Fully open at 1"), AGBDoor::ComputeLeafOffset(Slide, 1.f).Equals(Slide, 0.01f));
+	TestTrue(TEXT("Never past open"), AGBDoor::ComputeLeafOffset(Slide, 3.f).Equals(Slide, 0.01f));
+	TestTrue(TEXT("Never past shut"), AGBDoor::ComputeLeafOffset(Slide, -2.f).IsNearlyZero());
+	TestTrue(TEXT("Half way at half time"), AGBDoor::ComputeLeafOffset(Slide, 0.5f).Equals(Slide * 0.5f, 0.01f));
+	const float Quarter = static_cast<float>(AGBDoor::ComputeLeafOffset(Slide, 0.25f).Z);
+	TestTrue(TEXT("Starts gently: behind a straight line at a quarter"), Quarter > 0.f && Quarter < Slide.Z * 0.25f - 1.f);
+	const float ThreeQuarters = static_cast<float>(AGBDoor::ComputeLeafOffset(Slide, 0.75f).Z);
+	TestTrue(TEXT("Stops gently: ahead of a straight line at three quarters"), ThreeQuarters > Slide.Z * 0.75f + 1.f && ThreeQuarters < Slide.Z);
 	return true;
 }
 

@@ -188,12 +188,37 @@ def place_section(stage, folder, items, origin, to=(0.0, 0.0, 0.0), yaw=0.0, lig
         r = unreal.MathLibrary.compose_rotators(rot(*it['rot']), turn)
         if it['kind'] == 'mesh':
             mesh(stage, folder, it['mesh'], loc, r, it['scale'], it['mats'], it.get('shadow', True))
+        elif it['kind'] == 'bp':
+            cls = unreal.load_class(None, it['class'])
+            if not cls:
+                continue
+            a = eas.spawn_actor_from_class(cls, unreal.Vector(*loc), r)
+            a.set_actor_scale3d(unreal.Vector(*it['scale']))
+            tag(a, stage, folder)
         else:
             d = dict(it)
             d['boost'] = light_boost
             light(stage, folder, it['class'], loc, r, d)
         n += 1
     return n
+
+
+def door(stage, path, loc, yaw, slide, centre, distance=450.0, mats=None, flag=None):
+    """A working door leaf (AGBDoor): slides by `slide` (its own axes) while the player is within `distance` of
+    its doorway's middle (`centre`, its own axes)."""
+    a = eas.spawn_actor_from_class(unreal.GBDoor, unreal.Vector(*loc), rot(yaw=yaw))
+    c = a.get_component_by_class(unreal.StaticMeshComponent)
+    c.set_static_mesh(asset(path))
+    for i, m in enumerate(mats or []):
+        if m:
+            c.set_material(i, asset(m))
+    a.set_editor_property('slide_offset', unreal.Vector(*slide))
+    a.set_editor_property('centre_offset', unreal.Vector(*centre))
+    a.set_editor_property('open_distance', distance)
+    if flag:
+        a.set_editor_property('required_flag', unreal.Name(flag))
+    tag(a, stage, 'Doors')
+    return a
 
 
 def box(stage, folder, x, y, z, mat=None, visible=True):
@@ -230,6 +255,7 @@ async def stage_world():
     tag(ppv, s, 'Light')
     ps = eas.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(150, 0, 110), rot(yaw=0))
     tag(ps, s, 'Gameplay')
+    ps.tags = list(ps.tags) + [unreal.Name('GBStartFuture')]      # UGBEraSubsystem: this map starts in the future
     ues.get_editor_world().get_world_settings().set_editor_property('kill_z', -2500.0)
     log.append('world: post process, player start')
 
@@ -254,14 +280,44 @@ async def stage_corridor():
     # The store room's door: the same frame the kit uses in the right alcove, in place of one wall panel.
     mesh(s, 'Doors', HTB + 'SM_Door_01_Frame', (550, -600, 0), rot(yaw=180),
          mats=['/Game/High_Tech_Base/Materials/MI_Tile_Machine_01', '/Game/High_Tech_Base/Materials/MI_Tile_Grate', '/Game/High_Tech_Base/Materials/MI_Rubber_02'])
-    log.append('corridor: %d pieces from the kit demo (two bays), door frame for the store room' % n)
+    # The service pit under the alcove's bridge is 2.9 m deep. Crate steps on both sides of the bridge, under the
+    # gaps the railing leaves at the corridor's edge: one crate, then two stacked, then the floor (0.8 m, one jump).
+    for x in (1400, 1700):
+        mesh(s, 'Steps', HTB + 'SM_Prop_02', (x, 670, -288), rot(yaw=5), collide=True)
+        mesh(s, 'Steps', HTB + 'SM_Prop_02', (x, 560, -288), collide=True)
+        mesh(s, 'Steps', HTB + 'SM_Prop_02', (x, 560, -183), rot(yaw=-6), collide=True)
+    # Thresholds (owner: a hole between the corridor and the store room). The kit's corridor floor stops at its wall
+    # line and each room's floor starts behind its own wall: a steel plate bridges every doorway.
+    plate(s, 550, 750, -710, -495, 1.0)
+    plate(s, 1450, 1650, 890, 1070, 1.0)
+    log.append('corridor: %d pieces from the kit demo (two bays), door frame for the store room, pit steps, thresholds' % n)
 
 
 async def stage_hall():
     s = 'hall'
     htb = kit('htb_demo')
-    n = place_section(s, 'Kit', select(htb, x=(2905, 99999)), HTB_ORIGIN)
-    log.append('hall: %d pieces from the kit demo (hangar shell)' % n)
+    items = [it for it in select(htb, x=(2905, 99999)) if not it.get('mesh', '').endswith('.SM_Door_02')]
+    n = place_section(s, 'Kit', items, HTB_ORIGIN)
+    # The freight door at the end of the branch is a working door (owner): it lifts when the player comes near.
+    door(s, HTB + 'SM_Door_02', (3805, 2450, 0), 180, slide=(0, 0, 430), centre=(425, 25, 150), distance=600,
+         mats=['/Game/High_Tech_Base/Materials/MI_Door_03', '/Game/High_Tech_Base/Materials/MI_Tile_Machine_02'])
+    log.append('hall: %d pieces from the kit demo (hangar shell), working freight door' % n)
+
+
+async def stage_north():
+    """Beyond the freight door the way goes on (owner): one more bay of the kit's corridor, to a second freight
+    door that stays shut. That door is where the base continues in the next slice."""
+    s = 'north'
+    htb = kit('htb_demo')
+    items = [it for it in select(htb, x=(880, 1900)) if 'SM_Prop_03' not in it.get('mesh', '') and not it.get('mesh', '').endswith('.SM_Door_01')]
+    n = place_section(s, 'Kit', items, HTB_ORIGIN, to=(3380.0, 2460.0, 0.0), yaw=90.0)
+    box(s, 'Collision', (2860, 3900), (2450, 3500), (-60, -2))
+    hall = select(htb, x=(2905, 99999))
+    for it in hall:
+        if it.get('mesh', '').endswith('.SM_Door_02_Side') or it.get('mesh', '').endswith('.SM_Door_02'):
+            loc = (it['loc'][0] - HTB_ORIGIN[0], it['loc'][1] - HTB_ORIGIN[1] + 1030.0, it['loc'][2] - HTB_ORIGIN[2])
+            mesh(s, 'End', it['mesh'], loc, rot(*it['rot']), it['scale'], it['mats'])
+    log.append('north: %d pieces (one corridor bay beyond the freight door), closed freight door at its end' % n)
 
 
 async def stage_control():
@@ -288,6 +344,12 @@ def deck(s, x0, x1, y0, y1, z, grate=True):
             mesh(s, 'Deck', m, (x, y + 200, z - DECK), collide=True)   # the tile spans x..x+200, y-200..y from its origin
             y += 200
         x += 200
+
+
+def plate(s, x0, x1, y0, y1, z):
+    """A solid steel threshold plate from (x0, y0) to (x1, y1), walking surface at z, cut to size from one 2 x 2 m tile."""
+    a = mesh(s, 'Thresholds', MSS + 'Floor/SM_floor_200x200_01', (x0, y1, z - DECK), scale=((x1 - x0) / 200.0, (y1 - y0) / 200.0, 1.0), collide=True)
+    return a
 
 
 def post(s, x, y, z_top):
@@ -343,14 +405,15 @@ async def stage_hall_design():
     s = 'hall_design'
     # North catwalk: the supervisors' walkway along the wall, from above the bay entry to the far end. It crosses
     # the mouth of the branch as a bridge, so whoever comes in through the freight door passes under it.
-    deck(s, 2550, 4750, 100, 300, CAT_Z)
-    for x in (2550, 2950, 3800, 4200, 4750):
+    deck(s, 2800, 4800, 100, 300, CAT_Z)
+    for x in (2800, 2990, 3800, 4200, 4750):
         post(s, x, 110, CAT_Z)
-    rail(s, 2550, 100, 4150, 100, CAT_Z)                 # lane side, west part
+    rail(s, 2800, 100, 4200, 100, CAT_Z)                 # lane side, west part
     rail(s, 4350, 100, 4750, 100, CAT_Z)                 # lane side, east of the cross bridge
     rail(s, 3004, 300, 3804, 300, CAT_Z)                 # over the branch mouth, north side
     # West stair: straight, against the wall, the first thing seen on entering the bay.
-    stairs(s, 2100, 200, 0, 0, 3, rails=(False, True))
+    # It starts 2.5 m inside the bay (owner: the wing of the corridor's last frame stood in front of its first step).
+    stairs(s, 2350, 200, 0, 0, 3, rails=(False, True))
     # East stair: straight down towards the freight end, so the catwalk is a flanking route, not a dead end.
     stairs(s, 5200, 200, 0, 180, 3, rails=(True, False))
     # Cross bridge: from the catwalk over the lane to a lookout above the trench railing. Its lane side is open:
@@ -378,7 +441,11 @@ async def stage_hall_design():
     # Work lights on the wall above the catwalk and under the lookout.
     for x in (2750, 3404, 4050, 4650):
         work_light(s, x, 290, 520, -90)
-    log.append('hall design: catwalk, two stairs, cross bridge and lookout, 10 crates, 2 machine blocks')
+    # A way out of the service trench (owner: a player who falls in early has no double jump): a crate as a step at
+    # each end, where the railing leaves a gap.
+    for x in (2750, 5250):
+        mesh(s, 'Steps', crate, (x, -700, -98), collide=True)
+    log.append('hall design: catwalk, two stairs, cross bridge and lookout, 10 crates, 2 machine blocks, trench steps')
 
 
 async def stage_arrival():
@@ -445,8 +512,8 @@ def module_room(stage, to, yaw, two_story):
         r = unreal.MathLibrary.compose_rotators(rot(*it['rot']), turn)
         if it['kind'] == 'mesh':
             path = it['mesh']
-            if name == 'SM_wall_door_400_a_01' and z >= 550:
-                path = MSS + 'Walls/A/SM_wall_400_a_02'      # the demo's upper door went outside; here the gallery ends in a wall
+            if name == 'SM_wall_door_400_a_01' and z >= 550 and not two_story:
+                path = MSS + 'Walls/A/SM_wall_400_a_02'
             mesh(stage, 'Module', path, loc, r, it['scale'], it['mats'])
             n += 1
         elif name in LAMP_OF:
@@ -486,6 +553,26 @@ async def stage_rooms():
     log.append('rooms: air plant (%d pieces, two floors) and store room (%d pieces, one story), 7 crates, 3 barrels' % (n1, n2))
 
 
+LAB_GATE = (1454.0, 400.0, 0.0)     # outer face of the lab room's gate, at floor height, in the lab kit's demo map
+LAB_Z = 410.0                       # the air plant's gallery
+
+
+async def stage_lab():
+    """The specimen lab (owner: a door from the gallery to a medium room with some fighting). It is the lab kit's
+    own room (dark skin), placed whole as its author built it, 4 m above the corridor, with its gate against the
+    gallery's far door. What came through the anomaly is kept here; the first fight of the future happens here."""
+    s = 'lab'
+    items = [it for it in kit('lab_roomB') if 'MGate' not in it.get('class', '')]
+    n = place_section(s, 'Lab', items, LAB_GATE, to=(1550.0, 2075.0, LAB_Z), yaw=-90.0)
+    plate(s, 1450, 1650, 1940, 2140, LAB_Z + 1.0)      # from the gallery through the door wall to the lab's gate
+    enc = eas.spawn_actor_from_class(unreal.GBEncounter, unreal.Vector(1500, 3800, LAB_Z + 150), rot())
+    enc.set_editor_property('encounter_id', unreal.Name('Opening_Future'))
+    enc.set_editor_property('presence', unreal.GBEraPresence.FUTURE_ONLY)
+    enc.set_editor_property('trigger_extent', unreal.Vector(900, 1000, 300))
+    tag(enc, s, 'Gameplay')
+    log.append('lab: %d pieces and lights from the lab kit room, encounter Opening_Future' % n)
+
+
 # Review spots: (name, x, y, floor z, yaw). The game's smoke block "tour" puts the player on each one and takes a
 # screenshot through the real game camera (gb.Smoke tour).
 TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('03_corridor', 300, -50, 0, 0),
@@ -493,7 +580,9 @@ TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('
         ('07_catwalk', 2700, 200, 300, -5), ('08_bridge', 4250, -100, 300, -90), ('09_lookout', 4250, -600, 300, 150),
         ('10_bay_floor_east', 4600, -150, 0, 180), ('11_branch', 3380, 2200, 0, -90), ('12_under_catwalk', 3380, 500, 0, -90),
         ('13_alcove_bridge', 1550, 620, 0, 90), ('14_air_plant', 1350, 1400, 0, 20), ('15_air_plant_gallery', 1550, 1150, 410, 90),
-        ('16_store_door', 650, -350, 0, -90), ('17_store', 650, -1000, 0, -90)]
+        ('16_store_door', 650, -350, 0, -90), ('17_store', 650, -1000, 0, -90),
+        ('18_lab_gate', 1550, 2350, 410, 90), ('19_lab', 1500, 3000, 410, 90), ('20_north_corridor', 3380, 2750, 0, 90),
+        ('21_alcove_pit', 1250, 700, -290, 20)]
 
 
 async def stage_tour():
@@ -502,10 +591,36 @@ async def stage_tour():
         a = eas.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(x, y, z), rot(yaw=yaw))
         a.tags = [unreal.Name(TAG), unreal.Name('stage_' + s), unreal.Name('GBTour'), unreal.Name('tour_' + name)]
         a.set_folder_path(unreal.Name('Base/tour'))
-    nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(1900, 400, 300), rot())
-    nav.set_actor_scale3d(unreal.Vector(80.0, 44.0, 8.0))    # the volume's brush is a 2 m cube
+    nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(1900, 1650, 300), rot())
+    nav.set_actor_scale3d(unreal.Vector(44.0, 40.0, 8.0))    # the volume's brush is a 2 m cube
     tag(nav, s, 'Gameplay')
     log.append('tour: %d review spots, nav bounds' % len(TOUR))
+
+
+# Walks checked for holes: (name, [(x, y, z), ...]). A point every 20 cm must have floor within 45 cm of the line.
+WALKS = [('arrival to corridor', [(-500, 60, 0), (300, 0, 0)]), ('corridor to store room', [(650, -300, 0), (650, -950, 0)]),
+         ('corridor over the bridge into the air plant', [(1550, 300, 0), (1550, 1180, 0)]),
+         ('corridor to bay', [(1800, 0, 0), (2500, -150, 0)]), ('bay to branch to freight door and on', [(3380, 100, 0), (3380, 3350, 0)]),
+         ('gallery to lab', [(1550, 1960, 410), (1550, 2700, 410)]), ('bay floor to west stair', [(2250, 200, 0), (2360, 200, 0)])]
+
+
+def check_walks():
+    world = ues.get_editor_world()
+    bad = []
+    for name, pts in WALKS:
+        for (x0, y0, z0), (x1, y1, z1) in zip(pts[:-1], pts[1:]):
+            n = max(1, int(math.hypot(x1 - x0, y1 - y0) / 20.0))
+            run = []
+            for i in range(n + 1):
+                t = i / float(n)
+                x, y, z = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z0 + (z1 - z0) * t
+                hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z + 60), unreal.Vector(x, y, z - 45),
+                                                             unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
+                if not hit:
+                    run.append((int(x), int(y)))
+            if run:
+                bad.append('%s: no floor from %s to %s (%d points)' % (name, run[0], run[-1], len(run)))
+    log.append('walks: ' + ('no holes on %d walks' % len(WALKS) if not bad else 'HOLES -> ' + ' | '.join(bad)))
 
 
 def enable_collision():
@@ -534,7 +649,8 @@ def enable_collision():
 
 
 ALL = [('world', stage_world), ('corridor', stage_corridor), ('hall', stage_hall), ('control', stage_control),
-       ('hall_design', stage_hall_design), ('arrival', stage_arrival), ('rooms', stage_rooms), ('tour', stage_tour)]
+       ('north', stage_north), ('hall_design', stage_hall_design), ('arrival', stage_arrival), ('rooms', stage_rooms),
+       ('lab', stage_lab), ('tour', stage_tour)]
 
 # ---- run ----
 if not eal.does_asset_exist(MAP):
@@ -551,5 +667,7 @@ for name, fn in ALL:
     await fn()
     await asyncio.sleep(0)
 enable_collision()
+await asyncio.sleep(0.5)
+check_walks()
 les.save_current_level()
 '\n'.join(log)
