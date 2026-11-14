@@ -96,3 +96,15 @@ The owner saw version 1 and answered *"Sí, sigue"* (yes, go on) to "do I keep t
 - **Builds:** Editor target `Succeeded` (18 s); game target `Succeeded` (24 s).
 - **Full arena smoke, offscreen, once at the end:** `done=True crashed=False LogGB errors=0`, 156 s. The tour block logs `skipped: this map has no tour spots` on the arena, as intended.
 - **Not checked:** nobody has walked the map by hand yet. The tour teleports; it does not prove that every stair can be climbed on foot or that enemies find paths (no enemies are placed). The test suite was not run: no tested logic changed.
+
+## The package (owner: "Sí, empaquétalo")
+The owner asked for a package that starts on the new map, so he can walk it.
+
+- **Start map:** `GameDefaultMap` is `/Game/Glyphbound/Maps/FutureBase`, and the map is in `MapsToCook`. The Editor and the smoke runs still start on the Entry map (the test arena). GDD v0.48, §4.
+- **Package:** `Glyphbound/TeamTBD_Glyphbound.zip`, **1,232.7 MB**. BuildCookRun `BUILD SUCCESSFUL` (150 s the first time, 41 s the second).
+- **Over the jam's 1 GB.** `Package-Jam.ps1` reports it as a failure. Where the size is (cooked): High Tech Base textures 1,655 MB, Modular SciFi Station textures 559 MB, Scifi Material Pack 278 MB; the kits' textures cook at 4096 px.
+- **The cap that did not happen.** `Tools/Jam/cap_kit_textures.py` caps the kits' textures at 2048 px. Its first run capped nothing: the Editor reports 2048 for textures that cook at 4096, and the script trusted that number. The size test was removed and a second run started. The owner then said the limit does not matter for now (*"El limite de 1GB no importa por ahora"*), so that run was stopped part-way and the Editor closed. **Some kit textures are now capped at 2048 and some are not**; nothing was repackaged after that. When the limit matters, run the script to the end and package again.
+- **Checks on the package that is on disk** (built before any cap):
+  - `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/FutureBase -Only tour -Offscreen`: `SMOKE tour block passed: 17 spots, 0 without floor`, no errors, 66 s.
+  - `Smoke-Jam.ps1 -Packaged -Offscreen` (full arena smoke): `done=True crashed=False LogGB errors=0`, 148 s.
+- **Still true:** nobody has walked the map by hand; the tour teleports.
