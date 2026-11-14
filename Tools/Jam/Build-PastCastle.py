@@ -35,12 +35,14 @@ TERRACE_X = 2800.0       # the edge of the upper ward
 TERRACE_Z = 210.0        # the wide stair's rise (SM_Stairs_4M)
 COBBLE_Z = -3.0            # the cobble piece's stone tops (measured: 90% of them under +5 cm) come up to the ground plane
 STONE_FLOOR = MI + 'MI_StoneFloor_Tile_A'   # the author's terraces are timber decks; a ward is paved
-FLOOR_Z = KEEP[2] + 90.0   # the keep's walking floor
+FLOOR_Z = KEEP[2] + 86.0   # the keep's walking floor (measured with a trace in the Main Hall: 236)
 # The crypt (plan 6.5, 6.6). Its stair starts in the Main Hall's rear corner on the King's Hall side, where four of the
-# hall's 4 m floor tiles are left out: X 9690..10490, Y -1000..-200, beside the grand stair's first flight.
-PIT = (9690.0, 10490.0, -1000.0, -200.0)
+# hall's 4 m floor tiles are left out: X 9290..10090, Y -1000..-200, beside the grand stair's first flight. The hall's
+# back wall is at X 10090 and its foot is 3 m above the stair there; behind it lies the grand stair's own well, open
+# above, and the keep's outer wall at X 10490 (its foot 3.6 m above the stair).
+PIT = (9290.0, 10090.0, -1000.0, -200.0)
 CRYPT_Z = FLOOR_Z - 1200.0            # four flights of 3 m
-CRYPT_AREA = (9690.0, 13500.0, -7900.0, -100.0)   # no land over it: the stair and the vaults pass where the land would be
+CRYPT_AREA = (9290.0, 13100.0, -7900.0, -100.0)   # no land over it: the stair and the vaults pass where the land would be
 WALK_Z = 1200.0          # the wall walk: 12 m above the curtain wall's base (measured from the author's own stair and towers)
 
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
@@ -465,9 +467,16 @@ async def stage_crypt():
     for y in (y0, y1):
         box(s, 'Mouth', (x0, x1), (y - 12.0, y + 12.0), (FLOOR_Z - 320.0, FLOOR_Z + 95.0), MI + 'MI_BrickStoneWall_nonDisp')
     box(s, 'Mouth', (x0, x1 + 200.0), (y0, y1), (FLOOR_Z - 340.0, FLOOR_Z - 318.0), MI + 'MI_BrickStoneWall_nonDisp', collide=False)
-    # Under the keep's back wall and on, in the rock behind the keep: the second flight, a landing, a turn towards the
-    # King's Hall side, two more flights. Twelve metres down in all; the turns hide what comes next.
-    flight(s, (x1 + 800.0, y1, FLOOR_Z - 600.0), 180.0)
+    # Under the hall's back wall, across the foot of the grand stair's well (open above: low side walls only), under
+    # the keep's outer wall and on into the rock: the second flight. No vault of the set here: it is 8 m high and would
+    # stand in the well. Then a landing, a turn towards the King's Hall side, two more flights. Twelve metres down in
+    # all; the turns hide what comes next.
+    flight(s, (x1 + 800.0, y1, FLOOR_Z - 600.0), 180.0, walls=False)
+    stone = MI + 'MI_BrickStoneWall_nonDisp'
+    for y in (y0, y1):
+        box(s, 'Mouth', (x1, x1 + 800.0), (y - 12.0, y + 12.0), (FLOOR_Z - 640.0, FLOOR_Z), stone)
+    box(s, 'Mouth', (x1 + 400.0, x1 + 800.0), (y0, y1), (FLOOR_Z - 90.0, FLOOR_Z - 60.0), stone)          # a ceiling once outside the keep
+    box(s, 'Mouth', (x1 + 790.0, x1 + 810.0), (y0, y1), (FLOOR_Z - 90.0, FLOOR_Z + 600.0), stone)       # the landing's wall over the stair's mouth
     lx = x1 + 800.0                                   # the landing's low-X edge
     bay(s, lx, y1, FLOOR_Z - 600.0, west=False, east=True, north=True, south=False)
     flight(s, (lx + 800.0, y0 - 800.0, FLOOR_Z - 900.0), 90.0)
@@ -509,16 +518,16 @@ async def stage_crypt():
     # the keep (from its back wall), and beyond the King's Hall, where the seal's hall reaches further west.
     rock = MI + 'MI_Ground_Rock_A'
     split = hy + 100.0                               # just north of the seal's hall
-    for rx0, rx1, ry0, ry1 in ((hx - 110.0, CRYPT_AREA[1], CRYPT_AREA[2], split), (x1 + 240.0, CRYPT_AREA[1], split, CRYPT_AREA[3])):
+    for rx0, rx1, ry0, ry1 in ((hx - 110.0, CRYPT_AREA[1], CRYPT_AREA[2], split), (x1 + 480.0, CRYPT_AREA[1], split, CRYPT_AREA[3])):
         box(s, 'Rock', (rx0, rx1), (ry0, ry1), (1050.0, 1100.0), rock, collide=False)
         box(s, 'Rock', (rx0, rx1), (ry0, ry1), (CRYPT_Z - 80.0, CRYPT_Z - 30.0), rock)
         box(s, 'Rock', (rx1 - 50.0, rx1), (ry0, ry1), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
     box(s, 'Rock', (hx - 110.0, hx - 60.0), (CRYPT_AREA[2], split), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
     box(s, 'Rock', (hx - 110.0, CRYPT_AREA[1]), (CRYPT_AREA[2], CRYPT_AREA[2] + 50.0), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
-    box(s, 'Rock', (hx - 110.0, x1 + 290.0), (split - 50.0, split), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
-    box(s, 'Rock', (x1 + 240.0, CRYPT_AREA[1]), (CRYPT_AREA[3] - 50.0, CRYPT_AREA[3]), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
+    box(s, 'Rock', (hx - 110.0, x1 + 530.0), (split - 50.0, split), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
+    box(s, 'Rock', (x1 + 480.0, CRYPT_AREA[1]), (CRYPT_AREA[3] - 50.0, CRYPT_AREA[3]), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
     for ry0, ry1 in ((split, y0 - 60.0), (y1 + 60.0, CRYPT_AREA[3])):
-        box(s, 'Rock', (x1 + 240.0, x1 + 290.0), (ry0, ry1), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
+        box(s, 'Rock', (x1 + 480.0, x1 + 530.0), (ry0, ry1), (CRYPT_Z - 80.0, 1100.0), rock, collide=False)
     log.append('crypt: stair of four flights from the Main Hall, three cells, the seal\'s hall at Z %d' % CRYPT_Z)
 
 
@@ -688,10 +697,10 @@ TOUR = [('01_start', -2300, 0, 0, 0), ('02_gate_passage', -700, 0, 0, 0), ('03_w
         ('08_terrace', 3000, -200, 210, 0), ('09_terrace_back', 4800, 0, 210, 180), ('10_side_yard_stores', 5700, 2100, 210, 0),
         ('11_side_yard_stair', 5300, -2000, 210, -10), ('12_keep_door', 4900, 0, 210, 0), ('13_front_hall', 5750, 0, 240, 0),
         ('14_front_hall_aisle', 6500, -1100, 240, 30), ('15_front_hall_back', 7400, 0, 240, 180), ('16_main_hall', 8300, 400, 260, 0),
-        ('17_main_hall_side', 8600, -900, 260, 45), ('18_main_hall_up', 8700, 900, 260, -60), ('19_crypt_mouth', 9350, -600, 260, 0), ('20_stair_1', 10100, -600, 90, 0),
-        ('21_landing', 11690, -600, -360, -90), ('22_stair_4', 11690, -2200, -810, -90), ('23_cells', 11690, -2900, -960, -90),
-        ('24_cell_open', 12000, -3800, -960, 0), ('25_corridor_end', 11690, -4800, -960, -90), ('26_seal_hall', 11690, -5300, -960, -90),
-        ('27_sealmap', 11690, -6500, -960, -90), ('28_seal_back', 11690, -7150, -960, 90),
+        ('17_main_hall_side', 8600, -900, 260, 45), ('18_main_hall_up', 8700, 900, 260, -60), ('19_crypt_mouth', 8950, -600, 236, 0), ('20_stair_1', 9700, -600, 82, 0),
+        ('21_landing', 11290, -600, -364, -90), ('22_stair_4', 11290, -2200, -814, -90), ('23_cells', 11290, -2900, -964, -90),
+        ('24_cell_open', 11600, -3800, -964, 0), ('25_corridor_end', 11290, -4800, -964, -90), ('26_seal_hall', 11290, -5300, -964, -90),
+        ('27_sealmap', 11290, -6500, -964, -90), ('28_seal_back', 11290, -7150, -964, 90),
         # the owner's notes of his first walk: the wall beside the gate from outside (both sides), the cart, the wide stair's
         # top, the wall stair and the wall walk it now leads to, the paving at the keep's entrance
         ('30_gate_wall_left', -1900, -1750, 0, 22), ('31_gate_wall_right', -1900, 1750, 0, -22), ('32_cart', 1000, -950, 0, 135),
@@ -709,8 +718,9 @@ WALKS = [('road through the gate into the ward', [(-2300, 0, 0), (2300, 0, 0)]),
          ('along the wall walk on the other side, tower to tower', [(7300, 2816, 1203), (-640, 2816, 1203)]),
          ('from the wall stair\'s landing through the opening onto the wall walk', [(STAIR_X - 275, -2500, 1212), (STAIR_X - 275, -2690, 1212), (STAIR_X - 275, -2816, 1203)]),
          ('across the terrace in front of the keep, wall to wall', [(4700, -2400, 210), (4700, 2400, 210)]),
-         ('Main Hall down the crypt stair to the landing', [(9300, -600, 260), (9695, -600, 240), (10485, -600, -60), (11285, -600, -360), (11690, -600, -360)]),
-         ('landing down to the cells and into the seal\'s hall', [(11690, -600, -360), (11690, -1005, -360), (11690, -1795, -660), (11690, -2595, -960), (11690, -6800, -960)])]
+         ('Main Hall down the crypt stair to the landing', [(8900, -600, 236), (9295, -600, 236), (10085, -600, -64), (10885, -600, -364), (11290, -600, -364)]),
+         ('landing down to the cells and into the seal\'s hall', [(11290, -600, -364), (11290, -1005, -364), (11290, -1795, -664), (11290, -2595, -964), (11290, -6800, -964)]),
+         ('back up from the seal\'s hall to the Main Hall', [(11290, -6800, -964), (11290, -2595, -964), (11290, -1795, -664), (11290, -1005, -364), (11290, -600, -364), (10885, -600, -364), (10085, -600, -64), (9295, -600, 236), (8900, -600, 236)])]
 
 
 async def stage_gameplay():
@@ -729,11 +739,47 @@ async def stage_gameplay():
         a.set_folder_path(unreal.Name('Castle/tour'))
     nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(4000.0, 0.0, 400.0), rot())
     nav.set_actor_scale3d(unreal.Vector(72.0, 62.0, 12.0))
-    nav2 = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(11700.0, -4000.0, -500.0), rot())
+    nav2 = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(11300.0, -4000.0, -500.0), rot())
     nav2.set_actor_scale3d(unreal.Vector(18.0, 40.0, 8.0))
     tag(nav2, s, 'Gameplay')    # the volume's brush is a 2 m cube
     tag(nav, s, 'Gameplay')
     log.append('gameplay: %d fights, %d review spots, nav bounds' % (len(ENCOUNTERS) if ENCOUNTERS_ON else 0, len(TOUR)))
+
+
+BODY_R, BODY_H, STEP_UP = 38.0, 180.0, 45.0     # the player's capsule (Player.json) and the highest step it walks up
+
+
+def body_walk(world, pts):
+    """Moves a body of the player's size along a walk, on the floor it finds under it: a capsule as wide as the player
+    and as tall as the player above his highest step, swept from one sample to the next (30 cm). Returns what stops it:
+    something across the way at any height of the body (a low lintel, a kerb above a step's height), or a rise in the
+    floor higher than a step. None when the body gets through."""
+    half = (BODY_H - STEP_UP) / 2.0
+    prev = None
+    prev_floor = None
+    for (x0, y0, z0), (x1, y1, z1) in zip(pts[:-1], pts[1:]):
+        n = max(1, int(math.hypot(x1 - x0, y1 - y0) / 30.0))
+        for i in range(n + 1):
+            t = i / float(n)
+            x, y, z = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z0 + (z1 - z0) * t
+            hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z + 110), unreal.Vector(x, y, z - 200),
+                                                         unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
+            if not hit:
+                prev, prev_floor = None, None
+                continue                             # the floor check reports a hole
+            floor = hit.to_tuple()[4].z
+            if prev_floor is not None and floor - prev_floor > STEP_UP:
+                return 'a rise of %d cm in the floor at (%d, %d, %d): more than a step' % (floor - prev_floor, x, y, floor)
+            centre = unreal.Vector(x, y, floor + STEP_UP + half + 2.0)
+            if prev is not None:
+                sweep = unreal.SystemLibrary.capsule_trace_single(world, prev, centre, BODY_R, half, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1,
+                                                                  True, [], unreal.DrawDebugTrace.NONE, True)
+                if sweep:
+                    tup = sweep.to_tuple()
+                    return 'the body is stopped at (%d, %d, %d) by %s (floor there %d)' % (tup[5].x, tup[5].y, tup[5].z,
+                                                                                          tup[9].get_actor_label() if tup[9] else '?', floor)
+            prev, prev_floor = centre, floor
+    return None
 
 
 def check_walks():
@@ -757,6 +803,9 @@ def check_walks():
                     run.append((int(x), int(y), int(hit.to_tuple()[4].z) if hit else None))
             if run:
                 bad.append('%s: no floor from %s to %s (%d points)' % (name, run[0], run[-1], len(run)))
+        body = body_walk(world, pts)
+        if body:
+            bad.append('%s: %s' % (name, body))
     log.append('walks: ' + ('clear on %d walks' % len(WALKS) if not bad else 'PROBLEMS -> ' + ' | '.join(bad)))
 
 
