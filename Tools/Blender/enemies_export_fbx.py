@@ -630,7 +630,7 @@ def armor_slot(fn, c, size):
         slot = "Helmet" if c.z > 0.8 else "Chest" if c.z > 0.5 else "Hand" if c.z > 0.25 else "Foot"
         return st, slot, None
     if c.z > 0.55:
-        return (st, "Pelvis", None) if abs(dx) < 0.06 and (size.x > 0.15 or c.z > 0.745) else (st, "Thigh", side)
+        return (st, "Pelvis", None) if c.z > 0.75 else (st, "Thigh", side)
     if c.z > 0.34:
         return st, "UpperArm", side
     if c.z > 0.25:
@@ -660,15 +660,363 @@ def body_regions(body, arm):
     return dom
 
 
+BOOT_H = 0.30        # collar height above the sole (m); the greave overlaps its top
+BOOT_WALL = 0.024    # boot outer surface this far outside the bare foot (m)
+BOOT_SOLE_DROP = 0.004
+
+
+def _pct(vals, q):
+    s = sorted(vals)
+    return s[min(len(s) - 1, max(0, int(round(q * (len(s) - 1)))))]
+
+
+def _smooth(a, k=2):
+    out = []
+    for i in range(len(a)):
+        w = a[max(0, i - k): i + k + 1]
+        out.append(sum(w) / len(w))
+    return out
+
+
+def add_boot_liner(piece, body, dom, sd, offset=0.003):
+    """The line-up boot is a kit of separate plates; wherever they leave a gap the bare foot would show. A liner
+    (the foot and ankle faces of the body, pushed LINER offset out along the normals, textured with the sole's flat
+    black) closes the gaps. It is inside the plates everywhere else (the plates stand at least 6 mm off the foot)."""
+    import bmesh
+    wm = body.matrix_world
+    body.data.calc_loop_triangles()
+    keep = []
+    for poly in body.data.polygons:
+        names = [dom.get(i, "") for i in poly.vertices]
+        if not all(n.startswith(("foot", "ball", "calf")) and n.endswith(sd) for n in names):
+            continue
+        if (wm @ poly.center).z > BOOT_H - 0.02:
+            continue
+        keep.append(poly)
+    # UV of the sole's underside (flat black rubber)
+    uvl = piece.data.uv_layers.active
+    low = sorted(piece.data.vertices, key=lambda v: v.co.z)[:20]
+    lowset = {v.index for v in low}
+    uvs = [uvl.data[l].uv.copy() for p in piece.data.polygons for l in p.loop_indices
+           if piece.data.loops[l].vertex_index in lowset]
+    uv = sum(uvs, Vector((0, 0))) / len(uvs) if uvs else Vector((0.5, 0.5))
+    bm = bmesh.new()
+    bm.from_mesh(piece.data)
+    uvlay = bm.loops.layers.uv.active
+    vmap = {}
+    for poly in keep:
+        vl = []
+        for i in poly.vertices:
+            if i not in vmap:
+                v = body.data.vertices[i]
+                vmap[i] = bm.verts.new(wm @ v.co + (wm.to_3x3() @ v.normal).normalized() * offset)
+            vl.append(vmap[i])
+        try:
+            f = bm.faces.new(vl)
+        except ValueError:
+            continue
+        f.material_index = 0
+        f.smooth = True
+        for l in f.loops:
+            l[uvlay].uv = uv
+    bm.to_mesh(piece.data)
+    bm.free()
+    piece.data.update()
+
+
+def fit_boot(piece, body, arm, dom, sd):
+    """Wraps a line-up boot around the orc's foot and ankle. The boot is turned so its toe points where the foot
+    points (foot bone head -> ball bone tip, yaw), then every vertex is mapped slice by slice (by height) from the
+    boot's own cross-section box to the foot's cross-section box plus the wall, so the boot encloses the foot and
+    ankle (toes included) whatever the proportions of the two. Frame L': origin at the ankle, toe towards -Y."""
+    wm = body.matrix_world
+    pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
+           if b.startswith(("foot", "ball", "calf")) and b.endswith(sd)]
+    fh = arm.data.bones["foot" + sd].head_local
+    bt = arm.data.bones["ball" + sd].tail_local
+    P = Vector((fh.x, fh.y, 0.0))
+    dv = Vector((bt.x - fh.x, bt.y - fh.y))
+    phi = math.atan2(dv.y, dv.x) + math.pi / 2           # toe (-Y) turned by phi gives the foot direction
+    Rf = Matrix.Rotation(phi, 3, "Z")
+    Rfi = Rf.inverted()
+    loc = [Rfi @ (p - P) for p in pts]
+    # --- the boot: toe direction from the sole's centre against the shaft's centre (the line-up has it diagonal)
+    vs = [v.co.copy() for v in piece.data.vertices]
+    zmin_b = min(v.z for v in vs)
+    zmax_b = max(v.z for v in vs)
+    hb = zmax_b - zmin_b
+    lo = [v for v in vs if v.z < zmin_b + 0.18 * hb]
+    hi = [v for v in vs if v.z > zmin_b + 0.6 * hb]
+    cl = sum((v for v in lo), Vector()) / len(lo)
+    ch = sum((v for v in hi), Vector()) / len(hi)
+    toe = Vector((cl.x - ch.x, cl.y - ch.y))
+    ang = (-math.pi / 2) - math.atan2(toe.y, toe.x)
+    R1 = Matrix.Rotation(ang, 3, "Z")
+    vs = [R1 @ v for v in vs]
+    # --- slices
+    NB = 12
+    zlo, zhi = -BOOT_SOLE_DROP, BOOT_H
+
+    def knee_height(items, hmax, step, lo_frac, hi_frac):
+        """Height where the footprint length (Y extent) drops below 62 % of its value at the sole: the top of the
+        foot proper (toe box + instep) before the ankle and shaft begin."""
+        ext = []
+        h = 0.0
+        while h <= hmax:
+            sel = [p.y for p in items if abs(p.z - h) < step]
+            ext.append((h, (max(sel) - min(sel)) if len(sel) > 3 else 0.0))
+            h += step
+        ref = max(e for _, e in ext[:3])
+        for h, e in ext:
+            if h > lo_frac * hmax and e < 0.62 * ref:
+                return min(h, hi_frac * hmax)
+        return hi_frac * hmax
+
+    t_items = [Vector((p.x, p.y, (p.z - zmin_b) / hb)) for p in vs]
+    t_i = knee_height(t_items, 1.0, 0.03, 0.2, 0.6)
+    z_f = knee_height(loc, BOOT_H, 0.01, 0.25, 0.7)
+    print("BOOT knee: boot t=%.2f -> foot z=%.1f cm" % (t_i, z_f * 100))
+
+    def zmap(t):
+        if t <= t_i:
+            return zlo + (z_f - zlo) * t / t_i
+        return z_f + (zhi - z_f) * (t - t_i) / (1 - t_i)
+
+    def box(items, zc, half, minpts=12):
+        sel = []
+        while len(sel) < minpts and half < 0.2:
+            sel = [p for p in items if abs(p.z - zc) < half]
+            half *= 1.5
+        if not sel:
+            return None
+        xs = [p.x for p in sel]
+        ys = [p.y for p in sel]
+        return (_pct(xs, 0.01), _pct(xs, 0.99), _pct(ys, 0.01), _pct(ys, 0.99))
+
+    tb = []
+    for k in range(NB + 1):
+        t = k / NB
+        tb.append(box([Vector((p.x, p.y, (p.z - zmin_b) / hb)) for p in vs], t, 0.5 / NB * 1.6, 40))
+    tt = []
+    last = None
+    for k in range(NB + 1):
+        zc = zmap(k / NB)
+        b = box(loc, max(zc, 0.0), 0.02)
+        tt.append(b if b else last)
+        last = tt[-1]
+    for k in range(NB + 1):               # same-shaped holes: fill
+        if tt[k] is None:
+            tt[k] = next(x for x in tt if x)
+        if tb[k] is None:
+            tb[k] = next(x for x in tb if x)
+
+    def smooth_boxes(bx):
+        cols = list(zip(*bx))
+        return list(zip(*[_smooth(list(c), 1) for c in cols]))
+
+    tb = smooth_boxes(tb)
+    tt = smooth_boxes(tt)
+    mat_warn = 0
+    for v in piece.data.vertices:
+        p = vs[v.index]
+        t = (p.z - zmin_b) / hb
+        f = min(NB - 1e-6, max(0.0, t * NB))
+        k = int(f)
+        u = f - k
+        bb = [tb[k][i] * (1 - u) + tb[k + 1][i] * u for i in range(4)]
+        ta = [tt[k][i] * (1 - u) + tt[k + 1][i] * u for i in range(4)]
+        out = []
+        for a0 in (0, 2):
+            cb = (bb[a0] + bb[a0 + 1]) / 2
+            eb = max(bb[a0 + 1] - bb[a0], 1e-4)
+            ct = (ta[a0] + ta[a0 + 1]) / 2
+            et = (ta[a0 + 1] - ta[a0]) + 2 * BOOT_WALL
+            r = et / eb
+            out.append(ct + (p[a0 // 2] - cb) * r)
+        z = zmap(min(1.0, max(0.0, t)))
+        q = Vector((out[0], out[1], z))
+        w = P + Rf @ q
+        v.co = Vector((w.x, w.y, z))
+    piece.data.update()
+    # --- poke test: body foot vertices outside the boot's surface (normal side)
+    import bmesh
+    from mathutils.bvhtree import BVHTree
+    from mathutils.kdtree import KDTree
+    chk = [p for p in pts if p.z < BOOT_H - 0.02]
+    RAD = 0.04
+    MARGIN = 0.004                           # the bare foot ends this far inside the boot's surface
+
+    def pokes():
+        bm = bmesh.new()
+        bm.from_mesh(piece.data)
+        bm.normal_update()
+        tree = BVHTree.FromBMesh(bm)
+        out = []
+        for p in chk:
+            loc_, nrm, idx, dist = tree.find_nearest(p)
+            if loc_ is not None:
+                s = (p - loc_).dot(nrm)
+                if s > -MARGIN:
+                    out.append((p, loc_, nrm, s))
+        bm.free()
+        return out
+
+    # inflate the boot where the foot still pokes through (a local, smooth push along the surface normal)
+    for it in range(int(os.environ.get("BOOT_INFLATE", "4"))):
+        pk = pokes()
+        if not pk:
+            break
+        kd = KDTree(len(piece.data.vertices))
+        for v in piece.data.vertices:
+            kd.insert(v.co, v.index)
+        kd.balance()
+        push = {}
+        for p, loc_, nrm, s in pk:
+            amount = s + MARGIN
+            for co, idx, dist in kd.find_range(loc_, RAD):
+                wgt = math.exp(-(dist / (RAD * 0.6)) ** 2) * amount
+                if wgt > push.get(idx, (0, None))[0]:
+                    push[idx] = (wgt, nrm.copy())
+        for idx, (a, n) in push.items():
+            piece.data.vertices[idx].co += n * a
+        piece.data.update()
+    poke = len([1 for p, loc_, nrm, s in pokes() if s > 0.002])
+    add_boot_liner(piece, body, dom, sd)
+    return {"boot_toe_turn_deg": round(math.degrees(ang), 1), "foot_yaw_deg": round(math.degrees(phi), 1),
+            "poke_verts": poke, "checked": len(chk)}
+
+
+_BODY_TREES = {}
+
+
+def _body_tree(body):
+    import bmesh
+    from mathutils.bvhtree import BVHTree
+    if id(body) not in _BODY_TREES:
+        bm = bmesh.new()
+        bm.from_mesh(body.data)
+        bm.transform(body.matrix_world)
+        bm.normal_update()
+        _BODY_TREES[id(body)] = BVHTree.FromBMesh(bm)
+        bm.free()
+    return _BODY_TREES[id(body)]
+
+
+MAX_EDGE = 0.03      # m: plates are cut into pieces no longer than this before they are wrapped round the body
+
+
+def subdivide_long_edges(piece, max_edge, passes=3):
+    """Long flat triangles of a low-poly plate cut straight through the body's curves even when every corner is
+    outside: cut them down first (UVs interpolate)."""
+    import bmesh
+    for _ in range(passes):
+        bm = bmesh.new()
+        bm.from_mesh(piece.data)
+        long_edges = [e for e in bm.edges if e.calc_length() > max_edge]
+        if not long_edges:
+            bm.free()
+            break
+        bmesh.ops.subdivide_edges(bm, edges=long_edges, cuts=1, use_grid_fill=True)
+        bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+        bm.to_mesh(piece.data)
+        bm.free()
+        piece.data.update()
+
+
+def wrap_outside(piece, body, pts, axis=None, margin=0.008, max_depth=0.05, smooth_iters=12):
+    """Plates are thin and the orc is bulky: where a vertex of the piece ended up inside the body it is pushed out,
+    radially from the slot's axis (a bone line; a vertical line through the region for torso, head and belt), to
+    just outside the body's surface along that direction. The push is a scalar field per vertex, dilated and smoothed
+    over the piece's edges (so the plate bulges like cloth instead of tearing, and ornaments move with it), and the
+    radial direction is smooth where the body's own normals are not. Plates are cut into small triangles first so
+    they do not slice through the body's curves between their corners."""
+    tree = _body_tree(body)
+    subdivide_long_edges(piece, MAX_EDGE)
+    me = piece.data
+    n = len(me.vertices)
+    if axis is None:
+        cx = sum(p.x for p in pts) / len(pts)
+        cy = sum(p.y for p in pts) / len(pts)
+        a0, a1 = Vector((cx, cy, 0.0)), Vector((cx, cy, 3.0))
+    else:
+        a0, a1 = Vector(axis[0]), Vector(axis[1])
+    ad = (a1 - a0).normalized()
+    dirs = []
+    req = [0.0] * n
+    hit = 0
+    for v in me.vertices:
+        c = a0 + ad * (v.co - a0).dot(ad)
+        d = v.co - c
+        if d.length < 0.02:
+            dirs.append(None)
+            continue
+        d.normalize()
+        dirs.append(d)
+        loc, nrm, idx, dist = tree.ray_cast(v.co, d, max_depth)
+        if loc is not None and nrm.dot(d) > 0:
+            req[v.index] = dist + margin
+            hit += 1
+    if not hit:
+        return 0
+    adj = [[] for _ in range(n)]
+    for e in me.edges:
+        x, y = e.vertices
+        adj[x].append(y)
+        adj[y].append(x)
+    f = req[:]
+    for _ in range(smooth_iters):
+        new = []
+        for i in range(n):
+            if adj[i]:
+                avg = sum(f[j] for j in adj[i]) / len(adj[i])
+                new.append(f[i] * 0.5 + avg * 0.5)
+            else:
+                new.append(f[i])
+        f = [max(new[i], req[i]) for i in range(n)]
+    for v in me.vertices:
+        if dirs[v.index] is not None and f[v.index] > 1e-5:
+            v.co += dirs[v.index] * f[v.index]
+    me.update()
+    return hit
+
+
+BELT_TOP = 1.20     # m: top edge of the belt (the orc's waist; its pelvis joint is at 1.12)
+
+
+def fit_belt(piece, body, dom):
+    """Belt + codpiece: the ring is sized to the orc's waist (a slab of the torso bones, arms excluded) and hung from
+    BELT_TOP; the codpiece follows the same transform and hangs down the front over the groin."""
+    wm = body.matrix_world
+    pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
+           if b.split("_")[0] in ("pelvis", "spine", "thigh") and BELT_TOP - 0.20 < (wm @ body.data.vertices[i].co).z < BELT_TOP
+           and abs((wm @ body.data.vertices[i].co).x) < 0.40]
+    xs = [p.x for p in pts]
+    ys = [p.y for p in pts]
+    bx0, bx1, by0, by1 = _pct(xs, 0.02), _pct(xs, 0.98), min(ys), max(ys)
+    pv = [v.co for v in piece.data.vertices]
+    pmin = Vector((min(v.x for v in pv), min(v.y for v in pv), min(v.z for v in pv)))
+    pmax = Vector((max(v.x for v in pv), max(v.y for v in pv), max(v.z for v in pv)))
+    sx = (bx1 - bx0) * 1.12 / (pmax.x - pmin.x)
+    sy = (by1 - by0) * 1.14 / (pmax.y - pmin.y)
+    sz = (sx * sy) ** 0.5
+    for v in piece.data.vertices:
+        c = v.co
+        v.co = Vector(((c.x - (pmin.x + pmax.x) / 2) * sx + (bx0 + bx1) / 2,
+                       (c.y - (pmin.y + pmax.y) / 2) * sy + (by0 + by1) / 2,
+                       (c.z - pmax.z) * sz + BELT_TOP))
+    piece.data.update()
+    left = wrap_outside(piece, body, pts)
+    return {"scale": [round(sx, 3), round(sy, 3), round(sz, 3)], "verts_pushed_out": left, "waist_cm": [round(bx0 * 100, 1), round(bx1 * 100, 1),
+            round(by0 * 100, 1), round(by1 * 100, 1)]}
+
+
 def fit_piece(piece, body, arm, dom, slot, side, mirror):
+    if slot == "Pelvis":
+        return fit_belt(piece, body, dom)
     bones_pat, axis, margin, cover, along_c = SLOT_DEF[slot]
     sd = SIDES[side] if side else ""
     pats = [p.replace("_{s}", sd) for p in bones_pat]
     pv0 = [v.co for v in piece.data.vertices]
-    if slot == "Pelvis" and (max(v.z for v in pv0) - min(v.z for v in pv0)) > 0.6 * (max(v.x for v in pv0) - min(v.x for v in pv0)):
-        # set B's belt and thigh plates are one island: fit it to the hips and both thighs
-        pats = pats + ["thigh_"]
-        cover = 0.75
     wm = body.matrix_world
     pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
            if any(b == p or (not side and b.startswith(p)) or (side and b.startswith(p) and b.endswith(sd)) for p in pats)]
@@ -701,9 +1049,7 @@ def fit_piece(piece, body, arm, dom, slot, side, mirror):
         piece.data.transform(Matrix.Scale(-1, 4, (1, 0, 0)))
         piece.data.flip_normals()
     if slot == "Foot":
-        # the line-up shows the boots from the side, toe towards -X: turn the toe to the front (-Y)
-        piece.data.transform(Matrix.Rotation(math.pi / 2, 4, "Z"))
-        pv = [v.co for v in piece.data.vertices]
+        return fit_boot(piece, body, arm, dom, sd)
     pmin = Vector((min(v.x for v in pv), min(v.y for v in pv), min(v.z for v in pv)))
     pmax = Vector((max(v.x for v in pv), max(v.y for v in pv), max(v.z for v in pv)))
     psize = pmax - pmin
@@ -719,7 +1065,9 @@ def fit_piece(piece, body, arm, dom, slot, side, mirror):
     M = Matrix.Translation(world_c) @ R.to_4x4() @ S
     piece.data.transform(M)
     piece.data.update()
-    return {"scale": [round(x, 3) for x in sc], "centre_cm": v3(world_c)}
+    left = wrap_outside(piece, body, pts, axis=(h, t) if axis else None,
+                        max_depth=0.09 if slot in ("Chest", "Helmet", "UpperArm", "Shoulder") else 0.05)
+    return {"scale": [round(x, 3) for x in sc], "centre_cm": v3(world_c), "verts_pushed_out": left}
 
 
 def transfer_weights(piece, body):
@@ -746,6 +1094,46 @@ def transfer_weights(piece, body):
                 piece.vertex_groups[n].add([v.index], w / wsum, "REPLACE")
 
 
+def clusters(isl, gap):
+    """Islands whose boxes are closer than `gap` form one piece (a helmet is 18 islands: shell, visor, teeth, halo)."""
+    n = len(isl)
+    par = list(range(n))
+
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+
+    for a in range(n):
+        for b in range(a + 1, n):
+            A, B = isl[a], isl[b]
+            if max(max(A["min"][k] - B["max"][k], B["min"][k] - A["max"][k], 0.0) for k in range(3)) < gap:
+                par[find(a)] = find(b)
+    out = {}
+    for i in range(n):
+        out.setdefault(find(i), []).append(i)
+    return list(out.values())
+
+
+def piece_groups(src_ob, fn):
+    """{(set, slot, side): vertex indices}. Classifying whole pieces, not single islands: classifying by island
+    centre sent a helmet's jaw to the chest and a breastplate's lower plate to the forearm. Armor 2's belt, codpiece
+    and thigh plates touch each other in the line-up; that cluster is split island by island."""
+    isl = islands(src_ob)
+    groups = {}
+    for m in clusters(isl, 0.012 if fn == 1 else 0.003):
+        mn = Vector([min(isl[i]["min"][a] for i in m) for a in range(3)])
+        mx = Vector([max(isl[i]["max"][a] for i in m) for a in range(3)])
+        c, size = (mn + mx) / 2, mx - mn
+        if fn == 2 and c.z > 0.6 and size.z > 0.2:
+            for i in m:
+                groups.setdefault(armor_slot(fn, isl[i]["c"], isl[i]["s"]), set()).update(isl[i]["verts"])
+        else:
+            groups.setdefault(armor_slot(fn, c, size), set()).update(v for i in m for v in isl[i]["verts"])
+    return groups
+
+
 def do_armor():
     d = out_dir("OrcArmor")
     arm, body, tex, s, bones = humanoid(src("Enemies", "Orc", "Base_Rigged_Orc.glb"), "Orc", 2.10, d)
@@ -757,10 +1145,7 @@ def do_armor():
         flatten([src_ob])
         report["textures"]["Armor%d" % fn] = save_textures(src_ob.data.materials[0], "OrcArmor%d" % fn, d)
         src_ob.data.materials[0].name = "M_OrcArmor%d" % fn
-        groups = {}
-        for i in islands(src_ob):
-            key = armor_slot(fn, i["c"], i["s"])
-            groups.setdefault(key, set()).update(i["verts"])
+        groups = piece_groups(src_ob, fn)
         for (st, slot, side), verts in sorted(groups.items(), key=lambda kv: str(kv[0])):
             sides = [side] if side else (["r", "l"] if slot in ("Hand", "Foot") else [None])
             for sd in sides:
