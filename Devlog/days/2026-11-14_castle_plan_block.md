@@ -306,3 +306,19 @@ Applied by `Tools/Jam/castle_pixel_test.py` (settings in `Saved/castle_pixel.jso
 - No C++ changed in this part. Not reviewed by Sol: the changes are Editor scripts (the builder's check and stair, the test's two tools), checked by their own output and by the pictures.
 
 **Tools used in this part:** Unreal Editor 5.9 Python over MCP; Node.js (tile drawing, patches); no image model.
+
+---
+
+## Sixth part: the owner's decision on the pixel test, and a handoff
+The owner looked at the two variants and answered (Spanish):
+
+> *"La cosa tambien es que el beneficio del pixel art es que sea ligero para el almacenamiento, ram, gpu y todo. Ten eso en cuenta. Pero sí, hay que reemplazar todo. Dame el handoff para hacerlo con Opus en otro chat"*
+
+Translation: the point of pixel art is also that it is light on storage, RAM, GPU and everything; keep that in mind. But yes, everything has to be replaced. Give me the handoff to do it with Opus in another chat.
+
+- **Decided by the owner:** the whole castle is replaced, not re-textured (the recommendation of the fifth part, taken to all of it); variant B is dropped; and a rule the architect had not weighed: pixel art is there to be light. It is now in the GDD (section 3, v0.67).
+- **What that rule changes.** The test judged the two variants by how they look. By the owner's rule both fail for a second reason: each still draws the pack's Nanite pieces (a plain 4 m wall panel has 50,000 triangles; the kit's meshes average 8,800) and keeps the pack in the package. Measured for the brief: the castle pack is 1,172 MB of the 6,491 MB of cooked content.
+- **The handoff:** `Prompts/castle_pixel_rebuild_handoff.md`. It gives the next chat the owner's words, where the map and its three checks stand, what the test settled, what "done" means with numbers (no reference from the map to the pack, the same castle, measured cost before and after), a way to do it (a flat twin for each of the 141 pack meshes in use, same pivot and size, so the builder's records keep working; one zone shown to the owner first; the pack's look buildable until he accepts), and the traps already paid for.
+- **Said plainly in the brief:** removing the castle pack will not by itself bring the zip (2,628.8 MB) under the jam's 1 GB. Most of the rest is the future base's kits. That is a separate job.
+- **Model:** Opus, by the owner's choice: an exception to the default implementer (Muse Spark through OpenCode), because the task is design-heavy Editor work driven turn by turn with the owner.
+- Nothing was built in this part. No C++ changed.
