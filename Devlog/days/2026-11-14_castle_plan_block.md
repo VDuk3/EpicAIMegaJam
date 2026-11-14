@@ -117,3 +117,74 @@ The first read took ten minutes: the Editor rebuilt the Nanite data of every cas
 - The pixel-art look of the castle's stone is not decided; a test on one section goes to the owner first.
 - The keep's entrance was not looked at up close (how its floor meets the upper ward), nor the exact spot of the crypt stair.
 - `Content/CastleTown` is 4.7 GB again; what the map does not use can go back to the bin once the map exists.
+
+---
+
+## Third part: slice 1 is built
+The owner's answer to the drawing (Spanish): *"Sí, constrúyelo"* (Yes, build it).
+
+### How it was built
+`Tools/Jam/Build-PastCastle.py`, the future base's method in nine stages, each one rebuilt alone while it was being looked at: world, ground, keep, gate, walls, wards, camp, crypt, gameplay.
+
+- **The author's sections, placed again piece by piece** from the records of the second part: the keep (5,190 pieces from six of his levels), the gatehouse (316), a wall tower at each of the four corners (416), the wall stair (36).
+- **Ours, each thing for a reason in the plan:** the curtain walls (50 pieces of the pack's wall), the pack's cobbles in the lower ward and on the road, the upper ward on a retaining wall with the wide stair and a breach, the orcs' camp, and the crypt from the pack's second interior set.
+- **Collision:** complex as simple, both sides, set on 108 mesh assets of the pack (most had no simple collision at all).
+
+### What the renders and the game showed, and what was changed
+Each stage was looked at before the next one: offscreen views in the Editor, then the game's own tour.
+
+| Seen | Cause | Change |
+|---|---|---|
+| Half of the lower ward's cobbles were missing, in a checkerboard | The cobble piece's pivot is on its edge; turning every other piece by 90 degrees moved it out of its cell | Not turned |
+| The upper ward was a timber deck | The author's terrace tile is planked: his terraces are the keep's roofs | The same tile, paved in the pack's stone |
+| The curtain walls showed their crenels to the ward | The piece's crenels are on its own -Y side, the opposite of the guess | The runs are turned round |
+| The land was one rock picture stretched over 300 m | One box, one texture | 20 m squares |
+| The walk into the Main Hall hit a pillar | The two doorways are 4 m to either side of the axis, not where the plan had guessed | Walk and review spot moved |
+| The Front Hall glowed orange | 50 torch lights of 55 cd, saturated | 34 cd, a paler flame |
+| The crypt stair's first tiles were not the ones removed from the hall's floor | The author turned many floor tiles, so a tile's pivot can be any of its four corners | Tiles are chosen by their middle |
+| A wall of rock stood inside the seal's hall | The slab that keeps daylight out of the crypt followed the keep's back wall, and the hall reaches further west | The rock follows the crypt's real outline |
+| The crypt's vaults were smeared white | The brick material stretched on the vault pieces' UVs | The wall's stone |
+| A glare on the wall in front of the first flight; the seal's hall burnt out | A candle light a metre from the wall; the seal's light too strong and too low | Moved and dimmed |
+
+Before placing the crypt, the shapes of fifteen pieces of the second interior set were read from their vertices (a 4 x 4 grid of heights per piece): which way the stair tile rises, where a vault springs, where a cell wall's door is. Nothing in the crypt was placed from a name.
+
+### The plan against the map
+In the plan's new section 10. The larger differences: the wall walk is 12 m up, not 10 (level with the keep's galleries); the gate passage and the keep's entrance are arches about 3 m wide, not 10; the crypt's mouth is beside the grand stair's first flight; the seal's hall is three by three vaulted bays, 7.5 m to the crown.
+
+### Code (architect, directly)
+- **`AGBSeal::TravelMapPath`** (`World/GBSeal.h/.cpp`): a seal can open another map after its caption instead of changing the era in place. The plan had left open how the castle and the base, two maps, would be joined; this is the smallest thing that does it. Only the progress flags cross to the new map, which is enough for the opening (the player carries only what he starts with).
+- **`HasTravelMap()`** asks the package store whether that map exists, not the file system: in a packaged build a map is inside a container file. The existing final portal checks a file on disk; its check was not reused.
+- **A tour check, "sealmap"** (`Core/GBDevCommands.cpp`): on a spot with that word in its name, every seal of the map must have a map that can be opened, or the tour fails. Without it a seal whose map is not cooked would fall back to the travel in place and nobody would notice.
+- **Exception to the implementer rule:** about thirty lines tied to the map work, written by the architect.
+
+### Start map and launchers
+- `GameDefaultMap` is `/Game/Glyphbound/Maps/PastCastle` (it was the future base, so the owner could walk it): the game begins in the castle, as the GDD's opening sequence says, and reaches the base through the seal. The castle is in `MapsToCook`.
+- `Glyphbound/Play-Castle.bat` and `Glyphbound/Play-FutureBase.bat` start the packaged game on either map; the second is for whoever is working on the base and its enemies.
+
+### Pictures
+`media/2026-11-14/castle_v1_tour_0.png` to `_3.png`: the 28 review spots through the game's camera, from the road to the seal (Editor build).
+
+### Checks
+- Editor target: `Result: Succeeded` (88 s, then 54 s after the second change).
+- Whole test suite: `65 run, 0 failed` (1.35 s of tests).
+- `Smoke-Jam.ps1 -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 28 spots, 0 without floor`, `the seal's map /Game/Glyphbound/Maps/FutureBase can be opened`, no LogGB errors, no engine errors, 123 s.
+- Builder: `walks: clear on 7 walks` (road to ward, wide stair to the keep's door, the breach, Front Hall to Main Hall, terrace to side yard, Main Hall down to the landing, landing to the seal's hall).
+
+### Code review
+Sol 6.1 (medium, read-only) through Codex CLI and the logged wrapper; prompt `Prompts/review_castle_slice1.md`. It was given the measured facts of every piece the builder relies on, and it recomputed the floor tiles left out over the crypt stair from the records (the same two tiles). **Two findings, both real, both fixed:**
+
+| Finding | What it meant | Fix |
+|---|---|---|
+| The barricade of the orcs' stores in the side yard was placed at Z 0 | The yard's floor is 2.1 m up: its kegs, barrels and crates stood buried in the terrace. The tour's picture of that yard showed the wall and no stores, and the architect had read it as "not in view" | `barricade()` takes the floor's height |
+| `HasTravelMap()` accepted any package that exists, not only a map | A seal pointed at a mesh's package would pass the tour's check, and then fail to travel after being spent | The asset registry is asked what the package holds: a package it knows must hold a world. (While the registry has not read the package yet, its existence is all there is to go on.) New module dependency: `AssetRegistry` |
+
+It also confirmed from the engine's source that `FPackageName::DoesPackageExist` sees packages inside IoStore containers, which is why the seal does not use the final portal's file check.
+
+Editor target after the fixes: `Result: Succeeded` (65 s). Builder after the fix: `walks: clear on 7 walks`.
+
+### The package, and a pack material that does not compile
+- **First package** (before the review's fixes): `BUILD SUCCESSFUL` in 181 s. `TeamTBD_Glyphbound.zip` is **2,668 MB** (it was 2,117 MB with the future base alone); `Package-Jam.ps1` reports it as a failure because the jam's limit is 1 GB. The owner set that limit aside on 2026-11-13; it has to be dealt with before the submission (the kits' textures cook at 4096 px).
+- **Second package** (with the fixes): the packaged tour passed on 28 spots and the seal found its map inside the package, but the log had three engine errors: `Loading a material resource None with an invalid ShaderMap` (twice) and `Tried to access an uncooked shader map ID in a cooked application`.
+  - **Cause**, from the cook's log: the pack's `MI_Stab_Algae` fails to compile in this project ("Error on property Normal" in two of its layer functions), and the cook says the default material will be used. Two gatehouse meshes use it on two trim slots each: `SM_Middle_Arch` and `SM_Front_Top`.
+  - **First fix, not enough:** the builder replaced it on the placed pieces. The mesh assets still named it, so the cook would still have taken it.
+  - **Fix:** `Tools/Jam/fix_castle_materials.py` replaces it in the two mesh assets themselves with the pack's plain slab stone (`MI_Slabs_03`): 2 meshes, 4 slots. The builder keeps its own replacement for any piece that names a material of that list.

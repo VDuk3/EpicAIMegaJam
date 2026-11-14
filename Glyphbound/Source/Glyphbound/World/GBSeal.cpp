@@ -11,6 +11,9 @@
 #include "World/GBEraComponent.h"
 #include "World/GBEraSubsystem.h"
 #include "World/GBProgressSubsystem.h"
+#include "AssetRegistry/AssetData.h"
+#include "AssetRegistry/IAssetRegistry.h"
+#include "Engine/World.h"
 #include "Misc/PackageName.h"
 
 namespace GBSealLocal
@@ -185,7 +188,27 @@ void AGBSeal::Tick(float DeltaSeconds)
 bool AGBSeal::HasTravelMap() const
 {
 	// Asked of the package store, not of the file system: in a packaged build the map is inside a container file.
-	return !TravelMapPath.IsEmpty() && FPackageName::IsValidLongPackageName(TravelMapPath, false) && FPackageName::DoesPackageExist(TravelMapPath);
+	if (TravelMapPath.IsEmpty() || !FPackageName::IsValidLongPackageName(TravelMapPath, false) || !FPackageName::DoesPackageExist(TravelMapPath))
+	{
+		return false;
+	}
+	// It must be a map, not just any package: opening a mesh's package as a level fails after the seal is spent.
+	// The asset registry knows what a package holds without loading it. While it has not read this package yet (an
+	// uncooked game that is still scanning) the package's existence is all there is to go on.
+	TArray<FAssetData> Assets;
+	IAssetRegistry::GetChecked().GetAssetsByPackageName(FName(*TravelMapPath), Assets, true);
+	if (Assets.Num() == 0)
+	{
+		return true;
+	}
+	for (const FAssetData& Asset : Assets)
+	{
+		if (Asset.AssetClassPath == UWorld::StaticClass()->GetClassPathName())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void AGBSeal::ResetUse()

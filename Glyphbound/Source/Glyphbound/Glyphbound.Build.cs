@@ -13,7 +13,7 @@ public class Glyphbound : ModuleRules
 		{
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
 			"Json", "JsonUtilities", "AIModule", "NavigationSystem",
-			"Slate", "SlateCore", "UMG", "RenderCore", "Niagara"
+			"Slate", "SlateCore", "UMG", "RenderCore", "Niagara", "AssetRegistry"
 		});
 
 		// Baked pixel VFX clips (Plugins/GBPixelVfx, Runtime module): the flame and the explosion of the Fireball.

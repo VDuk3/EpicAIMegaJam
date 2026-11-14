@@ -56,6 +56,12 @@ NO_BLOCK = ('Candle', 'Cup', 'Plate', 'Book', 'Bottle', 'Goblet', 'ChainLink', '
             'Horse_Shoe', 'Fruit', 'Kettle', 'Pot', 'Cobble', 'Window_A_0', 'Window_B', 'Window_C', 'Window_D', 'Banner')
 
 
+# MI_Stab_Algae (two trim slots of the gatehouse's middle arch and front top): "Failed to compile Material Instance ...
+# Error on property Normal" in its layer functions; in a package it loads with an invalid shader map.
+BAD_MATS = {'MI_Stab_Algae': MI + 'MI_Slabs_03'}
+_bad_slots = {}
+
+
 def asset(path):
     if path not in _assets:
         _assets[path] = unreal.load_asset(path.split('.')[0]) if path else None
@@ -92,6 +98,13 @@ def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=Tr
     for i, m in enumerate(mats or []):
         if m:
             c.set_material(i, asset(m))
+    if path not in _bad_slots:
+        # A pack material that does not compile in this project (the cook says so and uses the default material) is
+        # replaced, slot by slot, by a plain one of the same pack.
+        _bad_slots[path] = [(i, BAD_MATS[sl.material_interface.get_name()]) for i, sl in enumerate(sm.static_materials)
+                            if sl.material_interface and sl.material_interface.get_name() in BAD_MATS]
+    for i, m in _bad_slots[path]:
+        c.set_material(i, asset(m))
     if collide is None:
         name = path.split('/')[-1]
         collide = not any(k in name for k in NO_BLOCK)
@@ -475,24 +488,25 @@ BARREL = PROPS + 'SM_Barrel_01'         # 0.54 m across, 0.73 m high
 CRATE = PROPS + 'Crates/SM_Crate_B_01'  # 0.6 m cube, pivot at a corner
 
 
-def barricade(s, x, y, yaw, kinds):
-    """A row of the camp's stores, laid along the given direction: 'K' a large keg, 'B' two barrels, 'C' crates stacked two high."""
+def barricade(s, x, y, yaw, kinds, z=0.0):
+    """A row of the camp's stores, laid along the given direction on a floor at height z: 'K' a large keg, 'B' two
+    barrels, 'C' crates stacked two high."""
     rad = math.radians(yaw)
     dx, dy = math.cos(rad), math.sin(rad)
     d = 0.0
     for i, k in enumerate(kinds):
         px, py = x + dx * d, y + dy * d
         if k == 'K':
-            mesh(s, 'Camp', KEG, (px, py, 0.0), rot(yaw=yaw + (8 if i % 2 else -6)))
+            mesh(s, 'Camp', KEG, (px, py, z), rot(yaw=yaw + (8 if i % 2 else -6)))
             d += 140.0
         elif k == 'B':
-            mesh(s, 'Camp', BARREL, (px, py - 20.0 * dx, 0.0), rot(yaw=yaw + 15))
-            mesh(s, 'Camp', BARREL, (px + 45.0 * dx, py + 45.0 * dy, 0.0), rot(yaw=yaw + 70))
+            mesh(s, 'Camp', BARREL, (px, py - 20.0 * dx, z), rot(yaw=yaw + 15))
+            mesh(s, 'Camp', BARREL, (px + 45.0 * dx, py + 45.0 * dy, z), rot(yaw=yaw + 70))
             d += 110.0
         else:
-            mesh(s, 'Camp', CRATE, (px + 30.0, py + 30.0, 0.0), rot(yaw=yaw + 5))
-            mesh(s, 'Camp', CRATE, (px + 30.0, py + 30.0, 60.0), rot(yaw=yaw - 9))
-            mesh(s, 'Camp', CRATE, (px + 30.0 + 62.0 * dx, py + 30.0 + 62.0 * dy, 0.0), rot(yaw=yaw))
+            mesh(s, 'Camp', CRATE, (px + 30.0, py + 30.0, z), rot(yaw=yaw + 5))
+            mesh(s, 'Camp', CRATE, (px + 30.0, py + 30.0, z + 60.0), rot(yaw=yaw - 9))
+            mesh(s, 'Camp', CRATE, (px + 30.0 + 62.0 * dx, py + 30.0 + 62.0 * dy, z), rot(yaw=yaw))
             d += 135.0
 
 
@@ -512,7 +526,7 @@ async def stage_camp():
     for x, y, yaw in ((1250, 210, 40), (1560, 190, 150), (1620, -170, 250), (1210, -150, 330)):
         mesh(s, 'Camp', PROPS + 'SM_Sack_01', (x, y, 0.0), rot(yaw=yaw), collide=False)
     # The orcs' stores in the far side yard, on the upper ward.
-    barricade(s, 5900.0, 2250.0, 0.0, 'KKCKB')
+    barricade(s, 5900.0, 2250.0, 0.0, 'KKCKB', z=TERRACE_Z)      # on the upper ward (review: it stood buried at Z 0)
     mesh(s, 'Camp', PROPS + 'SM_WeaponStand', (6800.0, 2350.0, TERRACE_Z), rot(yaw=180))
     log.append('camp: fire, five barricades, cart, the stores in the side yard')
 
