@@ -49,3 +49,71 @@ Nothing was restored in this block: another chat held the machine (`machine.lock
 ## Not done in this block
 - The restore, the kit's contact sheets, the measurements, and the plan to scale.
 - Nothing built, no build or smoke run, nothing packaged.
+
+---
+
+## Second part: the owner's "yes, go ahead"; the castle restored, read and measured; the plan to scale
+The owner's answer to the plan (Spanish): *"Sí, adelante"* (Yes, go ahead).
+
+### The restore
+- `Tools/Jam/Restore-CastlePack.ps1` reads the Recycle Bin's own records (its `$I` files: original path, size, date) and moves each matching item back where it was. It overwrites nothing.
+- **Restored:** 939 items, 4,378 MB: the author's assembled castle levels, the castle kit, the second interior set, props, blueprints, materials and textures.
+- **Left in the bin:** 760 items (the town's houses and docks, landscape, water, scanned foliage, demo mannequins).
+- Done while the other chat's packaged game was still running, since moving files into `Content/CastleTown` touches neither its package nor its run; the Editor was opened only after it released the machine (17:50), under this chat's own lock.
+
+### Reading the author's castle (Editor, read-only)
+Tools written for it, all in `Tools/Jam/`:
+- `castle_read.py`: opens each level of the author's castle and writes every piece (mesh, place, turn, scale, bounds), every light and every level instance to JSON; measures every static mesh of the kit (size, pivot, triangles, materials, collision).
+- `castle_piece_pictures.py`: one picture of each piece, alone on a floor, with a 1 m and a 1.8 m post beside it.
+- `castle_plan_svg.js`: a level's JSON as a top-down plan to scale.
+- The existing `capture_views.py` for views and for plan cuts (an orthographic camera looking down from a chosen height).
+
+The first read took ten minutes: the Editor rebuilt the Nanite data of every castle mesh on first load. The caller's HTTP request gave up after five; the script went on inside the Editor and its files were watched instead.
+
+**What was looked at:** 15 levels (11 castle sections, 3 sub-levels, the author's construction level); 336 meshes measured; the keep from four sides and from above; twelve plan cuts of the keep, from 2.5 m below its floor to 56 m; twelve views from inside; a picture of each of 103 pieces (the whole second interior set, stairs, gate, curtain wall, spiral stair, doors).
+
+**Pictures** (`media/2026-11-14/`):
+- `castle_author_keep_exterior.png`, `castle_author_keep_top.png`: the keep as the pack's author assembled it.
+- `castle_author_keep_cuts_a.png`, `_b.png`: its plan at twelve heights.
+- `castle_author_keep_inside_a.png`, `_b.png`: views from inside (unlit; the offscreen capture does not wait for texture streaming, so they are soft).
+- `castle_pieces_0.png` to `_3.png`: the pieces, with scale posts.
+- `castle_plan_v1.png`: the plan and section of this block.
+
+### What the castle turned out to be
+- **A keep in a T, 92 x 59 m and 55 m high, in five sections:** Front Hall (the entrance, between two round towers), Main Hall behind it (a stair hall: a grand stair of six flights, 25 m), King's Hall and Side Hall as wings, and a Top Level of three more floors.
+- **Everything the owner named is already in it:** six spiral stairs (two in the entrance towers, four turrets on the Top Level); galleries 9 m up in both wings that have no stair of their own, reached only through a door from the Main Hall's stair; a roof walk between the two entrance towers.
+- **Storeys are 9 m apart.** The plan's guess from piece names had been 5 m.
+- **The second interior set has no materials at all** (every slot empty): plain low meshes for a vaulted corridor, a stair, cells and a hall. It will take whatever look the past is given.
+- **The author's curtain wall** is a ring of 150 x 175 m on a hill, partly built by spline blueprints. It is not reused; its sections (gatehouse, wall tower, wall stair, corner towers, wall pieces) are.
+- **Most kit pieces have no simple collision** (they need "complex as simple", as the base's kits did), and **tower and room doors are about 1.3 m wide.**
+
+### The plan, version 1
+`Design/Levels/PAST_CASTLE_PLAN.md`, drawn by `Design/Levels/make_castle_plan.js`: the keep's own floor plan (the Editor's cut at 2.5 m, embedded to scale) with what the plan adds around and under it, and a section on the same axis.
+
+- **The keep is placed whole**, as the base's control room, corridor and hangar were.
+- **Added in front:** the author's gatehouse, curtain walls 52 m apart with a wall tower at each end, a lower ward (the orcs' camp, the first fight) and an upper ward 2.1 m higher, joined by a wide stair and by a breach with rubble steps; a wall stair in a side yard, shut in this slice.
+- **Added below:** the crypt, from the second interior set: a stair of four flights from a rear corner of the Main Hall, a corridor with three cells, the seal's hall under an 11 m vault in the rock behind the keep, 12 m below the keep's floor.
+- **Version 0 against the real castle** is a table in the plan (section 3.4): the Front Hall has aisles, not side rooms; the crypt stair leaves from the Main Hall; every height changed.
+
+### Decisions (architect)
+- **Restore from the bin, not from Fab:** it was already on disk, it is exactly what the project had, and it needs no download.
+- **Only the castle part comes back.** If a castle level turns out to need something left behind, that one thing is restored.
+- **The moss is left out of the records and of the map** (35,000 instanced clumps): foliage for a photographic look.
+- **The crypt goes behind the keep, not under its halls:** the wings stand on pillars that go 5 m below their floors, and the crypt's vault is 11 m high.
+- **No level of the pack was changed or saved.** A review level (`/Game/Glyphbound/Maps/Dev/Review_Castle`) was created for the piece pictures.
+- **Exception to the implementer rule:** the architect wrote the reading tools directly; they are small Editor scripts judged on pictures at every step. No game code changed.
+- GDD v0.60, §4.
+
+### Mistakes on the way
+- The first plan drawing put the crypt stair on top of the grand stair's first flight; it showed once the keep's own floor plan was under the drawing, and the stair moved to a rear corner.
+- A one-line patch of the drawing script typed straight into the shell broke its quoting and the file; the script was rewritten whole. The project's rule (one-off scripts in a file) exists for this.
+
+### Checks
+- The Editor was opened with `Start-EditorMcp.ps1` (MCP ready in 105 s) and closed with `Stop-EditorMcp.ps1` (6 s, log collected). The machine lock was taken and released.
+- No build, no smoke run, no tests: no code changed.
+
+### Not done
+- Nothing is built. The next step, after the owner's word on the drawing: `Build-PastCastle.py`, slice 1.
+- The pixel-art look of the castle's stone is not decided; a test on one section goes to the owner first.
+- The keep's entrance was not looked at up close (how its floor meets the upper ward), nor the exact spot of the crypt stair.
+- `Content/CastleTown` is 4.7 GB again; what the map does not use can go back to the bin once the map exists.

@@ -1,0 +1,9005 @@
+[
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Wall_A_03",
+"min": [
+-427.9,
+-400.0,
+0.0
+],
+"max": [
+0.0,
+16.4,
+400.0
+],
+"size": [
+428,
+416,
+400
+],
+"tris": 50019,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_05",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/DoorWays/SM_CastleTower_Wall_Door_A_03",
+"min": [
+0.0,
+-58.5,
+0.0
+],
+"max": [
+200.0,
+8.5,
+400.0
+],
+"size": [
+200,
+67,
+400
+],
+"tris": 2690,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_12",
+"min": [
+-318.4,
+-300.0,
+0.0
+],
+"max": [
+0.0,
+24.0,
+400.0
+],
+"size": [
+318,
+324,
+400
+],
+"tris": 42610,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_13",
+"min": [
+0.0,
+-65.2,
+0.0
+],
+"max": [
+400.0,
+16.9,
+400.0
+],
+"size": [
+400,
+82,
+400
+],
+"tris": 9633,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Castle_SeamHider_01",
+"min": [
+-29.2,
+-14.9,
+-0.8
+],
+"max": [
+29.2,
+14.9,
+398.9
+],
+"size": [
+58,
+30,
+400
+],
+"tris": 1918,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickKit_06"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Crenel_A_02",
+"min": [
+-208.2,
+-67.8,
+-0.4
+],
+"max": [
+8.2,
+18.2,
+224.1
+],
+"size": [
+216,
+86,
+224
+],
+"tris": 4020,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_07",
+"min": [
+-427.9,
+-400.0,
+0.0
+],
+"max": [
+0.0,
+16.4,
+400.0
+],
+"size": [
+428,
+416,
+400
+],
+"tris": 49140,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_05",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_VarnishedWood_01",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Crenel_A_03",
+"min": [
+-427.4,
+-408.9,
+-2.3
+],
+"max": [
+8.9,
+18.1,
+233.3
+],
+"size": [
+436,
+427,
+236
+],
+"tris": 7736,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickKit_06",
+"MI_BrickKit_05",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Castle_SeamHider_02",
+"min": [
+-5.9,
+-52.0,
+-0.9
+],
+"max": [
+6.3,
+5.4,
+400.7
+],
+"size": [
+12,
+57,
+402
+],
+"tris": 1070,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_B_02",
+"min": [
+-436.5,
+-401.3,
+-8.8
+],
+"max": [
+4.6,
+31.9,
+57.7
+],
+"size": [
+441,
+433,
+67
+],
+"tris": 914,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_02",
+"MI_BrickKit_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/SM_Spiral_Stairs",
+"min": [
+-352.9,
+-353.6,
+-0.0
+],
+"max": [
+352.9,
+353.6,
+453.1
+],
+"size": [
+706,
+707,
+453
+],
+"tris": 952,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_DoorFrame_A_01",
+"min": [
+-90.8,
+-27.2,
+-0.8
+],
+"max": [
+86.5,
+28.9,
+277.3
+],
+"size": [
+177,
+56,
+278
+],
+"tris": 1004,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_VarnishedWood_01",
+"MI_StoneFence_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Crenel_A_Pillar",
+"min": [
+-104.6,
+-32.8,
+-0.8
+],
+"max": [
+29.6,
+104.4,
+290.2
+],
+"size": [
+134,
+137,
+291
+],
+"tris": 5007,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_05"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_DoorFrame_A_02",
+"min": [
+-90.8,
+-27.2,
+-0.7
+],
+"max": [
+86.5,
+28.9,
+277.3
+],
+"size": [
+177,
+56,
+278
+],
+"tris": 714,
+"lods": 6,
+"mats": [
+"WorldGridMaterial",
+"MI_StoneFence_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_A_03",
+"min": [
+-524.2,
+-400.0,
+-100.0
+],
+"max": [
+0.0,
+124.2,
+122.7
+],
+"size": [
+524,
+524,
+223
+],
+"tris": 256,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_A_03",
+"min": [
+-400.0,
+-0.0,
+0.0
+],
+"max": [
+0.0,
+400.0,
+50.0
+],
+"size": [
+400,
+400,
+50
+],
+"tris": 323,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Floor"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Roofs/SM_ConeRoof_01",
+"min": [
+-676.0,
+-675.6,
+-6.8
+],
+"max": [
+678.2,
+678.3,
+1109.8
+],
+"size": [
+1354,
+1354,
+1117
+],
+"tris": 71430,
+"lods": 6,
+"mats": [
+"MI_IndividualRoofTiles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/DoorWays/SM_CastleTower_Wall_Door_A_01",
+"min": [
+0.0,
+-58.5,
+0.0
+],
+"max": [
+400.0,
+8.5,
+400.0
+],
+"size": [
+400,
+67,
+400
+],
+"tris": 5015,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/SM_Spiral_Stairs_Cap",
+"min": [
+-352.9,
+-353.6,
+-0.0
+],
+"max": [
+352.9,
+353.6,
+465.1
+],
+"size": [
+706,
+707,
+465
+],
+"tris": 930,
+"lods": 6,
+"mats": [
+"MI_StoneFence_05"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_09",
+"min": [
+0.0,
+-67.4,
+0.0
+],
+"max": [
+400.0,
+14.7,
+400.0
+],
+"size": [
+400,
+82,
+400
+],
+"tris": 9526,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_Corner",
+"min": [
+-1.1,
+-123.4,
+1.7
+],
+"max": [
+123.1,
+0.8,
+124.3
+],
+"size": [
+124,
+124,
+123
+],
+"tris": 160,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Arch_Walkway/SM_Arch_Walkway_Corner_B",
+"min": [
+-446.1,
+-45.6,
+0.0
+],
+"max": [
+0.5,
+400.5,
+500.4
+],
+"size": [
+447,
+446,
+500
+],
+"tris": 1586,
+"lods": 6,
+"mats": [
+"MI_StoneFence_02",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Wall_A_02",
+"min": [
+0.0,
+-58.9,
+0.0
+],
+"max": [
+200.0,
+8.5,
+400.0
+],
+"size": [
+200,
+67,
+400
+],
+"tris": 8266,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Doorway_2M",
+"min": [
+-0.0,
+-17.7,
+-0.3
+],
+"max": [
+400.0,
+107.7,
+1000.3
+],
+"size": [
+400,
+125,
+1001
+],
+"tris": 6786,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Crenel_A_01",
+"min": [
+-8.2,
+-70.7,
+-0.4
+],
+"max": [
+408.2,
+14.0,
+231.0
+],
+"size": [
+416,
+85,
+231
+],
+"tris": 8962,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Internal_Floors/SM_Herringbone_4M",
+"min": [
+-1.0,
+-1.2,
+0.0
+],
+"max": [
+401.3,
+401.1,
+89.2
+],
+"size": [
+402,
+402,
+89
+],
+"tris": 4086,
+"lods": 6,
+"mats": [
+"MI_StoneFence_02",
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_WallTopper_A_01",
+"min": [
+-400.7,
+-55.7,
+-1.7
+],
+"max": [
+0.1,
+9.4,
+46.3
+],
+"size": [
+401,
+65,
+48
+],
+"tris": 1080,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Main_Stairs",
+"min": [
+-415.6,
+-807.7,
+-4.9
+],
+"max": [
+13.7,
+6.7,
+602.7
+],
+"size": [
+429,
+814,
+608
+],
+"tris": 13148,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Arch_Walkway/SM_Arch_Walkway_Side_B",
+"min": [
+-45.6,
+-0.5,
+0.0
+],
+"max": [
+445.6,
+400.5,
+500.4
+],
+"size": [
+491,
+401,
+500
+],
+"tris": 1580,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Internal_Floors/SM_Planks_4M",
+"min": [
+-0.9,
+-0.1,
+0.0
+],
+"max": [
+402.0,
+402.6,
+90.4
+],
+"size": [
+403,
+403,
+90
+],
+"tris": 23792,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_B_01",
+"min": [
+-405.1,
+-65.7,
+-8.4
+],
+"max": [
+6.1,
+40.9,
+58.4
+],
+"size": [
+411,
+107,
+67
+],
+"tris": 950,
+"lods": 6,
+"mats": [
+"MI_BrickKit_01",
+"MI_BrickKit_02",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Pillar_A_02",
+"min": [
+-48.3,
+-56.5,
+-250.0
+],
+"max": [
+110.0,
+56.5,
+837.4
+],
+"size": [
+158,
+113,
+1087
+],
+"tris": 6195,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_03"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_A_01",
+"min": [
+-400.0,
+0.0,
+0.0
+],
+"max": [
+0.0,
+124.2,
+122.7
+],
+"size": [
+400,
+124,
+123
+],
+"tris": 120,
+"lods": 6,
+"mats": [
+"MI_StoneFence_05"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_01",
+"min": [
+-0.3,
+-66.1,
+-0.4
+],
+"max": [
+400.3,
+14.6,
+400.9
+],
+"size": [
+401,
+81,
+401
+],
+"tris": 58169,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickStoneWall_Disp",
+"MI_Metal",
+"M_Glass"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Pillar_A_01",
+"min": [
+-93.3,
+-17.6,
+0.0
+],
+"max": [
+19.8,
+94.8,
+401.7
+],
+"size": [
+113,
+112,
+402
+],
+"tris": 28232,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickKit_06",
+"MI_BrickKit_05",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_A_01",
+"min": [
+0.0,
+0.0,
+0.0
+],
+"max": [
+400.0,
+400.0,
+50.0
+],
+"size": [
+400,
+400,
+50
+],
+"tris": 298,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Floor"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Internal_Floors/SM_Square_Planks_4M",
+"min": [
+-1.5,
+0.0,
+0.0
+],
+"max": [
+400.8,
+403.2,
+87.5
+],
+"size": [
+402,
+403,
+87
+],
+"tris": 37328,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Wall_A_01",
+"min": [
+0.0,
+-58.8,
+0.0
+],
+"max": [
+400.0,
+8.9,
+400.0
+],
+"size": [
+400,
+68,
+400
+],
+"tris": 12079,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_WallTopper_A_02",
+"min": [
+-200.9,
+-55.7,
+0.0
+],
+"max": [
+0.9,
+4.3,
+52.9
+],
+"size": [
+202,
+60,
+53
+],
+"tris": 648,
+"lods": 6,
+"mats": [
+"MI_BrickKit_04",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_10",
+"min": [
+0.0,
+-67.4,
+0.0
+],
+"max": [
+200.0,
+14.7,
+400.0
+],
+"size": [
+200,
+82,
+400
+],
+"tris": 7197,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_04",
+"min": [
+-319.2,
+-301.2,
+-1.7
+],
+"max": [
+1.1,
+24.7,
+400.6
+],
+"size": [
+320,
+326,
+402
+],
+"tris": 116111,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03",
+"MI_Metal",
+"M_Glass"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_A_02",
+"min": [
+-200.0,
+0.0,
+0.0
+],
+"max": [
+0.0,
+124.2,
+122.7
+],
+"size": [
+200,
+124,
+123
+],
+"tris": 120,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Back_Arch",
+"min": [
+-0.0,
+-17.1,
+-0.7
+],
+"max": [
+1000.0,
+108.6,
+800.0
+],
+"size": [
+1000,
+126,
+801
+],
+"tris": 16652,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_BrickKit_07"
+],
+"simple": 2,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Wall_1x5",
+"min": [
+1.0,
+-15.6,
+-1.8
+],
+"max": [
+401.0,
+109.6,
+499.8
+],
+"size": [
+400,
+125,
+502
+],
+"tris": 5584,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Wall_Edging",
+"min": [
+0.0,
+0.0,
+0.0
+],
+"max": [
+1000.0,
+73.0,
+59.4
+],
+"size": [
+1000,
+73,
+59
+],
+"tris": 44,
+"lods": 6,
+"mats": [
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Roofs/SM_LargeRoof_01",
+"min": [
+-1610.2,
+-809.8,
+0.8
+],
+"max": [
+1610.3,
+9.8,
+858.4
+],
+"size": [
+3220,
+820,
+858
+],
+"tris": 37084,
+"lods": 6,
+"mats": [
+"MI_IndividualRoofTiles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Roofs/SM_LargeRoof_02",
+"min": [
+-1610.4,
+-992.2,
+0.8
+],
+"max": [
+1610.3,
+26.3,
+859.1
+],
+"size": [
+3221,
+1019,
+858
+],
+"tris": 70850,
+"lods": 6,
+"mats": [
+"MI_IndividualRoofTiles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_CurtainWall_SeamHider",
+"min": [
+-54.1,
+-245.1,
+-0.0
+],
+"max": [
+54.1,
+245.1,
+1383.9
+],
+"size": [
+108,
+490,
+1384
+],
+"tris": 28678,
+"lods": 6,
+"mats": [
+"MI_BrickKit_01",
+"MI_BrickKit_02",
+"MI_BrickKit_03",
+"MI_BrickKit_05",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/DoorWays/SM_CastleTower_Wall_Door_A_04",
+"min": [
+0.0,
+-58.5,
+0.0
+],
+"max": [
+200.0,
+8.5,
+400.0
+],
+"size": [
+200,
+67,
+400
+],
+"tris": 2612,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Front_Arch",
+"min": [
+-0.0,
+-17.1,
+-4.7
+],
+"max": [
+1000.0,
+108.6,
+800.0
+],
+"size": [
+1000,
+126,
+805
+],
+"tris": 14648,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 2,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Castle_Door",
+"min": [
+-5.5,
+-11.7,
+-0.0
+],
+"max": [
+25.9,
+146.7,
+524.6
+],
+"size": [
+31,
+158,
+525
+],
+"tris": 31241,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Middle_Arch",
+"min": [
+-6.6,
+-3.2,
+-9.8
+],
+"max": [
+1001.7,
+168.3,
+499.2
+],
+"size": [
+1008,
+171,
+509
+],
+"tris": 16896,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03",
+"MI_Stab_Algae",
+"MI_Stab_Algae",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Stairs_5M",
+"min": [
+-2.6,
+-1.7,
+-0.1
+],
+"max": [
+103.5,
+500.4,
+504.6
+],
+"size": [
+106,
+502,
+505
+],
+"tris": 7616,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 25,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_A_05",
+"min": [
+-424.2,
+0.0,
+0.0
+],
+"max": [
+112.6,
+224.2,
+122.7
+],
+"size": [
+537,
+224,
+123
+],
+"tris": 318,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Front_Top",
+"min": [
+-1.0,
+-18.8,
+-0.2
+],
+"max": [
+999.0,
+67.1,
+195.4
+],
+"size": [
+1000,
+86,
+196
+],
+"tris": 8748,
+"lods": 6,
+"mats": [
+"MI_Stab_Algae",
+"MI_Stab_Algae",
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_A_04",
+"min": [
+-424.2,
+-300.0,
+-100.0
+],
+"max": [
+0.0,
+124.2,
+122.7
+],
+"size": [
+424,
+424,
+223
+],
+"tris": 256,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Portcullis_Frame",
+"min": [
+-101.9,
+-10.9,
+-5.8
+],
+"max": [
+9.6,
+82.3,
+597.7
+],
+"size": [
+111,
+93,
+604
+],
+"tris": 1735,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Stairs_4M",
+"min": [
+-810.7,
+-0.7,
+3.6
+],
+"max": [
+9.0,
+297.3,
+213.2
+],
+"size": [
+820,
+298,
+210
+],
+"tris": 4200,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_A_02",
+"min": [
+0.0,
+-0.0,
+0.0
+],
+"max": [
+100.0,
+400.0,
+50.0
+],
+"size": [
+100,
+400,
+50
+],
+"tris": 132,
+"lods": 6,
+"mats": [
+"MI_Floor",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_Curtain_Wall_Pillar",
+"min": [
+-56.6,
+-233.4,
+-1.5
+],
+"max": [
+56.8,
+233.4,
+1087.6
+],
+"size": [
+113,
+467,
+1089
+],
+"tris": 104240,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_DoorFrame_B_02",
+"min": [
+-90.8,
+-26.7,
+-0.7
+],
+"max": [
+86.5,
+29.6,
+252.5
+],
+"size": [
+177,
+56,
+253
+],
+"tris": 446,
+"lods": 6,
+"mats": [
+"MI_StoneFence_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/DoorWays/SM_CastleTower_Wall_Door_A_02",
+"min": [
+0.0,
+-58.5,
+0.0
+],
+"max": [
+400.0,
+8.5,
+400.0
+],
+"size": [
+400,
+67,
+400
+],
+"tris": 4987,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_05",
+"min": [
+0.0,
+-58.8,
+0.0
+],
+"max": [
+400.0,
+8.9,
+400.0
+],
+"size": [
+400,
+68,
+400
+],
+"tris": 10966,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_VarnishedWood_01",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Stair_Support_2M",
+"min": [
+-53.0,
+-5.1,
+-0.5
+],
+"max": [
+2.8,
+205.2,
+134.5
+],
+"size": [
+56,
+210,
+135
+],
+"tris": 1366,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_Curtain_Wall_03_Fix",
+"min": [
+-0.7,
+-216.0,
+-0.8
+],
+"max": [
+401.1,
+357.3,
+1456.6
+],
+"size": [
+402,
+573,
+1457
+],
+"tris": 292560,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_BrickKit_07",
+"MI_WoodPlanks",
+"MI_BrickKit_02",
+"MI_BrickKit_05"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_Curtain_Wall_02",
+"min": [
+-0.8,
+-216.2,
+-0.5
+],
+"max": [
+401.4,
+215.8,
+1361.8
+],
+"size": [
+402,
+432,
+1362
+],
+"tris": 151729,
+"lods": 7,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_BrickKit_07",
+"MI_WoodPlanks"
+],
+"simple": 5,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Podium",
+"min": [
+-13.3,
+-8.3,
+0.0
+],
+"max": [
+212.2,
+207.4,
+506.6
+],
+"size": [
+225,
+216,
+507
+],
+"tris": 8764,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_07"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Wall_16x5",
+"min": [
+-108.4,
+-0.0,
+0.0
+],
+"max": [
+16.9,
+1600.0,
+501.6
+],
+"size": [
+125,
+1600,
+502
+],
+"tris": 11618,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_Curtain_Wall_01",
+"min": [
+-0.8,
+-216.0,
+-0.4
+],
+"max": [
+401.0,
+215.8,
+1362.8
+],
+"size": [
+402,
+432,
+1363
+],
+"tris": 160306,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_WoodPlanks",
+"MI_BrickKit_07",
+"MI_StoneFence_05",
+"MI_StoneFence_05"
+],
+"simple": 4,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_A_04",
+"min": [
+0.0,
+-0.0,
+0.0
+],
+"max": [
+100.0,
+300.0,
+50.0
+],
+"size": [
+100,
+300,
+50
+],
+"tris": 199,
+"lods": 6,
+"mats": [
+"MI_Floor",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_B_04",
+"min": [
+-134.2,
+-28.9,
+-15.9
+],
+"max": [
+34.4,
+136.2,
+66.4
+],
+"size": [
+169,
+165,
+82
+],
+"tris": 1212,
+"lods": 6,
+"mats": [
+"MI_BrickKit_02",
+"MI_BrickKit_07",
+"MI_BrickKit_01",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Wall_A_04",
+"min": [
+-318.4,
+-300.0,
+0.0
+],
+"max": [
+0.0,
+24.0,
+400.0
+],
+"size": [
+318,
+324,
+400
+],
+"tris": 43529,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_04",
+"MI_BrickKit_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_A_05",
+"min": [
+-600.0,
+-600.0,
+0.0
+],
+"max": [
+600.0,
+600.0,
+50.0
+],
+"size": [
+1200,
+1200,
+50
+],
+"tris": 1885,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Floor"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_Floor_Seam_B_03",
+"min": [
+-336.5,
+-301.2,
+-8.8
+],
+"max": [
+4.9,
+31.9,
+57.7
+],
+"size": [
+341,
+333,
+67
+],
+"tris": 850,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_01",
+"MI_BrickKit_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_WallTopper_A_03",
+"min": [
+-414.4,
+-400.6,
+-7.5
+],
+"max": [
+0.3,
+15.3,
+52.8
+],
+"size": [
+415,
+416,
+60
+],
+"tris": 1038,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_CastleTower_WallTopper_A_04",
+"min": [
+-305.3,
+-297.8,
+-1.2
+],
+"max": [
+0.5,
+9.7,
+46.8
+],
+"size": [
+306,
+307,
+48
+],
+"tris": 914,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_04"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/SM_Crenel_A_04",
+"min": [
+-318.4,
+-308.2,
+-1.9
+],
+"max": [
+9.9,
+24.0,
+230.3
+],
+"size": [
+328,
+332,
+232
+],
+"tris": 6667,
+"lods": 6,
+"mats": [
+"MI_BrickKit_07",
+"MI_BrickKit_05",
+"MI_BrickKit_04",
+"MI_BrickKit_06",
+"MI_BrickKit_03",
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_02",
+"min": [
+-0.6,
+-66.1,
+-0.3
+],
+"max": [
+200.4,
+14.6,
+400.8
+],
+"size": [
+201,
+81,
+401
+],
+"tris": 54487,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_Metal",
+"M_Glass"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_03",
+"min": [
+-429.4,
+-401.3,
+-1.7
+],
+"max": [
+1.8,
+17.2,
+401.6
+],
+"size": [
+431,
+418,
+403
+],
+"tris": 115330,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_05",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03",
+"MI_Metal",
+"M_Glass"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_06",
+"min": [
+0.0,
+-58.9,
+0.0
+],
+"max": [
+200.0,
+8.2,
+400.0
+],
+"size": [
+200,
+67,
+400
+],
+"tris": 9863,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_VarnishedWood_01",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_08",
+"min": [
+-318.4,
+-300.0,
+0.0
+],
+"max": [
+0.0,
+24.0,
+400.0
+],
+"size": [
+318,
+324,
+400
+],
+"tris": 43656,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_VarnishedWood_01",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_11",
+"min": [
+-427.9,
+-400.0,
+0.0
+],
+"max": [
+0.0,
+16.4,
+400.0
+],
+"size": [
+428,
+416,
+400
+],
+"tris": 49091,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_05",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_14",
+"min": [
+0.0,
+-65.2,
+0.0
+],
+"max": [
+200.0,
+16.9,
+400.0
+],
+"size": [
+200,
+82,
+400
+],
+"tris": 7007,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_15",
+"min": [
+-427.9,
+-400.0,
+0.0
+],
+"max": [
+0.0,
+16.4,
+400.0
+],
+"size": [
+428,
+416,
+400
+],
+"tris": 49297,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_05",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/A/Windows/SM_CastleTower_Window_A_16",
+"min": [
+-318.4,
+-300.0,
+0.0
+],
+"max": [
+0.0,
+24.0,
+400.0
+],
+"size": [
+318,
+324,
+400
+],
+"tris": 43748,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_06",
+"MI_BrickKit_04",
+"MI_BrickKit_03",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Castle_Gate/SM_Portcullis",
+"min": [
+-11.4,
+-10.0,
+0.0
+],
+"max": [
+413.5,
+11.9,
+599.1
+],
+"size": [
+425,
+22,
+599
+],
+"tris": 5732,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Short_Walls_Post",
+"min": [
+-9.0,
+-63.0,
+0.0
+],
+"max": [
+62.8,
+9.1,
+221.8
+],
+"size": [
+72,
+72,
+222
+],
+"tris": 1477,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Short_Walls_Wall_2M",
+"min": [
+-21.3,
+-201.6,
+-0.0
+],
+"max": [
+47.4,
+3.8,
+202.5
+],
+"size": [
+69,
+205,
+203
+],
+"tris": 1794,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Short_Walls_Wall_Corner",
+"min": [
+-10.5,
+-3.4,
+0.0
+],
+"max": [
+206.5,
+211.2,
+204.0
+],
+"size": [
+217,
+215,
+204
+],
+"tris": 2640,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Courtyard/SM_Stairs_8M",
+"min": [
+-810.7,
+-0.7,
+3.6
+],
+"max": [
+9.0,
+605.2,
+413.5
+],
+"size": [
+820,
+606,
+410
+],
+"tris": 6890,
+"lods": 6,
+"mats": [
+"MI_BrickKit_03",
+"MI_BrickKit_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Wall_16x15",
+"min": [
+-117.0,
+-0.0,
+0.0
+],
+"max": [
+8.5,
+1600.0,
+1500.0
+],
+"size": [
+125,
+1600,
+1500
+],
+"tris": 22130,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/Hall_1/SM_Wall_Door_16x15",
+"min": [
+-117.0,
+-0.0,
+-0.7
+],
+"max": [
+8.5,
+1600.0,
+1500.0
+],
+"size": [
+125,
+1600,
+1501
+],
+"tris": 21894,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_StoneFence_03",
+"MI_BrickKit_07"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_DoorFrame_B_01",
+"min": [
+-90.8,
+-26.7,
+-0.8
+],
+"max": [
+86.5,
+29.6,
+252.5
+],
+"size": [
+177,
+56,
+253
+],
+"tris": 562,
+"lods": 6,
+"mats": [
+"MI_StoneFence_04",
+"MI_VarnishedWood_01",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Door_A_01",
+"min": [
+-111.0,
+-7.0,
+1.2
+],
+"max": [
+1.4,
+15.3,
+246.2
+],
+"size": [
+112,
+22,
+245
+],
+"tris": 1178,
+"lods": 6,
+"mats": [
+"WorldGridMaterial",
+"WorldGridMaterial",
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Door_B_01",
+"min": [
+-111.0,
+-7.0,
+1.2
+],
+"max": [
+1.4,
+15.5,
+223.4
+],
+"size": [
+112,
+23,
+222
+],
+"tris": 1413,
+"lods": 6,
+"mats": [
+"WorldGridMaterial",
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Window_A_01",
+"min": [
+-67.6,
+-41.9,
+-0.5
+],
+"max": [
+67.6,
+40.2,
+212.1
+],
+"size": [
+135,
+82,
+213
+],
+"tris": 4680,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03",
+"MI_Metal",
+"M_Glass",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Window_A_02",
+"min": [
+-67.6,
+-11.2,
+0.0
+],
+"max": [
+67.6,
+11.2,
+212.0
+],
+"size": [
+135,
+22,
+212
+],
+"tris": 1112,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Window_B_01",
+"min": [
+-37.7,
+-7.9,
+0.0
+],
+"max": [
+37.6,
+7.1,
+128.9
+],
+"size": [
+75,
+15,
+129
+],
+"tris": 1114,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01",
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Window_C_01",
+"min": [
+-35.1,
+-28.2,
+0.0
+],
+"max": [
+33.2,
+26.4,
+164.3
+],
+"size": [
+68,
+55,
+164
+],
+"tris": 734,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/SM_Window_D_01",
+"min": [
+-23.3,
+-26.8,
+0.0
+],
+"max": [
+23.3,
+28.0,
+149.3
+],
+"size": [
+47,
+55,
+149
+],
+"tris": 454,
+"lods": 6,
+"mats": [
+"MI_StoneFence_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_DoorBore_A",
+"min": [
+-67.9,
+-97.2,
+-0.4
+],
+"max": [
+67.9,
+97.2,
+261.2
+],
+"size": [
+136,
+194,
+262
+],
+"tris": 82,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_DoorBore_B",
+"min": [
+-70.3,
+-89.9,
+0.0
+],
+"max": [
+70.3,
+89.9,
+239.4
+],
+"size": [
+141,
+180,
+239
+],
+"tris": 12,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_WindowBore_A",
+"min": [
+-51.4,
+-85.5,
+10.3
+],
+"max": [
+51.4,
+85.5,
+202.3
+],
+"size": [
+103,
+171,
+192
+],
+"tris": 84,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_WindowBore_B",
+"min": [
+-31.7,
+-95.1,
+4.1
+],
+"max": [
+31.7,
+95.1,
+122.7
+],
+"size": [
+63,
+190,
+119
+],
+"tris": 84,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_WindowBore_C",
+"min": [
+-24.3,
+-79.3,
+6.9
+],
+"max": [
+24.3,
+98.4,
+157.5
+],
+"size": [
+49,
+178,
+151
+],
+"tris": 84,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/Buildings/WindowsandDoors/Boolean_Tools/SM_WindowBore_D",
+"min": [
+-14.1,
+-95.8,
+3.9
+],
+"max": [
+14.1,
+95.8,
+145.9
+],
+"size": [
+28,
+192,
+142
+],
+"tris": 12,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Castle_Kit/CurtainWall/SM_Curtain_Wall_Turret",
+"min": [
+-212.7,
+-171.3,
+-0.8
+],
+"max": [
+209.5,
+256.8,
+1456.6
+],
+"size": [
+422,
+428,
+1457
+],
+"tris": 179586,
+"lods": 6,
+"mats": [
+"MI_BrickStoneWall_Disp",
+"MI_WoodPlanks",
+"MI_StoneFence_03",
+"MI_BrickKit_07",
+"MI_BrickKit_02",
+"MI_BrickKit_05"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_ArchCorridorHall_01",
+"min": [
+-259.2,
+-6.9,
+0.0
+],
+"max": [
+5.2,
+99.0,
+426.8
+],
+"size": [
+264,
+106,
+427
+],
+"tris": 811,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_ArchMed_01",
+"min": [
+-72.1,
+8.0,
+0.0
+],
+"max": [
+72.1,
+392.0,
+613.9
+],
+"size": [
+144,
+384,
+614
+],
+"tris": 814,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_Arch_01",
+"min": [
+-103.1,
+-0.2,
+-25.9
+],
+"max": [
+0.0,
+800.2,
+425.3
+],
+"size": [
+103,
+800,
+451
+],
+"tris": 802,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_BorderSide_01",
+"min": [
+-58.0,
+-0.3,
+-0.3
+],
+"max": [
+18.2,
+762.8,
+142.8
+],
+"size": [
+76,
+763,
+143
+],
+"tris": 793,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_BorderSide_02",
+"min": [
+-76.0,
+-764.3,
+-0.3
+],
+"max": [
+0.2,
+-1.2,
+492.8
+],
+"size": [
+76,
+763,
+493
+],
+"tris": 524,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CeilingMainHall_01",
+"min": [
+-4.7,
+-600.0,
+-0.2
+],
+"max": [
+1204.7,
+0.0,
+578.9
+],
+"size": [
+1209,
+600,
+579
+],
+"tris": 368,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CeilingVaultedStair_01",
+"min": [
+-18.1,
+-800.0,
+0.0
+],
+"max": [
+800.0,
+0.0,
+634.7
+],
+"size": [
+818,
+800,
+635
+],
+"tris": 1388,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CeilingVaulted_01",
+"min": [
+-0.0,
+-800.0,
+-0.0
+],
+"max": [
+800.0,
+0.0,
+348.0
+],
+"size": [
+800,
+800,
+348
+],
+"tris": 686,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorArch_01",
+"min": [
+-0.0,
+-592.2,
+-25.9
+],
+"max": [
+70.0,
+-7.8,
+288.1
+],
+"size": [
+70,
+584,
+314
+],
+"tris": 524,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorCellBars_01",
+"min": [
+8.0,
+-10.2,
+-1.4
+],
+"max": [
+283.2,
+10.2,
+449.6
+],
+"size": [
+275,
+20,
+451
+],
+"tris": 712,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorCellDoor_01",
+"min": [
+-116.5,
+-5.8,
+5.5
+],
+"max": [
+0.3,
+5.8,
+211.2
+],
+"size": [
+117,
+12,
+206
+],
+"tris": 180,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorCellWall_01",
+"min": [
+-800.0,
+-72.1,
+-1.7
+],
+"max": [
+0.0,
+72.1,
+750.0
+],
+"size": [
+800,
+144,
+752
+],
+"tris": 477,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorPillar_Short",
+"min": [
+-0.0,
+-169.9,
+-2.0
+],
+"max": [
+169.9,
+0.0,
+275.8
+],
+"size": [
+170,
+170,
+278
+],
+"tris": 644,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorWallStair_01",
+"min": [
+0.0,
+1.3,
+-4.0
+],
+"max": [
+800.0,
+33.3,
+1140.6
+],
+"size": [
+800,
+32,
+1145
+],
+"tris": 12,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorWall_01",
+"min": [
+0.0,
+-32.0,
+0.0
+],
+"max": [
+800.0,
+0.0,
+750.0
+],
+"size": [
+800,
+32,
+750
+],
+"tris": 192,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_CorridorWall_02",
+"min": [
+0.0,
+-32.0,
+0.0
+],
+"max": [
+800.0,
+0.0,
+750.0
+],
+"size": [
+800,
+32,
+750
+],
+"tris": 148,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_DoorWooden_01",
+"min": [
+-105.8,
+-3.6,
+0.1
+],
+"max": [
+-0.0,
+3.6,
+427.3
+],
+"size": [
+106,
+7,
+427
+],
+"tris": 432,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorBack",
+"min": [
+10.0,
+-971.5,
+-32.0
+],
+"max": [
+1590.0,
+0.0,
+0.0
+],
+"size": [
+1580,
+971,
+32
+],
+"tris": 212,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorCorridor",
+"min": [
+0.0,
+-800.0,
+-1.1
+],
+"max": [
+800.0,
+0.0,
+6.5
+],
+"size": [
+800,
+800,
+8
+],
+"tris": 255,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorCorridorCorner",
+"min": [
+0.0,
+-800.0,
+-0.0
+],
+"max": [
+800.0,
+0.0,
+0.0
+],
+"size": [
+800,
+800,
+0
+],
+"tris": 80,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorCorridorStair_01",
+"min": [
+0.0,
+0.0,
+-4.9
+],
+"max": [
+800.0,
+800.0,
+300.0
+],
+"size": [
+800,
+800,
+305
+],
+"tris": 460,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorCorridor_Broken",
+"min": [
+0.0,
+-800.0,
+-11.8
+],
+"max": [
+812.3,
+0.0,
+14.3
+],
+"size": [
+812,
+800,
+26
+],
+"tris": 259,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorHall",
+"min": [
+0.0,
+-1600.0,
+0.0
+],
+"max": [
+1200.0,
+0.0,
+0.0
+],
+"size": [
+1200,
+1600,
+0
+],
+"tris": 240,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorHallFront",
+"min": [
+-0.0,
+-1600.0,
+0.0
+],
+"max": [
+1580.0,
+0.0,
+103.8
+],
+"size": [
+1580,
+1600,
+104
+],
+"tris": 829,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorSide_01",
+"min": [
+-146.6,
+0.0,
+-106.5
+],
+"max": [
+610.0,
+1600.0,
+11.5
+],
+"size": [
+757,
+1600,
+118
+],
+"tris": 265,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorSide_02",
+"min": [
+-6.6,
+-800.0,
+0.0
+],
+"max": [
+750.0,
+0.0,
+100.0
+],
+"size": [
+757,
+800,
+100
+],
+"tris": 192,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_FloorStrip_01",
+"min": [
+0.0,
+-800.0,
+0.0
+],
+"max": [
+50.0,
+-0.0,
+0.0
+],
+"size": [
+50,
+800,
+0
+],
+"tris": 12,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_HallEnd_01",
+"min": [
+-74.4,
+-963.0,
+-3.2
+],
+"max": [
+1274.4,
+2.1,
+2171.0
+],
+"size": [
+1349,
+965,
+2174
+],
+"tris": 2665,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarBlock_01",
+"min": [
+-138.4,
+-0.6,
+-0.0
+],
+"max": [
+-0.0,
+220.2,
+815.2
+],
+"size": [
+138,
+221,
+815
+],
+"tris": 282,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarFlatBottom_02",
+"min": [
+-56.3,
+-113.8,
+-1.6
+],
+"max": [
+68.0,
+113.8,
+63.2
+],
+"size": [
+124,
+228,
+65
+],
+"tris": 472,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarFlat_02",
+"min": [
+-198.9,
+-58.6,
+0.0
+],
+"max": [
+-0.3,
+278.8,
+1104.5
+],
+"size": [
+199,
+337,
+1105
+],
+"tris": 256,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarFlat_Top_01",
+"min": [
+-198.9,
+-168.7,
+-24.8
+],
+"max": [
+-32.0,
+168.7,
+204.5
+],
+"size": [
+167,
+337,
+229
+],
+"tris": 752,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarSmallFlat_01",
+"min": [
+-57.9,
+-38.8,
+-14.7
+],
+"max": [
+80.0,
+238.9,
+324.6
+],
+"size": [
+138,
+278,
+339
+],
+"tris": 822,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarStem_01",
+"min": [
+-59.0,
+-59.0,
+18.4
+],
+"max": [
+59.0,
+59.0,
+982.7
+],
+"size": [
+118,
+118,
+964
+],
+"tris": 3604,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarTop_01",
+"min": [
+-117.3,
+-227.3,
+0.0
+],
+"max": [
+227.3,
+117.3,
+416.7
+],
+"size": [
+345,
+345,
+417
+],
+"tris": 1268,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarTriBroken",
+"min": [
+-94.9,
+-112.3,
+-2.0
+],
+"max": [
+188.5,
+706.8,
+1161.0
+],
+"size": [
+283,
+819,
+1163
+],
+"tris": 5257,
+"lods": 4,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_PillarTri_02",
+"min": [
+-80.6,
+-106.8,
+-2.0
+],
+"max": [
+179.4,
+706.8,
+1111.7
+],
+"size": [
+260,
+814,
+1114
+],
+"tris": 3249,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_Plinth_03",
+"min": [
+-13.9,
+-205.9,
+7.6
+],
+"max": [
+213.9,
+5.9,
+100.0
+],
+"size": [
+228,
+212,
+92
+],
+"tris": 240,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_WallSideHall_01",
+"min": [
+-32.0,
+0.0,
+0.0
+],
+"max": [
+32.0,
+800.0,
+1400.0
+],
+"size": [
+64,
+800,
+1400
+],
+"tris": 164,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_WallSideHall_02",
+"min": [
+-32.0,
+0.0,
+0.0
+],
+"max": [
+32.0,
+800.0,
+1400.0
+],
+"size": [
+64,
+800,
+1400
+],
+"tris": 250,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_WallSideHall_03",
+"min": [
+-32.0,
+0.0,
+0.0
+],
+"max": [
+32.0,
+800.0,
+1400.0
+],
+"size": [
+64,
+800,
+1400
+],
+"tris": 82,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_Wall_HallBack",
+"min": [
+-1400.0,
+-32.0,
+0.0
+],
+"max": [
+-0.0,
+32.0,
+2271.9
+],
+"size": [
+1400,
+64,
+2272
+],
+"tris": 256,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Architecture/SM_WindowArchSM_01",
+"min": [
+-57.3,
+-48.9,
+-15.8
+],
+"max": [
+46.9,
+48.9,
+412.0
+],
+"size": [
+104,
+98,
+428
+],
+"tris": 296,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleDrips_01",
+"min": [
+-20.2,
+-14.5,
+-75.2
+],
+"max": [
+20.2,
+14.5,
+11.1
+],
+"size": [
+40,
+29,
+86
+],
+"tris": 1088,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleDrips_02",
+"min": [
+-30.2,
+-20.2,
+-51.4
+],
+"max": [
+30.2,
+20.0,
+13.4
+],
+"size": [
+60,
+40,
+65
+],
+"tris": 1022,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleFat_01",
+"min": [
+-9.6,
+-10.6,
+-15.7
+],
+"max": [
+9.6,
+10.6,
+34.5
+],
+"size": [
+19,
+21,
+50
+],
+"tris": 730,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleFat_02",
+"min": [
+-9.8,
+-9.9,
+-13.1
+],
+"max": [
+9.8,
+9.9,
+22.7
+],
+"size": [
+20,
+20,
+36
+],
+"tris": 612,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleSlim_01",
+"min": [
+-3.8,
+-3.5,
+-2.1
+],
+"max": [
+3.8,
+3.5,
+25.7
+],
+"size": [
+8,
+7,
+28
+],
+"tris": 218,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Props/Candle/SM_CandleSlim_02",
+"min": [
+-4.0,
+-3.9,
+-4.9
+],
+"max": [
+4.0,
+3.9,
+15.6
+],
+"size": [
+8,
+8,
+21
+],
+"tris": 262,
+"lods": 4,
+"mats": [
+"M_Candles"
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_BrokenTile_01",
+"min": [
+-37.0,
+-42.9,
+-5.1
+],
+"max": [
+37.4,
+42.8,
+5.3
+],
+"size": [
+74,
+86,
+10
+],
+"tris": 68,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 1,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_BrokenTile_02",
+"min": [
+-119.9,
+-61.9,
+-11.4
+],
+"max": [
+119.9,
+61.9,
+11.4
+],
+"size": [
+240,
+124,
+23
+],
+"tris": 40,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_BrokenTile_03",
+"min": [
+-137.9,
+-136.5,
+-11.3
+],
+"max": [
+137.9,
+136.5,
+11.3
+],
+"size": [
+276,
+273,
+23
+],
+"tris": 39,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_PillarSmallFlat_Rubble",
+"min": [
+-122.9,
+-58.8,
+0.3
+],
+"max": [
+15.0,
+218.9,
+339.6
+],
+"size": [
+138,
+278,
+339
+],
+"tris": 1076,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_PillarSmallFlat_Rubble_02",
+"min": [
+-13.7,
+-219.8,
+-0.0
+],
+"max": [
+124.2,
+57.9,
+339.5
+],
+"size": [
+138,
+278,
+340
+],
+"tris": 856,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_PillarTop_Broken",
+"min": [
+-110.5,
+-233.8,
+-0.6
+],
+"max": [
+234.2,
+110.9,
+412.8
+],
+"size": [
+345,
+345,
+413
+],
+"tris": 1922,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_PillarTop_Broken_02",
+"min": [
+-172.3,
+-172.3,
+10.8
+],
+"max": [
+94.3,
+172.3,
+110.5
+],
+"size": [
+267,
+345,
+100
+],
+"tris": 999,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_PillarTriTop_02",
+"min": [
+-344.6,
+-1152.4,
+-0.1
+],
+"max": [
+-0.0,
+0.0,
+190.0
+],
+"size": [
+345,
+1152,
+190
+],
+"tris": 1450,
+"lods": 4,
+"mats": [
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_RubblePile",
+"min": [
+-20.1,
+-20.0,
+-6.3
+],
+"max": [
+20.1,
+20.0,
+6.3
+],
+"size": [
+40,
+40,
+13
+],
+"tris": 7683,
+"lods": 6,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_Rubble_01",
+"min": [
+-49.2,
+-67.4,
+-37.8
+],
+"max": [
+49.2,
+69.0,
+44.0
+],
+"size": [
+98,
+136,
+82
+],
+"tris": 1328,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_Rubble_02",
+"min": [
+-44.6,
+-174.2,
+-52.8
+],
+"max": [
+44.6,
+173.1,
+64.0
+],
+"size": [
+89,
+347,
+117
+],
+"tris": 2330,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_Rubble_03",
+"min": [
+-39.4,
+-54.4,
+-40.4
+],
+"max": [
+39.4,
+54.4,
+40.4
+],
+"size": [
+79,
+109,
+81
+],
+"tris": 1224,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_Rubble_04",
+"min": [
+-71.0,
+-54.6,
+-42.9
+],
+"max": [
+69.7,
+88.1,
+41.5
+],
+"size": [
+141,
+143,
+84
+],
+"tris": 1822,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Candle/StaticMeshes/Rubble/SM_Rubble_05",
+"min": [
+-32.3,
+-62.9,
+-27.3
+],
+"max": [
+32.3,
+62.9,
+27.3
+],
+"size": [
+65,
+126,
+55
+],
+"tris": 1050,
+"lods": 4,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_HighBackChair",
+"min": [
+-37.5,
+-32.1,
+0.7
+],
+"max": [
+37.5,
+28.2,
+171.7
+],
+"size": [
+75,
+60,
+171
+],
+"tris": 760,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Torch_A",
+"min": [
+-9.8,
+-0.8,
+-0.6
+],
+"max": [
+8.3,
+11.8,
+65.1
+],
+"size": [
+18,
+13,
+66
+],
+"tris": 2330,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_Wood_A",
+"M_BasicTextured"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Barrel_01",
+"min": [
+-27.2,
+-27.2,
+0.0
+],
+"max": [
+27.2,
+27.2,
+73.1
+],
+"size": [
+54,
+54,
+73
+],
+"tris": 5208,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Crate_A_02",
+"min": [
+-88.6,
+-88.1,
+0.0
+],
+"max": [
+2.0,
+2.1,
+40.8
+],
+"size": [
+91,
+90,
+41
+],
+"tris": 750,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Crate_B_01",
+"min": [
+-59.8,
+-59.5,
+0.0
+],
+"max": [
+0.3,
+0.6,
+60.1
+],
+"size": [
+60,
+60,
+60
+],
+"tris": 1298,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Crate_Lid_A_02",
+"min": [
+-89.0,
+-88.1,
+-0.0
+],
+"max": [
+0.4,
+0.3,
+3.0
+],
+"size": [
+89,
+88,
+3
+],
+"tris": 488,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Sack_02",
+"min": [
+-22.3,
+-30.2,
+-3.6
+],
+"max": [
+20.1,
+30.9,
+22.1
+],
+"size": [
+42,
+61,
+26
+],
+"tris": 496,
+"lods": 6,
+"mats": [
+"MI_GrainSack"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bar_Shelf",
+"min": [
+-106.0,
+-10.0,
+0.0
+],
+"max": [
+106.0,
+60.0,
+306.1
+],
+"size": [
+212,
+70,
+306
+],
+"tris": 757,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01",
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Bowl_01",
+"min": [
+-11.7,
+-11.8,
+-0.0
+],
+"max": [
+11.8,
+11.8,
+9.1
+],
+"size": [
+23,
+24,
+9
+],
+"tris": 518,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Flagon_01",
+"min": [
+-9.2,
+-12.9,
+0.0
+],
+"max": [
+9.2,
+9.2,
+30.0
+],
+"size": [
+18,
+22,
+30
+],
+"tris": 1192,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Goblet_01",
+"min": [
+-4.9,
+-4.9,
+0.0
+],
+"max": [
+4.9,
+4.9,
+18.0
+],
+"size": [
+10,
+10,
+18
+],
+"tris": 574,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Hammer",
+"min": [
+-39.3,
+-10.5,
+-2.1
+],
+"max": [
+0.1,
+8.6,
+2.1
+],
+"size": [
+39,
+19,
+4
+],
+"tris": 11556,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_KettlePot_01",
+"min": [
+-16.3,
+-16.3,
+0.0
+],
+"max": [
+16.3,
+16.3,
+30.2
+],
+"size": [
+33,
+33,
+30
+],
+"tris": 640,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Plate_01",
+"min": [
+-14.3,
+-14.3,
+-0.0
+],
+"max": [
+14.4,
+14.4,
+2.2
+],
+"size": [
+29,
+29,
+2
+],
+"tris": 256,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Pot",
+"min": [
+-31.3,
+-31.3,
+-0.0
+],
+"max": [
+31.3,
+31.3,
+18.2
+],
+"size": [
+63,
+63,
+18
+],
+"tris": 9344,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Lanterns/SM_Lantern",
+"min": [
+-8.6,
+-10.2,
+0.0
+],
+"max": [
+8.6,
+10.2,
+46.8
+],
+"size": [
+17,
+20,
+47
+],
+"tris": 1412,
+"lods": 6,
+"mats": [
+"MI_Lanterns"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Bottle_01",
+"min": [
+-4.7,
+-5.3,
+0.1
+],
+"max": [
+5.8,
+5.6,
+30.4
+],
+"size": [
+11,
+11,
+30
+],
+"tris": 844,
+"lods": 6,
+"mats": [
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Jar_01",
+"min": [
+-6.3,
+-6.5,
+0.4
+],
+"max": [
+6.2,
+6.3,
+16.2
+],
+"size": [
+13,
+13,
+16
+],
+"tris": 13312,
+"lods": 6,
+"mats": [
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Jar_02",
+"min": [
+-4.3,
+-4.5,
+0.0
+],
+"max": [
+4.5,
+4.3,
+11.1
+],
+"size": [
+9,
+9,
+11
+],
+"tris": 2480,
+"lods": 6,
+"mats": [
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Mug",
+"min": [
+-9.6,
+-9.1,
+0.1
+],
+"max": [
+13.4,
+9.1,
+20.3
+],
+"size": [
+23,
+18,
+20
+],
+"tris": 1160,
+"lods": 6,
+"mats": [
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Ship_Cargo_01",
+"min": [
+-23.9,
+-15.9,
+-0.0
+],
+"max": [
+23.9,
+15.9,
+28.9
+],
+"size": [
+48,
+32,
+29
+],
+"tris": 1332,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Rope_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Cup_01",
+"min": [
+-6.1,
+-6.1,
+-0.6
+],
+"max": [
+6.1,
+6.1,
+11.3
+],
+"size": [
+12,
+12,
+12
+],
+"tris": 376,
+"lods": 6,
+"mats": [
+"MI_Terracotta"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Chair",
+"min": [
+-20.7,
+-24.6,
+0.0
+],
+"max": [
+20.7,
+24.6,
+132.7
+],
+"size": [
+41,
+49,
+133
+],
+"tris": 1234,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Large_Keg",
+"min": [
+-56.7,
+-61.2,
+-0.0
+],
+"max": [
+56.7,
+72.0,
+127.4
+],
+"size": [
+113,
+133,
+127
+],
+"tris": 3288,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Table_Rectangle",
+"min": [
+-108.9,
+-51.7,
+0.0
+],
+"max": [
+108.9,
+51.7,
+81.2
+],
+"size": [
+218,
+103,
+81
+],
+"tris": 1644,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Plate_02",
+"min": [
+-12.5,
+-11.3,
+-0.1
+],
+"max": [
+12.5,
+11.3,
+13.6
+],
+"size": [
+25,
+23,
+14
+],
+"tris": 624,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_WeaponStand",
+"min": [
+-38.5,
+-56.2,
+0.0
+],
+"max": [
+37.0,
+56.2,
+128.2
+],
+"size": [
+76,
+112,
+128
+],
+"tris": 816,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Stool",
+"min": [
+-22.0,
+-22.6,
+2.3
+],
+"max": [
+22.1,
+22.8,
+85.7
+],
+"size": [
+44,
+45,
+83
+],
+"tris": 972,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Cabinet_02",
+"min": [
+-41.5,
+-36.9,
+-0.5
+],
+"max": [
+41.5,
+36.9,
+88.5
+],
+"size": [
+83,
+74,
+89
+],
+"tris": 1244,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Sack_01",
+"min": [
+-22.7,
+-21.2,
+0.4
+],
+"max": [
+21.3,
+21.6,
+41.4
+],
+"size": [
+44,
+43,
+41
+],
+"tris": 3640,
+"lods": 6,
+"mats": [
+"MI_GrainSack"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bed",
+"min": [
+-3.3,
+-8.1,
+-0.4
+],
+"max": [
+142.8,
+273.2,
+89.6
+],
+"size": [
+146,
+281,
+90
+],
+"tris": 803,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_BedSheet",
+"MI_Cloth_Plain",
+"MI_Cloth_Plain"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_ChainLink_01",
+"min": [
+-2.0,
+-2.0,
+-7.3
+],
+"max": [
+2.0,
+2.0,
+0.6
+],
+"size": [
+4,
+4,
+8
+],
+"tris": 478,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_IronChandelier",
+"min": [
+-91.1,
+-87.6,
+-77.7
+],
+"max": [
+91.1,
+87.6,
+3.2
+],
+"size": [
+182,
+175,
+81
+],
+"tris": 7986,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_IronChandelier_Base",
+"min": [
+-7.8,
+-7.8,
+-18.9
+],
+"max": [
+7.8,
+7.8,
+0.0
+],
+"size": [
+16,
+16,
+19
+],
+"tris": 392,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Candles/SM_Candle_B",
+"min": [
+-6.1,
+-6.3,
+0.0
+],
+"max": [
+6.1,
+6.3,
+35.2
+],
+"size": [
+12,
+13,
+35
+],
+"tris": 1115,
+"lods": 6,
+"mats": [
+"MI_Candles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Pillow",
+"min": [
+-40.6,
+-24.6,
+-0.8
+],
+"max": [
+40.6,
+24.6,
+22.3
+],
+"size": [
+81,
+49,
+23
+],
+"tris": 494,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Horse_Shoe",
+"min": [
+-0.7,
+-10.4,
+-10.1
+],
+"max": [
+0.7,
+10.4,
+11.5
+],
+"size": [
+1,
+21,
+22
+],
+"tris": 6344,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Fruit/SM_Potato",
+"min": [
+-5.5,
+-6.2,
+-7.2
+],
+"max": [
+5.5,
+6.2,
+7.2
+],
+"size": [
+11,
+12,
+14
+],
+"tris": 422,
+"lods": 6,
+"mats": [
+"MI_Fruit"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Saw",
+"min": [
+-81.0,
+-7.5,
+-1.3
+],
+"max": [
+-0.3,
+9.6,
+1.5
+],
+"size": [
+81,
+17,
+3
+],
+"tris": 9094,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Sledge_Hammer",
+"min": [
+-84.8,
+-8.8,
+-3.2
+],
+"max": [
+0.0,
+8.8,
+3.2
+],
+"size": [
+85,
+18,
+6
+],
+"tris": 1292,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Chest_Lid_01",
+"min": [
+-46.2,
+-0.9,
+-5.3
+],
+"max": [
+46.2,
+54.3,
+17.3
+],
+"size": [
+92,
+55,
+23
+],
+"tris": 860,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Fruit/SM_Apple",
+"min": [
+-5.7,
+-5.8,
+-5.9
+],
+"max": [
+5.7,
+5.8,
+5.9
+],
+"size": [
+11,
+12,
+12
+],
+"tris": 420,
+"lods": 6,
+"mats": [
+"MI_Fruit"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Chest_Open_01",
+"min": [
+-46.2,
+-28.0,
+0.0
+],
+"max": [
+46.2,
+25.0,
+36.0
+],
+"size": [
+92,
+53,
+36
+],
+"tris": 723,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bench",
+"min": [
+-108.9,
+-21.5,
+0.0
+],
+"max": [
+108.9,
+21.5,
+49.9
+],
+"size": [
+218,
+43,
+50
+],
+"tris": 568,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Crate_A_01",
+"min": [
+-57.2,
+-88.5,
+-0.5
+],
+"max": [
+2.2,
+2.5,
+35.4
+],
+"size": [
+59,
+91,
+36
+],
+"tris": 1364,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_Crate_Lid_A_01",
+"min": [
+-57.4,
+-88.9,
+-0.1
+],
+"max": [
+0.4,
+0.4,
+2.9
+],
+"size": [
+58,
+89,
+3
+],
+"tris": 471,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Fruit/SM_Pumpkin",
+"min": [
+-14.7,
+-15.1,
+-10.2
+],
+"max": [
+14.7,
+15.1,
+10.2
+],
+"size": [
+29,
+30,
+20
+],
+"tris": 778,
+"lods": 6,
+"mats": [
+"MI_Fruit"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Counter_Separator",
+"min": [
+-3.9,
+-67.5,
+0.0
+],
+"max": [
+3.9,
+22.0,
+97.8
+],
+"size": [
+8,
+89,
+98
+],
+"tris": 334,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Counter_01",
+"min": [
+-100.0,
+-64.8,
+0.0
+],
+"max": [
+0.0,
+19.9,
+95.1
+],
+"size": [
+100,
+85,
+95
+],
+"tris": 729,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/carts/SM_CartWheel_01",
+"min": [
+-43.9,
+-43.8,
+0.0
+],
+"max": [
+43.9,
+43.8,
+14.5
+],
+"size": [
+88,
+88,
+15
+],
+"tris": 3044,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Sword_01",
+"min": [
+-2.3,
+-12.7,
+-0.1
+],
+"max": [
+2.2,
+12.6,
+121.7
+],
+"size": [
+5,
+25,
+122
+],
+"tris": 4654,
+"lods": 6,
+"mats": [
+"MI_Weapons"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_ConicalCauldron_01",
+"min": [
+-23.6,
+-23.6,
+0.0
+],
+"max": [
+23.6,
+25.1,
+37.0
+],
+"size": [
+47,
+49,
+37
+],
+"tris": 1320,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Bucket_01",
+"min": [
+-17.7,
+-18.1,
+0.8
+],
+"max": [
+17.7,
+18.1,
+45.5
+],
+"size": [
+35,
+36,
+45
+],
+"tris": 2468,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Axe_01",
+"min": [
+-2.0,
+-2.2,
+0.5
+],
+"max": [
+19.6,
+2.2,
+57.6
+],
+"size": [
+22,
+4,
+57
+],
+"tris": 8806,
+"lods": 6,
+"mats": [
+"MI_Weapons"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Table_Round",
+"min": [
+-76.1,
+-76.0,
+0.0
+],
+"max": [
+76.1,
+76.0,
+79.6
+],
+"size": [
+152,
+152,
+80
+],
+"tris": 696,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Stool_Short",
+"min": [
+-0.6,
+-3.4,
+-0.6
+],
+"max": [
+39.8,
+48.0,
+46.7
+],
+"size": [
+40,
+51,
+47
+],
+"tris": 878,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_HallTable_01",
+"min": [
+-149.4,
+-69.1,
+0.0
+],
+"max": [
+149.4,
+67.0,
+99.4
+],
+"size": [
+299,
+136,
+99
+],
+"tris": 1714,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Drawer_01",
+"min": [
+-84.1,
+-31.0,
+-0.5
+],
+"max": [
+84.1,
+42.5,
+89.6
+],
+"size": [
+168,
+73,
+90
+],
+"tris": 1794,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bench_01",
+"min": [
+-130.4,
+-23.5,
+-0.6
+],
+"max": [
+130.4,
+22.8,
+56.9
+],
+"size": [
+261,
+46,
+57
+],
+"tris": 772,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Cannon",
+"min": [
+-135.4,
+-55.5,
+-1.3
+],
+"max": [
+5.2,
+274.4,
+139.6
+],
+"size": [
+141,
+330,
+141
+],
+"tris": 3266,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks",
+"MI_Metal",
+"MI_Cloth_Plain"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Rug",
+"min": [
+-316.0,
+-221.6,
+-0.6
+],
+"max": [
+313.7,
+221.6,
+0.5
+],
+"size": [
+630,
+443,
+1
+],
+"tris": 252,
+"lods": 6,
+"mats": [
+"MI_Rug_1",
+"MI_Rug_1"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Long_Rug",
+"min": [
+-316.0,
+-103.8,
+-0.6
+],
+"max": [
+313.7,
+103.8,
+0.5
+],
+"size": [
+630,
+208,
+1
+],
+"tris": 252,
+"lods": 6,
+"mats": [
+"MI_Rug_1",
+"MI_Rug_1"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Books_A",
+"min": [
+-3.5,
+-14.1,
+0.2
+],
+"max": [
+11.3,
+14.1,
+23.2
+],
+"size": [
+15,
+28,
+23
+],
+"tris": 962,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Cloth_Red",
+"MI_Cloth_Blue"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Books",
+"min": [
+-3.5,
+-1.2,
+0.2
+],
+"max": [
+11.3,
+5.4,
+23.2
+],
+"size": [
+15,
+7,
+23
+],
+"tris": 282,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Cloth_Blue",
+"MI_Cloth_Red"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Book_Stack",
+"min": [
+-13.0,
+-29.4,
+0.1
+],
+"max": [
+15.6,
+34.6,
+31.2
+],
+"size": [
+29,
+64,
+31
+],
+"tris": 536,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Cloth_Red"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Shield_01",
+"min": [
+-0.9,
+-39.1,
+-39.1
+],
+"max": [
+12.5,
+39.1,
+39.1
+],
+"size": [
+13,
+78,
+78
+],
+"tris": 1176,
+"lods": 6,
+"mats": [
+"MI_Weapons"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Book_B",
+"min": [
+-13.0,
+-2.0,
+0.2
+],
+"max": [
+12.2,
+2.0,
+31.2
+],
+"size": [
+25,
+4,
+31
+],
+"tris": 256,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Cloth_Blue"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Ropes/SM_Rope_Bundle_02",
+"min": [
+-36.3,
+-44.4,
+-0.0
+],
+"max": [
+36.3,
+44.4,
+15.5
+],
+"size": [
+73,
+89,
+15
+],
+"tris": 2680,
+"lods": 6,
+"mats": [
+"MI_Rope_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Book_A",
+"min": [
+-8.2,
+-1.9,
+0.3
+],
+"max": [
+11.7,
+1.9,
+29.0
+],
+"size": [
+20,
+4,
+29
+],
+"tris": 256,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_Cloth_Red"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Candles/SM_Candle_C",
+"min": [
+-6.2,
+-6.3,
+-0.0
+],
+"max": [
+6.2,
+6.3,
+22.9
+],
+"size": [
+12,
+13,
+23
+],
+"tris": 1406,
+"lods": 6,
+"mats": [
+"MI_Candles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Candles/SM_Candle_A",
+"min": [
+-6.2,
+-6.1,
+0.0
+],
+"max": [
+6.2,
+6.1,
+28.3
+],
+"size": [
+12,
+12,
+28
+],
+"tris": 1102,
+"lods": 6,
+"mats": [
+"MI_Candles"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Cauldron",
+"min": [
+-36.8,
+-33.9,
+-1.8
+],
+"max": [
+36.8,
+33.9,
+52.5
+],
+"size": [
+74,
+68,
+54
+],
+"tris": 2288,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Market/SM_Market_Stand_01",
+"min": [
+-24.2,
+-206.8,
+0.0
+],
+"max": [
+420.9,
+8.4,
+271.5
+],
+"size": [
+445,
+215,
+272
+],
+"tris": 410,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/carts/SM_Cart_Small",
+"min": [
+-9.6,
+-73.5,
+-1.1
+],
+"max": [
+139.4,
+254.7,
+96.9
+],
+"size": [
+149,
+328,
+98
+],
+"tris": 1630,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_WoodPlanks",
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/carts/SM_Cart",
+"min": [
+-7.5,
+-43.4,
+-1.4
+],
+"max": [
+216.8,
+435.2,
+250.1
+],
+"size": [
+224,
+479,
+251
+],
+"tris": 3897,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_LighterPlanks",
+"MI_Cloth_Plain",
+"MI_Metal",
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Anvil",
+"min": [
+-22.0,
+-31.7,
+-24.3
+],
+"max": [
+22.0,
+48.1,
+15.6
+],
+"size": [
+44,
+80,
+40
+],
+"tris": 1678,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_Cauldron_Lid",
+"min": [
+-33.6,
+-33.6,
+-4.7
+],
+"max": [
+33.6,
+33.6,
+4.7
+],
+"size": [
+67,
+67,
+9
+],
+"tris": 1152,
+"lods": 6,
+"mats": [
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_ConicalCauldron_02",
+"min": [
+-66.1,
+-45.8,
+-1.0
+],
+"max": [
+48.6,
+57.3,
+143.0
+],
+"size": [
+115,
+103,
+144
+],
+"tris": 1460,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_Metal",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_FirePit_01",
+"min": [
+-41.1,
+-44.0,
+-2.7
+],
+"max": [
+43.8,
+44.9,
+19.0
+],
+"size": [
+85,
+89,
+22
+],
+"tris": 5538,
+"lods": 6,
+"mats": [
+"MI_FirePit_A_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_FlowerPot1",
+"min": [
+-27.8,
+-24.2,
+-0.3
+],
+"max": [
+21.7,
+21.1,
+176.1
+],
+"size": [
+49,
+45,
+176
+],
+"tris": 6021,
+"lods": 6,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_FlowerPot2",
+"min": [
+-20.9,
+-22.3,
+-0.7
+],
+"max": [
+21.7,
+19.4,
+168.8
+],
+"size": [
+43,
+42,
+169
+],
+"tris": 5850,
+"lods": 6,
+"mats": [
+null,
+null,
+null
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/SM_TavernSign_01",
+"min": [
+0.0,
+-3.1,
+-114.6
+],
+"max": [
+145.9,
+3.1,
+2.0
+],
+"size": [
+146,
+6,
+117
+],
+"tris": 750,
+"lods": 6,
+"mats": [
+"MI_TavernSign"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/carts/SM_Wheel",
+"min": [
+-47.4,
+-47.4,
+-14.4
+],
+"max": [
+47.4,
+47.4,
+18.6
+],
+"size": [
+95,
+95,
+33
+],
+"tris": 1308,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Castle/SM_Throne",
+"min": [
+-6.0,
+-114.7,
+-1.6
+],
+"max": [
+90.3,
+2.6,
+285.0
+],
+"size": [
+96,
+117,
+287
+],
+"tris": 1874,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_Long",
+"min": [
+-1.7,
+-2.7,
+-59.2
+],
+"max": [
+255.9,
+2.7,
+2.0
+],
+"size": [
+258,
+5,
+61
+],
+"tris": 6554,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_Long_Loose",
+"min": [
+-2.1,
+-2.7,
+-113.6
+],
+"max": [
+254.8,
+2.7,
+2.1
+],
+"size": [
+257,
+5,
+116
+],
+"tris": 6120,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_Med",
+"min": [
+-2.2,
+-2.2,
+-44.5
+],
+"max": [
+141.5,
+2.2,
+2.1
+],
+"size": [
+144,
+4,
+47
+],
+"tris": 5240,
+"lods": 6,
+"mats": [
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_Med_Loose",
+"min": [
+-2.0,
+-2.1,
+-97.4
+],
+"max": [
+140.5,
+2.1,
+2.1
+],
+"size": [
+142,
+4,
+99
+],
+"tris": 4848,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_Small",
+"min": [
+-2.0,
+-2.5,
+-69.0
+],
+"max": [
+80.4,
+2.5,
+1.9
+],
+"size": [
+82,
+5,
+71
+],
+"tris": 3720,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_XtraLong",
+"min": [
+-2.3,
+-3.1,
+-70.3
+],
+"max": [
+576.7,
+3.1,
+2.8
+],
+"size": [
+579,
+6,
+73
+],
+"tris": 8004,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Chains/SM_Chain_XtraLong_Loose",
+"min": [
+-2.6,
+-3.1,
+-127.1
+],
+"max": [
+577.8,
+3.1,
+3.4
+],
+"size": [
+580,
+6,
+130
+],
+"tris": 8056,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Crates/SM_CargoCrate_01",
+"min": [
+-54.8,
+-30.8,
+0.0
+],
+"max": [
+54.8,
+30.8,
+46.1
+],
+"size": [
+110,
+62,
+46
+],
+"tris": 3640,
+"lods": 6,
+"mats": [
+"MI_LighterPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Fruit/SM_Carrot",
+"min": [
+-12.7,
+-2.1,
+-2.1
+],
+"max": [
+12.7,
+2.1,
+2.1
+],
+"size": [
+25,
+4,
+4
+],
+"tris": 496,
+"lods": 6,
+"mats": [
+"MI_Fruit"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bed_01",
+"min": [
+-135.3,
+-78.7,
+0.0
+],
+"max": [
+133.6,
+53.8,
+91.1
+],
+"size": [
+269,
+132,
+91
+],
+"tris": 1796,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bookshelf_A_01",
+"min": [
+-84.1,
+-27.0,
+-0.5
+],
+"max": [
+84.1,
+32.1,
+200.8
+],
+"size": [
+168,
+59,
+201
+],
+"tris": 2540,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bookshelf_A_02",
+"min": [
+-84.1,
+-24.8,
+-0.5
+],
+"max": [
+84.1,
+31.5,
+198.7
+],
+"size": [
+168,
+56,
+199
+],
+"tris": 1602,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Bookshelf_A_03",
+"min": [
+-84.1,
+-32.1,
+-0.5
+],
+"max": [
+84.1,
+32.1,
+200.8
+],
+"size": [
+168,
+64,
+201
+],
+"tris": 2830,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Cabinet_01",
+"min": [
+-82.6,
+-32.1,
+-0.5
+],
+"max": [
+82.6,
+38.5,
+89.6
+],
+"size": [
+165,
+71,
+90
+],
+"tris": 1971,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks",
+"MI_Metal"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Counter_02",
+"min": [
+-119.3,
+-100.0,
+0.0
+],
+"max": [
+0.0,
+19.3,
+95.1
+],
+"size": [
+119,
+119,
+95
+],
+"tris": 974,
+"lods": 6,
+"mats": [
+"MI_VarnishedWood_01",
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_drinkstable",
+"min": [
+-47.1,
+-99.7,
+-101.1
+],
+"max": [
+685.7,
+632.5,
+134.0
+],
+"size": [
+733,
+732,
+235
+],
+"tris": 53754,
+"lods": 6,
+"mats": [
+"MI_Metal",
+"MI_WoodPlanks",
+"MI_VarnishedWood_01",
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": false
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_Sidetable_01",
+"min": [
+-84.1,
+-26.7,
+-0.5
+],
+"max": [
+84.1,
+33.4,
+89.6
+],
+"size": [
+168,
+60,
+90
+],
+"tris": 752,
+"lods": 6,
+"mats": [
+"MI_WoodPlanks"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Furniture/SM_TableAndChairs",
+"min": [
+-35.4,
+-25.6,
+-61.2
+],
+"max": [
+225.8,
+256.5,
+110.5
+],
+"size": [
+261,
+282,
+172
+],
+"tris": 2556,
+"lods": 6,
+"mats": [
+"MI_Cloth_Plain",
+"MI_VarnishedWood_01",
+"MI_Terracotta",
+"MI_Metal",
+"MI_WoodPlanks",
+"MI_InteriorCups"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Lanterns/SM_Lantern_Hanging",
+"min": [
+-8.6,
+-10.2,
+-26.7
+],
+"max": [
+8.6,
+10.2,
+26.7
+],
+"size": [
+17,
+20,
+53
+],
+"tris": 1485,
+"lods": 6,
+"mats": [
+"MI_Lanterns"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Ropes/SM_Rope_Bundle_01",
+"min": [
+-38.8,
+-47.5,
+-0.0
+],
+"max": [
+38.8,
+47.5,
+12.8
+],
+"size": [
+78,
+95,
+13
+],
+"tris": 1826,
+"lods": 6,
+"mats": [
+"MI_Rope_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Ropes/SM_Rope_Sleeve",
+"min": [
+-18.1,
+-18.1,
+-38.8
+],
+"max": [
+18.1,
+17.6,
+0.0
+],
+"size": [
+36,
+36,
+39
+],
+"tris": 2360,
+"lods": 6,
+"mats": [
+"MI_Rope_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Ropes/SM_Rope_Sleeve_Beam",
+"min": [
+-4.4,
+-16.6,
+-38.8
+],
+"max": [
+27.1,
+15.9,
+0.0
+],
+"size": [
+31,
+32,
+39
+],
+"tris": 2290,
+"lods": 6,
+"mats": [
+"MI_Rope_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Props/Ropes/SM_Rope_Small",
+"min": [
+-2.0,
+0.0,
+-59.3
+],
+"max": [
+2.0,
+381.5,
+0.0
+],
+"size": [
+4,
+381,
+59
+],
+"tris": 286,
+"lods": 6,
+"mats": [
+"MI_Rope_01"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BlockA",
+"min": [
+-2.6,
+-3.0,
+-0.2
+],
+"max": [
+54.7,
+40.6,
+82.6
+],
+"size": [
+57,
+44,
+83
+],
+"tris": 634,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BlockB",
+"min": [
+-3.3,
+-2.7,
+-0.6
+],
+"max": [
+53.9,
+41.1,
+82.0
+],
+"size": [
+57,
+44,
+83
+],
+"tris": 874,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_Tile_B",
+"min": [
+-56.3,
+-0.4,
+-1.5
+],
+"max": [
+0.9,
+72.4,
+2.0
+],
+"size": [
+57,
+73,
+4
+],
+"tris": 874,
+"lods": 6,
+"mats": [
+"MI_Roof_Tiles_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_Tile_C",
+"min": [
+-36.2,
+-0.3,
+-0.9
+],
+"max": [
+0.8,
+63.1,
+3.0
+],
+"size": [
+37,
+63,
+4
+],
+"tris": 376,
+"lods": 6,
+"mats": [
+"MI_Roof_Tiles_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_Tile_D",
+"min": [
+-37.1,
+-0.7,
+-0.8
+],
+"max": [
+0.2,
+63.3,
+3.1
+],
+"size": [
+37,
+64,
+4
+],
+"tris": 582,
+"lods": 6,
+"mats": [
+"MI_Roof_Tiles_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_Tile_A",
+"min": [
+-56.9,
+-0.8,
+-1.6
+],
+"max": [
+0.3,
+71.2,
+2.0
+],
+"size": [
+57,
+72,
+4
+],
+"tris": 634,
+"lods": 6,
+"mats": [
+"MI_Roof_Tiles_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabB",
+"min": [
+-1.1,
+-5.5,
+-2.4
+],
+"max": [
+56.3,
+9.9,
+223.3
+],
+"size": [
+57,
+15,
+226
+],
+"tris": 946,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickA",
+"min": [
+-0.3,
+-3.4,
+-1.0
+],
+"max": [
+63.2,
+33.7,
+20.2
+],
+"size": [
+63,
+37,
+21
+],
+"tris": 376,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabA",
+"min": [
+-2.2,
+-3.5,
+-1.0
+],
+"max": [
+55.1,
+12.7,
+224.6
+],
+"size": [
+57,
+16,
+226
+],
+"tris": 1946,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BlockC",
+"min": [
+-4.1,
+-0.4,
+-2.1
+],
+"max": [
+53.0,
+42.3,
+52.5
+],
+"size": [
+57,
+43,
+55
+],
+"tris": 528,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BlockD",
+"min": [
+-0.1,
+-7.2,
+-13.4
+],
+"max": [
+57.2,
+35.6,
+25.9
+],
+"size": [
+57,
+43,
+39
+],
+"tris": 420,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickB",
+"min": [
+-0.5,
+-2.8,
+-1.2
+],
+"max": [
+63.5,
+34.5,
+20.4
+],
+"size": [
+64,
+37,
+22
+],
+"tris": 582,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickC",
+"min": [
+-5.3,
+-12.9,
+-0.4
+],
+"max": [
+37.5,
+23.9,
+20.9
+],
+"size": [
+43,
+37,
+21
+],
+"tris": 366,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickD",
+"min": [
+-4.4,
+-0.1,
+-1.2
+],
+"max": [
+22.9,
+36.6,
+19.5
+],
+"size": [
+27,
+37,
+21
+],
+"tris": 204,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickE",
+"min": [
+-0.4,
+-0.5,
+-5.4
+],
+"max": [
+63.2,
+36.1,
+15.6
+],
+"size": [
+64,
+37,
+21
+],
+"tris": 1042,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickF",
+"min": [
+-1.9,
+-2.2,
+-0.1
+],
+"max": [
+61.7,
+34.5,
+20.6
+],
+"size": [
+64,
+37,
+21
+],
+"tris": 560,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickG",
+"min": [
+-7.2,
+-4.7,
+-0.1
+],
+"max": [
+33.4,
+32.0,
+20.7
+],
+"size": [
+41,
+37,
+21
+],
+"tris": 366,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickH",
+"min": [
+-1.8,
+-2.3,
+-0.1
+],
+"max": [
+27.2,
+34.3,
+20.6
+],
+"size": [
+29,
+37,
+21
+],
+"tris": 170,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_BrickI",
+"min": [
+-1.1,
+-2.7,
+-2.5
+],
+"max": [
+63.0,
+34.0,
+18.9
+],
+"size": [
+64,
+37,
+21
+],
+"tris": 676,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabC",
+"min": [
+-2.0,
+-5.1,
+-1.7
+],
+"max": [
+56.1,
+10.2,
+110.1
+],
+"size": [
+58,
+15,
+112
+],
+"tris": 1430,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabD",
+"min": [
+-2.7,
+-2.1,
+-2.7
+],
+"max": [
+39.3,
+12.9,
+56.3
+],
+"size": [
+42,
+15,
+59
+],
+"tris": 790,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabE",
+"min": [
+-9.5,
+-1.4,
+-2.7
+],
+"max": [
+8.7,
+13.8,
+44.3
+],
+"size": [
+18,
+15,
+47
+],
+"tris": 158,
+"lods": 6,
+"mats": [
+"MI_Slabs_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_SlabF",
+"min": [
+-0.4,
+-8.5,
+-1.8
+],
+"max": [
+56.8,
+6.5,
+183.7
+],
+"size": [
+57,
+15,
+185
+],
+"tris": 2822,
+"lods": 6,
+"mats": [
+"MI_Slabs_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Brick_Kit/SM_Tile_E",
+"min": [
+-36.7,
+-0.3,
+-0.7
+],
+"max": [
+0.0,
+63.3,
+3.1
+],
+"size": [
+37,
+64,
+4
+],
+"tris": 560,
+"lods": 6,
+"mats": [
+"MI_Roof_Tiles_03"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_01",
+"min": [
+-11.1,
+-27.5,
+-6.0
+],
+"max": [
+322.5,
+123.6,
+315.7
+],
+"size": [
+334,
+151,
+322
+],
+"tris": 31108,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_02",
+"min": [
+-15.4,
+-35.1,
+-5.6
+],
+"max": [
+511.0,
+122.9,
+311.8
+],
+"size": [
+526,
+158,
+317
+],
+"tris": 31482,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_03",
+"min": [
+-15.3,
+-30.0,
+-7.5
+],
+"max": [
+512.3,
+128.7,
+319.0
+],
+"size": [
+528,
+159,
+326
+],
+"tris": 26534,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_04",
+"min": [
+-124.3,
+-166.8,
+-4.1
+],
+"max": [
+26.1,
+11.4,
+309.0
+],
+"size": [
+150,
+178,
+313
+],
+"tris": 16644,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_Corner_01",
+"min": [
+-9.8,
+-119.2,
+-2.2
+],
+"max": [
+115.9,
+19.3,
+312.2
+],
+"size": [
+126,
+139,
+314
+],
+"tris": 16248,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Stone_Fence/SM_Wall_Stone_End_01",
+"min": [
+-13.7,
+-59.3,
+-10.9
+],
+"max": [
+324.6,
+155.3,
+305.0
+],
+"size": [
+338,
+215,
+316
+],
+"tris": 17134,
+"lods": 6,
+"mats": [
+"MI_StoneFence_01",
+"MI_StoneFence_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Bloking/SM_castle",
+"min": [
+-1486.8,
+-14503.1,
+-1491.0
+],
+"max": [
+18637.8,
+7364.3,
+7252.6
+],
+"size": [
+20125,
+21867,
+8744
+],
+"tris": 8266,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Bloking/SM_Land",
+"min": [
+-25999.9,
+-26623.6,
+-1321.8
+],
+"max": [
+26746.7,
+26865.5,
+7092.3
+],
+"size": [
+52747,
+53489,
+8414
+],
+"tris": 4039,
+"lods": 6,
+"mats": [
+"MI_MountainRVT_02",
+"MI_MountainRVT_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Bloking/SM_mountain",
+"min": [
+-79984.8,
+-80826.8,
+0.0
+],
+"max": [
+79984.5,
+80998.0,
+65241.6
+],
+"size": [
+159969,
+161825,
+65242
+],
+"tris": 6474,
+"lods": 6,
+"mats": [
+"MI_Mountain_Grass"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Bloking/SM_nature",
+"min": [
+-7851.8,
+-16573.9,
+-1344.0
+],
+"max": [
+22730.8,
+16760.7,
+4353.1
+],
+"size": [
+30583,
+33335,
+5697
+],
+"tris": 3124,
+"lods": 6,
+"mats": [
+"WorldGridMaterial"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE: 3>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobbles_4M",
+"min": [
+-5.1,
+-183.5,
+-22.7
+],
+"max": [
+416.5,
+234.6,
+11.7
+],
+"size": [
+422,
+418,
+34
+],
+"tris": 20535,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobbles_8M",
+"min": [
+-7.4,
+-409.0,
+-33.3
+],
+"max": [
+826.8,
+423.1,
+12.2
+],
+"size": [
+834,
+832,
+46
+],
+"tris": 77969,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobble_A",
+"min": [
+-7.9,
+-61.4,
+-12.1
+],
+"max": [
+77.7,
+5.2,
+8.4
+],
+"size": [
+86,
+67,
+20
+],
+"tris": 252,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobble_B",
+"min": [
+-4.0,
+-33.5,
+-11.9
+],
+"max": [
+61.5,
+2.3,
+11.7
+],
+"size": [
+65,
+36,
+24
+],
+"tris": 251,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobble_C",
+"min": [
+-50.5,
+-43.0,
+-11.9
+],
+"max": [
+1.8,
+5.0,
+9.1
+],
+"size": [
+52,
+48,
+21
+],
+"tris": 376,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobble_Patch_A",
+"min": [
+-2.8,
+-82.4,
+-12.1
+],
+"max": [
+186.7,
+12.0,
+11.1
+],
+"size": [
+189,
+94,
+23
+],
+"tris": 1763,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Cobblestone_Road/SM_Cobble_Patch_B",
+"min": [
+-4.0,
+-4.9,
+-12.2
+],
+"max": [
+119.7,
+148.8,
+11.7
+],
+"size": [
+124,
+154,
+24
+],
+"tris": 1512,
+"lods": 6,
+"mats": [
+"MI_Cobblestone_A"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_Path_Slab_A",
+"min": [
+-5.1,
+-103.7,
+-4.5
+],
+"max": [
+50.2,
+4.6,
+4.8
+],
+"size": [
+55,
+108,
+9
+],
+"tris": 410,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_Path_Slab_B",
+"min": [
+-4.5,
+-72.9,
+-5.1
+],
+"max": [
+52.3,
+12.1,
+5.1
+],
+"size": [
+57,
+85,
+10
+],
+"tris": 556,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_Path_Slab_C",
+"min": [
+-0.3,
+-81.5,
+-4.3
+],
+"max": [
+44.7,
+9.9,
+4.9
+],
+"size": [
+45,
+91,
+9
+],
+"tris": 348,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_Path_Slab_E",
+"min": [
+-0.8,
+-75.2,
+-4.5
+],
+"max": [
+42.8,
+0.5,
+4.8
+],
+"size": [
+44,
+76,
+9
+],
+"tris": 316,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_Path_Slab_F",
+"min": [
+-36.4,
+-44.0,
+-4.5
+],
+"max": [
+1.0,
+2.1,
+4.8
+],
+"size": [
+37,
+46,
+9
+],
+"tris": 166,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_RockCliff_01",
+"min": [
+-699.2,
+-171.0,
+-2.3
+],
+"max": [
+699.2,
+171.0,
+532.9
+],
+"size": [
+1398,
+342,
+535
+],
+"tris": 4496,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_RockCliff_02",
+"min": [
+-421.1,
+-202.8,
+-5.7
+],
+"max": [
+421.1,
+202.8,
+488.2
+],
+"size": [
+842,
+406,
+494
+],
+"tris": 2570,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_RockCliff_03",
+"min": [
+-163.4,
+-84.7,
+-3.0
+],
+"max": [
+163.4,
+84.7,
+101.1
+],
+"size": [
+327,
+169,
+104
+],
+"tris": 3276,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/SM_RockCliff_04",
+"min": [
+-905.3,
+-414.1,
+-1.8
+],
+"max": [
+905.3,
+414.1,
+448.3
+],
+"size": [
+1811,
+828,
+450
+],
+"tris": 3130,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Large/SM_Large_Rock_C",
+"min": [
+-761.9,
+-239.7,
+-87.3
+],
+"max": [
+95.1,
+1142.3,
+513.9
+],
+"size": [
+857,
+1382,
+601
+],
+"tris": 5188,
+"lods": 6,
+"mats": [
+"MI_Rock_RVT"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Large/SM_Large_Rock_D",
+"min": [
+-394.6,
+-600.0,
+-22.3
+],
+"max": [
+75.9,
+32.0,
+412.4
+],
+"size": [
+471,
+632,
+435
+],
+"tris": 1830,
+"lods": 6,
+"mats": [
+"MI_Rock_RVT"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Large/SM_Lsarge_Rock_B",
+"min": [
+-55.7,
+-1014.4,
+-73.9
+],
+"max": [
+982.0,
+127.5,
+458.8
+],
+"size": [
+1038,
+1142,
+533
+],
+"tris": 7326,
+"lods": 6,
+"mats": [
+"MI_Rock_RVT"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Large/SM_Rock_Large_A",
+"min": [
+-31.9,
+-902.4,
+-15.8
+],
+"max": [
+1083.5,
+326.0,
+631.6
+],
+"size": [
+1115,
+1228,
+647
+],
+"tris": 3974,
+"lods": 6,
+"mats": [
+"MI_Rock_RVT"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Small/SM_Large_Rock_C",
+"min": [
+-134.9,
+-25.6,
+-14.0
+],
+"max": [
+16.4,
+123.9,
+76.2
+],
+"size": [
+151,
+149,
+90
+],
+"tris": 2294,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Small/SM_Small_Rock_A",
+"min": [
+-21.9,
+-161.4,
+-28.7
+],
+"max": [
+92.3,
+6.9,
+66.1
+],
+"size": [
+114,
+168,
+95
+],
+"tris": 2314,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Small/SM_Small_Rock_B",
+"min": [
+-131.6,
+-177.4,
+-3.7
+],
+"max": [
+25.0,
+9.2,
+67.9
+],
+"size": [
+157,
+187,
+72
+],
+"tris": 1288,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Small/SM_Small_Rock_D",
+"min": [
+-70.7,
+-11.7,
+-2.2
+],
+"max": [
+57.2,
+130.2,
+83.6
+],
+"size": [
+128,
+142,
+86
+],
+"tris": 1734,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+},
+{
+"mesh": "/Game/CastleTown/Static_Mesh/Rock_Kit/Small/SM_Small_Rock_E",
+"min": [
+-5.0,
+-174.8,
+-1.5
+],
+"max": [
+207.4,
+62.6,
+68.7
+],
+"size": [
+212,
+237,
+70
+],
+"tris": 1716,
+"lods": 6,
+"mats": [
+"MI_RockMossy_02"
+],
+"simple": 0,
+"trace": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+"nanite": true
+}
+]

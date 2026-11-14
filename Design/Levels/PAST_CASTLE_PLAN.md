@@ -1,7 +1,8 @@
-# The castle (past): plan, version 0
+# The castle (past): plan, version 1
 
-> Written by the architect (Claude Fable 5.2) on 2026-11-14, at the owner's request.
-> Status: **a proposal on paper.** Nothing is built and nothing is measured yet: the castle kit has to be restored and looked at first (section 3). Every size here is provisional until then.
+> Written by the architect (Claude Fable 5.2) on 2026-11-14, at the owner's request. Version 0 was a proposal on paper; the owner answered "yes, go ahead" and this version is drawn **to scale over the castle as the pack's author assembled it**, now restored and measured.
+> Status: **a plan, nothing built.** The keep's numbers are measured. Everything outside the keep (wards, walls, crypt) is a proposal, waiting for the owner.
+> Drawing: `Devlog/media/2026-11-14/castle_plan_v1.png` (plan and section, made by `Design/Levels/make_castle_plan.js`).
 > Nothing of the deleted world plan (2026-11-13) is reused: not its layout, its route or its zone names.
 
 ## 1. What the owner asked for (his words, translated)
@@ -43,91 +44,122 @@ Read from `FUTURE_BASE_SLICE1.md`, its seven dev log blocks and the owner's six 
 A zone per encounter that they never leave, posts and patrol routes, hidden points for reinforcements, cover with a firing spot beside it, and navmesh joined across every height.
 
 ## 3. What there is to build with
-**The owner's premise needs one correction.** The castle pack is Medieval Kingdom (Hivemind, Fab, Professional license). On 2026-11-13 the first planner kept 31 of its meshes and the other 1,697 files went to the Windows Recycle Bin, with the town. What is in the project today is 31 loose pieces: two hall walls, one tower wall, two tower floors, a crenel, the portcullis, two stairs, low walls, a podium, a door, props.
+The castle pack is Medieval Kingdom (Hivemind, Fab, Professional license). On 2026-11-13 the first planner kept 31 of its meshes and the rest went to the Windows Recycle Bin with the town. **On 2026-11-14 the castle part was restored** (`Tools/Jam/Restore-CastlePack.ps1`: 939 items, 4.4 GB; the town, landscape, water, foliage and mannequins stay in the bin), then read and measured in the Editor.
 
-**The structure the owner means is in the Recycle Bin, and it is still there** (checked 2026-11-14, read-only):
-- **The castle as its author assembled it:** `LI_Full_Castle`, `LI_Front_Gate`, `LI_Front_Hall`, `LI_Kings_Hall`, `LI_Side_Hall`, `LI_Top_Level`, `LI_CurtainWall_Tower_01`, `LI_CurtainWall_Stairs_01`, `LI_CurtainWall_Corner_01/02`, and the sub-levels `SL_Castle`, `SL_Castle_Walls`, `SL_Courtyard`.
-- **The castle kit, about 95 meshes:** a tower set (walls, door walls, 16 window walls, floors, wall tops, crenels, pillars), **`SM_Spiral_Stairs`** and its cap, a curtain wall set with a turret, a gate set (three arches, portcullis frame), an arched walkway (side and corner), the hall's main stairs, wooden internal floors, cone and large roofs, doors and windows.
-- **A second interior set, 41 meshes** (folder `Candle`): vaulted corridor with arches, a stair corridor, cell walls with bars and doors, a pillared hall with its floor, end wall and ceiling, broken floor and rubble.
-- **Props:** furniture, crates, kegs, chains, candles, weapons, chests, a cannon.
+**Records** (`Design/Levels/kits/castle/`): one JSON per level of the author's castle (every piece with its place, turn and scale; the moss clumps are left out), `pieces.json` (336 meshes: size, pivot, triangles, materials, collision), and the keep's floor plan cut at 2.5 m.
 
-**First step, before any drawing to scale** (waits for the machine: another chat is packaging):
-1. Restore the castle part from the Recycle Bin (no town, water, foliage or mannequins).
-2. Write the author's castle to `Design/Levels/kits/castle_demo.json` with `extract_level_pieces.py`, as was done for the base's kits.
-3. Look at it: a picture of every piece, and views from inside each assembled section.
-4. Measure what the plan hangs on: storey height, stair rises, door widths, the spiral stair's width and rise per turn, the wall walk's width.
+### 3.1 The keep, as its author built it
+Five sections placed together (`LI_Full_Castle`): a **T, 92 m wide and 59 m deep, 55 m to the top**.
+
+| Section | Size | What it is |
+|---|---|---|
+| Front Hall | 24 x 28 m inside | the entrance: a gate arch 10 m wide between **two round towers, each with a spiral stair** from the ground to the roof (doors at three floors); arcades along both sides; an upper floor 9 m up; a roof walk between the two towers |
+| Main Hall | 24 x 28 m | **a stair hall**: the grand stair climbs in six flights from the floor to 25 m, with a gallery of arches 9 m up; two arched doorways from the Front Hall; a door to each wing on the ground **and another on the gallery level** |
+| King's Hall | 28 x 24 m, 15 m high | the great hall of one wing: an arcade around the floor (pillars every 4 m), **a gallery all round, 9 m up, that has no stair of its own**, two long tables with high-backed chairs |
+| Side Hall | 28 x 24 m | the other wing: the same hall, with rooms on its gallery level and a stair up to **a roof terrace** with a turret |
+| Top Level | 26 x 26 m, from +24 m | three more floors over the Main Hall, **four turrets with spiral stairs** at its corners, a walkway between them |
+
+- **Storeys are 9 m apart** (walking floors at +0.9, +10.2, +19.2, then +25, +34.2, +43.4 m above the keep's zero).
+- **The spiral stair** is 7 m across and climbs 4.5 m per piece, two pieces to a storey.
+- **Doors:** the big doorways are 4 m pieces; **tower and room doors are about 1.3 m wide**. Towers are for the player and for small enemies; fights with big enemies stay in the halls and the wards.
+- **Under both wings** the pillars go on down 5 m to a ring of arches with no floor: the castle stands on legs, meant for a hillside.
+
+### 3.2 The author's walls and gate
+- **Gatehouse** (`LI_Front_Gate`, 27.5 x 10.5 m, 24 m high): a front and a back arch 10 m wide, a portcullis, two door leaves, an upper room over the passage and two spiral stairs inside.
+- **Wall tower** (`LI_CurtainWall_Tower_01`, 7 x 7.7 m, 25 m): doors onto the wall walk at +10 m, two more floors, crenels.
+- **Wall stair** (`LI_CurtainWall_Stairs_01`): a wide first flight (2.1 m) and three narrow ones (1 m wide, 5 m each) up to +10 m.
+- **Corner towers** (two sizes, 17 and 23 m across) and **curtain wall** pieces: 4 m long, 4.3 m thick, 13.6 m high. The author's own ring is 150 x 175 m, laid on a hill we do not have; it is not reused, its sections are.
+
+### 3.3 The second interior set
+41 low, plain meshes with **no material of their own** (folder `Candle`): 8 m corridor tiles with walls 7.5 m high and arches, **a stair tile that drops 3.05 m in 8 m** with its own walls and vault, cell walls with a door arch and bars, vaulted ceilings, a hall (floor 12 x 16 m, side walls 14 m, an apse 21 m high), pillars whole and broken, rubble. They take any material, which suits the pixel-art look of the past (GDD §3: structures are 3D with pixel textures).
+
+### 3.4 What this changes from version 0
+| Version 0 said | The author's castle has | Version 1 |
+|---|---|---|
+| a tower with a spiral stair, somewhere on the wall | six spiral stairs: two in the entrance towers, four on the Top Level | the entrance towers are the first spiral stairs the player meets |
+| an upper floor reached only along the wall | galleries 9 m up in both wings with no stair of their own, and a door to them from the Main Hall's stair | kept: the King's Hall gallery is the floor above that does not connect to the one below |
+| a long wall between two towers | a roof walk between the two entrance towers 18 m up, and the wall walk at +10 m | both, in later slices |
+| Front Hall with a guard room and a buttery | one large hall with an arcade along each side and no side rooms | the two "rooms" are the two aisles behind the arcades |
+| the crypt stair leaves from the Front Hall | the Main Hall, a stair hall, lies behind it | the crypt stair is in a rear corner of the Main Hall |
+| storeys of about 5 m | storeys of 9 m | every height in section 5 |
 
 ## 4. The place
 **Blackwall Castle** (provisional name; the station of the future took it). A border castle on a rock, built around something older than itself: **the seal**, in a crypt under the keep. The keep stands on the crypt to guard it. That is why the future base's Anomaly wing is underground: it was dug around the same crypt.
 
-**Its state when the mage arrives:** the garrison is gone and **orcs are camped in it**. That gives the castle its obstacles without scattering props: the orcs' camp in the ward (fire, kegs, a cart, barricades), and the castle's own decay (a fallen stair, a broken floor, rubble that can be climbed).
+**Its state when the mage arrives:** the garrison is gone and **orcs are camped in it**. That gives the castle its obstacles without scattering props: the orcs' camp in the ward (fire, kegs, a cart, barricades), and the castle's own decay (a breach in a wall, a broken floor, rubble that can be climbed).
 
-**Look:** stone and timber, lit by fire (torches, braziers, chandeliers, candles) and by daylight through windows and gates. The crypt is the dark place; the seal is the one cold, bright thing in it, as in the future. The pixel-art look of the past (§3 of the GDD: structures are 3D with pixel textures) is a separate step, tested on one section and shown to the owner before it is applied.
+**Look:** stone and timber, lit by fire (torches, braziers, chandeliers, candles) and by daylight through windows and gates. The crypt is the dark place; the seal is the one cold, bright thing in it, as in the future. **The pixel-art look of the past is a separate step,** tested on one section and shown to the owner before it is applied: the keep's stone is finely sculpted and photographic, and how it becomes pixel art is not decided.
 
 ## 5. The castle in section
-A castle changes height in more ways than a base. Each way is used once before any is repeated.
+Heights above the lower ward. The keep's zero sits 1.5 m above it, so that its floor meets the upper ward with three steps.
 
-| Height (provisional) | Place | How the player gets there |
+| Height | Place | How the player gets there |
 |---|---|---|
-| about -6 m | the crypt, with the seal | a vaulted stair corridor from the keep; later, the cellars |
-| 0 | gatehouse and lower ward | the start |
-| +2 m | upper ward, the terrace before the keep | a wide stair and a narrow side stair |
-| +2 m | the keep's ground floor (Front Hall, King's Hall) | the keep's door |
-| +5 to +7 m | the keep's upper floor and the King's Hall gallery | **not from inside**: only along the wall, through a tower door |
-| +8 to +10 m | the wall walk | **the spiral stair** of a tower |
-| above | tower tops | the spiral stair again; the highest places wait for the double jump |
+| -9.8 m | the crypt: cells and the seal's hall | four flights of the crypt stair, from the Main Hall |
+| 0 | gatehouse passage and lower ward | the start |
+| +2.1 m | upper ward and the two side yards | the wide stair, or the rubble at the breach |
+| +2.4 m | the keep's ground floor: Front Hall, Main Hall, King's Hall, Side Hall | the keep's gate arch |
+| +10 m | the wall walk | the wall stair in a side yard |
+| +11.7 m | the galleries of the wings; the Front Hall's upper floor | the grand stair, a spiral stair, or the wall walk through a wall tower |
+| +20.7 m | the roof walk between the entrance towers; the Side Hall's terrace | the spiral stairs; the Side Hall's stair |
+| +26.5 m and up | the Top Level: three floors and four turrets | the grand stair's last flight, then the turrets' spiral stairs |
 
 ## 6. The places
 ### Slice 1: from the gate to the seal (the game's opening)
-The castle's version of the future slice (arrival, a corridor with a couple of rooms, a hall). It is the GDD's opening sequence: start, a small group of orcs, the seal, the future.
+The castle's version of the future slice (arrival, a corridor with a couple of rooms, a hall). It is the GDD's opening sequence: start, a small group of orcs, the seal, the future. About 170 m on foot.
 
-**6.1 Gatehouse (the start, no fight).** The mage walks in through the gate passage: three arches in a row, the portcullis jammed half way up. Low and narrow on purpose: the squeeze before the ward. Through the last arch he sees the ward and the keep above it.
+**6.1 Gatehouse (the start, no fight).** The author's gatehouse, whole. The mage walks in under two arches, the portcullis jammed half way up. It is the squeeze before the ward; through the inner arch he sees the ward, the fire and the keep's towers.
 
-**6.2 The wards (first fight).** One open space on two heights, with a third above it.
-- **Lower ward (0):** the orcs' camp. A fire in the middle (the hero object), kegs, a cart, a barricade of crates: low cover that belongs there.
-- **Upper ward (+2 m):** the terrace in front of the keep, held by a low wall. Two ways up: the wide stair in the middle, where the fight funnels, and a narrow stair at one end, which flanks it.
-- **The wall walk above** is seen from here and not reached yet: the stair to it is in a tower whose door is shut. A shaman can stand up there in a later fight.
-- **Fight:** `Opening_Past`, about 8 enemies. The player enters with a view over the whole ward from the gate; the orcs are at the fire and on the terrace.
+**6.2 The wards (first fight).** One open space 52 m wide between the curtain walls, on two heights, with a third above it.
+- **Lower ward (0), 28 m deep:** the orcs' camp. A fire in the middle (the hero object), a cart, four barricades of crates and kegs: low cover that belongs there, set so that no line runs clear from the gate to the stair.
+- **Upper ward (+2.1 m), 25 m deep,** held by a retaining wall. Two ways up: **the wide stair** in the middle (8.2 m, where the fight funnels) and **a breach** at one end, where the wall has fallen and the rubble makes steps of a single jump (the flank).
+- **Two side yards** run on along the Front Hall, 8.5 m wide: one holds the wall stair, whose gate is shut in this slice; the other the orcs' stores (provisional pickups: a health and a mana potion).
+- **The wall walk (+10 m)** is seen from the whole ward and not reached yet.
+- **Fight:** `Opening_Past`, about 8 enemies: at the fire, behind the barricades and on the terrace.
 
-**6.3 Front Hall of the keep.** The keep's entrance hall, as the pack's author built it. A place to breathe, with two small rooms off it, each for a reason:
-- **Guard room:** weapon stands, a table, a bench. Provisional pickup: a mana potion.
-- **Buttery:** kegs and sacks, 0.5 m down three steps. Provisional pickup: a health potion.
-- The big door to the King's Hall is **barred from the other side** for now. The stair down to the crypt is open.
+**6.3 Front Hall.** The author's hall, whole: 24 x 28 m, an arcade along each side. A place to breathe after the ward. The two aisles behind the arcades are its "rooms": weapon stands in one, kegs in the other. The doors of the two spiral stairs are there to be seen, shut for now.
 
-**6.4 The crypt stair and the cells.** The second interior set: a vaulted corridor that goes down in two flights with a turn, then runs past **cells** with bars. One cell is open (a chest), one has a broken floor. The turn hides the crypt hall; its cold light shows at the end of the corridor before the hall does.
+**6.4 Main Hall.** Through one of two arched doorways into the stair hall: the grand stair goes up out of sight, 25 m of it. The doors to the wings are barred. **In a rear corner, a stair goes down:** the crypt stair, 8 m wide, under the back wall of the keep. Its exact spot is fixed on the model, clear of the grand stair's flights.
 
-**6.5 The seal's hall (no fight).** The pillared hall of the same set. The seal lies on the floor at the far end, between four standing stones cut with runes: the same four points where the future's emitters stand around it. Interacting with it starts cutscene 1 and the future.
+**6.5 The crypt stair and the cells.** From the second interior set. Two flights straight back, a turn, two more: 12 m down in all, and the two turns hide what comes next. Then a vaulted corridor past three **cells** with bars: one open (a chest), one with a broken floor. The cold light of the seal shows at the end of the corridor before the hall does.
+
+**6.6 The seal's hall (no fight).** A pillared hall, 24 x 24 m, under an 11 m vault, in the rock behind the keep. The seal lies on the floor at the far end, between four standing stones cut with runes: the four points where the future's emitters stand around it. Interacting with it starts cutscene 1 and the future.
 
 ### The rest of the castle (outline, provisional)
-Built after slice 1 is walked, one request at a time.
+Built after slice 1 is walked, one request at a time. Everything named here already stands in the author's keep.
 
-- **West tower.** A round tower at the upper ward. **The spiral stair** goes up through its floors; each floor is a round room, and fights happen in the rooms, not on the stair (too tight for the camera and for enemies).
-- **The long wall.** The wall walk from the west tower to the east tower: long, narrow, open to the sky, crenels on one side and a drop into the ward on the other. A fight in a line: a rush along the wall that the ice wall can plug and the lightning bolt goes through, with a shaman at the far tower. Jumping down into the ward is a one-way shortcut.
-- **East tower and the keep's upper floor.** From the wall, a tower door leads into the upper floor of the keep. This is **the floor above that does not connect to the one below**: the hall's own stair has fallen.
-- **King's Hall.** The large combat hall: the floor (long tables as low cover, pillars to circle around) and the gallery above it (enemies who shoot). The player first sees the gallery from below, on the other side of the barred door; later he arrives on it from the wall and **drops through the broken floor** into the hall, which opens the barred door from inside and closes the loop.
-- **The cellars.** Under the upper ward, entered from the lower ward: a low, cold store with the castle's well. They join the crypt from behind (a second loop). Provisional link to the future: this is the stone that has come through the roof of the tentacle boss's hall.
-- **The top.** The highest room of the keep or a tower top, for the medieval Valkyrie, bound in runes.
+- **The entrance towers.** The two spiral stairs: ground, the Front Hall's upper floor, the roof.
+- **The roof walk.** Between the two entrance towers, 23 m long and 20.7 m up, over the gate: the passage between two towers.
+- **The wall walk.** From the wall stair along the curtain wall to a wall tower, and through its door into the King's Hall gallery.
+- **King's Hall.** The large combat hall on two levels: the floor (two long tables as low cover, the arcade's pillars to circle around) and **the gallery at +11.7 m, which the floor cannot reach.** The player first sees the gallery from below; later he arrives on it from the wall walk or from the grand stair, and drops into the hall.
+- **Side Hall** and its roof terrace.
+- **The Top Level.** Three floors and four spiral turrets above the Main Hall; the highest room for the medieval Valkyrie, bound in runes.
+- **Under the wings.** The ring of arches 5 m below the hall floors, entered from outside the keep: a low, cold undercroft that can join the crypt from behind (a second loop).
 
-**Where the elements could live** (the owner's call; a starting proposal only): lightning at the top of the west tower, air on the long wall, ice in the cellars and the well, fire at the King's Hall's great hearth.
+**Where the elements could live** (the owner's call; a starting proposal only): lightning in a turret of the Top Level, air on the roof walk and the wall walk, ice in the undercroft, fire in the King's Hall.
 
 ### Loops
-1. Lower ward and upper ward, by the two stairs.
-2. Upper ward, west tower, long wall, east tower, upper floor, down through the broken floor into the King's Hall, Front Hall, upper ward.
-3. Lower ward, cellars, crypt, Front Hall.
+1. Lower ward and upper ward, by the wide stair and the breach.
+2. Upper ward, wall stair, wall walk, wall tower, King's Hall gallery, a drop to the hall floor, Main Hall, Front Hall, upper ward.
+3. Front Hall, a spiral stair, the roof walk, the other spiral stair, Front Hall.
+4. Main Hall, crypt, undercroft, the outside of the keep, upper ward.
 
 ## 7. Rules for building it
 The rules of `FUTURE_BASE_SLICE1.md` section 5 and of section 2 above, and:
 - **The author's sections are placed as he assembled them** wherever one exists for the place; our level design goes on top.
-- **Fights in the past are mostly melee and swarm.** The castle gives them funnels (stairs, doors, the wall) and room to move in the wards and the hall; the spells that wall and pierce are meant to matter there.
-- **A door an enemy must pass is at least 2 m wide**, 3 m on a sub-boss's path.
+- **Fights in the past are mostly melee and swarm.** The castle gives them funnels (stairs, doorways, the wall) and room to move in the wards and the halls; the spells that wall and pierce are meant to matter there.
+- **Fights stay where the doors are wide** (wards, halls, the big doorways). The 1.3 m doors of towers and rooms are for the player.
 - **Steps for a single jump are 1.5 m or less** (kegs, crates, rubble).
 - **Every light has its fixture:** a torch, a brazier, a chandelier, a candle, a window.
+- **Collision:** most of the kit's pieces have no simple collision at all; like the base's kits, they block as they look (complex collision as simple, from both sides).
 
 ## 8. Technical decisions (architect)
 - **Its own map,** `/Game/Glyphbound/Maps/PastCastle`, built by `Tools/Jam/Build-PastCastle.py` with the base builder's stages, walk check and tour spots.
 - **The seal joins the two maps.** How the game travels between two maps while keeping the player's state is to be checked in the era code before slice 1 is called done.
+- **The moss** of the author's castle (about 35,000 instanced clumps) is left out: it is foliage for a photographic look.
+- **Frame:** +X is the way the player advances, from the gate to the keep; the lower ward is Z = 0.
 
 ## 9. Open, for the owner
-1. Is this the castle (a keep over the seal's crypt, wards, towers joined by a wall, orcs camped in it)?
-2. Is slice 1 the right first piece (gate, wards, Front Hall, crypt, seal)?
+1. Is slice 1 right as drawn (gate, two wards, Front Hall, Main Hall, crypt stair, cells, the seal's hall)?
+2. The pixel-art look of the castle's stone: which way to go, from a test on one section.
 3. Where each element lives, and where the medieval Valkyrie is bound.

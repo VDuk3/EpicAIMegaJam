@@ -4,7 +4,7 @@
 # 1.8 m post stand beside it for scale.
 # Run with: node Tools/Jam/mcp_call.js py Tools/Jam/castle_piece_pictures.py
 # Settings: Glyphbound/Saved/castle_pictures.json
-#   {"out": "C:/dir/", "pieces": "C:/GameJam/Design/Levels/kits/castle/pieces.json", "match": "Castle_Kit",
+#   {"out": "C:/dir/", "pieces": "C:/GameJam/Design/Levels/kits/castle/pieces.json", "match": "Castle_Kit" (or a list of texts),
 #    "size": 512, "yaw": 215, "pitch": -22}
 import base64
 import json
@@ -53,7 +53,9 @@ s.set_editor_property('override_auto_exposure_bias', True)
 s.set_editor_property('auto_exposure_bias', float(CFG.get('exposure', 11.0)))
 pp.set_editor_property('settings', s)
 
-pieces = [p for p in json.load(open(CFG['pieces'])) if CFG.get('match', '') in p['mesh']]
+MATCH = CFG.get('match', '')
+MATCH = MATCH if isinstance(MATCH, list) else [MATCH]
+pieces = [p for p in json.load(open(CFG['pieces'])) if any(m in p['mesh'] for m in MATCH)]
 world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
 yaw, pitch, fov = float(CFG.get('yaw', 215)), float(CFG.get('pitch', -22)), 40.0
 done = []
