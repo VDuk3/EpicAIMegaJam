@@ -197,3 +197,41 @@ Editor target after the fixes: `Result: Succeeded` (65 s). Builder after the fix
 - **The full arena smoke was not run** in this block: the game's code changed only in the seal's new, opt-in path and in one tour check.
 - **The package is 2.6 GB.** The jam's limit is 1 GB.
 - The keep's other doors are open; pickups and the pixel-art look are not done (plan, section 10).
+
+---
+
+## Fourth part: the owner's first walk of the castle
+The owner played the package and sent eight screenshots with eight notes (Spanish):
+
+> *"1. Arregla el hueco en la muralla al lado de la entrada. 2. La carreta esta flotando. 3. El ultimo escalon de la entrada funciona como pared y no como escalon. 4. Quita esa estructura marron oscuro. 5. Pegalo a la pared para que se pueda subir al muro. 6. Esa parte del piso esta rara, el piso deberia continuar y ya. Eso es en la entrada a la derecha. 7. Revisa los lados de la puerta, completa ese hueco con el piso. 8. Revisa que por ninguna ventana se pueda pasar."*
+
+Translation: (1) fix the gap in the wall beside the entrance. (2) The cart is floating. (3) The last step of the entrance works as a wall, not as a step. (4) Remove that dark brown structure. (5) Put it against the wall, so that one can get up onto the wall. (6) That part of the floor is odd, the floor should simply go on; at the entrance, on the right. (7) Check the sides of the door, fill that hole with floor. (8) Check that no window can be passed through.
+
+And, while the fixes were being made, a ninth with a screenshot taken in the Editor:
+
+> *"las torres de los pasillos de la muralla están bloqueados por la ventana con un pedazo de pared. Le pasa a ambos"*
+
+Translation: the towers of the wall's walkways are blocked by the window with a piece of wall. It happens to both.
+
+| Note | What was wrong | What was done |
+|---|---|---|
+| 1 | The front wall stopped at the widest point of the gatehouse's round towers, and a round tower leaves a slit there | The front wall runs 1.8 m into the towers on both sides of the gate |
+| 2 | **The whole lower ward floated, not only the cart.** The cobble piece's stone tops are 3 to 9 cm under its own pivot (measured from its vertices), and the pieces were set 12 cm down: the stones lay 10 to 20 cm under the plane the cart, the kegs and the player stand on | The cobbles come up 9 cm: nine tenths of the stone tops are now within 2 cm of that plane |
+| 3 | The retaining wall ran on behind the wide stair. Its face stands 1 m in front of the terrace's edge, in the middle of the stair's run, where the stair is 1.4 m up: the last 70 cm were a wall | No retaining wall behind the stair (the stair is the wall there) |
+| 4 | The portcullis the architect had put across the wall stair's foot to shut it | Removed: the wall stair is open |
+| 5 | The author's wall stair stood 1.08 m off the wall (a guess at where its wall side is). And its landing meets the wall's inner parapet, 54 cm thick and 1.34 m high, not the wall walk | The stair stands against the wall. From its landing a mounting step of the kit's own stone blocks goes over the parapet: four steps of 34 cm up, a cap, three steps down onto the walk. Measured with traces first (landing 1210, walk 1203, merlons 1344) |
+| 6 | The upper ward's paving stopped where the architect thought the Front Hall began. The hall is narrower: a bare strip was left along its walls, with a white cube on it, a leftover unit cube that the author's level holds at its origin | The paving runs on under the keep. Unit cubes of the engine at a level's origin are no longer placed (four in the keep's levels) |
+| 7 | The same gap, at the two sides of the door | The same paving |
+| 8 | **Far worse than a window: 207 wall pieces of the keep blocked nothing at all.** The builder's list of things that never block had `Window_A_0`, meant for the pack's small loose window frames; it also matched `SM_CastleTower_Window_A_01` to `_09`, the walls that have a window | The entry is gone. And a new stage, `windows`, answers the owner's request as asked: every wall piece with a window (350) is crossed by straight lines on a 15 cm grid, from both sides; wherever a line goes through (184 pieces), an unseen blocking pane is set in the opening (239 panes, most 40 x 160 cm, the largest 80 x 100); then every piece is crossed again and must stop every line. Result: `still open after that: 0` |
+| 9 | Three faults in the towers the wall stair now leads to. The two towers at the keep's end stood 3.5 m inside the wings' front wall: a piece of the King's Hall's wall, window and all, filled the tower's room. At the front corners the front wall ran through the corner tower and its parapets crossed the wall walk. And a tower's doorway, 1.45 m of wall thickness, had no floor | No wall runs through a tower any more: each run ends at a tower's face (42 wall pieces, were 50). The keep-end towers stand against the wings' wall, not in it. A stone threshold in each of the eight doorways |
+
+**A mistake on the way.** The architect lowered the four towers by 50 cm on a guess about their floor tile's thickness. The builder's walk check, which now goes along both wall walks from inside one tower through the other, reported the floor 50 cm under the walk; the towers went back up. The same check then found the missing floor in the doorways.
+
+**Not placed from names.** The wall's cross-section (a walk 2.1 m wide at 12.0 m between two parapets of 1.6 m), the two stairs' direction of rise, the cart's wheels, the cobbles' height distribution and each window wall's direction (the towers' pieces run at 45 degrees in their own frame) were all read from the meshes' vertices or from traces in the level.
+
+**What the wall walk is now.** Up the wall stair on the King's Hall side, over the parapet, and along the wall: to the keep-end tower (a room; its far door faces the wing's wall, where a door into the King's Hall gallery belongs in a later slice) and to the front corner tower (a room; its far door opens on the outside of the castle, 12 m up). The front wall and the other side wall are not reached from it.
+
+**Checks**
+- Builder: `walks: clear on 10 walks` (three new: both wall walks from tower to tower, and across the terrace in front of the keep); `windows: ... still open after that: 0`.
+- `Smoke-Jam.ps1 -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 41 spots, 0 without floor`, no LogGB errors, 0 engine errors, 186 s (Editor build). Fourteen new spots at the places of the nine notes; their screenshots were looked at one by one.
+- No C++ changed in this part.

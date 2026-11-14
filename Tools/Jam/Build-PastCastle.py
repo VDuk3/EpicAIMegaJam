@@ -33,6 +33,7 @@ KEEP = (5700.0, 1400.0, 150.0)
 WARD_Y = 2600.0          # half the wards' width, wall face to wall face
 TERRACE_X = 2800.0       # the edge of the upper ward
 TERRACE_Z = 210.0        # the wide stair's rise (SM_Stairs_4M)
+COBBLE_Z = -3.0            # the cobble piece's stone tops (measured: 90% of them under +5 cm) come up to the ground plane
 STONE_FLOOR = MI + 'MI_StoneFloor_Tile_A'   # the author's terraces are timber decks; a ward is paved
 FLOOR_Z = KEEP[2] + 90.0   # the keep's walking floor
 # The crypt (plan 6.5, 6.6). Its stair starts in the Main Hall's rear corner on the King's Hall side, where four of the
@@ -53,7 +54,7 @@ _kits = {}
 # Things that never block: what is small, what hangs overhead, what only hides a seam.
 NO_BLOCK = ('Candle', 'Cup', 'Plate', 'Book', 'Bottle', 'Goblet', 'ChainLink', 'Chain_', 'Rug', 'SeamHider', 'Moss', 'Chandelier',
             'Torch', 'Lantern', 'Flag', 'Rope', 'Mug', 'Bowl', 'Jar', 'Flagon', 'Pillow', 'Sword', 'Axe', 'Hammer', 'Shield',
-            'Horse_Shoe', 'Fruit', 'Kettle', 'Pot', 'Cobble', 'Window_A_0', 'Window_B', 'Window_C', 'Window_D', 'Banner')
+            'Horse_Shoe', 'Fruit', 'Kettle', 'Pot', 'Cobble', 'Banner')
 
 
 # MI_Stab_Algae (two trim slots of the gatehouse's middle arch and front top): "Failed to compile Material Instance ...
@@ -162,6 +163,8 @@ def place_level(stage, folder, name, to, yaw=0.0, drop=None, keep=None, inside=N
         if it['kind'] != 'mesh':
             continue
         nm = it['mesh'].split('/')[-1]
+        if it['mesh'].startswith('/Engine/') and [abs(v) for v in it['scale']] == [1, 1, 1]:
+            continue                        # a leftover unit cube of the author's
         if drop and any(k in nm for k in drop):
             continue
         if keep and not any(k in nm for k in keep):
@@ -235,15 +238,13 @@ async def stage_ground():
             x, y = i * 800.0 - 300.0, j * 800.0
             if x < -1100 and abs(y) > 500:
                 continue                    # outside the gate only the road is cobbled
-            mesh(s, 'Cobbles', CT + 'Static_Mesh/Cobblestone_Road/SM_Cobbles_8M', (x, y, -12.0), collide=False)
+            mesh(s, 'Cobbles', CT + 'Static_Mesh/Cobblestone_Road/SM_Cobbles_8M', (x, y, COBBLE_Z), collide=False)
             n += 1
     # The upper ward and the two side yards: the stone floor tiles the author uses on every terrace of the keep.
     t = 0
     for i in range(0, 12):
         for j in range(-7, 7):
             x, y = TERRACE_X + i * 400.0, j * 400.0
-            if x >= 5600 and abs(y + 200) < 1700:
-                continue                    # under the Front Hall
             if abs(y + 200) > WARD_Y:
                 continue
             mesh(s, 'Terrace', CK + 'Buildings/A/SM_CastleTower_Floor_A_01', (x, y, TERRACE_Z - 50.0), mats=[STONE_FLOOR, STONE_FLOOR], collide=True)
@@ -293,6 +294,9 @@ GATE_DROP = ()
 WALL = CK + 'CurtainWall/SM_Curtain_Wall_01'      # 4 m long from its pivot along its own +X, 4.3 m thick, 13.6 m high
 WALL_Y = WARD_Y + 216.0                           # the side walls' middle line
 FRONT_X = -525.0                                  # the front wall's middle line (the gatehouse's too)
+STAIR_X = 6050.0                                  # the wall stair's own origin along the wall
+SIDE_X0 = FRONT_X + 345.0 - 62.0                  # where a side wall starts: the corner tower's face, 62 cm in
+END_TOWER_X = SIDE_X0 + 7200.0 + 345.0            # the keep-end towers: their far face (7646) meets the wings' wall
 WALL_OUT = -1.0                                   # the piece's crenels are on its own -Y side: that side faces outward (seen in renders)
 
 
@@ -320,23 +324,61 @@ def wall_run(s, x0, y0, x1, y1, out):
     return n
 
 
+STEP_STONE = MI + 'BrickKit/MI_BrickKit_03'            # the stone of the kit's own stairs
+BLOCK = CT + 'Static_Mesh/Brick_Kit/SM_BlockC'       # a dressed stone block, 57 x 42 x 54 cm, from (-4, 0, -2) of its pivot
+
+
+def stone_block(s, x, y, z, sx, sy, sz):
+    """One of the kit's stone blocks filling the box that starts at (x, y, z) and measures sx, sy, sz."""
+    kx, ky, kz = sx / 57.0, sy / 42.0, sz / 54.0
+    return mesh(s, 'Mount', BLOCK, (x + 4.0 * kx, y, z + 2.0 * kz), scale=(kx, ky, kz), mats=[STEP_STONE], collide=True)
+
+
 async def stage_walls():
     s = 'walls'
     n = 0
-    # The two side walls, from the front corner to the keep's wings.
-    n += wall_run(s, FRONT_X - 216, -WALL_Y, 7584, -WALL_Y, (0, -1))
-    n += wall_run(s, FRONT_X - 216, WALL_Y, 7584, WALL_Y, (0, 1))
-    # The front wall, either side of the gatehouse.
-    n += wall_run(s, FRONT_X, -WALL_Y, FRONT_X, -1416, (-1, 0))
-    n += wall_run(s, FRONT_X, 1416, FRONT_X, WALL_Y, (-1, 0))
-    # The author's wall tower at each corner and where the walls meet the keep (its doors open onto the wall walk).
+    # A wall never runs through a tower (owner, 2026-11-14: "the towers of the wall's walks are blocked by the window
+    # with a piece of wall, both of them"): each run ends at a tower's face. The tower is 6.9 x 7.7 m outside and only
+    # 4 x 4 m inside, with a door in each face across the wall's line and a window in the other two.
+    # The two side walls: 18 pieces from the corner tower's face (62 cm into its wall's thickness) to the keep-end
+    # tower's face.
+    n += wall_run(s, SIDE_X0, -WALL_Y, SIDE_X0 + 7200.0, -WALL_Y, (0, -1))
+    n += wall_run(s, SIDE_X0, WALL_Y, SIDE_X0 + 7200.0, WALL_Y, (0, 1))
+    # The front wall, either side of the gatehouse: 3 pieces from inside its round towers to the corner tower's face.
+    n += wall_run(s, FRONT_X, -2440.0, FRONT_X, -1240.0, (-1, 0))
+    n += wall_run(s, FRONT_X, 1240.0, FRONT_X, 2440.0, (-1, 0))
+    # The author's wall tower at each front corner and at the keep's end of each side wall. The keep-end towers stand
+    # against the wings' front wall, not in it (they stood 3.5 m inside: a piece of the King's Hall's wall, window and
+    # all, filled the tower's room). A tower's floor is at its own height 1000 (measured with a trace: the architect
+    # lowered the towers by 50 cm on a guess about the floor tile's thickness, and the walk check caught it).
     t = 0
-    for x, y in ((FRONT_X, -WALL_Y), (FRONT_X, WALL_Y), (7480, -WALL_Y), (7480, WALL_Y)):
-        k, _ = place_level(s, 'Tower', 'LI_CurtainWall_Tower_01', (x, y, WALK_Z - 1000.0), 0.0)
+    for x, y in ((FRONT_X, -WALL_Y), (FRONT_X, WALL_Y), (END_TOWER_X, -WALL_Y), (END_TOWER_X, WALL_Y)):
+        k, _ = place_level(s, 'Tower', 'LI_CurtainWall_Tower_01', (x, y, WALK_Z + 3.0 - 1000.0), 0.0)
         t += k
+        # A threshold in each of its two doorways: the tower's wall is 1.45 m thick there and has no floor of its own
+        # (the walk check found the hole between the wall walk's end and the tower's room).
+        for dx in (-350.0, 195.0):
+            stone_block(s, x + dx, y - 70.0, WALK_Z - 17.0, 155.0, 140.0, 20.0)
     # The author's wall stair, in the side yard on the King's Hall side, its foot on the upper ward.
-    k, _ = place_level(s, 'WallStair', 'LI_CurtainWall_Stairs_01', (6050.0, -WARD_Y + 108.0, TERRACE_Z), 0.0)
-    log.append('walls: %d wall pieces, %d tower pieces, %d wall stair pieces' % (n, t, k))
+    k, _ = place_level(s, 'WallStair', 'LI_CurtainWall_Stairs_01', (STAIR_X, -WARD_Y - 6.0, TERRACE_Z), 0.0)
+    # From the stair's landing onto the wall walk (owner: "so that one can get up onto the wall"). Measured with traces:
+    # the landing is at 1210, the walk at 1203, and between them stands the wall's inner parapet, 54 cm thick, its
+    # merlons 1.34 m above the landing. A mounting block of the kit's own stone blocks goes over it: four steps of
+    # 34 cm up from the landing, a cap on the parapet, three steps down onto the walk. Every step can be walked.
+    yf = -WARD_Y
+    b = 0
+    for xa in (STAIR_X - 350.0, STAIR_X - 290.0):
+        for r in range(4):                                   # landing side: the row nearest the wall is the highest
+            for layer in range(4 - r):
+                stone_block(s, xa, yf - 4.0 + 40.0 * r, 1207.0 + 34.0 * layer, 60.0, 40.0, 34.0)
+                b += 1
+        stone_block(s, xa, yf - 58.0, 1312.0, 60.0, 54.0, 34.0)      # the cap, over crenels and merlons alike
+        b += 1
+        for r in range(3):                                   # walk side
+            for layer in range(3 - r):
+                stone_block(s, xa, yf - 58.0 - 40.0 * (r + 1), 1203.0 + 34.0 * layer, 60.0, 40.0, 34.0)
+                b += 1
+    log.append('walls: %d wall pieces, %d tower pieces, %d wall stair pieces, %d blocks of the mounting step' % (n, t, k, b))
 
 
 RET = CK + 'Buildings/Hall_1/SM_Wall_1x5'          # 4 m long along its own +X, 1.25 m thick, 5 m high
@@ -348,11 +390,11 @@ async def stage_wards():
     s = 'wards'
     # The retaining wall of the upper ward: thirteen 4 m modules across the ward, sunk so their top is the terrace.
     for i in range(13):
-        if i == BREACH:
-            continue
+        if i == BREACH or i in STAIR_MODS:
+            continue                        # the breach; and the stair itself is the wall there
         y = -WARD_Y + i * 400.0
         mesh(s, 'Retaining', RET, (TERRACE_X + 5.0, y, TERRACE_Z - 500.0), rot(yaw=90))
-        if i not in STAIR_MODS:
+        if True:
             mesh(s, 'Retaining', CK + 'Buildings/A/SM_CastleTower_WallTopper_A_01', (TERRACE_X - 55.0, y + 400.0, TERRACE_Z), rot(yaw=90))
     # The wide stair (8.2 m, rises 2.1 m towards its own +Y): in the middle, where the fight funnels.
     mesh(s, 'Stair', CK + 'Buildings/Courtyard/SM_Stairs_4M', (TERRACE_X - 298.0, -610.0, 0.0), rot(yaw=-90))
@@ -369,10 +411,7 @@ async def stage_wards():
                                    ('SM_Small_Rock_E', TERRACE_X - 200, y0 + 180, 70, 140, 0.9), ('SM_Small_Rock_A', TERRACE_X - 330, y1 - 190, 40, 250, 1.0),
                                    ('SM_Small_Rock_D', TERRACE_X - 90, y0 + 250, 130, 60, 0.9)):
         mesh(s, 'Breach', rk + name, (x, y, z), rot(yaw=yaw), (sc, sc, sc), collide=False)
-    # The wall stair is shut in this slice: a portcullis across its foot (two leaves of 4.25 m).
-    for x in (5625.0, 6050.0):
-        mesh(s, 'Shut', CK + 'Buildings/Castle_Gate/SM_Portcullis', (x, -WARD_Y + 930.0, TERRACE_Z), rot(yaw=0))
-    log.append('wards: retaining wall with its breach, the wide stair, the wall stair shut')
+    log.append('wards: retaining wall with its breach, the wide stair')
 
 
 CA = CT + 'Candle/StaticMeshes/Architecture/'
@@ -483,6 +522,109 @@ async def stage_crypt():
     log.append('crypt: stair of four flights from the Main Hall, three cells, the seal\'s hall at Z %d' % CRYPT_Z)
 
 
+WINDOW_KEY = 'SM_CastleTower_Window_A_'
+_wall_axes = {}
+
+
+def wall_axes(sm):
+    """A wall piece is flat: its long direction in its own XY, read from its vertices (the tower's pieces run at 45
+    degrees). Returns (centre x, centre y, angle, along min, along max, across min, across max)."""
+    key = sm.get_path_name()
+    if key not in _wall_axes:
+        sm.set_editor_property('allow_cpu_access', True)
+        pts = []
+        for sec in range(sm.get_num_sections(0)):
+            r = unreal.ProceduralMeshLibrary.get_section_from_static_mesh(sm, 0, sec)
+            pts += [(v.x, v.y) for v in r[0]]
+        n = float(len(pts))
+        mx, my = sum(p[0] for p in pts) / n, sum(p[1] for p in pts) / n
+        sxx = sum((p[0] - mx) ** 2 for p in pts) / n
+        syy = sum((p[1] - my) ** 2 for p in pts) / n
+        sxy = sum((p[0] - mx) * (p[1] - my) for p in pts) / n
+        ang = 0.5 * math.atan2(2 * sxy, sxx - syy)
+        c, sn = math.cos(ang), math.sin(ang)
+        us = [(p[0] - mx) * c + (p[1] - my) * sn for p in pts]
+        ns = [-(p[0] - mx) * sn + (p[1] - my) * c for p in pts]
+        _wall_axes[key] = (mx, my, ang, min(us), max(us), min(ns), max(ns))
+    return _wall_axes[key]
+
+
+def window_cells(a, world, step=15.0):
+    """The cells of a window wall that a straight line crosses without touching anything, from either side."""
+    mx, my, ang, u0, u1, n0, n1 = wall_axes(a.static_mesh_component.static_mesh)
+    c, sn = math.cos(ang), math.sin(ang)
+    t = a.get_actor_transform()
+
+    def at(u, n, z):
+        return unreal.MathLibrary.transform_location(t, unreal.Vector(mx + u * c - n * sn, my + u * sn + n * c, z))
+    cells = set()
+    nu, nz = int((u1 - u0 - 30.0) / step), int(350.0 / step)
+    for i in range(nu + 1):
+        for j in range(nz + 1):
+            u, z = u0 + 15.0 + i * step, 25.0 + j * step
+            p, q = at(u, n0 - 40.0, z), at(u, n1 + 40.0, z)
+            if unreal.SystemLibrary.line_trace_single(world, p, q, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, False):
+                continue
+            if unreal.SystemLibrary.line_trace_single(world, q, p, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, False):
+                continue
+            cells.add((i, j))
+    return cells, at, (u0, n0, n1, step)
+
+
+async def stage_windows():
+    """No window can be passed (owner, 2026-11-14). Every wall piece with a window is crossed by lines on a 15 cm grid,
+    from both sides; wherever a line goes through, an unseen blocking pane is set in the opening. Then every opening
+    is crossed again and must stop the line."""
+    s = 'windows'
+    world = ues.get_editor_world()
+    walls = [a for a in eas.get_all_level_actors() if isinstance(a, unreal.StaticMeshActor) and a.actor_has_tag(TAG)
+             and a.static_mesh_component.static_mesh and WINDOW_KEY in a.static_mesh_component.static_mesh.get_name()]
+    panes = 0
+    open_walls = 0
+    for k, a in enumerate(walls):
+        cells, at, (u0, n0, n1, step) = window_cells(a, world)
+        if not cells:
+            continue
+        open_walls += 1
+        todo = set(cells)
+        while todo:                                   # one pane per opening (cells that touch)
+            group, stack = [], [todo.pop()]
+            while stack:
+                ci, cj = stack.pop()
+                group.append((ci, cj))
+                for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nb = (ci + d[0], cj + d[1])
+                    if nb in todo:
+                        todo.remove(nb)
+                        stack.append(nb)
+            i0, i1 = min(g[0] for g in group), max(g[0] for g in group)
+            j0, j1 = min(g[1] for g in group), max(g[1] for g in group)
+            ua, ub = u0 + 15.0 + i0 * step - step, u0 + 15.0 + i1 * step + step
+            za, zb = 25.0 + j0 * step - step, 25.0 + j1 * step + step
+            nm = (n0 + n1) / 2.0
+            pa, pb, pc = at(ua, nm, (za + zb) / 2), at(ub, nm, (za + zb) / 2), at((ua + ub) / 2, nm, (za + zb) / 2)
+            yaw = math.degrees(math.atan2(pb.y - pa.y, pb.x - pa.x))
+            b = eas.spawn_actor_from_object(asset('/Engine/BasicShapes/Cube'), pc, rot(yaw=yaw))
+            b.set_actor_scale3d(unreal.Vector(math.hypot(pb.x - pa.x, pb.y - pa.y) / 100.0, 0.12, (zb - za) / 100.0))
+            bc = b.static_mesh_component
+            bc.set_mobility(unreal.ComponentMobility.STATIC)
+            bc.set_collision_profile_name('BlockAll')
+            bc.set_visibility(False)
+            bc.set_editor_property('cast_shadow', False)
+            b.set_actor_hidden_in_game(True)
+            tag(b, s, 'Panes')
+            panes += 1
+        if k % 40 == 0:
+            await asyncio.sleep(0)
+    await asyncio.sleep(0.5)
+    still = 0
+    for a in walls:
+        cells, _, _ = window_cells(a, world)
+        still += 1 if cells else 0
+    log.append('windows: %d wall pieces with a window, %d had an opening a line could cross, %d unseen panes set; still open after that: %d'
+               % (len(walls), open_walls, panes, still))
+
+
 KEG = PROPS + 'SM_Large_Keg'            # 1.13 x 1.33 m, 1.27 m high: low cover, and a step
 BARREL = PROPS + 'SM_Barrel_01'         # 0.54 m across, 0.73 m high
 CRATE = PROPS + 'Crates/SM_Crate_B_01'  # 0.6 m cube, pivot at a corner
@@ -549,13 +691,23 @@ TOUR = [('01_start', -2300, 0, 0, 0), ('02_gate_passage', -700, 0, 0, 0), ('03_w
         ('17_main_hall_side', 8600, -900, 260, 45), ('18_main_hall_up', 8700, 900, 260, -60), ('19_crypt_mouth', 9350, -600, 260, 0), ('20_stair_1', 10100, -600, 90, 0),
         ('21_landing', 11690, -600, -360, -90), ('22_stair_4', 11690, -2200, -810, -90), ('23_cells', 11690, -2900, -960, -90),
         ('24_cell_open', 12000, -3800, -960, 0), ('25_corridor_end', 11690, -4800, -960, -90), ('26_seal_hall', 11690, -5300, -960, -90),
-        ('27_sealmap', 11690, -6500, -960, -90), ('28_seal_back', 11690, -7150, -960, 90)]
+        ('27_sealmap', 11690, -6500, -960, -90), ('28_seal_back', 11690, -7150, -960, 90),
+        # the owner's notes of his first walk: the wall beside the gate from outside (both sides), the cart, the wide stair's
+        # top, the wall stair and the wall walk it now leads to, the paving at the keep's entrance
+        ('30_gate_wall_left', -1900, -1750, 0, 22), ('31_gate_wall_right', -1900, 1750, 0, -22), ('32_cart', 1000, -950, 0, 135),
+        ('33_stair_top', 2900, -200, 210, 180), ('34_wall_stair', 5350, -1850, 210, -35), ('35_stair_landing', STAIR_X - 250, -2470, 1211, -90),
+        ('36_wall_walk', STAIR_X - 290, -2816, 1203, 0), ('37_wall_walk_gate_end', 1500, -2816, 1203, 180), ('37b_corner_tower', -300, -2816, 1203, 180), ('37c_keep_end_tower', 6800, -2816, 1203, 0),
+        ('37d_in_keep_end_tower', 7300, -2816, 1203, 180), ('38_entrance_right', 5380, 950, 210, 35),
+        ('39_door_side', 5050, -700, 210, 25), ('39b_door_side_right', 5050, 700, 210, -25)]
 
 WALKS = [('road through the gate into the ward', [(-2300, 0, 0), (2300, 0, 0)]),
          ('up the wide stair to the keep\'s door', [(2300, -200, 0), (2505, -200, 0), (2712, -200, 210), (4900, -200, 210), (5200, 0, 210)]),
          ('up the breach', [(2200, 2000, 0), (2800, 2000, 210), (3200, 2000, 210)]),
          ('into the Front Hall and through to the Main Hall', [(5500, 0, 240), (7400, 400, 240), (8300, 400, 260)]),
          ('terrace to the far side yard', [(4500, 2100, 210), (6800, 2100, 210)]),
+         ('along the wall walk on the King\'s side, from inside the keep-end tower through the corner tower to its far door', [(7300, -2816, 1203), (-640, -2816, 1203)]),
+         ('along the wall walk on the other side, tower to tower', [(7300, 2816, 1203), (-640, 2816, 1203)]),
+         ('across the terrace in front of the keep, wall to wall', [(4700, -2400, 210), (4700, 2400, 210)]),
          ('Main Hall down the crypt stair to the landing', [(9300, -600, 260), (9695, -600, 240), (10485, -600, -60), (11285, -600, -360), (11690, -600, -360)]),
          ('landing down to the cells and into the seal\'s hall', [(11690, -600, -360), (11690, -1005, -360), (11690, -1795, -660), (11690, -2595, -960), (11690, -6800, -960)])]
 
@@ -652,7 +804,11 @@ for name, fn in ALL:
     await asyncio.sleep(0)
 enable_collision()
 await asyncio.sleep(0.5)
+if not STAGES or 'windows' in STAGES:
+    clear('windows')            # after the collision flags: before them a wall piece blocks nothing
+    await stage_windows()
 if not CFG.get('no_walks'):
     check_walks()
 les.save_current_level()
+open(os.path.join(unreal.Paths.project_saved_dir(), 'castle_build_result.txt'), 'w').write('\n'.join(log))
 '\n'.join(log)
