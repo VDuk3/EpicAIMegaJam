@@ -17,7 +17,11 @@ from mathutils.bvhtree import BVHTree
 
 HANDY = ("hand", "index", "middle", "ring", "pinky", "thumb")
 # per set and slot: hand-set numbers, each one read off a review render (armor_review_render.py)
-BOOT_TOP = 0.185     # m above the floor: the boots are cut here (ankle); the greaves come down to this height
+BOOT_TOP = 0.185     # m above the floor: the boots are cut here (ankle)
+# Owner, 2026-11-14, second look: "remove the upper part of the boots completely". The pieces of Armor 2's last row
+# are tall boot shafts (the first fit called them greaves); with the boots cut at the ankle they were still the upper
+# part of a boot. They are not fitted and not exported: the lower leg is the suit, from the knee to the boot.
+SKIP_SLOTS = ("Shin",)
 TUNE = {
     ("A", "Helmet"): {"s": 2.75}, ("B", "Helmet"): {"s": 2.85, "dy": -0.025}, ("C", "Helmet"): {"s": 3.15, "dz": 0.07, "dy": 0.015}, ("D", "Helmet"): {"s": 2.75},
     ("D", "Chest"): {"top": 1.87},
@@ -597,21 +601,53 @@ def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margi
         cg = (cg - lat * (2 * cg.dot(lat))).normalized()
         X = np.array([v.co[:] for v in piece.data.vertices], dtype=float)
         t = (X - c) @ ax
+        Sd = S - np.array(Wg)
+        S = S - 2 * np.outer(Sd @ np.array(lat), np.array(lat))
     # the cuff takes the hand's turn and is then swung onto the forearm (no twist between the two parts)
+    # The wrist is made straight (owner, 2026-11-14: "the wrist is bent towards the little finger; straighten it").
+    # Registered onto the orc's hand, the glove's hand takes that hand's own bend (10 degrees to the little
+    # finger's side in this rig) plus whatever its sculpt adds. The line of the glove's hand is measured where it
+    # ended up: the middle of its surface, side to side, at six stations from wrist to knuckles (a median, so the
+    # thumb does not pull it), against the forearm's axis; the hand part is turned about the wrist, in the plane of
+    # the palm, until that line runs along the forearm. The registered pose is kept for the skin: every glove finger
+    # is still bound to the orc finger it was laid on.
+    Rh_reg = Rh.copy()
+    kn = [_bh(arm, f + "_01" + sd) for f in ("index", "pinky")]
+    side_ax = kn[0] - kn[1]
+    side_ax = (side_ax - co * side_ax.dot(co)).normalized()          # from the little finger to the index, across the hand
+    palm_n = co.cross(side_ax)
+    Hs = (S[ts > tw] - np.array(Wg)) * s
+    straighten = 0.0
+    for _ in range(3):
+        P = Hs @ np.array(Rh).T
+        tau, lt = P @ np.array(co), P @ np.array(side_ax)
+        hl = np.percentile(tau, 95)
+        xs, ys = [], []
+        for k in range(6):
+            m = (tau >= hl * (0.08 + 0.09 * k)) & (tau < hl * (0.17 + 0.09 * k))
+            if m.sum() > 20:
+                xs.append(float(np.median(tau[m])))
+                ys.append(float(np.median(lt[m])))
+        if len(xs) < 3:
+            break
+        ang = math.atan(float(np.polyfit(xs, ys, 1)[0]))
+        Rh = Matrix.Rotation(-ang, 3, palm_n) @ Rh
+        straighten += math.degrees(ang)
     Rc = (Rh @ cg).rotation_difference(co).to_matrix() @ Rh
     info = {"scale": round(s, 2), "wrist_cm": round(float(wrist_g * s) * 100, 1),
             "hand_len_cm": [round(float(hand_len_g * s) * 100, 1), round((tip - W).length * 100, 1)],
             "hand_fit_mm": round(best[0] * 1000, 1), "thumb_mm": round(best[4] * 1000, 1), "cost": float(best[3]), "wrist_off_cm": round((Wh - W).length * 100, 1),
-            "cuff_swing_deg": round(math.degrees((Rh @ cg).angle(co)), 1)}
+            "cuff_swing_deg": round(math.degrees((Rh @ cg).angle(co)), 1), "straightened_deg": round(straighten, 1)}
     if os.environ.get("GAUNTLET_DEBUG"):
         print("GAUNTLET", sd, "kw", kw, "Lg_cm", round(Lg * 100, 1), "area_cm2", [round(float(a) * 1e4) for a in area])
     blend0, blend1 = tw - 0.08 * Lg, tw + 0.08 * Lg
-    out = []
+    out, reg = [], []
     for i, v in enumerate(piece.data.vertices):
         d = v.co - Wg
         u = min(1.0, max(0.0, (t[i] - blend0) / (blend1 - blend0)))
         u = u * u * (3 - 2 * u)
         out.append(Wh + ((Rc @ d) * (1 - u) + (Rh @ d) * u) * s)
+        reg.append(Wh + (Rh_reg @ d) * s)
     # the cuff, station by station along the forearm: widened and centred on the forearm
     cuff = [i for i in range(len(out)) if t[i] < tw]
     tau = {i: (out[i] - W).dot(co) for i in cuff}
@@ -688,7 +724,7 @@ def fit_gauntlet(piece, body, arm, dom, sd, whole, whole_dom, s=None, hand_margi
         if t[i] < blend0:
             hard.append("lowerarm" + sd)
         else:
-            hard.append(min(segs[1:], key=lambda sg: seg_d(out[i], sg[1], sg[2]))[0])
+            hard.append(min(segs[1:], key=lambda sg: seg_d(reg[i], sg[1], sg[2]))[0])
     adj = [[] for _ in range(n)]
     for e in piece.data.edges:
         a, b = e.vertices
@@ -1010,6 +1046,8 @@ def do_armor():
         src_ob.data.materials[0].name = "M_OrcArmor%d" % fn
         groups = piece_groups(src_ob, fn)
         for (st, slot, side), verts in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2] != "r")):
+            if slot in SKIP_SLOTS:
+                continue
             sides = [side] if side else (["r", "l"] if slot in ("Hand", "Foot") else [None])
             for sd in sides:
                 # a knee piece is exported inside its set's thigh mesh

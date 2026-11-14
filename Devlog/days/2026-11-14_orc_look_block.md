@@ -86,3 +86,14 @@ Translation: (1, on set B's gauntlet) the thumb is on the wrong side; (2, on set
 - **Boots.** Cut with a plane at 18.5 cm (the ankle); the greaves slide down and stretch up to 20 % to end there. Cuts are real cuts through the faces now; deleting vertices had left ragged edges.
 
 Media, replaced: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_heads`, `_legs`; new: `orc_refit_B_gauntlet.png` (set B's right hand from outside, front and inside, and its left hand).
+
+## The owner's second look: wrists and boot shafts
+
+> 1. La muñeca esta torcida hacia el lado del meñique. 2. Enderezala. 3. Remueve completamente la parte superior de las botas.
+
+Translation: (1, on the gauntlets of sets B and D) the wrist is bent towards the little finger's side; (2) straighten it; (3) remove the upper part of the boots completely (his picture shows the four tall shafts over the calves).
+
+- **Wrists.** Registered onto the orc's hand, a glove's hand took that hand's own bend plus its sculpt's: measured, 21 to 35 degrees to the little finger's side on sets A, C and D, and 7 to 10 the other way on B. The line of the glove's hand is now measured where it ended up (the middle of its surface, side to side, at six stations from wrist to knuckles; a median, so the thumb does not pull it) and the hand part is turned about the wrist, in the plane of the palm, until that line runs along the forearm. The registered pose is kept for the skin, so each glove finger is still bound to the orc finger it was laid on. Done on all four sets, not only the two in the pictures.
+- **Boot shafts.** The last row of Armor 2, which the first fit called greaves, are tall boot shafts; cutting the boots at the ankle and bringing those shafts down to them (the first reading of "take the upper part of the boots off") left the upper part of a boot in place. They are no longer fitted or exported (`SKIP_SLOTS`); the lower leg is the suit from knee to boot, with its orange ring at the knee. Eight slots per set now. This is the architect's reading of the owner's picture, said to him as such.
+
+Media, replaced: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_legs`, `orc_refit_B_gauntlet.png`; new: `orc_refit_gauntlets_front.png`.
