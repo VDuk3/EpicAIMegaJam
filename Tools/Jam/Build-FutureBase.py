@@ -657,7 +657,7 @@ async def stage_guard():
     through the gallery's far door, 4 m above the corridor. Its shell is the kit's own hangar branch, placed again
     as its author built it (walls, lit ceiling, floor, the freight door at the far end, here shut). Ours: the end
     wall around the gallery's door, a loading dock 1 m up in front of the freight door with its stair, and cover.
-    The first fight of the future (Opening_Future) starts when the player is well inside."""
+    It is built for the first fight of the future, which is switched off for now (owner)."""
     s = 'guard'
     htb = kit('htb_demo')
     items = []
@@ -692,12 +692,9 @@ async def stage_guard():
                          (1200, 3450, 10, 0), (1310, 3440, 0, 0), (1700, 3950, 0, 100), (1810, 3960, 8, 100)):
         mesh(s, 'Cover', crate, (x, y, ROOM_Z + z + 2), rot(yaw=yaw), collide=True)
     mesh(s, 'Cover', HTB + 'SM_Prop_HS', (1900, 3420, ROOM_Z + 124), collide=True)     # away from the entry: by the door it read as a black wall
-    enc = eas.spawn_actor_from_class(unreal.GBEncounter, unreal.Vector(1550, 3300, ROOM_Z + 150), rot())
-    enc.set_editor_property('encounter_id', unreal.Name('Opening_Future'))
-    enc.set_editor_property('presence', unreal.GBEraPresence.FUTURE_ONLY)
-    enc.set_editor_property('trigger_extent', unreal.Vector(550, 800, 300))
-    tag(enc, s, 'Gameplay')
-    log.append('guard: muster hall, %d pieces from the kit hangar branch, end wall, dock, cover, encounter Opening_Future' % n)
+    # No fight here for now (owner, 2026-11-13: "no es necesario la pelea ahorita en la sala"). When it comes back:
+    # a GBEncounter at (1550, 3300, ROOM_Z + 150), encounter_id Opening_Future, presence FUTURE_ONLY, trigger extent (550, 800, 300).
+    log.append('guard: muster hall, %d pieces from the kit hangar branch, end wall, dock, cover (no encounter for now)' % n)
 
 
 # Review spots: (name, x, y, floor z, yaw). The game's smoke block "tour" puts the player on each one and takes a

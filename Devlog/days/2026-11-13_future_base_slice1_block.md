@@ -171,3 +171,10 @@ Translation: (1) the room is fine, but do not use those assets: they are the one
 - Package: `BUILD SUCCESSFUL`; `TeamTBD_Glyphbound.zip` is **1,206.2 MB** (the lab kit is out of the cook).
 - On the package: tour `passed: 27 spots, 0 without floor` (102 s); full arena smoke `LogGB errors=0` (149 s). Screenshots taken on the package: `media/2026-11-13/futurebase_v4_packaged.png`.
 - **Not checked by a person yet:** this round's changes on foot.
+
+## No fight in the muster hall for now
+The owner: *"El Blender si esta instalado con steam y no es necesario la pelea ahorita en la sala."* (Blender is installed, through Steam, and the fight in the room is not needed right now.)
+
+- The muster hall keeps its layout, dock and cover, without the encounter. The builder keeps a note of how to put it back.
+- Package again: `TeamTBD_Glyphbound.zip`, 1,206.2 MB. On the package: tour `passed: 27 spots, 0 without floor` (100 s); full arena smoke `LogGB errors=0` (149 s).
+- Blender (5.3.0) is at `C:\Program Files (x86)\Steam\steamapps\common\Blender`. The architect had looked only in the usual install folder and reported it missing; the long corridor will be redone from the Spaceship Corridor model, which is what the owner meant by "there is already an asset like that".
