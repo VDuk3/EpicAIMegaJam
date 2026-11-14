@@ -3,8 +3,11 @@
 # Owner, 2026-11-14: "the glass that breaks before the stairs looks cheap; there are windows of thick dirty glass in the
 # map already, take them as the model". Those windows are the deep wing's: heavy worn steel, cut corners, thick glass
 # with the deep water's glow behind it. This is the same thing as a whole bulkhead:
-#   SM_GB_Bulkhead_Frame    stays: jambs on plinths, lintel, corner gussets, threshold, bolt heads        (slot Steel)
-#   SM_GB_Bulkhead_Glazing  breaks: 4 x 2 panes of glass 10 cm thick with cut corners, in steel bars       (slots Glass, Steel)
+#   SM_GB_Bulkhead_Frame      stays: jambs on plinths, lintel, corner gussets, threshold, bolt heads      (slot Steel)
+#   SM_GB_Bulkhead_Bars       stays: the glazing bars, their hub plates and every pane's corner plates    (slot Steel)
+#   SM_GB_Bulkhead_Pane_<c><r>  breaks, each on its own: 4 x 2 panes of glass 10 cm thick (c 0..3 from -Y, r L or U) (slot Glass)
+# (owner, after seeing the first version in the game: "each pane on its own, and what holds the glass stays when
+# only the glass breaks"). Every mesh keeps the wall's origin, so all of them are placed at the same point.
 # Metres, Z up, the wall across the X axis (its thickness), centred on Y, standing on Z = 0. Opening: 10.24 x 5.75 m.
 # Each pane's two big faces are unwrapped 0..1 (the material puts grime along a pane's edges with it).
 import bpy, bmesh, sys, os, math
@@ -149,8 +152,9 @@ for i in range(n):
         parts.append(bolt(y, IN_TOP + 0.27, face))
 frame = join("SM_GB_Bulkhead_Frame", parts)
 
-# ---- the glazing (breaks)
+# ---- the bars (stay) and the panes (break one by one)
 parts = []
+panes = []
 G = 0.05                                             # half thickness of the glass
 B = 0.09                                             # half depth of a glazing bar
 rows = [(SILL + BAR * 0.8, TRANSOM - BAR / 2.0), (TRANSOM + BAR / 2.0, IN_TOP)]
@@ -168,14 +172,19 @@ for ci in range(4):
     ya = COLS[ci] + (BAR / 2.0 if ci > 0 else 0.0)
     yb = COLS[ci + 1] - (BAR / 2.0 if ci < 3 else 0.0)
     for (za, zb) in rows:
-        parts.append(box((-G, G), (ya, yb), (za, zb), "Glass", 0.006, pane_uv=True))
+        pane = box((-G, G), (ya, yb), (za, zb), "Glass", 0.006, pane_uv=True)
+        pane.name = "SM_GB_Bulkhead_Pane_%d%s" % (ci, "L" if za < TRANSOM else "U")
+        pane.data.name = pane.name
+        for p in pane.data.polygons:
+            p.use_smooth = False
+        panes.append(pane)
         for (cy, sy) in ((ya, 1), (yb, -1)):
             for (cz, sz) in ((za, 1), (zb, -1)):
                 parts.append(prism([(cy, cz), (cy + sy * CUT, cz), (cy, cz + sz * CUT)], (-G - 0.018, G + 0.018), "Steel"))
                 for face in (-G - 0.018, G + 0.018):
                     parts.append(bolt(cy + sy * CUT * 0.3, cz + sz * CUT * 0.3, face, r=0.016, h=0.012))
-glazing = join("SM_GB_Bulkhead_Glazing", parts)
+bars = join("SM_GB_Bulkhead_Bars", parts)
 
-for ob in (frame, glazing):
+for ob in [frame, bars] + panes:
     export(ob)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, 'bulkhead.blend'))

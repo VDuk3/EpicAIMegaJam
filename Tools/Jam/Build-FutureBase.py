@@ -272,8 +272,9 @@ def decal(stage, material, loc, size, yaw=0.0, wall_yaw=None):
 
 CRACKS = '/Game/Glyphbound/Materials/M_GB_Cracks'
 BULK = '/Game/Glyphbound/Environment/Bulkhead/'
+GLASS_CRACKS = '/Game/Glyphbound/Materials/M_GB_GlassCracks'
 GLASS_FX = ''          # set once a pack effect has been looked at in the game; empty = pieces only
-SHARDS = {'shard_count': 60, 'shard_speed': 520.0, 'shard_seconds': 10.0}
+SHARDS = {'shard_count': 22, 'shard_speed': 480.0, 'shard_seconds': 10.0}      # per pane
 FLICKER = '/Game/Glyphbound/Materials/M_GB_LightFlicker'
 
 
@@ -373,16 +374,21 @@ async def stage_hall():
     # the deep wing's windows: a heavy frame of worn steel with cut corners and bolt heads, which stays, and eight
     # panes of thick glass in steel bars, dark teal with the deep water's glow behind and grime along every edge,
     # which break: pieces of glass fly the way of the last hit and lie on the landing.
+    # After the owner saw it in the game: "each pane on its own, and what holds the glass stays when only the glass
+    # breaks". The bars are a fixed piece now and each of the eight panes is its own breakable with its own flag and
+    # its own cracks (M_GB_GlassCracks: the wall cracks, 6 m wide and bright, read as lightning across the glazing).
+    # A lower pane, 2.2 m wide and 2.8 m high over an 11 cm rail, is the way through.
     mesh(s, 'Bulkhead', BULK + 'SM_GB_Bulkhead_Frame', (5300, 0, 0))
-    glazing = breakable(s, BULK + 'SM_GB_Bulkhead_Glazing', (5300, 0, 0), rot(), (1, 1, 1), [], 4, 'FutureBayShutterBroken')
-    try:
-        glazing.set_editor_property('shard_meshes', [asset('/Game/GunFX/Meshes/Glass_Shards/SM_Glass_shard0%d' % i) for i in (1, 2, 3, 4)])
-        glazing.set_editor_property('shard_material', asset('/Game/Glyphbound/Materials/M_GB_DeepGlass'))
-        glazing.set_editor_property('break_effect', asset(GLASS_FX))
-        for key, value in SHARDS.items():
-            glazing.set_editor_property(key, value)
-    except Exception as e:
-        log.append('hall: the glazing has no shatter settings in this Editor build (%s)' % e)
+    mesh(s, 'Bulkhead', BULK + 'SM_GB_Bulkhead_Bars', (5300, 0, 0))
+    for ci in range(4):
+        for row in ('L', 'U'):
+            pane = breakable(s, BULK + 'SM_GB_Bulkhead_Pane_%d%s' % (ci, row), (5300, 0, 0), rot(), (1, 1, 1), [], 4, 'FutureBayGlass_%d%s' % (ci, row))
+            pane.set_editor_property('crack_material', asset(GLASS_CRACKS))
+            pane.set_editor_property('shard_meshes', [asset('/Game/GunFX/Meshes/Glass_Shards/SM_Glass_shard0%d' % i) for i in (1, 2, 3, 4)])
+            pane.set_editor_property('shard_material', asset('/Game/Glyphbound/Materials/M_GB_DeepGlass'))
+            pane.set_editor_property('break_effect', asset(GLASS_FX))
+            for key, value in SHARDS.items():
+                pane.set_editor_property(key, value)
     # The freight door at the end of the branch is a working door (owner): it lifts when the player comes near.
     door(s, HTB + 'SM_Door_02', (3805, 2450, 0), 180, slide=(0, 0, 430), centre=(425, 25, 150), distance=600,
          mats=['/Game/High_Tech_Base/Materials/MI_Door_03', '/Game/High_Tech_Base/Materials/MI_Tile_Machine_02'])
@@ -778,6 +784,7 @@ async def stage_lab():
                % (n, len(room) - len(items), len(new)))
 
 
+VALK_GLASS_FLAG = 'ValkyrieTubeBroken'        # set when the glass of her tube breaks; her encounter's WakeFlag
 VALK_TO = (1550.0, 4320.0, LAB_Z + 50.0)     # the second lab room: its inner doorway (demo x 700) lands on Y 5074, 1.2 m behind the gate
 BATTLE = {}
 
@@ -847,11 +854,29 @@ async def stage_valk():
         items.append(it)
     # Her tube's glass (the demo's glass is a separate piece, not in the extracted room).
     tube = next(it for it in room if 'LabCapsule11_1_Capsule' in it.get('mesh', ''))
-    glass = dict(tube)
-    glass['mesh'] = '/Game/SciFiWorld/Meshes/SM_LabCapsule11_1_Glass'
-    glass['mats'] = []
-    items.append(glass)
     n = place_section(s, 'Lab', items, LAB_GATE, to=VALK_TO, yaw=-90.0)
+    # The Valkyrie is INSIDE that tube (owner, 2026-11-14, after the test package: "better that she is inside the
+    # chamber at the back and the player has to destroy the glass for her to wake, come out and start the fight").
+    # Its glass is a breakable whose own shape blocks, so she can stand inside it; breaking it sets VALK_GLASS_FLAG,
+    # which is what her encounter waits for (Encounters.json, WakeFlag).
+    tube_glass = breakable(s, '/Game/SciFiWorld/Meshes/SM_LabCapsule11_1_Glass', lab_world(tube['loc'][0], tube['loc'][1], tube['loc'][2], VALK_TO),
+                           unreal.MathLibrary.compose_rotators(rot(*tube['rot']), rot(yaw=-90.0)), tube['scale'], [], 4, VALK_GLASS_FLAG)
+    tube_glass.set_editor_property('crack_material', asset(GLASS_CRACKS))
+    glass_setup = asset('/Game/SciFiWorld/Meshes/SM_LabCapsule11_1_Glass').get_editor_property('body_setup')     # its triangles block, from both sides
+    if glass_setup.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE or not glass_setup.get_editor_property('double_sided_geometry'):
+        glass_setup.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+        glass_setup.set_editor_property('double_sided_geometry', True)
+        eal.save_asset('/Game/SciFiWorld/Meshes/SM_LabCapsule11_1_Glass', only_if_is_dirty=False)
+    tube_glass.set_editor_property('shard_meshes', [asset('/Game/GunFX/Meshes/Glass_Shards/SM_Glass_shard0%d' % i) for i in (1, 2, 3, 4)])
+    for key, value in {'shard_count': 70, 'shard_speed': 420.0, 'shard_seconds': 12.0}.items():
+        tube_glass.set_editor_property(key, value)
+    try:
+        tube_glass.set_editor_property('mesh_collision', True)
+    except Exception as e:
+        log.append('valk: THE TUBE GLASS HAS NO MESH COLLISION IN THIS EDITOR BUILD (%s): rebuild the stage after the next C++ build' % e)
+    # The three steps up to the dais are the lab's (same kit room): the same unseen slope over them.
+    lo, hi = lab_world(-266, 50, 0, VALK_TO), lab_world(-378, 750, 50, VALK_TO)
+    ramp(s, lo[0], hi[0], lo[1], hi[1], lo[2], hi[2])
     # The 1.2 m between the gate and the room's own doorway: floor, dark sides and lintel.
     g = lab_world(-1425, 400, 50)
     front = lab_world(700, 400, 0, VALK_TO)
@@ -861,8 +886,10 @@ async def stage_valk():
     box(s, 'Passage', (g[0] - 270, g[0] + 270), (g[1] + 4, front[1]), (g[2] + 350, g[2] + 380))
     # Light. Cold on her tube, so it is the brightest thing seen through the gate; red lamps where the fight was.
     tx, ty, tz = lab_world(tube['loc'][0] + 190, tube['loc'][1], tube['loc'][2] + 260, VALK_TO)
-    light(s, 'Lamps', 'PointLight', (tx, ty, tz), rot(), {'intensity': 9.0, 'color': (150, 225, 255), 'attenuation_radius': 1100.0, 'shadow': False})
-    light(s, 'Lamps', 'SpotLight', lab_world(-800, 400, 480, VALK_TO), rot(pitch=-35, yaw=90), {'intensity': 22.0, 'color': (170, 230, 255), 'attenuation_radius': 1600.0, 'shadow': False})
+    # She stands in the tube now, and her white wings burned out to plain white under the first values (9 and 22:
+    # the owner's screenshot): a third of them.
+    light(s, 'Lamps', 'PointLight', (tx, ty, tz), rot(), {'intensity': 3.0, 'color': (150, 225, 255), 'attenuation_radius': 1100.0, 'shadow': False})
+    light(s, 'Lamps', 'SpotLight', lab_world(-800, 400, 480, VALK_TO), rot(pitch=-35, yaw=90), {'intensity': 7.0, 'color': (170, 230, 255), 'attenuation_radius': 1600.0, 'shadow': False})
     for x, y, on in ((300, -200, True), (-300, 1000, True), (-1100, -150, False), (350, 900, False)):
         light(s, 'Lamps', 'PointLight', lab_world(x, y, 300, VALK_TO), rot(),
               {'intensity': 3.5, 'color': (255, 70, 45), 'attenuation_radius': 800.0, 'shadow': False, 'flicker': not on})
@@ -1350,10 +1377,11 @@ ENCOUNTERS = [
     # the deep wing: the small room, with more coming up the dark corridor behind it
     ('Future_DeepWing', (11654, 0, -450), (540, 540, 250), -600,
      [(12050, -300), (12050, 300), (11900, 0), (12800, 0), (13400, 60), (14000, -60)]),
-    # the Valkyrie's room (owner, 2026-11-14: "add the Valkyrie with her sword"): she stands before her tube, in sight
-    # through the energy gate, and wakes when the player comes in
+    # the Valkyrie's room (owner, 2026-11-14: "add the Valkyrie with her sword"; then, after playing: inside her tube,
+    # behind its glass, until the player breaks it): one spawn point in the middle of the glass cylinder (its axis is
+    # 264 cm in front of the tube's own origin at the wall; 1.8 m of room round her), on the dais
     ('Boss_Valkyrie_Future', (1550, 6000, 610), (650, 950, 300), 510,
-     [(1550, 6330)]),
+     [(1550, 6931)]),
 ]
 
 
@@ -1463,7 +1491,7 @@ def check_walks():
 
 def enable_collision():
     """Kit pieces block exactly as they look: complex collision used as simple on every mesh the map uses, except
-    decals and loose cables. (The kits' own simple hulls close doorways: found on the deleted site map.)"""
+    decals and loose cables. Chairs collide too (owner, 2026-11-14: "give the chairs collision"). (The kits' own simple hulls close doorways: found on the deleted site map.)"""
     done = 0
     for a in eas.get_all_level_actors():
         if not (isinstance(a, unreal.StaticMeshActor) and a.actor_has_tag(TAG)):
@@ -1473,7 +1501,7 @@ def enable_collision():
         if not sm or sm.get_path_name().startswith('/Engine/'):
             continue
         name = sm.get_name()
-        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Chair', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_', 'ShipCorridor_Details', 'MStair01-Steps', 'MFloor02-Steps', 'WinMetal', 'SM_Lamp0')):
+        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_', 'ShipCorridor_Details', 'MStair01-Steps', 'MFloor02-Steps', 'WinMetal', 'SM_Lamp0')):
             c.set_collision_profile_name('NoCollision')
             continue
         bs = sm.get_editor_property('body_setup')

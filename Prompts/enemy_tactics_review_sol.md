@@ -5,7 +5,7 @@ v0.57 block "How the future's enemies fight") and the brief the implementer work
 Run `git status` and `git diff` to see the change.
 
 Files:
-- New: `Glyphbound/Source/Glyphbound/AI/GBTactics.*` (pure decisions: zone clamp, roles, attack tokens, position
+- New: `Glyphbound/Source/Glyphbound/AI/GBShieldEnemy.*` (the horde chief: shield arc on the incoming-damage hook, aim / open / bash phases, stagger), `Glyphbound/Source/Glyphbound/AI/GBTactics.*` (pure decisions: zone clamp, roles, attack tokens, position
   score), `AI/GBSquad.*` (a world subsystem: one squad per encounter, last known position, roles, reserved positions,
   tokens, the tactical position query on the navmesh).
 - Edited: `AI/GBEnemyAnimInstance.*` (clips played in place: the pelvis' linear drift is subtracted; clip speeds read
@@ -14,7 +14,7 @@ Files:
   move to position, in cover, peek, relocate, search; the shielded chief), `AI/GBFlyerEnemy.*` and the drone and
   sentinel (zone, separation, orbit slots, acceleration), `AI/GBEncounter.*` (zone, prespawned first wave,
   reinforcements out of sight), `Data/GBDataTypes.h` and the data loader, `Weapons/GBGun.cpp` (gunfire heard),
-  `World/GBBreakable.*` (the glass wall shatters into pieces moved by hand), `Core/GBDevCommands.cpp` (smoke blocks
+  `World/GBBreakable.*` (the glass wall shatters into pieces moved by hand), `Player/GBPlayerCharacter.cpp` (-AllWeapons test start), `Core/GBDevCommands.cpp` (smoke blocks
   `Enemies3D` and `Enemies3DBase`, the tour's wall check, `gb.God`, `gb.OpenValkyrie`, `gb.OpenDoors`),
   `Tests/GBAITests.cpp`, `Content/Data/Enemies.json`, `Encounters.json`, `Game.json`.
 

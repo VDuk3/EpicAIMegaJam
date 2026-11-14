@@ -1,6 +1,9 @@
 # import_bulkhead.py - the glass bulkhead of the transfer bay (Tools/Blender/bulkhead_glass_export.py) into the project.
 # Run in the Editor: node Tools/Jam/mcp_call.js py Tools/Jam/import_bulkhead.py
-# Imports SM_GB_Bulkhead_Frame and SM_GB_Bulkhead_Glazing and makes M_GB_DeepGlass: the thick, dirty glass of the deep
+# Imports SM_GB_Bulkhead_Frame, SM_GB_Bulkhead_Bars and the eight panes SM_GB_Bulkhead_Pane_<c><r> (each breaks on its
+# own; the bars stay: owner, after the first version in the game) and makes M_GB_GlassCracks, the cracks of one pane
+# (the first version used the wall cracks, a 6 m pattern of thick glowing lines across the whole glazing: it read as
+# lightning), and M_GB_DeepGlass: the thick, dirty glass of the deep
 # wing's windows (owner, 2026-11-14: "there are windows of thick dirty glass in the map already, take them as the
 # model"). Opaque like them: nearly black teal glass with the deep water's glow behind it, grime gathered along each
 # pane's edges and bottom (the panes are unwrapped 0..1), streaks running down, and a gloss that the grime kills.
@@ -12,6 +15,7 @@ unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).load_level('/Engine/Map
 mel = unreal.MaterialEditingLibrary
 eal = unreal.EditorAssetLibrary
 tools = unreal.AssetToolsHelpers.get_asset_tools()
+unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX false')     # the options below are the FBX factory's
 MP = unreal.MaterialProperty
 SRC = 'C:/GameJam/Glyphbound/Saved/bulkhead_export/'
 DST = '/Game/Glyphbound/Environment/Bulkhead'
@@ -142,8 +146,47 @@ mel.recompile_material(m)
 eal.save_asset(path, only_if_is_dirty=False)
 out.append('M_GB_DeepGlass')
 
+# ---- M_GB_GlassCracks: an overlay for ONE pane. The crack mask is laid over the pane's own 0..1 unwrap (so the lines
+# are a third as thick as on the 6 m wall pattern), shifted by where the pane is so no two panes crack alike. Thin, pale
+# and dull: scratches of light in thick glass, not a glow. Scalar "Stage" 0..1 as in M_GB_Cracks.
+cpath = OUR + '/M_GB_GlassCracks'
+if eal.does_asset_exist(cpath):
+    c = unreal.load_asset(cpath)
+    mel.delete_all_material_expressions(c)
+else:
+    c = tools.create_asset('M_GB_GlassCracks', OUR, unreal.Material, unreal.MaterialFactoryNew())
+c.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+c.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
+c.set_editor_property('two_sided', True)
+_m = m
+m = c
+cuv = node(m, 'TextureCoordinate', -1500, 0)
+tiled = op('Multiply', cuv, scalar(m, 'Tile', 0.55, -1500, 150), -1300, 0)
+opos = node(m, 'ObjectPositionWS', -1700, 300)
+oyz = node(m, 'ComponentMask', -1500, 300, r=False, g=True, b=True, a=False)
+link(opos, oyz)
+shift = one('Frac', op('Divide', oyz, None, -1300, 300, const_b=173.0), -1150, 300)
+cuv2 = op('Add', tiled, shift, -1000, 100)
+cts = node(m, 'TextureSample', -820, 100, texture=unreal.load_asset(OUR + '/T_GB_Cracks'))
+link(cuv2, cts, 'UVs')
+cred = node(m, 'ComponentMask', -640, 100, r=True, g=False, b=False, a=False)
+link(cts, cred)
+stage = scalar(m, 'Stage', 0.0, -820, 350)
+over = op('Subtract', cred, one('OneMinus', stage, -640, 350), -460, 150)
+shown = one('Saturate', op('Multiply', over, None, -320, 150, const_b=14.0), -180, 150)
+mel.connect_material_property(op('Multiply', shown, None, -40, 150, const_b=0.85), '', MP.MP_OPACITY)
+mel.connect_material_property(op('Multiply', vector(m, 'Color', (0.55, 0.64, 0.68), -320, -150), scalar(m, 'Brightness', 0.038, -320, 0), -40, -100), '', MP.MP_EMISSIVE_COLOR)
+mel.recompile_material(c)
+eal.save_asset(cpath, only_if_is_dirty=False)
+out.append('M_GB_GlassCracks')
+m = _m
+
 # ---- the meshes
-for name in ('SM_GB_Bulkhead_Frame', 'SM_GB_Bulkhead_Glazing'):
+old = DST + '/SM_GB_Bulkhead_Glazing'
+if eal.does_asset_exist(old):
+    eal.delete_asset(old)          # the first version: bars and glass in one piece
+    out.append('SM_GB_Bulkhead_Glazing deleted')
+for name in ['SM_GB_Bulkhead_Frame', 'SM_GB_Bulkhead_Bars'] + ['SM_GB_Bulkhead_Pane_%d%s' % (ci, r) for ci in range(4) for r in ('L', 'U')]:
     fbx = SRC + name + '.fbx'
     if os.path.exists(fbx):
         task = unreal.AssetImportTask()
@@ -153,6 +196,16 @@ for name in ('SM_GB_Bulkhead_Frame', 'SM_GB_Bulkhead_Glazing'):
         task.set_editor_property('replace_existing', True)
         task.set_editor_property('automated', True)
         task.set_editor_property('save', True)
+        ui = unreal.FbxImportUI()
+        ui.set_editor_property('import_mesh', True)
+        ui.set_editor_property('import_as_skeletal', False)
+        ui.set_editor_property('import_materials', False)       # no stray Glass / Steel materials beside the meshes
+        ui.set_editor_property('import_textures', False)
+        ui.set_editor_property('import_animations', False)
+        ui.set_editor_property('mesh_type_to_import', unreal.FBXImportType.FBXIT_STATIC_MESH)
+        ui.static_mesh_import_data.set_editor_property('combine_meshes', True)
+        ui.static_mesh_import_data.set_editor_property('auto_generate_collision', False)
+        task.set_editor_property('options', ui)
         tools.import_asset_tasks([task])
     sm = unreal.load_asset(DST + '/' + name)
     if not sm:
@@ -162,7 +215,7 @@ for name in ('SM_GB_Bulkhead_Frame', 'SM_GB_Bulkhead_Glazing'):
     slots = []
     for i, slot in enumerate(mats):
         slot_name = str(slot.get_editor_property('material_slot_name'))
-        sm.set_material(i, unreal.load_asset(path if 'glass' in slot_name.lower() else STEEL))
+        sm.set_material(i, unreal.load_asset(path if ('glass' in slot_name.lower() or '_Pane_' in name) else STEEL))
         slots.append(slot_name)
     eal.save_asset(DST + '/' + name, only_if_is_dirty=False)
     b = sm.get_bounding_box()
