@@ -271,6 +271,9 @@ def decal(stage, material, loc, size, yaw=0.0, wall_yaw=None):
 
 
 CRACKS = '/Game/Glyphbound/Materials/M_GB_Cracks'
+BULK = '/Game/Glyphbound/Environment/Bulkhead/'
+GLASS_FX = ''          # set once a pack effect has been looked at in the game; empty = pieces only
+SHARDS = {'shard_count': 60, 'shard_speed': 520.0, 'shard_seconds': 10.0}
 FLICKER = '/Game/Glyphbound/Materials/M_GB_LightFlicker'
 
 
@@ -365,11 +368,21 @@ async def stage_hall():
     # hits, cracks spreading over it with each one, and the way down to the deep wing is behind it. It was the kit's
     # grated shutter; it is a wall of frosted glass now (owner: "change it for a wall of opaque glass"), in a dark
     # steel frame that stays.
-    breakable(s, '/Engine/BasicShapes/Cube', (5300, 0, 281), rot(), (0.12, 10.0, 5.62),
-              ['/Game/Glyphbound/Materials/M_GB_FrostedGlass'], 4, 'FutureBayShutterBroken')
-    box(s, 'Frame', (5292, 5308), (-512, -500), (0, 575))
-    box(s, 'Frame', (5292, 5308), (500, 512), (0, 575))
-    box(s, 'Frame', (5292, 5308), (-512, 512), (562, 575))
+    # Later the same day (owner: "the glass that breaks looks cheap; there are windows of thick dirty glass in the map
+    # already, take them as the model"): a modelled bulkhead (Tools/Blender/bulkhead_glass_export.py) in the manner of
+    # the deep wing's windows: a heavy frame of worn steel with cut corners and bolt heads, which stays, and eight
+    # panes of thick glass in steel bars, dark teal with the deep water's glow behind and grime along every edge,
+    # which break: pieces of glass fly the way of the last hit and lie on the landing.
+    mesh(s, 'Bulkhead', BULK + 'SM_GB_Bulkhead_Frame', (5300, 0, 0))
+    glazing = breakable(s, BULK + 'SM_GB_Bulkhead_Glazing', (5300, 0, 0), rot(), (1, 1, 1), [], 4, 'FutureBayShutterBroken')
+    try:
+        glazing.set_editor_property('shard_meshes', [asset('/Game/GunFX/Meshes/Glass_Shards/SM_Glass_shard0%d' % i) for i in (1, 2, 3, 4)])
+        glazing.set_editor_property('shard_material', asset('/Game/Glyphbound/Materials/M_GB_DeepGlass'))
+        glazing.set_editor_property('break_effect', asset(GLASS_FX))
+        for key, value in SHARDS.items():
+            glazing.set_editor_property(key, value)
+    except Exception as e:
+        log.append('hall: the glazing has no shatter settings in this Editor build (%s)' % e)
     # The freight door at the end of the branch is a working door (owner): it lifts when the player comes near.
     door(s, HTB + 'SM_Door_02', (3805, 2450, 0), 180, slide=(0, 0, 430), centre=(425, 25, 150), distance=600,
          mats=['/Game/High_Tech_Base/Materials/MI_Door_03', '/Game/High_Tech_Base/Materials/MI_Tile_Machine_02'])
@@ -1337,6 +1350,10 @@ ENCOUNTERS = [
     # the deep wing: the small room, with more coming up the dark corridor behind it
     ('Future_DeepWing', (11654, 0, -450), (540, 540, 250), -600,
      [(12050, -300), (12050, 300), (11900, 0), (12800, 0), (13400, 60), (14000, -60)]),
+    # the Valkyrie's room (owner, 2026-11-14: "add the Valkyrie with her sword"): she stands before her tube, in sight
+    # through the energy gate, and wakes when the player comes in
+    ('Boss_Valkyrie_Future', (1550, 6000, 610), (650, 950, 300), 510,
+     [(1550, 6330)]),
 ]
 
 
@@ -1460,8 +1477,13 @@ def enable_collision():
             c.set_collision_profile_name('NoCollision')
             continue
         bs = sm.get_editor_property('body_setup')
-        if bs and bs.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:
+        # Both sides answer traces (2026-11-14): 51 kit meshes are single-sided shells and stopped a trace from their
+        # front only, so an enemy behind one saw and shot through it. The flag is cooked with the mesh: it takes
+        # effect the next time the Editor loads the asset.
+        if bs and (bs.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE
+                   or not bs.get_editor_property('double_sided_geometry')):
             bs.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+            bs.set_editor_property('double_sided_geometry', True)
             eal.save_asset(sm.get_path_name().split('.')[0], only_if_is_dirty=False)
             done += 1
         c.set_collision_profile_name('BlockAll')
