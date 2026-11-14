@@ -30,6 +30,12 @@ def ensure_level():
     floor.set_actor_scale3d(unreal.Vector(80, 80, 1))
     sun = EAS.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 500), unreal.Rotator(roll=0, pitch=-40, yaw=-50))
     sun.set_actor_label("RV_Sun")
+    # a weaker light from the other side: the offscreen capture shows no sky light, and without this one the side
+    # away from the sun is black (the first captures of the refitted orcs showed three silhouettes)
+    fill = EAS.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 500), unreal.Rotator(roll=0, pitch=-25, yaw=130))
+    fill.set_actor_label("RV_Fill")
+    fill.light_component.set_editor_property("intensity", float(CFG.get("fill", 3.0)))
+    fill.light_component.set_editor_property("cast_shadows", False)
     sky = EAS.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 300))
     sky.set_actor_label("RV_Sky")
     sky.light_component.set_editor_property("source_type", unreal.SkyLightSourceType.SLS_SPECIFIED_CUBEMAP)
@@ -103,10 +109,12 @@ def lineup():
     yaw = CFG.get("yaw", -90.0)
     y = 0
     skel("Robot", C + "Robot/SK_Robot", 0, y, C + "Robot/Anims/A_Robot_" + clip, weapon=RIFLE, offset=off, yaw=yaw)
-    for i, st in enumerate("ABCD"):
+    # the armed orcs: the body worn under armor (slimmer, no hands) and the three sets left after 2026-11-14
+    # (set B and the boot shafts were dropped by the owner)
+    for i, st in enumerate("ACD"):
         armor = [C + "Orc/Armor/SK_OrcArmor_%s_%s" % (st, s) for s in
-                 ("Helmet", "Chest", "Pelvis", "Thigh", "Shin", "UpperArm", "Shoulder", "Hand", "Foot")]
-        skel("Orc" + st, C + "Orc/SK_Orc", 0, 250 + 200 * i, C + "Orc/Anims/A_Orc_" + clip, armor=armor, weapon=RIFLE,
+                 ("Helmet", "Chest", "Pelvis", "Thigh", "UpperArm", "Shoulder", "Hand", "Foot")]
+        skel("Orc" + st, C + "Orc/SK_Orc_Armored", 0, 250 + 200 * i, C + "Orc/Anims/A_Orc_" + clip, armor=armor, weapon=RIFLE,
              offset=CFG.get("orc_weapon_offset", off), yaw=yaw)
     skel("OrcBare", C + "Orc/SK_Orc", 0, -250, C + "Orc/Anims/A_Orc_" + CFG.get("orc_bare_clip", clip), weapon=RIFLE,
          offset=CFG.get("orc_weapon_offset", off), yaw=yaw)

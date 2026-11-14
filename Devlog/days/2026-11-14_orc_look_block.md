@@ -107,3 +107,16 @@ Translation: (1, over a picture of the four pairs of knees) take the orange line
 - **Knee rings** removed from the suit's light lines. The collar ring, the elbow rings and the spine line stay; this is the architect's reading (the picture shows knees only), said to the owner.
 - **Set B** (riveted iron with spikes) is no longer fitted or exported (`SKIP_SETS`). Three attempts at its glove (a left one, a mitten that is nearly its own mirror image) did not give a hand the owner accepted, and he chose to drop the set instead of spending a fourth. Its pieces stay in the delivered file. Three sets remain: A (plain military), C (bone and gold), D (green scales). Set B was the horde chief's; who wears what is decided again at import.
 - All sheets now show three sets: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_gauntlets_front`, `_heads`, `_legs`. `orc_refit_B_gauntlet.png` is kept as the record of the dropped set.
+
+## Imported (owner: "Sí, importa")
+
+- **Waited for the machine.** Another chat was packaging; the stage export (Blender) and the two scripts below were made meanwhile, the Editor opened once the lock was free.
+- **Into Unreal** with `Tools/Jam/import_enemies.py`: the body's textures (the undersuit), `SK_Orc_Armored` on the orc's skeleton, 24 armor meshes (three sets x eight slots), the orange glow on the orc's material. `SK_Orc` itself was left alone on purpose: its geometry did not change, and re-importing it could have replaced the skeleton that 22 retargeted clips hang from. No import errors.
+- **Out of Unreal** with `Tools/Jam/orc_armor_cleanup.py`: set B and every set's boot shafts, 24 assets with their physics assets. The first run kept 12 that the old review level still used; the level was rebuilt first, the second run left none.
+- **Data** with `Tools/Jam/set_orc_armor.js`: the five armed orcs use `SK_Orc_Armored` and eight pieces. Who wears what, provisional (set B was the chief's): regular orc and gun carrier A, enforcer and siege orc D, the horde chief C. The script edits only those two values per orc in the text: `Enemies.json` is hand-formatted and does not survive a parse-and-write round trip unchanged (the first version of the script refused to write for that reason).
+- **Seen in the engine.** `review_enemies.py` line-up: the first captures were three silhouettes (the offscreen capture shows no sky light), so the review level got a second, weaker directional light. Then the game itself: `Smoke-Jam.ps1 -Only Enemies3D -Offscreen`, done, 0 errors, 212 s; its screenshots show the enforcer in set D and the chief in set C with his shield.
+- Not done here: the full smoke and the package (end of day), and a person playing it. The orcs still lean back when they aim; that is animation, the next part of the owner's request ("first looks, then how they work").
+
+Media: `media/2026-11-14/orc_refit_engine_front.png`, `orc_refit_engine_back.png`, `orc_refit_engine_A_hands.png` (Editor line-up, relaxed idle), `orc_refit_game_enforcer.png`, `orc_refit_game_chief.png` (the game, from the smoke run).
+
+GDD v0.62.
