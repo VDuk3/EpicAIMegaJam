@@ -1,0 +1,14095 @@
+{
+"level": "/Game/High_Tech_Base/Demo_Level/L_HighTechBase_Level.L_HighTechBase_Level",
+"items": [
+{
+"loc": [
+1700.0,
+850.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1350,
+650,
+400
+],
+"bmax": [
+1700,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1800.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1500,
+150,
+950
+],
+"bmax": [
+1800,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1100.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1100,
+-350,
+950
+],
+"bmax": [
+1400,
+150,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1500.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1500,
+-350,
+950
+],
+"bmax": [
+1800,
+150,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1350.0,
+850.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1000,
+650,
+400
+],
+"bmax": [
+1350,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1100,
+150,
+950
+],
+"bmax": [
+1400,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Concrete_01.MI_Concrete_01"
+],
+"bmin": [
+1000,
+-750,
+350
+],
+"bmax": [
+1000,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+850.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1700,
+850,
+650
+],
+"bmax": [
+1900,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+850.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A24",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1700,
+850,
+350
+],
+"bmax": [
+1900,
+850,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-550.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A29",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Concrete_01.MI_Concrete_01"
+],
+"bmin": [
+1000,
+-950,
+650
+],
+"bmax": [
+1000,
+-550,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-550.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A30",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Concrete_01.MI_Concrete_01"
+],
+"bmin": [
+1000,
+-950,
+350
+],
+"bmax": [
+1000,
+-550,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+1000,
+-550,
+950
+],
+"bmax": [
+1900,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+1000,
+650,
+350
+],
+"bmax": [
+1900,
+850,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A34",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1000,
+650,
+350
+],
+"bmax": [
+1200,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1450.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A35",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1100,
+-550,
+-200
+],
+"bmax": [
+1450,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1550.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A36",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1350,
+-350,
+350
+],
+"bmax": [
+1550,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A37",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1550,
+-550,
+-200
+],
+"bmax": [
+1900,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1100.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A38",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+900,
+-350,
+350
+],
+"bmax": [
+1100,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-550.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+1000,
+-550,
+350
+],
+"bmax": [
+1900,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+1050.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A39",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Panel_01.MI_Wall_Concrete_Panel_01",
+"/Game/High_Tech_Base/Materials/MI_Ventilation_01.MI_Ventilation_01",
+null,
+"/Game/High_Tech_Base/Materials/MI_R5_Inst.MI_R5_Inst",
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Floor_Lighting_01.MI_NonSquare_Floor_Lighting_01"
+],
+"bmin": [
+2550,
+850,
+400
+],
+"bmax": [
+2900,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1890.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Reinforcement_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Reinforcement_01.SM_Reinforcement_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Electric.MI_Sci_Fi_Electric",
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Floor_Lighting_01.MI_NonSquare_Floor_Lighting_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_01_Inst.MI_Emissive_01_Inst",
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+1889,
+-358,
+635
+],
+"bmax": [
+2010,
+657,
+1200
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.125,
+1.0,
+1.0
+],
+"label": "IB_Floor_A4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_03_PDO_Fix.SM_Floor_03_PDO_Fix",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Asymmetric.MI_Tile_Asymmetric",
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01"
+],
+"bmin": [
+1999,
+-350,
+630
+],
+"bmax": [
+2900,
+151,
+655
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.125,
+1.0,
+1.0
+],
+"label": "IB_Floor_A5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_03_PDO_Fix.SM_Floor_03_PDO_Fix",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Asymmetric.MI_Tile_Asymmetric",
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01"
+],
+"bmin": [
+2000,
+149,
+630
+],
+"bmax": [
+2901,
+650,
+655
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+-750.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A43",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+2550,
+-750,
+400
+],
+"bmax": [
+2900,
+-550,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+-750.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A44",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2350,
+-750,
+650
+],
+"bmax": [
+2550,
+-750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A47",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-750,
+650
+],
+"bmax": [
+2000,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A50",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-750,
+350
+],
+"bmax": [
+2000,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2500,
+150,
+950
+],
+"bmax": [
+2800,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2100.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2100,
+-350,
+950
+],
+"bmax": [
+2400,
+150,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2500.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2500,
+-350,
+950
+],
+"bmax": [
+2800,
+150,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grates.SM_Top_Grates",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2100,
+150,
+950
+],
+"bmax": [
+2400,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+850.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+650,
+950
+],
+"bmax": [
+2900,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.031
+],
+"label": "IB_Top_E6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-550,
+950
+],
+"bmax": [
+2928,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-750.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A60",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-750,
+350
+],
+"bmax": [
+2900,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+650,
+350
+],
+"bmax": [
+2900,
+850,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A65",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+2000,
+650,
+-200
+],
+"bmax": [
+2350,
+850,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A67",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+2550,
+650,
+-200
+],
+"bmax": [
+2900,
+850,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2200.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A72",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-350,
+350
+],
+"bmax": [
+2200,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-550.0,
+-50.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-550,
+-50
+],
+"bmax": [
+2900,
+-350,
+-50
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-750.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A75",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-750,
+650
+],
+"bmax": [
+2900,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A76",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2900,
+650,
+650
+],
+"bmax": [
+2900,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2384.0,
+1050.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Door_1",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Door_01.SM_Door_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Door_01.MI_Door_01",
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Tile_01.MI_NonSquare_Tile_01"
+],
+"bmin": [
+2384,
+1050,
+650
+],
+"bmax": [
+2514,
+1100,
+890
+],
+"shadow": true
+},
+{
+"loc": [
+-840.0,
+-75.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "DM_Prop_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_01.SM_Prop_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_03.MI_Technical_Computer_03",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_01.MI_Technical_Computer_01",
+"/Game/High_Tech_Base/Materials/MI_Computer_Panel_01.MI_Computer_Panel_01"
+],
+"bmin": [
+-860,
+-966,
+646
+],
+"bmax": [
+904,
+-124,
+914
+],
+"shadow": true
+},
+{
+"loc": [
+1350.0,
+-550.0,
+950.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1350,
+-550,
+400
+],
+"bmax": [
+1700,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-550.0,
+950.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+1000,
+-550,
+400
+],
+"bmax": [
+1350,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1700.0,
+-550.0,
+650.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1700,
+-550,
+650
+],
+"bmax": [
+1900,
+-550,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1700.0,
+-550.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A40",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1700,
+-550,
+350
+],
+"bmax": [
+1900,
+-550,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D14",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [],
+"bmin": [
+2399,
+-350,
+950
+],
+"bmax": [
+2500,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+1050.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A55",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+2000,
+850,
+400
+],
+"bmax": [
+2350,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A77",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2900,
+650,
+350
+],
+"bmax": [
+2900,
+850,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+850.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A78",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2900,
+850,
+650
+],
+"bmax": [
+2900,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+850.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A79",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2900,
+850,
+350
+],
+"bmax": [
+2900,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+850.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A80",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2000,
+650,
+650
+],
+"bmax": [
+2000,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+1050.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A81",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2000,
+850,
+650
+],
+"bmax": [
+2000,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+850.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A82",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2000,
+650,
+350
+],
+"bmax": [
+2000,
+850,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+1050.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A83",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2000,
+850,
+350
+],
+"bmax": [
+2000,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+1050.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+850,
+950
+],
+"bmax": [
+2900,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+850.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+850,
+350
+],
+"bmax": [
+2900,
+1050,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Bridge",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Bridge_01.SM_Bridge_01",
+"mats": [
+null,
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+2350,
+632,
+368
+],
+"bmax": [
+2550,
+1068,
+651
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+1050.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Door_Frame_02",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Door_01_Frame.SM_Door_01_Frame",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+2350,
+1050,
+650
+],
+"bmax": [
+2550,
+1100,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+1050.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A84",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2350,
+1050,
+350
+],
+"bmax": [
+2550,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+1050.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A85",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2150,
+1050,
+350
+],
+"bmax": [
+2350,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2750.0,
+1050.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A86",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+2550,
+1050,
+350
+],
+"bmax": [
+2750,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2750.0,
+-30.0,
+1150.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Extra.SM_Top_Grate_Extra",
+"mats": [],
+"bmin": [
+2450,
+-30,
+1040
+],
+"bmax": [
+2750,
+332,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2450.0,
+-30.0,
+1150.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D19",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Extra.SM_Top_Grate_Extra",
+"mats": [],
+"bmin": [
+2150,
+-30,
+1040
+],
+"bmax": [
+2450,
+332,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1750.0,
+-30.0,
+1150.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D21",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Extra.SM_Top_Grate_Extra",
+"mats": [],
+"bmin": [
+1450,
+-30,
+1040
+],
+"bmax": [
+1750,
+332,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2750.0,
+650.0,
+750.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Railing",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_03.SM_Railing_03",
+"mats": [
+null
+],
+"bmin": [
+2630,
+622,
+645
+],
+"bmax": [
+2870,
+679,
+777
+],
+"shadow": true
+},
+{
+"loc": [
+2150.0,
+650.0,
+750.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Railing2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_03.SM_Railing_03",
+"mats": [
+null
+],
+"bmin": [
+2030,
+622,
+645
+],
+"bmax": [
+2270,
+679,
+777
+],
+"shadow": true
+},
+{
+"loc": [
+2545.0,
+900.0,
+750.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Railing3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_03.SM_Railing_03",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R8_Inst.MI_R8_Inst"
+],
+"bmin": [
+2517,
+780,
+645
+],
+"bmax": [
+2574,
+1020,
+777
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+900.0,
+750.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Railing4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_03.SM_Railing_03",
+"mats": [
+null
+],
+"bmin": [
+2326,
+780,
+645
+],
+"bmax": [
+2383,
+1020,
+777
+],
+"shadow": true
+},
+{
+"loc": [
+2650.0,
+650.0,
+690.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.062,
+1.0
+],
+"label": "IB_Railing_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2545,
+647,
+687
+],
+"bmax": [
+2650,
+653,
+693
+],
+"shadow": true
+},
+{
+"loc": [
+2650.0,
+650.0,
+660.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.062,
+1.0
+],
+"label": "IB_Railing_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2545,
+647,
+657
+],
+"bmax": [
+2650,
+653,
+663
+],
+"shadow": true
+},
+{
+"loc": [
+2545.0,
+650.0,
+690.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.52,
+1.0
+],
+"label": "IB_Railing_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2542,
+650,
+687
+],
+"bmax": [
+2548,
+800,
+693
+],
+"shadow": true
+},
+{
+"loc": [
+2545.0,
+650.0,
+660.0
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.5,
+1.0
+],
+"label": "IB_Railing_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2542,
+650,
+657
+],
+"bmax": [
+2548,
+799,
+663
+],
+"shadow": true
+},
+{
+"loc": [
+2545.0,
+650.0,
+605.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.062,
+1.0
+],
+"label": "IB_Railing_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2542,
+647,
+605
+],
+"bmax": [
+2548,
+653,
+710
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+800.0,
+690.0
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.511,
+1.0
+],
+"label": "IB_Railing_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2352,
+650,
+687
+],
+"bmax": [
+2358,
+800,
+693
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+800.0,
+660.0
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.511,
+1.0
+],
+"label": "IB_Railing_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2352,
+650,
+657
+],
+"bmax": [
+2358,
+800,
+663
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+650.0,
+690.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.06,
+1.0
+],
+"label": "IB_Railing_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2250,
+647,
+687
+],
+"bmax": [
+2355,
+653,
+693
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+650.0,
+660.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.06,
+1.0
+],
+"label": "IB_Railing_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2250,
+647,
+657
+],
+"bmax": [
+2355,
+653,
+663
+],
+"shadow": true
+},
+{
+"loc": [
+2355.0,
+650.0,
+605.0
+],
+"rot": [
+0.0,
+-180.0,
+-90.0
+],
+"scale": [
+1.0,
+1.062,
+1.0
+],
+"label": "IB_Railing_10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_01.SM_Railing_01",
+"mats": [
+null
+],
+"bmin": [
+2352,
+647,
+605
+],
+"bmax": [
+2358,
+653,
+710
+],
+"shadow": true
+},
+{
+"loc": [
+2250.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2050,
+-450,
+650
+],
+"bmax": [
+2250,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2450.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2250,
+-450,
+650
+],
+"bmax": [
+2450,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2650.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2450,
+-450,
+650
+],
+"bmax": [
+2650,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2850.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2650,
+-450,
+650
+],
+"bmax": [
+2850,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-1150.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A87",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-1150,
+650
+],
+"bmax": [
+2900,
+-750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-550.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-750,
+950
+],
+"bmax": [
+2900,
+-550,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-950,
+950
+],
+"bmax": [
+2900,
+-750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A51",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-1150,
+650
+],
+"bmax": [
+2000,
+-750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A52",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-1150,
+350
+],
+"bmax": [
+2000,
+-750,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-1150.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A61",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-1150,
+350
+],
+"bmax": [
+2900,
+-750,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+-50.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-750,
+-50
+],
+"bmax": [
+2900,
+-550,
+-50
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-950.0,
+-50.0
+],
+"rot": [
+0.0,
+90.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E14",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+2000,
+-950,
+-50
+],
+"bmax": [
+2900,
+-750,
+-50
+],
+"shadow": true
+},
+{
+"loc": [
+2850.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2850,
+-450,
+650
+],
+"bmax": [
+2900,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+2000,
+-450,
+650
+],
+"bmax": [
+2050,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1250.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1050,
+-450,
+650
+],
+"bmax": [
+1250,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1450.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1250,
+-450,
+650
+],
+"bmax": [
+1450,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1650.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1450,
+-450,
+650
+],
+"bmax": [
+1650,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1850.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1650,
+-450,
+650
+],
+"bmax": [
+1850,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1850.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1850,
+-450,
+650
+],
+"bmax": [
+1900,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1000,
+-450,
+650
+],
+"bmax": [
+1050,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A53",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-750,
+50
+],
+"bmax": [
+2000,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A54",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-1150,
+50
+],
+"bmax": [
+2000,
+-750,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A56",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-750,
+-250
+],
+"bmax": [
+2000,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+-250.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A57",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-1150,
+-250
+],
+"bmax": [
+2000,
+-750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+1950.0,
+-750.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A63",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1950,
+-750,
+100
+],
+"bmax": [
+2150,
+-750,
+400
+],
+"shadow": true
+},
+{
+"loc": [
+1950.0,
+-750.0,
+-200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A64",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1950,
+-750,
+-200
+],
+"bmax": [
+2150,
+-750,
+100
+],
+"shadow": true
+},
+{
+"loc": [
+2150.0,
+-750.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A88",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2150,
+-750,
+100
+],
+"bmax": [
+2350,
+-750,
+400
+],
+"shadow": true
+},
+{
+"loc": [
+2150.0,
+-750.0,
+-200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A89",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2150,
+-750,
+-200
+],
+"bmax": [
+2350,
+-750,
+100
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+-750.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A91",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2350,
+-750,
+50
+],
+"bmax": [
+2550,
+-750,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+-750.0,
+-250.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A92",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2350,
+-750,
+-250
+],
+"bmax": [
+2550,
+-750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+-750.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A94",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2550,
+-750,
+100
+],
+"bmax": [
+2750,
+-750,
+400
+],
+"shadow": true
+},
+{
+"loc": [
+2550.0,
+-750.0,
+-200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A95",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2550,
+-750,
+-200
+],
+"bmax": [
+2750,
+-750,
+100
+],
+"shadow": true
+},
+{
+"loc": [
+2750.0,
+-750.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A97",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2750,
+-750,
+100
+],
+"bmax": [
+2950,
+-750,
+400
+],
+"shadow": true
+},
+{
+"loc": [
+2750.0,
+-750.0,
+-200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A98",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2750,
+-750,
+-200
+],
+"bmax": [
+2950,
+-750,
+100
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-750.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A99",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-750,
+50
+],
+"bmax": [
+2900,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-1150.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A100",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-1150,
+50
+],
+"bmax": [
+2900,
+-750,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-750.0,
+-250.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A101",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-750,
+-250
+],
+"bmax": [
+2900,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-1150.0,
+-250.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A102",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2900,
+-1150,
+-250
+],
+"bmax": [
+2900,
+-750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A103",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2200,
+-350,
+350
+],
+"bmax": [
+2400,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2600.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A104",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2400,
+-350,
+350
+],
+"bmax": [
+2600,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A105",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2600,
+-350,
+350
+],
+"bmax": [
+2800,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-350.0,
+350.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A106",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2800,
+-350,
+350
+],
+"bmax": [
+3000,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.125,
+1.0,
+1.0
+],
+"label": "IB_Floor_A6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_03_PDO_Fix.SM_Floor_03_PDO_Fix",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Asymmetric.MI_Tile_Asymmetric",
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01",
+"/Game/High_Tech_Base/Materials/MI_Roughness_02.MI_Roughness_02"
+],
+"bmin": [
+1000,
+149,
+630
+],
+"bmax": [
+1901,
+650,
+655
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.125,
+1.0,
+1.0
+],
+"label": "IB_Floor_A7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_03_PDO_Fix.SM_Floor_03_PDO_Fix",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Asymmetric.MI_Tile_Asymmetric",
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01",
+"/Game/High_Tech_Base/Materials/MI_Roughness_02.MI_Roughness_02"
+],
+"bmin": [
+999,
+-350,
+630
+],
+"bmax": [
+1900,
+151,
+655
+],
+"shadow": true
+},
+{
+"loc": [
+1650.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1650,
+650,
+650
+],
+"bmax": [
+1850,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1450.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1450,
+650,
+650
+],
+"bmax": [
+1650,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1250.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1250,
+650,
+650
+],
+"bmax": [
+1450,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1050.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_02.SM_Grate_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate.MI_Sci_Fi_Grate",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1050,
+650,
+650
+],
+"bmax": [
+1250,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1050.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1000,
+650,
+650
+],
+"bmax": [
+1050,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Grate_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Grate_01.SM_Grate_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_02_Inst.MI_Roughness_02_Inst",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate.MI_Tile_Grate"
+],
+"bmin": [
+1850,
+650,
+650
+],
+"bmax": [
+1900,
+750,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+900.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Reinforcement_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Reinforcement_01.SM_Reinforcement_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R2.MI_R2",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Electric.MI_Sci_Fi_Electric",
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Floor_Lighting_01.MI_NonSquare_Floor_Lighting_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_01_Inst.MI_Emissive_01_Inst",
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+899,
+-358,
+635
+],
+"bmax": [
+1020,
+657,
+1200
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+-750.0,
+950.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A46",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Ventilation.SM_Ventilation",
+"mats": [],
+"bmin": [
+2000,
+-750,
+400
+],
+"bmax": [
+2350,
+-550,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2350.0,
+-750.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A45",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2350,
+-750,
+350
+],
+"bmax": [
+2550,
+-750,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2450.0,
+-650.0,
+850.0
+],
+"rot": [
+0.0,
+-90.0,
+-0.08
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Pipe_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Pipe_01.SM_Pipe_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chipped_Metal.MI_Chipped_Metal"
+],
+"bmin": [
+1998,
+-763,
+-52
+],
+"bmax": [
+2903,
+-614,
+942
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-700.0,
+930.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Pipe_02",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Pipe_02.SM_Pipe_02",
+"mats": [],
+"bmin": [
+2000,
+-706,
+804
+],
+"bmax": [
+2900,
+-693,
+937
+],
+"shadow": true
+},
+{
+"loc": [
+2900.0,
+-700.0,
+910.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Pipe_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Pipe_02.SM_Pipe_02",
+"mats": [],
+"bmin": [
+2000,
+-706,
+784
+],
+"bmax": [
+2900,
+-693,
+917
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+0.5,
+1.0,
+1.0
+],
+"label": "IB_Wall_A59",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Concrete_01.MI_Concrete_01"
+],
+"bmin": [
+2900,
+650,
+650
+],
+"bmax": [
+3000,
+650,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2950.0,
+-750.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A69",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2950,
+-750,
+100
+],
+"bmax": [
+3150,
+-750,
+400
+],
+"shadow": true
+},
+{
+"loc": [
+2950.0,
+-750.0,
+-200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A70",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2950,
+-750,
+-200
+],
+"bmax": [
+3150,
+-750,
+100
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+1050.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A122",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1000,
+650,
+650
+],
+"bmax": [
+1000,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+1050.0,
+350.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A123",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1000,
+650,
+350
+],
+"bmax": [
+1000,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A124",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1900,
+650,
+650
+],
+"bmax": [
+1900,
+1050,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A125",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1900,
+650,
+350
+],
+"bmax": [
+1900,
+1050,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1200.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A41",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1200,
+650,
+350
+],
+"bmax": [
+1400,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A42",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1400,
+650,
+350
+],
+"bmax": [
+1600,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1600.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A74",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1600,
+650,
+350
+],
+"bmax": [
+1800,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1800.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A126",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_02.MI_Wall_Concrete_Column_02"
+],
+"bmin": [
+1800,
+650,
+350
+],
+"bmax": [
+2000,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+850.0,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_E18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Vent_Emis.SM_Top_Vent_Emis",
+"mats": [],
+"bmin": [
+1000,
+650,
+950
+],
+"bmax": [
+1900,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A128",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1000,
+-750,
+650
+],
+"bmax": [
+1000,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+2200.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A130",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-350,
+50
+],
+"bmax": [
+2200,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A131",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2200,
+-350,
+50
+],
+"bmax": [
+2400,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2600.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A132",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2400,
+-350,
+50
+],
+"bmax": [
+2600,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A133",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2600,
+-350,
+50
+],
+"bmax": [
+2800,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-350.0,
+50.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A134",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2800,
+-350,
+50
+],
+"bmax": [
+3000,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+2200.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A135",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+-350,
+-250
+],
+"bmax": [
+2200,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A136",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2200,
+-350,
+-250
+],
+"bmax": [
+2400,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2600.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A137",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2400,
+-350,
+-250
+],
+"bmax": [
+2600,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A138",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2600,
+-350,
+-250
+],
+"bmax": [
+2800,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-350.0,
+-250.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A139",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2800,
+-350,
+-250
+],
+"bmax": [
+3000,
+-350,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+2910.0,
+-750.0,
+950.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+2.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A140",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2910,
+-750,
+950
+],
+"bmax": [
+2910,
+-350,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+910.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_AAAA",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_04.SM_Floor_04",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Emissive_01.MI_Emissive_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02",
+"/Game/High_Tech_Base/Materials/MI_Tile_Asymmetric_02.MI_Tile_Asymmetric_02",
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst",
+"/Game/High_Tech_Base/Materials/MI_R2.MI_R2",
+"/Game/High_Tech_Base/Materials/MI_Roughness_02.MI_Roughness_02",
+null,
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst"
+],
+"bmin": [
+-840,
+-950,
+633
+],
+"bmax": [
+910,
+1250,
+660
+],
+"shadow": true
+},
+{
+"loc": [
+-1540.0,
+-1470.0,
+750.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "DM_Prop_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_03.SM_Prop_03",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_03.MI_Technical_Computer_03",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_01.MI_Technical_Computer_01"
+],
+"bmin": [
+-1932,
+-1644,
+747
+],
+"bmax": [
+-1536,
+-1465,
+985
+],
+"shadow": true
+},
+{
+"loc": [
+-842.0,
+-130.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "DM_Prop_01_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_01_2.SM_Prop_01_2",
+"mats": [
+"/Game/High_Tech_Base/Materials/M_Roughness.M_Roughness",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_03.MI_Technical_Computer_03",
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_03.MI_Technical_Computer_03",
+"/Game/High_Tech_Base/Materials/MI_Computer_Panel_01.MI_Computer_Panel_01"
+],
+"bmin": [
+-844,
+-138,
+649
+],
+"bmax": [
+-543,
+1053,
+916
+],
+"shadow": true
+},
+{
+"loc": [
+-764.0,
+1140.0,
+651.0
+],
+"rot": [
+0.0,
+10.9,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "DM_Prop_04",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_04.SM_Prop_04",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Tile_01.MI_NonSquare_Tile_01",
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_Roughness_02.MI_Roughness_02"
+],
+"bmin": [
+-800,
+1104,
+651
+],
+"bmax": [
+-728,
+1176,
+721
+],
+"shadow": true
+},
+{
+"loc": [
+905.0,
+620.0,
+630.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_AAAA_add",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Structure_01.SM_Structure_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Grate_02.MI_Sci_Fi_Grate_02",
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02",
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst"
+],
+"bmin": [
+172,
+614,
+627
+],
+"bmax": [
+910,
+1249,
+964
+],
+"shadow": true
+},
+{
+"loc": [
+910.0,
+-950.0,
+1220.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_101",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Roof_01.SM_Roof_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_01.MI_Tile_Grate_Ceiling_01"
+],
+"bmin": [
+-840,
+-950,
+1220
+],
+"bmax": [
+910,
+1250,
+1220
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-660.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-661,
+650
+],
+"bmax": [
+934,
+-655,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-670.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-671,
+650
+],
+"bmax": [
+934,
+-665,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-680.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-681,
+650
+],
+"bmax": [
+934,
+-675,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-690.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-691,
+650
+],
+"bmax": [
+934,
+-685,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-700.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-701,
+650
+],
+"bmax": [
+934,
+-695,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-720.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-721,
+650
+],
+"bmax": [
+934,
+-715,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-710.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-711,
+650
+],
+"bmax": [
+934,
+-705,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-730.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-731,
+650
+],
+"bmax": [
+934,
+-725,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-740.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-741,
+650
+],
+"bmax": [
+934,
+-735,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-575.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-576,
+-871,
+650
+],
+"bmax": [
+-570,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-585.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-586,
+-871,
+650
+],
+"bmax": [
+-580,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-595.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-596,
+-871,
+650
+],
+"bmax": [
+-590,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-605.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-606,
+-871,
+650
+],
+"bmax": [
+-600,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-615.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_14",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-616,
+-871,
+650
+],
+"bmax": [
+-610,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-625.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_15",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-626,
+-871,
+650
+],
+"bmax": [
+-620,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-635.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_16",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-636,
+-871,
+650
+],
+"bmax": [
+-630,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-645.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-646,
+-871,
+650
+],
+"bmax": [
+-640,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-655.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-656,
+-871,
+650
+],
+"bmax": [
+-650,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-570.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_19",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-571,
+650
+],
+"bmax": [
+934,
+-565,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-580.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-581,
+650
+],
+"bmax": [
+934,
+-575,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-590.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_21",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-591,
+650
+],
+"bmax": [
+934,
+-585,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-600.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_22",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-601,
+650
+],
+"bmax": [
+934,
+-595,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-610.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_23",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-611,
+650
+],
+"bmax": [
+934,
+-605,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-630.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_24",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-631,
+650
+],
+"bmax": [
+934,
+-625,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-620.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_25",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-621,
+650
+],
+"bmax": [
+934,
+-615,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-640.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_26",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-641,
+650
+],
+"bmax": [
+934,
+-635,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+934.2,
+-650.7,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_27",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-1230,
+-651,
+650
+],
+"bmax": [
+934,
+-645,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-485.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_28",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-486,
+-871,
+650
+],
+"bmax": [
+-480,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-495.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_29",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-496,
+-871,
+650
+],
+"bmax": [
+-490,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-505.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_30",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-506,
+-871,
+650
+],
+"bmax": [
+-500,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-515.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_31",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-516,
+-871,
+650
+],
+"bmax": [
+-510,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-525.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_32",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-526,
+-871,
+650
+],
+"bmax": [
+-520,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-535.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_33",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-536,
+-871,
+650
+],
+"bmax": [
+-530,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-545.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_34",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-546,
+-871,
+650
+],
+"bmax": [
+-540,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-555.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_35",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-556,
+-871,
+650
+],
+"bmax": [
+-550,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+-565.8,
+-870.7,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+13.625,
+1.0,
+1.0
+],
+"label": "Decals_001_Decal_36",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+-566,
+-871,
+650
+],
+"bmax": [
+-560,
+1293,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+415.0,
+-950.0,
+1210.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Panel_Pipes_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Pipes_01.SM_Panel_Pipes_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst"
+],
+"bmin": [
+-839,
+-947,
+968
+],
+"bmax": [
+457,
+546,
+1130
+],
+"shadow": true
+},
+{
+"loc": [
+415.0,
+-950.0,
+1210.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Panel_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_01.SM_Panel_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R8_Inst.MI_R8_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_06.MI_Roughness_06",
+"/Game/High_Tech_Base/Materials/MI_Emissive_01.MI_Emissive_01"
+],
+"bmin": [
+414,
+-950,
+1115
+],
+"bmax": [
+483,
+-910,
+1211
+],
+"shadow": true
+},
+{
+"loc": [
+-840.0,
+570.0,
+1210.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Panel_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_01.SM_Panel_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R8_Inst.MI_R8_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_06.MI_Roughness_06",
+"/Game/High_Tech_Base/Materials/MI_Emissive_01.MI_Emissive_01"
+],
+"bmin": [
+-840,
+502,
+1115
+],
+"bmax": [
+-800,
+571,
+1211
+],
+"shadow": true
+},
+{
+"loc": [
+339.7,
+-940.0,
+978.7
+],
+"rot": [
+0.0,
+90.0,
+90.0
+],
+"scale": [
+0.997,
+0.832,
+7.397
+],
+"label": "IB_Panel_Handle",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+312,
+-948,
+970
+],
+"bmax": [
+366,
+-932,
+987
+],
+"shadow": true
+},
+{
+"loc": [
+-141.1,
+-940.0,
+978.2
+],
+"rot": [
+0.0,
+90.0,
+90.0
+],
+"scale": [
+1.0,
+0.905,
+3.63
+],
+"label": "IB_Panel_Handle2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+-155,
+-948,
+969
+],
+"bmax": [
+-128,
+-932,
+988
+],
+"shadow": true
+},
+{
+"loc": [
+-719.4,
+-939.1,
+978.7
+],
+"rot": [
+0.0,
+90.0,
+90.0
+],
+"scale": [
+1.0,
+0.925,
+3.72
+],
+"label": "IB_Panel_Handle3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+-734,
+-947,
+969
+],
+"bmax": [
+-706,
+-931,
+988
+],
+"shadow": true
+},
+{
+"loc": [
+-831.9,
+-848.0,
+978.8
+],
+"rot": [
+90.0,
+-90.0,
+0.0
+],
+"scale": [
+1.09,
+0.835,
+3.5
+],
+"label": "IB_Panel_Handle4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+-841,
+-861,
+970
+],
+"bmax": [
+-823,
+-835,
+988
+],
+"shadow": true
+},
+{
+"loc": [
+-831.9,
+-186.7,
+980.4
+],
+"rot": [
+90.0,
+-90.0,
+0.0
+],
+"scale": [
+1.01,
+0.835,
+3.97
+],
+"label": "IB_Panel_Handle5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+-841,
+-201,
+972
+],
+"bmax": [
+-823,
+-172,
+989
+],
+"shadow": true
+},
+{
+"loc": [
+-831.9,
+417.7,
+981.5
+],
+"rot": [
+90.0,
+-90.0,
+0.0
+],
+"scale": [
+0.93,
+0.772,
+8.838
+],
+"label": "IB_Panel_Handle7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Panel_Handle_01.SM_Panel_Handle_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+-840,
+386,
+974
+],
+"bmax": [
+-824,
+451,
+989
+],
+"shadow": true
+},
+{
+"loc": [
+910.0,
+-950.0,
+1400.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_102",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Roof_01.SM_Roof_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_05.MI_Tile_Grate_Ceiling_05"
+],
+"bmin": [
+-840,
+-950,
+1400
+],
+"bmax": [
+910,
+1250,
+1400
+],
+"shadow": true
+},
+{
+"loc": [
+910.0,
+-950.0,
+1400.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_100",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Control_Room.SM_Control_Room",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Marble_01.MI_Marble_01",
+"/Game/High_Tech_Base/Materials/MI_R2.MI_R2",
+"/Game/High_Tech_Base/Materials/MI_Emissive_03.MI_Emissive_03"
+],
+"bmin": [
+-859,
+-965,
+650
+],
+"bmax": [
+943,
+1283,
+1400
+],
+"shadow": true
+},
+{
+"loc": [
+770.0,
+765.0,
+640.0
+],
+"rot": [
+0.0,
+-85.38,
+0.0
+],
+"scale": [
+1.375,
+1.375,
+1.375
+],
+"label": "IB_Prop_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+692,
+688,
+637
+],
+"bmax": [
+847,
+844,
+787
+],
+"shadow": true
+},
+{
+"loc": [
+555.0,
+765.0,
+640.0
+],
+"rot": [
+0.0,
+-123.51,
+0.0
+],
+"scale": [
+1.375,
+1.375,
+1.375
+],
+"label": "IB_Prop_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+456,
+666,
+637
+],
+"bmax": [
+655,
+866,
+787
+],
+"shadow": true
+},
+{
+"loc": [
+555.0,
+765.0,
+775.0
+],
+"rot": [
+0.0,
+-33.39,
+0.0
+],
+"scale": [
+1.375,
+1.375,
+1.375
+],
+"label": "IB_Prop_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+454,
+666,
+772
+],
+"bmax": [
+654,
+865,
+922
+],
+"shadow": true
+},
+{
+"loc": [
+365.0,
+840.0,
+635.0
+],
+"rot": [
+0.0,
+-11.05,
+0.0
+],
+"scale": [
+2.125,
+2.125,
+2.125
+],
+"label": "IB_Prop_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+233,
+710,
+630
+],
+"bmax": [
+495,
+971,
+862
+],
+"shadow": true
+},
+{
+"loc": [
+2000.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D24",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_01.MI_Tile_Machine_01"
+],
+"bmin": [
+1999,
+-350,
+950
+],
+"bmax": [
+2100,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D15",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [],
+"bmin": [
+2799,
+-350,
+950
+],
+"bmax": [
+2900,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_200",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo.SM_Wall_Cargo",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+3000,
+-350,
+650
+],
+"bmax": [
+3600,
+-350,
+1212
+],
+"shadow": true
+},
+{
+"loc": [
+1000.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [],
+"bmin": [
+999,
+-350,
+950
+],
+"bmax": [
+1100,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_207",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Hero_Floor_01.SM_Hero_Floor_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02",
+"/Game/High_Tech_Base/Materials/MI_Rubber_01.MI_Rubber_01",
+"/Game/High_Tech_Base/Materials/MI_R4.MI_R4"
+],
+"bmin": [
+3600,
+-950,
+550
+],
+"bmax": [
+6200,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_209",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Hangar_Door_01.SM_Hangar_Door_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_06.MI_Tile_Grate_Ceiling_06"
+],
+"bmin": [
+6200,
+-350,
+650
+],
+"bmax": [
+6200,
+650,
+1212
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_200",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Long_01.SM_Floor_Long_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01",
+"/Game/High_Tech_Base/Materials/MI_R3.MI_R3",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_02.MI_Sci_Fi_Hard_Surface_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_R5.MI_R5"
+],
+"bmin": [
+3000,
+-300,
+650
+],
+"bmax": [
+6200,
+450,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3600.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_210",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_Turn.SM_Wall_Cargo_Turn",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+3600,
+-450,
+650
+],
+"bmax": [
+3700,
+-350,
+1212
+],
+"shadow": true
+},
+{
+"loc": [
+6087.5,
+571.9,
+650.0
+],
+"rot": [
+0.0,
+-0.05,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5995,
+480,
+646
+],
+"bmax": [
+6179,
+663,
+837
+],
+"shadow": true
+},
+{
+"loc": [
+3700.0,
+-450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_211",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+3700,
+-950,
+650
+],
+"bmax": [
+3700,
+-450,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+-350.0,
+1200.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_224",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_01.SM_Top_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Tile_01.MI_NonSquare_Tile_01",
+"/Game/High_Tech_Base/Materials/MI_R7_Inst.MI_R7_Inst",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_05.MI_Tile_Straight_05",
+"/Game/High_Tech_Base/Materials/MI_Floor_Panel_Bolt.MI_Floor_Panel_Bolt",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_02.MI_Tile_Grate_Ceiling_02",
+"/Game/High_Tech_Base/Materials/MI_R3.MI_R3"
+],
+"bmin": [
+3000,
+-350,
+1199
+],
+"bmax": [
+6200,
+650,
+1233
+],
+"shadow": true
+},
+{
+"loc": [
+6100.0,
+-450.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_226",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_Turn.SM_Wall_Cargo_Turn",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+6100,
+-450,
+650
+],
+"bmax": [
+6200,
+-350,
+1212
+],
+"shadow": true
+},
+{
+"loc": [
+6100.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_227",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+6100,
+-950,
+650
+],
+"bmax": [
+6100,
+-450,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+5600.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_228",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+null,
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst"
+],
+"bmin": [
+5600,
+-950,
+650
+],
+"bmax": [
+6100,
+-950,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+5100.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_229",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst"
+],
+"bmin": [
+5100,
+-950,
+650
+],
+"bmax": [
+5600,
+-950,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+4600.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_230",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst"
+],
+"bmin": [
+4600,
+-950,
+650
+],
+"bmax": [
+5100,
+-950,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+3600.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_231",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst"
+],
+"bmin": [
+3600,
+-950,
+650
+],
+"bmax": [
+4100,
+-950,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+4100.0,
+-950.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.125
+],
+"label": "IB_Wall_232",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_01.MI_Wall_01",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+4100,
+-950,
+650
+],
+"bmax": [
+4600,
+-950,
+1213
+],
+"shadow": true
+},
+{
+"loc": [
+4900.0,
+-400.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_216",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_02.SM_Railing_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R5_Inst.MI_R5_Inst"
+],
+"bmin": [
+4900,
+-424,
+650
+],
+"bmax": [
+6100,
+-400,
+783
+],
+"shadow": true
+},
+{
+"loc": [
+3700.0,
+-400.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_217",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Railing_02.SM_Railing_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R5_Inst.MI_R5_Inst"
+],
+"bmin": [
+3700,
+-424,
+650
+],
+"bmax": [
+4900,
+-400,
+783
+],
+"shadow": true
+},
+{
+"loc": [
+5103.7,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5095,
+-950,
+814
+],
+"bmax": [
+5104,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+6155.0,
+-950.0,
+742.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+7.375,
+1.0,
+1.0
+],
+"label": "Decal_01_1",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+4984,
+-950,
+736
+],
+"bmax": [
+6155,
+-950,
+742
+],
+"shadow": true
+},
+{
+"loc": [
+6154.0,
+-950.0,
+832.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+7.375,
+1.0,
+1.0
+],
+"label": "Decal_01_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+4983,
+-950,
+826
+],
+"bmax": [
+6154,
+-950,
+832
+],
+"shadow": true
+},
+{
+"loc": [
+5127.0,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_14",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5118,
+-950,
+814
+],
+"bmax": [
+5127,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5378.3,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_15",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5369,
+-950,
+814
+],
+"bmax": [
+5378,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5602.7,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_16",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5594,
+-950,
+814
+],
+"bmax": [
+5603,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5882.7,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5874,
+-950,
+814
+],
+"bmax": [
+5883,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+6096.7,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+6088,
+-950,
+814
+],
+"bmax": [
+6097,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5103.7,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_19",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5095,
+-950,
+744
+],
+"bmax": [
+5104,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5127.0,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5118,
+-950,
+744
+],
+"bmax": [
+5127,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5378.3,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_21",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5369,
+-950,
+744
+],
+"bmax": [
+5378,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5602.7,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_22",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5594,
+-950,
+744
+],
+"bmax": [
+5603,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5882.7,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_23",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5874,
+-950,
+744
+],
+"bmax": [
+5883,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+6096.7,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_24",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+6088,
+-950,
+744
+],
+"bmax": [
+6097,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5612.9,
+-949.9,
+740.9
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+0.54,
+1.0,
+1.0
+],
+"label": "Decal_01_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_04.SM_Decal_01_04",
+"mats": [],
+"bmin": [
+5607,
+-950,
+741
+],
+"bmax": [
+5613,
+-950,
+827
+],
+"shadow": true
+},
+{
+"loc": [
+5892.2,
+-949.9,
+740.9
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+0.54,
+1.0,
+1.0
+],
+"label": "Decal_01_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_04.SM_Decal_01_04",
+"mats": [],
+"bmin": [
+5886,
+-950,
+741
+],
+"bmax": [
+5892,
+-950,
+827
+],
+"shadow": true
+},
+{
+"loc": [
+5391.8,
+-949.9,
+740.9
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+0.54,
+1.0,
+1.0
+],
+"label": "Decal_01_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_04.SM_Decal_01_04",
+"mats": [],
+"bmin": [
+5386,
+-950,
+741
+],
+"bmax": [
+5392,
+-950,
+827
+],
+"shadow": true
+},
+{
+"loc": [
+5113.8,
+-949.9,
+740.9
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+0.54,
+1.0,
+1.0
+],
+"label": "Decal_01_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_04.SM_Decal_01_04",
+"mats": [],
+"bmin": [
+5108,
+-950,
+741
+],
+"bmax": [
+5114,
+-950,
+827
+],
+"shadow": true
+},
+{
+"loc": [
+5406.7,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_25",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5398,
+-950,
+814
+],
+"bmax": [
+5407,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5406.7,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_26",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5398,
+-950,
+744
+],
+"bmax": [
+5407,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5626.1,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_27",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5617,
+-950,
+814
+],
+"bmax": [
+5626,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5626.1,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_28",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5617,
+-950,
+744
+],
+"bmax": [
+5626,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5906.5,
+-950.0,
+823.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_29",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5898,
+-950,
+814
+],
+"bmax": [
+5907,
+-950,
+823
+],
+"shadow": true
+},
+{
+"loc": [
+5906.5,
+-950.0,
+753.0
+],
+"rot": [
+0.0,
+0.0,
+90.0
+],
+"scale": [
+0.75,
+0.75,
+0.75
+],
+"label": "Decal_01_30",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+5898,
+-950,
+744
+],
+"bmax": [
+5907,
+-950,
+753
+],
+"shadow": true
+},
+{
+"loc": [
+5025.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS.SM_Prop_HS",
+"mats": [
+null,
+null,
+null,
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+4918,
+-933,
+551
+],
+"bmax": [
+5132,
+-718,
+779
+],
+"shadow": true
+},
+{
+"loc": [
+5025.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_01.SM_Prop_HS_01",
+"mats": [],
+"bmin": [
+5117,
+-881,
+546
+],
+"bmax": [
+5232,
+-713,
+574
+],
+"shadow": true
+},
+{
+"loc": [
+5325.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS.SM_Prop_HS",
+"mats": [
+null,
+null,
+null,
+null,
+null,
+null,
+null,
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5218,
+-933,
+551
+],
+"bmax": [
+5432,
+-718,
+779
+],
+"shadow": true
+},
+{
+"loc": [
+5325.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_01.SM_Prop_HS_01",
+"mats": [],
+"bmin": [
+5417,
+-881,
+546
+],
+"bmax": [
+5532,
+-713,
+574
+],
+"shadow": true
+},
+{
+"loc": [
+5625.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS.SM_Prop_HS",
+"mats": [
+null,
+null,
+null,
+null,
+null,
+null,
+null,
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5518,
+-933,
+551
+],
+"bmax": [
+5732,
+-718,
+779
+],
+"shadow": true
+},
+{
+"loc": [
+5625.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_01.SM_Prop_HS_01",
+"mats": [],
+"bmin": [
+5717,
+-881,
+546
+],
+"bmax": [
+5832,
+-713,
+574
+],
+"shadow": true
+},
+{
+"loc": [
+5925.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS.SM_Prop_HS",
+"mats": [
+null,
+null,
+null,
+null,
+null,
+null,
+null,
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5818,
+-933,
+551
+],
+"bmax": [
+6032,
+-718,
+779
+],
+"shadow": true
+},
+{
+"loc": [
+5025.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_03",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_03.SM_Prop_HS_03",
+"mats": [],
+"bmin": [
+5113,
+-936,
+562
+],
+"bmax": [
+5239,
+-712,
+786
+],
+"shadow": true
+},
+{
+"loc": [
+5025.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_04",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_04.SM_Prop_HS_04",
+"mats": [],
+"bmin": [
+4916,
+-935,
+566
+],
+"bmax": [
+4935,
+-712,
+785
+],
+"shadow": true
+},
+{
+"loc": [
+6125.0,
+-823.0,
+680.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_04.SM_Prop_HS_04",
+"mats": [],
+"bmin": [
+6016,
+-935,
+571
+],
+"bmax": [
+6035,
+-712,
+790
+],
+"shadow": true
+},
+{
+"loc": [
+5925.0,
+-579.4,
+550.0
+],
+"rot": [
+0.0,
+-15.43,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5811,
+-692,
+546
+],
+"bmax": [
+6037,
+-466,
+737
+],
+"shadow": true
+},
+{
+"loc": [
+5325.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_03.SM_Prop_HS_03",
+"mats": [],
+"bmin": [
+5413,
+-936,
+562
+],
+"bmax": [
+5539,
+-712,
+786
+],
+"shadow": true
+},
+{
+"loc": [
+5625.0,
+-823.0,
+675.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "Prop_HS_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_HS_03.SM_Prop_HS_03",
+"mats": [],
+"bmin": [
+5713,
+-936,
+562
+],
+"bmax": [
+5839,
+-712,
+786
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+-300.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+20.125,
+1.0,
+1.0
+],
+"label": "Decal_01_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_01.SM_Decal_01_01",
+"mats": [],
+"bmin": [
+3003,
+-300,
+650
+],
+"bmax": [
+6200,
+-294,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3411.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3011,
+622,
+650
+],
+"bmax": [
+3411,
+676,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3610.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_02",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+null,
+null
+],
+"bmin": [
+3410,
+622,
+650
+],
+"bmax": [
+3610,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3610.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_03",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_03.SM_Wall_03",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_02.MI_Sci_Fi_Hard_Surface_02",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04"
+],
+"bmin": [
+3609,
+619,
+648
+],
+"bmax": [
+3751,
+761,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+2985.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+0.125,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [],
+"bmin": [
+2960,
+622,
+650
+],
+"bmax": [
+2985,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+850.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A90",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+3000,
+650,
+650
+],
+"bmax": [
+3000,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+3010.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+0.435,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+2923,
+622,
+650
+],
+"bmax": [
+3010,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+1360.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3694,
+960,
+650
+],
+"bmax": [
+3748,
+1360,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+1960.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3694,
+1560,
+650
+],
+"bmax": [
+3748,
+1960,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+1560.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3710,
+1360,
+650
+],
+"bmax": [
+3748,
+1560,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+2160.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_03.MI_Sci_Fi_Hard_Surface_03",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3710,
+1960,
+650
+],
+"bmax": [
+3748,
+2160,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+2560.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+3694,
+2160,
+650
+],
+"bmax": [
+3748,
+2560,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+6150.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+5750,
+622,
+650
+],
+"bmax": [
+6150,
+676,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+650.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A96",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+6200,
+650,
+650
+],
+"bmax": [
+6200,
+850,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A107",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column.MI_Wall_Concrete_Column"
+],
+"bmin": [
+6200,
+650,
+950
+],
+"bmax": [
+6200,
+850,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+5750.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_02.MI_Sci_Fi_Hard_Surface_02",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+5550,
+622,
+650
+],
+"bmax": [
+5750,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+5150.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_14",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4950,
+622,
+650
+],
+"bmax": [
+5150,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+760.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_16",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_03.SM_Wall_03",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04"
+],
+"bmin": [
+4809,
+619,
+648
+],
+"bmax": [
+4951,
+761,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+960.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_15",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+960,
+650
+],
+"bmax": [
+4866,
+1360,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+1360.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+1360,
+650
+],
+"bmax": [
+4850,
+1560,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+1560.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+1560,
+650
+],
+"bmax": [
+4866,
+1960,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+1960.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_19",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_02.MI_Sci_Fi_Hard_Surface_02",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+1960,
+650
+],
+"bmax": [
+4850,
+2160,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+2160.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+2160,
+650
+],
+"bmax": [
+4866,
+2560,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+4705.0,
+2600.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Door_03",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Door_02.SM_Door_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Door_03.MI_Door_03",
+"/Game/High_Tech_Base/Materials/MI_Tile_Machine_02.MI_Tile_Machine_02"
+],
+"bmin": [
+3855,
+2551,
+650
+],
+"bmax": [
+4705,
+2600,
+1075
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+760.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_22",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+4812,
+760,
+650
+],
+"bmax": [
+4850,
+960,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+6200.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_233",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_Cargo_02.SM_Wall_Cargo_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Cargo.MI_Sci_Fi_Cargo",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_02.MI_Tile_Straight_02",
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01"
+],
+"bmin": [
+6200,
+-350,
+650
+],
+"bmax": [
+6700,
+-350,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+3710.0,
+960.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+null,
+null
+],
+"bmin": [
+3710,
+760,
+650
+],
+"bmax": [
+3748,
+960,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+5550.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_23",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_01.SM_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_04.MI_Tile_Grate_Ceiling_04",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_01.MI_Sci_Fi_Hard_Surface_01",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+5150,
+622,
+650
+],
+"bmax": [
+5550,
+676,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+6350.0,
+660.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_202_13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Wall_02.SM_Wall_02",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Hard_Surface_02.MI_Sci_Fi_Hard_Surface_02",
+"/Game/High_Tech_Base/Materials/MI_Rubber_03.MI_Rubber_03"
+],
+"bmin": [
+6150,
+622,
+650
+],
+"bmax": [
+6350,
+660,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+3700.0,
+-950.0,
+1200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_X",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cable_System.SM_Top_Cable_System",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02",
+null,
+null,
+"/Game/High_Tech_Base/Materials/MI_R2_Inst.MI_R2_Inst"
+],
+"bmin": [
+3698,
+-951,
+1110
+],
+"bmax": [
+6103,
+-350,
+1294
+],
+"shadow": true
+},
+{
+"loc": [
+5000.0,
+-450.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_X1",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Chain.SM_Top_Chain",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Emissive_01.MI_Emissive_01",
+"/Game/High_Tech_Base/Materials/MI_R4.MI_R4"
+],
+"bmin": [
+4996,
+-1050,
+910
+],
+"bmax": [
+6043,
+-450,
+1253
+],
+"shadow": true
+},
+{
+"loc": [
+5575.0,
+-579.4,
+550.0
+],
+"rot": [
+0.0,
+29.57,
+-0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_13",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5449,
+-705,
+546
+],
+"bmax": [
+5699,
+-455,
+737
+],
+"shadow": true
+},
+{
+"loc": [
+4850.0,
+-950.0,
+1100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_X2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Chain.SM_Top_Chain",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04"
+],
+"bmin": [
+3807,
+-950,
+1060
+],
+"bmax": [
+4854,
+-350,
+1403
+],
+"shadow": true
+},
+{
+"loc": [
+5176.2,
+-794.3,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+5085,
+-885,
+946
+],
+"bmax": [
+5268,
+-701,
+1137
+],
+"shadow": true
+},
+{
+"loc": [
+3405.0,
+450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_01",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_01.SM_Floor_Side_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+3405,
+450,
+650
+],
+"bmax": [
+3905,
+980,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3405.0,
+450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+0.688,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_02",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+2993,
+450,
+650
+],
+"bmax": [
+3405,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+5785.0,
+450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+5185,
+450,
+650
+],
+"bmax": [
+5785,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4655.0,
+950.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_01.SM_Floor_Side_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+4655,
+450,
+650
+],
+"bmax": [
+5185,
+950,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+6385.0,
+450.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+5785,
+450,
+650
+],
+"bmax": [
+6385,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4655.0,
+950.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+4655,
+950,
+650
+],
+"bmax": [
+4855,
+1550,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3905.0,
+1580.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_02_mirror",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+3705,
+980,
+650
+],
+"bmax": [
+3905,
+1580,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4655.0,
+1550.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+4655,
+1550,
+650
+],
+"bmax": [
+4855,
+2150,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4655.0,
+2150.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+4655,
+2150,
+650
+],
+"bmax": [
+4855,
+2750,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3905.0,
+2180.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_02_mirror2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+3705,
+1580,
+650
+],
+"bmax": [
+3905,
+2180,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3905.0,
+2780.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_Side_02_mirror3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_Side_02.SM_Floor_Side_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R7.MI_R7",
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_01.MI_Tile_Straight_01"
+],
+"bmin": [
+3705,
+2180,
+650
+],
+"bmax": [
+3905,
+2780,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3904.5,
+451.4,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_201",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_02.SM_Floor_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R5.MI_R5",
+"/Game/High_Tech_Base/Materials/MI_R3.MI_R3"
+],
+"bmin": [
+3904,
+451,
+650
+],
+"bmax": [
+4654,
+2551,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-300.0,
+650.0
+],
+"rot": [
+0.0,
+180.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_202",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_01.SM_Floor_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_03.MI_Tile_Straight_03"
+],
+"bmin": [
+3000,
+-350,
+650
+],
+"bmax": [
+6200,
+-300,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3400.0,
+-350.0,
+1210.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A93",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01"
+],
+"bmin": [
+3400,
+-550,
+1210
+],
+"bmax": [
+3700,
+-350,
+1210
+],
+"shadow": true
+},
+{
+"loc": [
+6100.0,
+-350.0,
+1210.0
+],
+"rot": [
+0.0,
+-90.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+0.281
+],
+"label": "IB_Wall_A108",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Dusty_Metal_01.MI_Dusty_Metal_01"
+],
+"bmin": [
+6100,
+-550,
+1210
+],
+"bmax": [
+6184,
+-350,
+1210
+],
+"shadow": true
+},
+{
+"loc": [
+3980.0,
+220.0,
+1200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.75
+],
+"label": "IB_Wall_214_v4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1.MI_R1"
+],
+"bmin": [
+3939,
+184,
+1149
+],
+"bmax": [
+4037,
+257,
+1274
+],
+"shadow": true
+},
+{
+"loc": [
+4520.0,
+40.0,
+1230.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.75
+],
+"label": "IB_Wall_214_v5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [],
+"bmin": [
+4484,
+-17,
+1179
+],
+"bmax": [
+4557,
+81,
+1304
+],
+"shadow": true
+},
+{
+"loc": [
+4740.0,
+110.0,
+1240.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.75
+],
+"label": "IB_Wall_214_v6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [],
+"bmin": [
+4704,
+53,
+1189
+],
+"bmax": [
+4777,
+151,
+1314
+],
+"shadow": true
+},
+{
+"loc": [
+4660.0,
+340.0,
+1240.0
+],
+"rot": [
+30.0,
+-54.74,
+-35.26
+],
+"scale": [
+1.5,
+1.0,
+1.75
+],
+"label": "IB_Wall_214_v7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [],
+"bmin": [
+4558,
+254,
+1155
+],
+"bmax": [
+4757,
+410,
+1354
+],
+"shadow": true
+},
+{
+"loc": [
+5470.0,
+230.0,
+1230.0
+],
+"rot": [
+-0.0,
+-45.0,
+-0.0
+],
+"scale": [
+1.5,
+1.0,
+5.25
+],
+"label": "IB_Wall_214_v8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [],
+"bmin": [
+5400,
+144,
+1076
+],
+"bmax": [
+5556,
+300,
+1453
+],
+"shadow": true
+},
+{
+"loc": [
+5420.0,
+50.0,
+1230.0
+],
+"rot": [
+-30.0,
+-125.26,
+-35.26
+],
+"scale": [
+1.5,
+1.0,
+1.75
+],
+"label": "IB_Wall_214_v9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Cables.SM_Top_Cables",
+"mats": [],
+"bmin": [
+5307,
+-36,
+1133
+],
+"bmax": [
+5506,
+120,
+1332
+],
+"shadow": true
+},
+{
+"loc": [
+3705.0,
+650.0,
+1200.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_219",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Lighting_Ceiling_01.SM_Lighting_Ceiling_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R3.MI_R3",
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_03.MI_Tile_Grate_Ceiling_03",
+"/Game/High_Tech_Base/Materials/MI_Emissive_04.MI_Emissive_04"
+],
+"bmin": [
+3705,
+650,
+1200
+],
+"bmax": [
+4855,
+2550,
+1275
+],
+"shadow": true
+},
+{
+"loc": [
+3680.0,
+2600.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Door_03_side",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Door_02_Side.SM_Door_02_Side",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst",
+"/Game/High_Tech_Base/Materials/MI_Metallic_Floor.MI_Metallic_Floor",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+3680,
+2551,
+650
+],
+"bmax": [
+4880,
+2600,
+1250
+],
+"shadow": true
+},
+{
+"loc": [
+-366.4,
+-414.5,
+704.3
+],
+"rot": [
+0.0,
+-112.68,
+0.0
+],
+"scale": [
+1.188,
+1.188,
+1.188
+],
+"label": "IB_Chair2",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Chair_01.SM_Chair_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chair.MI_Chair"
+],
+"bmin": [
+-426,
+-481,
+648
+],
+"bmax": [
+-299,
+-352,
+782
+],
+"shadow": true
+},
+{
+"loc": [
+-467.8,
+1187.4,
+704.4
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.188,
+1.188,
+1.188
+],
+"label": "IB_Chair4",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Chair_01.SM_Chair_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chair.MI_Chair"
+],
+"bmin": [
+-511,
+1137,
+648
+],
+"bmax": [
+-416,
+1237,
+782
+],
+"shadow": true
+},
+{
+"loc": [
+-577.1,
+1187.4,
+704.4
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.188,
+1.188,
+1.188
+],
+"label": "IB_Chair5",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Chair_01.SM_Chair_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chair.MI_Chair"
+],
+"bmin": [
+-621,
+1137,
+648
+],
+"bmax": [
+-525,
+1237,
+782
+],
+"shadow": true
+},
+{
+"loc": [
+1920.0,
+630.0,
+360.0
+],
+"rot": [
+0.0,
+-90.0,
+180.0
+],
+"scale": [
+0.188,
+0.562,
+0.375
+],
+"label": "IB_Wall_103",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Roof_01.SM_Roof_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_01.MI_Tile_Grate_Ceiling_01"
+],
+"bmin": [
+1920,
+630,
+360
+],
+"bmax": [
+2904,
+1043,
+360
+],
+"shadow": true
+},
+{
+"loc": [
+-340.0,
+1250.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_104",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Closed_01.SM_Closed_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_07.MI_Tile_Grate_Ceiling_07"
+],
+"bmin": [
+-340,
+1250,
+650
+],
+"bmax": [
+210,
+1250,
+959
+],
+"shadow": true
+},
+{
+"loc": [
+2890.0,
+-350.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Reinforcement_6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Reinforcement_01.SM_Reinforcement_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R1_Inst.MI_R1_Inst",
+"/Game/High_Tech_Base/Materials/MI_Normal_Details_01.MI_Normal_Details_01",
+"/Game/High_Tech_Base/Materials/MI_Sci_Fi_Electric.MI_Sci_Fi_Electric",
+"/Game/High_Tech_Base/Materials/MI_NonSquare_Floor_Lighting_01.MI_NonSquare_Floor_Lighting_01",
+"/Game/High_Tech_Base/Materials/MI_Emissive_01_Inst.MI_Emissive_01_Inst",
+"/Game/High_Tech_Base/Materials/MI_R4_Inst.MI_R4_Inst",
+"/Game/High_Tech_Base/Materials/MI_Rubber_02.MI_Rubber_02"
+],
+"bmin": [
+2889,
+-358,
+635
+],
+"bmax": [
+3010,
+657,
+1200
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-255.0,
+600.0
+],
+"rot": [
+0.0,
+180.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_203",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_01.SM_Floor_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_03.MI_Tile_Straight_03"
+],
+"bmin": [
+3000,
+-255,
+600
+],
+"bmax": [
+6200,
+-255,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3000.0,
+-133.0,
+650.0
+],
+"rot": [
+-0.0,
+-180.0,
+-90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Floor_204",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Floor_01.SM_Floor_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Tile_Straight_03.MI_Tile_Straight_03"
+],
+"bmin": [
+3000,
+-133,
+600
+],
+"bmax": [
+6200,
+-133,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+-550.0,
+350.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A62",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1900,
+-550,
+350
+],
+"bmax": [
+1900,
+-350,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+-550.0,
+650.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A109",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1900,
+-550,
+650
+],
+"bmax": [
+1900,
+-350,
+950
+],
+"shadow": true
+},
+{
+"loc": [
+1900.0,
+-550.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A110",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+1900,
+-550,
+50
+],
+"bmax": [
+1900,
+-350,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+910.0,
+-738.4,
+650.0
+],
+"rot": [
+-0.0,
+180.0,
+-0.44
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "DM_Prop_02",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_03.SM_Prop_03",
+"mats": [
+null,
+"/Game/High_Tech_Base/Materials/MI_Technical_Computer_02.MI_Technical_Computer_02"
+],
+"bmin": [
+736,
+-742,
+644
+],
+"bmax": [
+915,
+-345,
+885
+],
+"shadow": true
+},
+{
+"loc": [
+643.6,
+-534.5,
+704.3
+],
+"rot": [
+0.0,
+0.0,
+-0.0
+],
+"scale": [
+1.188,
+1.188,
+1.188
+],
+"label": "IB_Chair3",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Chair_01.SM_Chair_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chair.MI_Chair"
+],
+"bmin": [
+594,
+-578,
+648
+],
+"bmax": [
+694,
+-482,
+782
+],
+"shadow": true
+},
+{
+"loc": [
+453.6,
+-564.5,
+704.3
+],
+"rot": [
+0.0,
+-135.0,
+0.0
+],
+"scale": [
+1.188,
+1.188,
+1.188
+],
+"label": "IB_Chair6",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Chair_01.SM_Chair_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Chair.MI_Chair"
+],
+"bmin": [
+387,
+-637,
+648
+],
+"bmax": [
+526,
+-498,
+782
+],
+"shadow": true
+},
+{
+"loc": [
+4610.0,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+6.5,
+8.5,
+6.5
+],
+"label": "Decals_Decal_02_006",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_14.SM_Decal_02_14",
+"mats": [],
+"bmin": [
+4402,
+446,
+650
+],
+"bmax": [
+4610,
+575,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4610.3,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+9.245,
+6.5,
+6.5
+],
+"label": "Decals_Decal_02_8",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_01.SM_Decal_02_01",
+"mats": [],
+"bmin": [
+4501,
+575,
+650
+],
+"bmax": [
+4610,
+2424,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4060.0,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+9.245,
+6.5,
+6.5
+],
+"label": "Decals_Decal_02_9",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_01.SM_Decal_02_01",
+"mats": [],
+"bmin": [
+3950,
+575,
+650
+],
+"bmax": [
+4060,
+2424,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4160.0,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+6.5,
+8.5,
+6.5
+],
+"label": "Decals_Decal_02_10",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_14.SM_Decal_02_14",
+"mats": [],
+"bmin": [
+3952,
+446,
+650
+],
+"bmax": [
+4160,
+575,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4405.2,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+180.0
+],
+"scale": [
+57.668,
+12.0,
+12.0
+],
+"label": "Decals_Decal_02_17",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_20.SM_Decal_02_20",
+"mats": [],
+"bmin": [
+4398,
+575,
+650
+],
+"bmax": [
+4405,
+2424,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4162.0,
+575.0,
+650.0
+],
+"rot": [
+0.0,
+-90.0,
+180.0
+],
+"scale": [
+57.668,
+12.0,
+12.0
+],
+"label": "Decals_Decal_02_18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_20.SM_Decal_02_20",
+"mats": [],
+"bmin": [
+4155,
+575,
+650
+],
+"bmax": [
+4162,
+2424,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4401.7,
+575.0,
+650.3
+],
+"rot": [
+0.0,
+0.0,
+180.0
+],
+"scale": [
+7.538,
+9.101,
+9.101
+],
+"label": "Decals_Decal_02_019",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_20.SM_Decal_02_20",
+"mats": [],
+"bmin": [
+4160,
+570,
+650
+],
+"bmax": [
+4402,
+575,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4610.0,
+2552.4,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+6.5,
+8.5,
+6.5
+],
+"label": "Decals_Decal_02_7",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_14.SM_Decal_02_14",
+"mats": [],
+"bmin": [
+4402,
+2423,
+650
+],
+"bmax": [
+4610,
+2552,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4160.0,
+2552.4,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+6.5,
+8.5,
+6.5
+],
+"label": "Decals_Decal_02_11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_14.SM_Decal_02_14",
+"mats": [],
+"bmin": [
+3952,
+2423,
+650
+],
+"bmax": [
+4160,
+2552,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4401.7,
+2429.9,
+650.3
+],
+"rot": [
+0.0,
+0.0,
+180.0
+],
+"scale": [
+7.529,
+9.101,
+9.101
+],
+"label": "Decals_Decal_02_20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_02/SM_Decal_02_20.SM_Decal_02_20",
+"mats": [],
+"bmin": [
+4160,
+2425,
+650
+],
+"bmax": [
+4402,
+2430,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4398.8,
+559.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+0.717,
+0.717,
+0.717
+],
+"label": "Decal_01_12",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+4390,
+559,
+650
+],
+"bmax": [
+4399,
+568,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4172.4,
+559.0,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+0.717,
+0.717,
+0.717
+],
+"label": "Decal_01_31",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+4164,
+559,
+650
+],
+"bmax": [
+4172,
+568,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4398.8,
+452.6,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+0.717,
+0.717,
+0.717
+],
+"label": "Decal_01_32",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+4390,
+453,
+650
+],
+"bmax": [
+4399,
+462,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+4172.4,
+452.6,
+650.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+0.717,
+0.717,
+0.717
+],
+"label": "Decal_01_33",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/Decals/Decal_01/SM_Decal_01_12.SM_Decal_01_12",
+"mats": [],
+"bmin": [
+4164,
+453,
+650
+],
+"bmax": [
+4172,
+462,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+3750.0,
+-900.0,
+550.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Base_Hero_Prop",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Base_Hero_Prop_01.SM_Base_Hero_Prop_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Base_Prop_Inst.MI_Base_Prop_Inst"
+],
+"bmin": [
+3748,
+-917,
+537
+],
+"bmax": [
+4922,
+-448,
+1064
+],
+"shadow": true
+},
+{
+"loc": [
+1450.0,
+-30.0,
+1150.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D22",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Extra.SM_Top_Grate_Extra",
+"mats": [],
+"bmin": [
+1150,
+-30,
+1040
+],
+"bmax": [
+1450,
+332,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D16",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [],
+"bmin": [
+1399,
+-350,
+950
+],
+"bmax": [
+1500,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+1800.0,
+650.0,
+950.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Top_D18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Top_Grate_Light_Mirrored.SM_Top_Grate_Light_Mirrored",
+"mats": [],
+"bmin": [
+1799,
+-350,
+950
+],
+"bmax": [
+1900,
+650,
+1150
+],
+"shadow": true
+},
+{
+"loc": [
+4300.0,
+1600.0,
+1369.3
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight",
+"kind": "light",
+"class": "RectLight",
+"intensity": 8.0,
+"color": [
+255,
+224,
+221
+],
+"shadow": false,
+"attenuation_radius": 1600.0,
+"source_width": 920.0,
+"source_height": 672.0,
+"barn_door_angle": 18.15999984741211,
+"barn_door_length": 35.54583740234375,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 100.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+5533.2,
+-682.4,
+896.7
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight2",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_width": 424.0,
+"source_height": 952.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 100.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+4292.2,
+-412.8,
+1047.7
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight3",
+"kind": "light",
+"class": "RectLight",
+"intensity": 1.0,
+"color": [
+255,
+167,
+153
+],
+"shadow": false,
+"attenuation_radius": 930.8889770507812,
+"source_width": 424.0,
+"source_height": 952.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+5462.9,
+-627.1,
+1191.3
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "PointLight",
+"kind": "light",
+"class": "PointLight",
+"intensity": 0.10000000149011612,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_radius": 0.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+6087.5,
+571.9,
+825.3
+],
+"rot": [
+0.0,
+-0.05,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_11",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_R3_Inst.MI_R3_Inst",
+"/Game/High_Tech_Base/Materials/MI_Roughness_01.MI_Roughness_01",
+"/Game/High_Tech_Base/Materials/MI_R6_Inst.MI_R6_Inst",
+"/Game/High_Tech_Base/Materials/MI_Decal_02.MI_Decal_02",
+"/Game/High_Tech_Base/Materials/MI_Decal_01.MI_Decal_01"
+],
+"bmin": [
+5995,
+480,
+821
+],
+"bmax": [
+6179,
+663,
+1012
+],
+"shadow": true
+},
+{
+"loc": [
+4292.2,
+162.4,
+1194.8
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight4",
+"kind": "light",
+"class": "RectLight",
+"intensity": 1.0,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 1500.0,
+"source_width": 424.0,
+"source_height": 952.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 120.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+5319.9,
+204.9,
+1185.7
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight5",
+"kind": "light",
+"class": "RectLight",
+"intensity": 1.0,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 1249.999755859375,
+"source_width": 1000.0,
+"source_height": 1000.0,
+"barn_door_angle": 61.92000198364258,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 120.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+5367.4,
+-794.3,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_18",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+5276,
+-885,
+946
+],
+"bmax": [
+5459,
+-701,
+1137
+],
+"shadow": true
+},
+{
+"loc": [
+5559.1,
+-794.3,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_19",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+5468,
+-885,
+946
+],
+"bmax": [
+5651,
+-701,
+1137
+],
+"shadow": true
+},
+{
+"loc": [
+5758.7,
+-794.3,
+950.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_20",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+5667,
+-885,
+946
+],
+"bmax": [
+5850,
+-701,
+1137
+],
+"shadow": true
+},
+{
+"loc": [
+5453.9,
+-584.2,
+950.0
+],
+"rot": [
+0.0,
+-60.0,
+0.0
+],
+"scale": [
+1.75,
+1.75,
+1.75
+],
+"label": "IB_Prop_21",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Roughness_05.MI_Roughness_05",
+null,
+null,
+null,
+null,
+null
+],
+"bmin": [
+5328,
+-709,
+946
+],
+"bmax": [
+5579,
+-458,
+1137
+],
+"shadow": true
+},
+{
+"loc": [
+2846.1,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight6",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2452.4,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight7",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2052.2,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight8",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1856.7,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight9",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1454.6,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight10",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1047.3,
+515.9,
+1017.6
+],
+"rot": [
+-46.02,
+-90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight11",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1047.3,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight12",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1454.6,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight13",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1856.7,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight14",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2052.2,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight15",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2452.4,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight16",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2846.1,
+-215.8,
+1017.6
+],
+"rot": [
+-44.14,
+90.0,
+-180.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight17",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.25,
+"color": [
+255,
+215,
+185
+],
+"shadow": false,
+"attenuation_radius": 850.0,
+"source_width": 64.0,
+"source_height": 168.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 25.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2017.6,
+524.6,
+734.1
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight18",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2017.6,
+-198.6,
+734.1
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight19",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+3033.2,
+-198.6,
+734.1
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight20",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+3033.2,
+524.6,
+734.1
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight21",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1023.2,
+-198.6,
+734.1
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight22",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1023.2,
+524.6,
+734.1
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight23",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+897.7,
+498.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight24",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+897.7,
+-224.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight25",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1883.3,
+498.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight26",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1883.3,
+-224.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight27",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2886.5,
+498.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight28",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2886.5,
+-224.6,
+734.1
+],
+"rot": [
+0.0,
+-180.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight29",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+109,
+55
+],
+"shadow": false,
+"attenuation_radius": 450.0,
+"source_width": 800.0,
+"source_height": 250.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 2.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2440.0,
+858.2,
+948.9
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight30",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_width": 368.0,
+"source_height": 880.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1410.9,
+759.3,
+948.9
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight31",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_width": 160.0,
+"source_height": 824.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+1461.5,
+-452.1,
+948.9
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight32",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_width": 160.0,
+"source_height": 880.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2455.2,
+-452.1,
+948.9
+],
+"rot": [
+-90.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight33",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"attenuation_radius": 750.0,
+"source_width": 160.0,
+"source_height": 856.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+-724.3,
+521.4,
+1154.7
+],
+"rot": [
+-30.0,
+0.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight35",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+138,
+228,
+255
+],
+"shadow": false,
+"attenuation_radius": 1500.0,
+"source_width": 64.0,
+"source_height": 64.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+444.3,
+-899.4,
+1154.7
+],
+"rot": [
+-30.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight36",
+"kind": "light",
+"class": "RectLight",
+"intensity": 0.5,
+"color": [
+138,
+228,
+255
+],
+"shadow": false,
+"attenuation_radius": 1500.0,
+"source_width": 64.0,
+"source_height": 64.0,
+"barn_door_angle": 88.0,
+"barn_door_length": 20.0,
+"intensity_units": "<LightUnits.CANDELAS: 1>",
+"use_temperature": false,
+"temperature": 6500.0,
+"volumetric_scattering_intensity": 1.0,
+"indirect_lighting_intensity": 50.0,
+"specular_scale": 1.0
+},
+{
+"loc": [
+2000.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A111",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2000,
+650,
+350
+],
+"bmax": [
+2200,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2200.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A112",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2200,
+650,
+350
+],
+"bmax": [
+2400,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2600.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A113",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2600,
+650,
+350
+],
+"bmax": [
+2800,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2400.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A114",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2400,
+650,
+350
+],
+"bmax": [
+2600,
+650,
+650
+],
+"shadow": true
+},
+{
+"loc": [
+2800.0,
+650.0,
+350.0
+],
+"rot": [
+0.0,
+-0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "IB_Wall_A115",
+"kind": "mesh",
+"mesh": "/Game/High_Tech_Base/Models/SM_Concete_Wall_01.SM_Concete_Wall_01",
+"mats": [
+"/Game/High_Tech_Base/Materials/MI_Wall_Concrete_Column_03.MI_Wall_Concrete_Column_03"
+],
+"bmin": [
+2800,
+650,
+350
+],
+"bmax": [
+3000,
+650,
+650
+],
+"shadow": true
+}
+]
+}

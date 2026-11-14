@@ -102,3 +102,21 @@ Decided after looking at every piece, texture and demo map of the kits (contact 
 - Every prop answers "why is this here". No scattering.
 - Every room is rendered from the player's eye and reviewed before the owner sees it.
 - Collision is simple and matches what is seen.
+
+## 6. What is built (version 1, 2026-11-13) and what is not
+Map: `/Game/Glyphbound/Maps/FutureBase`, built by `Tools/Jam/Build-FutureBase.py`. Frame: +X is the way the player advances, the corridor's axis is Y = 0, every main floor is Z = 0.
+
+**How it is built.** The kits' demo maps were read piece by piece (`Design/Levels/kits/htb_demo.json`), and whole *sections* of the High Tech Base demo are placed again exactly as their author assembled them: the control room, two corridor bays, the hangar shell, each with its own lights and the demo's exposure. On top of those shells, our level design is placed piece by piece from the Modular SciFi Station kit (a true 1 / 2 / 4 m grid kit: decks, truss posts, railings, stairs) and from High Tech Base props.
+
+| Place in the plan | Version 1 | Differs from the plan |
+|---|---|---|
+| 3.1 Containment chamber, 3.2 lock, 3.4 monitoring room | **One room: the anomaly's control room** (X -1740..0, 17.5 x 22 m). The seal lies on a low round plinth in the middle of the watch consoles, with four emitters and their cable trays. The player is thrown out in front of it, facing the corridor | The pit, the ring walkway, the ramp and the separate lock are not built. The watch room and the chamber are the same room |
+| 3.3 Spine corridor | Two bays of the kit's corridor (X 0..2000, 10 m wide, 5.6 m high), with its four alcoves and its lit frames | Straight, not an L; wider than planned (the kit's own corridor is 10 m) |
+| 3.5 Store room and the second side room | **Not built.** The corridor has a door in its right alcove that leads nowhere yet | Both rooms are missing |
+| 3.6 Transfer bay | The kit's hangar (lane X 2100..5300, Y -450..300; branch to the freight door at Y 2401; service trench 1 m down behind a railing) with our level design: a **catwalk** 3 m up along the north wall that crosses the branch mouth as a bridge, a **stair** at each end, a **cross bridge** over the lane to a **lookout** above the trench (its lane side is open: a drop closes the loop), ten **crates** as low cover in four groups and two **machine blocks** that break the 32 m lane | T-shaped (two lanes), not one 30 x 24 m room. No entry landing and no walkable pit: two walkable heights (0 and +3 m) plus the trench seen behind its railing |
+
+**Materials.** High Tech Base pieces keep the materials their author gave each piece. The Modular SciFi Station steel is painted white in its pack (a Mars station); here it uses four darker instances of the same materials (`MI_GB_Steel*`), so the catwalk reads as service steel.
+
+**Collision.** Every kit piece blocks exactly as it looks (complex collision used as simple), except decals, cables and lamps.
+
+**Review.** `gb.Smoke tour` (new) puts the player on each of the map's twelve review spots, checks the floor and takes a screenshot through the real game camera.

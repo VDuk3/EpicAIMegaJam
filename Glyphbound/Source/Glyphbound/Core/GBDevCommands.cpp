@@ -853,6 +853,128 @@ namespace GBSmokeRun
 		}
 	}
 
+	// ---- Map tour block (gb.Smoke tour) ----
+	// A real map marks its review spots with actors tagged "GBTour"; their second tag is the spot's name. The block
+	// puts the player on each spot in name order, lets the view settle, checks that the player stands on something,
+	// and takes a screenshot through the real game camera: what a person will see when playing that map.
+	// A map without tour spots (the test arena) skips the block.
+	namespace TourRun
+	{
+		static FTSTicker::FDelegateHandle Ticker;
+		static TArray<FTransform> Spots;
+		static TArray<FString> Names;
+		static int32 Index = 0;
+		static double PhaseStart = 0.0;
+		static bool bPlaced = false;
+		static bool bShot = false;
+		static int32 Failures = 0;
+
+		static bool Tick(float)
+		{
+			UWorld* World = SmokeWorld.Get();
+			AGBPlayerCharacter* Player = World ? AGBPlayerCharacter::Get(World) : nullptr;
+			if (!World || !Player)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE tour FAILED: no world or no player"));
+				SmokeQuitNow(TEXT("tour"));
+				return false;
+			}
+			if (Index >= Spots.Num())
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE tour block %s: %d spots, %d without floor"), Failures == 0 ? TEXT("passed") : TEXT("FAILED"), Spots.Num(), Failures);
+				SmokeQuitNow(TEXT("tour"));
+				return false;
+			}
+			const double Now = FPlatformTime::Seconds();
+			UCharacterMovementComponent* Move = Player->GetCharacterMovement();
+			const float HalfHeight = Player->GetSimpleCollisionHalfHeight();
+			if (!bPlaced)
+			{
+				const FTransform& Spot = Spots[Index];
+				Player->SetActorLocation(Spot.GetLocation() + FVector(0.f, 0.f, HalfHeight + 5.f), false, nullptr, ETeleportType::TeleportPhysics);
+				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+				{
+					PC->SetControlRotation(Spot.Rotator());
+				}
+				if (Move)
+				{
+					Move->Velocity = FVector::ZeroVector;
+				}
+				bPlaced = true;
+				bShot = false;
+				PhaseStart = Now;
+				return true;
+			}
+			const double InPhase = Now - PhaseStart;
+			if (!bShot && InPhase > 2.5) // lighting and exposure need a moment after a jump of many metres
+			{
+				const FVector Feet = Player->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
+				FHitResult Hit;
+				FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSmokeTourFloor), false, Player);
+				const bool bHit = World->LineTraceSingleByChannel(Hit, Feet + FVector(0.f, 0.f, 20.f), Feet - FVector(0.f, 0.f, 200.f), ECC_Visibility, Params);
+				const bool bFalling = Move && Move->IsFalling();
+				const float Drop = static_cast<float>(Spots[Index].GetLocation().Z - Feet.Z);
+				if (bHit && !bFalling && FMath::Abs(Drop) < 60.f)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: standing on %s, %.0f cm from the marked height"), *Names[Index], *GetNameSafe(Hit.GetActor()), Drop);
+				}
+				else
+				{
+					++Failures;
+					UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: no floor where the map marks one (hit=%d falling=%d, feet %.0f cm below the mark)"), *Names[Index], bHit ? 1 : 0, bFalling ? 1 : 0, Drop);
+				}
+				Shot(*FString::Printf(TEXT("tour_%s"), *Names[Index]));
+				bShot = true;
+			}
+			else if (bShot && InPhase > 3.5)
+			{
+				++Index;
+				bPlaced = false;
+			}
+			return true;
+		}
+
+		static void Start(UWorld* World, AGBPlayerCharacter*)
+		{
+			FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+			Spots.Reset();
+			Names.Reset();
+			Index = 0;
+			Failures = 0;
+			bPlaced = false;
+			bShot = false;
+			TArray<TPair<FString, FTransform>> Found;
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				if (It->ActorHasTag(FName(TEXT("GBTour"))))
+				{
+					FString Name = It->GetName();
+					for (const FName& Tag : It->Tags)
+					{
+						if (Tag != FName(TEXT("GBTour")) && Tag.ToString().StartsWith(TEXT("tour_")))
+						{
+							Name = Tag.ToString().RightChop(5);
+						}
+					}
+					Found.Emplace(Name, It->GetActorTransform());
+				}
+			}
+			if (Found.Num() == 0)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE tour skipped: this map has no tour spots"));
+				return;
+			}
+			Found.Sort([](const TPair<FString, FTransform>& A, const TPair<FString, FTransform>& B) { return A.Key < B.Key; });
+			for (const TPair<FString, FTransform>& Pair : Found)
+			{
+				Names.Add(Pair.Key);
+				Spots.Add(Pair.Value);
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE tour: %d spots"), Spots.Num());
+			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
+		}
+	}
+
 	static void BuildSteps()
 	{
 		Steps.Reset();
@@ -3948,6 +4070,7 @@ namespace GBSmokeRun
 		// It quits the run itself when done; the quit step below is only a far safety net.
 		const float Z = U + 43.8f;
 		Add(Z, TEXT("seal: seal, era block with a real doorway, captions, cancel, gun drop"), SealRun::Start);
+		Add(Z + 0.5f, TEXT("tour: a real map's own review spots (skipped on a map without them)"), TourRun::Start);
 		Add(Z + 150.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
