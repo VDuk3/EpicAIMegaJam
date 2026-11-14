@@ -1,0 +1,20 @@
+{
+    "out":  "C:/GameJam/Glyphbound/SourceArt/PixelArt/Hands/hands_pistol_right.png",
+    "palette":  {
+                    "K":  "#000000",
+                    "H":  "#EFD9BF",
+                    "L":  "#FBD6AA",
+                    "M":  "#F9C990",
+                    "S":  "#C88A6A",
+                    "D":  "#1D1D25",
+                    "C":  "#32343C",
+                    "E":  "#655478"
+                },
+    "sprites":  [
+                    {
+                        "x":  99,
+                        "y":  68,
+                        "rowsFile":  "hands_pistol_right.txt"
+                    }
+                ]
+}

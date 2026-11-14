@@ -25,6 +25,7 @@
 
 #include "Camera/PlayerCameraManager.h"
 #include "Engine/Canvas.h"
+#include "HAL/IConsoleManager.h"
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
 #include "UObject/ConstructorHelpers.h"
@@ -500,9 +501,12 @@ void AGBHUD::DrawHUD()
 
 // ======================================================================== hands (GDD 3: always pixel art)
 
+// Dev only: hides every first-person hand (and the staff/sword sprites) to capture clean gun templates for drawing the hands.
+static TAutoConsoleVariable<int32> CVarHideHands(TEXT("gb.HideHands"), 0, TEXT("1 hides the first-person hands layer (template screenshots)."));
+
 void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 {
-	if (!Player->IsControlEnabled() || Player->IsDead())
+	if (CVarHideHands.GetValueOnGameThread() != 0 || !Player->IsControlEnabled() || Player->IsDead())
 	{
 		return;
 	}

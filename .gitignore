@@ -26,6 +26,9 @@ Build/
 !**/SourceArt/**/
 !**/SourceArt/**/README.md
 !**/SourceArt/**/provenance/*.md
+# First-person hand maps: small text sources (character maps + spec), the record of how the hands are made.
+!**/SourceArt/PixelArt/Hands/*.txt
+!**/SourceArt/PixelArt/Hands/*.json
 Incoming/
 *.uasset
 *.umap
