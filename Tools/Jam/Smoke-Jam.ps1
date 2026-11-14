@@ -19,7 +19,10 @@ param(
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
     [int]$TimeoutSeconds = 180,
     [int]$ResX = 1280,        # screenshot size (for example 1920 x 1080 to judge the HUD)
-    [int]$ResY = 720
+    [int]$ResY = 720,
+    # The map to start on. The smoke steps run in the code-built test arena, which the game builds on the engine's
+    # empty Entry map; the game's own default map is the site (/Game/Glyphbound/Maps/Site) since 2026-11-13.
+    [string]$Map = '/Engine/Maps/Entry'
 )
 $Project = (Resolve-Path $Project).Path
 $projDir = Split-Path $Project -Parent
@@ -32,12 +35,12 @@ if ($Packaged) {
     if (-not (Test-Path $exe)) { Write-Host "No packaged build at $exe"; exit 2 }
     $shotDir = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Screenshots\Smoke'
     $log = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Logs\Glyphbound.log'
-    $argList = $common
+    $argList = @($Map) + $common
 } else {
     $exe = Join-Path $EngineDir 'Engine\Binaries\Win64\UnrealEditor.exe'
     $shotDir = Join-Path $projDir 'Saved\Screenshots\Smoke'
     $log = Join-Path $projDir "Saved\Logs\smoke_$stamp.log"
-    $argList = @("`"$Project`"", '-game', "-abslog=`"$log`"") + $common
+    $argList = @("`"$Project`"", $Map, '-game', "-abslog=`"$log`"") + $common
 }
 if (Test-Path $shotDir) { Remove-Item (Join-Path $shotDir '*.png') -Force -ErrorAction SilentlyContinue }
 $sw = [Diagnostics.Stopwatch]::StartNew()

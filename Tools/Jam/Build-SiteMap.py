@@ -248,22 +248,85 @@ def build_era_blocks(layout):
                 rect = [rect[0] + offset, rect[1] + offset, rect[2], rect[3]]
             else:
                 rect = [rect[0], rect[1], rect[2] + offset, rect[3] + offset]
-            label = 'Lock_%s_%d_%s' % (d['id'], i, lock['kind'].replace(' ', '_'))
-            n += place_block(has_block, 'Locks', label, rect, 0, d['h'], d['era'], None, lock.get('removedBy'))
+            label = 'Lock_%s_%d_%s' % (d['id'], i, lock['kind'].replace(' ', '_').replace('(', '').replace(')', ''))
+            n += place_block(has_block, 'Locks', label, rect, 0, d['h'], d['era'], None, lock.get('removedBy'), lock['kind'])
     for s in layout['structures']:
         if s['kind'] == 'feature' or s.get('removedBy'):
-            n += place_block(has_block, 'Features', s['id'], s['rect'], s['z0'], s['z1'], s['era'], None, s.get('removedBy'))
+            n += place_block(has_block, 'Features', s['id'], s['rect'], s['z0'], s['z1'], s['era'], None, s.get('removedBy'), s.get('mesh'))
     log('era blocks: %d (%s)' % (n, 'AGBEraBlock' if has_block else 'static boxes in the era sub-level, no flags yet'))
 
 
-def place_block(has_block, folder, label, rect, z0, z1, era, required, removed):
+# Era blocks: the look (and collision) of each lock kind. None = the engine cube. Paths are found by file name.
+BLOCK_LOOKS = {
+    'SM_Portcullis': ('SM_Portcullis', None),
+    'rune ward': (None, 'MI_Hologram_6'),
+    'rune-sealed plug': (None, 'MI_Hologram_7'),
+    'barred door (2 x SM_Castle_Door)': ('SM_Castle_Door', None),
+    'blast gate': ('SM_MGate01-500x350-1_GateL', None),
+    'blast gate (second lock)': ('SM_MGate01-500x350-1_GateR', None),
+    'door leaf': ('SM_Door_02', None),
+    'lockdown shutter': ('SM_Door_02', 'MI_GB_WA_SciFiAccent'),
+    'SM_Podium + rune glow': ('SM_Podium', None),
+    'SciFi SM_LabCapsule11_1_Capsule + _Glass, scale 1.3': ('SM_LabCapsule11_1_Capsule', None),
+}
+
+_asset_index = None
+
+
+def find_asset(short):
+    """'/Game/...' object path of a package found by file name under Content."""
+    global _asset_index
+    if _asset_index is None:
+        import os
+        _asset_index = {}
+        root = r'C:/GameJam/Glyphbound/Content'
+        for dirpath, _, files in os.walk(root):
+            if '__External' in dirpath:
+                continue
+            for f in files:
+                if f.endswith('.uasset'):
+                    rel = os.path.relpath(os.path.join(dirpath, f[:-7]), root).replace('\\', '/')
+                    _asset_index.setdefault(f[:-7], '/Game/' + rel + '.' + f[:-7])
+    path = _asset_index.get(short)
+    return unreal.load_asset(path) if path else None
+
+
+def fit_actor_to_rect(actor, mesh, rect, z0, z1):
+    """Turns, scales and moves actor (whose root shows mesh) so the mesh bounds fill rect and z0..z1."""
+    box = mesh.get_bounding_box()
+    mn, mx = box.min, box.max
+    sx, sy, sz = max(mx.x - mn.x, 1.0), max(mx.y - mn.y, 1.0), max(mx.z - mn.z, 1.0)
+    x0, x1, y0, y1 = rect
+    rx, ry, rz = x1 - x0, y1 - y0, max(z1 - z0, 1.0)
+    yaw = 0.0 if ((rx >= ry) == (sx >= sy)) else 90.0
+    lx, ly = (rx, ry) if yaw == 0.0 else (ry, rx)
+    scale = (lx / sx, ly / sy, rz / sz)
+    cxl, cyl = (mn.x + mx.x) * 0.5 * scale[0], (mn.y + mx.y) * 0.5 * scale[1]
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    ox, oy = cxl * c - cyl * s, cxl * s + cyl * c
+    actor.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=yaw), False)
+    actor.set_actor_scale3d(unreal.Vector(*scale))
+    actor.set_actor_location(unreal.Vector((x0 + x1) * 0.5 - ox, (y0 + y1) * 0.5 - oy, z0 - mn.z * scale[2]), False, False)
+
+
+def place_block(has_block, folder, label, rect, z0, z1, era, required, removed, look=None):
     if has_block:
-        x0, x1, y0, y1 = rect
-        centre = unreal.Vector((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5)
-        actor = eas.spawn_actor_from_class(unreal.GBEraBlock, centre, unreal.Rotator(0, 0, 0))
-        actor.set_actor_scale3d(unreal.Vector((x1 - x0) / 100.0, (y1 - y0) / 100.0, (z1 - z0) / 100.0))
+        actor = eas.spawn_actor_from_class(unreal.GBEraBlock, unreal.Vector(0, 0, 0), unreal.Rotator(0, 0, 0))
         tag(actor, folder, label)
         set_era(actor, era, required, removed)
+        comp = actor.get_component_by_class(unreal.StaticMeshComponent)
+        mesh_short, mat_short = BLOCK_LOOKS.get(look or '', (None, None))
+        mesh = find_asset(mesh_short) if mesh_short else None
+        if mesh is not None:
+            comp.set_static_mesh(mesh)
+        else:
+            mesh = comp.static_mesh
+        if mat_short:
+            mat = find_asset(mat_short)
+            if mat:
+                for i in range(comp.get_num_materials()):
+                    comp.set_material(i, mat)
+        fit_actor_to_rect(actor, mesh, rect, z0, z1)
         return 1
     # Fallback until the class exists: a static box in the era's sub-level (never removed).
     set_current(era if era in ('past', 'future') else 'persistent')
@@ -308,6 +371,8 @@ def build_gameplay(layout):
         if box:
             box.set_box_extent(unreal.Vector(*cp['extent']), True)
 
+    build_interactables(layout)
+
     # Navigation: one bounds volume over the whole site (the navmesh is dynamic, built at runtime too).
     floor = layout['shell']['floor']['rect']
     x0, x1, y0, y1 = floor
@@ -317,6 +382,85 @@ def build_gameplay(layout):
 
     ws = ues.get_editor_world().get_world_settings()
     ws.set_editor_property('kill_z', KILL_Z)
+
+
+# Chest contents (provisional, WORLD_PLAN.md section 11). The Herald's rifle is its encounter's reward, so its crate
+# only holds supplies.
+CHEST_CONTENTS = {
+    'chest_fire': [{'SpellGroup': 'Fire'}, {'WeaponId': 'Staff_Ember'}],
+    'chest_lightning': [{'SpellGroup': 'Lightning'}],
+    'chest_ice': [{'SpellGroup': 'Ice'}],
+    'chest_air': [{'SpellGroup': 'Air'}],
+    'crate_herald': [{'ItemId': 'Ammo_Magazine', 'Count': 2}, {'ItemId': 'HealthInjection'}],
+    'crate_yard': [{'WeaponId': 'Shotgun'}, {'ItemId': 'HealthInjection'}],
+}
+ITEM_ALIASES = {'Grenade': 'ElectricGrenade'}
+
+
+def make_drop(fields):
+    drop = unreal.GBDropDefinition()
+    drop.set_editor_property('item_id', unreal.Name(fields.get('ItemId', 'None')))
+    drop.set_editor_property('weapon_id', unreal.Name(fields.get('WeaponId', 'None')))
+    drop.set_editor_property('spell_group', unreal.Name(fields.get('SpellGroup', 'None')))
+    drop.set_editor_property('count', int(fields.get('Count', 1)))
+    drop.set_editor_property('chance', 1.0)
+    return drop
+
+
+def parse_pickup_items(text):
+    """'Ammo_Magazine x2 + HealthInjection (before the Herald)' -> [('Ammo_Magazine', 2), ('HealthInjection', 1)]."""
+    import re
+    text = re.sub(r'\([^)]*\)', '', text)
+    out = []
+    for part in text.split('+'):
+        words = part.split()
+        if not words:
+            continue
+        name = ITEM_ALIASES.get(words[0], words[0])
+        count = 1
+        for w in words[1:]:
+            if w.startswith('x') and w[1:].isdigit():
+                count = int(w[1:])
+        out.append((name, count))
+    return out
+
+
+def build_interactables(layout):
+    special = {s['id']: s for s in layout['special']}
+    seal = special['SEAL']
+    actor = eas.spawn_actor_from_class(unreal.GBSeal, unreal.Vector(*seal['pos']), unreal.Rotator(0, 0, 0))
+    tag(actor, 'Gameplay', 'Seal')
+    final = special['FINAL']
+    actor = eas.spawn_actor_from_class(unreal.GBFinalPortal, unreal.Vector(*final['pos']), unreal.Rotator(0, 0, 0))
+    tag(actor, 'Gameplay', 'FinalPortal')
+
+    encounters = {a.get_actor_label(): a for a in eas.get_all_level_actors() if isinstance(a, unreal.GBEncounter)}
+    for sid, enc_id, era, prompt in (('CAGE', 'Valkyrie_Past', 'past', 'Free the Valkyrie'),
+                                     ('TUBE', 'Valkyrie_Future', 'future', 'Release the cryo tube')):
+        sp = special[sid]
+        starter = eas.spawn_actor_from_class(unreal.GBEncounterStarter, unreal.Vector(*sp['pos']), unreal.Rotator(0, 0, 0))
+        tag(starter, 'Gameplay', 'Starter_' + enc_id)
+        starter.set_editor_property('encounter', encounters.get('Encounter_' + enc_id))
+        starter.set_editor_property('prompt', prompt)
+        set_era(starter, era, None, None)
+
+    for c in layout['chests']:
+        actor = eas.spawn_actor_from_class(unreal.GBChest, unreal.Vector(*c['pos']), unreal.Rotator(0, 0, 0))
+        tag(actor, 'Chests', c['id'])
+        actor.set_editor_property('contents', [make_drop(f) for f in CHEST_CONTENTS.get(c['id'], [])])
+        actor.set_editor_property('opened_flag', unreal.Name('Chest.%s.Opened' % c['id']))
+        set_era(actor, c['era'], c.get('requiredFlag'), None)
+
+    n = 0
+    for p in layout['pickups']:
+        for i, (item, count) in enumerate(parse_pickup_items(p['item'])):
+            pos = unreal.Vector(p['pos'][0] + 70 * i, p['pos'][1], p['pos'][2] + 40)
+            actor = eas.spawn_actor_from_class(unreal.GBPickup, pos, unreal.Rotator(0, 0, 0))
+            tag(actor, 'Pickups', '%s_%d' % (p['id'], i))
+            actor.set_editor_property('drop', make_drop({'ItemId': item, 'Count': count}))
+            set_era(actor, p['era'], None, None)
+            n += 1
+    log('interactables: seal, final portal, 2 starters, %d chests, %d pickups' % (len(layout['chests']), n))
 
 
 def build_lighting():
