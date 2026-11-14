@@ -178,3 +178,13 @@ The owner: *"El Blender si esta instalado con steam y no es necesario la pelea a
 - The muster hall keeps its layout, dock and cover, without the encounter. The builder keeps a note of how to put it back.
 - Package again: `TeamTBD_Glyphbound.zip`, 1,206.2 MB. On the package: tour `passed: 27 spots, 0 without floor` (100 s); full arena smoke `LogGB errors=0` (149 s).
 - Blender (5.3.0) is at `C:\Program Files (x86)\Steam\steamapps\common\Blender`. The architect had looked only in the usual install folder and reported it missing; the long corridor will be redone from the Spaceship Corridor model, which is what the owner meant by "there is already an asset like that".
+
+## The Spaceship Corridor model: looked at in Blender, not imported yet
+The owner: *"Verifica de nuevo lo de Blender si lo necesitas. Instala el MCP. Y maneja la aplicación como necesites. Si algo te quedó pendiente, resuélvelo."* (Check Blender again if you need to. Install the MCP. Drive the application as you need. If anything was left pending, resolve it.)
+
+- **The MCP.** There is no Blender connector in the official connector registry (searched). A community add-on would mean downloading and running third-party code inside Blender, and it would not be usable before the session restarts, so it was not installed. Blender is driven directly with its own Python, without a window: `blender -b --disable-autoexec <file> --python <script>` (the model is a downloaded file, so its embedded scripts are not allowed to run).
+- **What the model holds** (65 objects): the corridor body (104,272 polygons, 5.30 x 40.47 x 3.33 m), a floor grid, floor wires, roof pipes, roof vents and their grid, roof wires, loose cables, two door leaves at the far end (the near end is open), two crates, eight fire extinguishers, eight axes, eight screens, eight lights. One procedural material carries the look of the walls (worn painted metal); the rest are plain colours, metal, rubber, glass, emission, and one picture for the screens.
+- **Two sets of renders from the player's eye** (`Tools/Jam/corridor_blender_render.py`, Cycles, 90 degree view):
+  - as its author made it: `media/2026-11-13/corridor_model_author.png`. The screens are magenta because the file remembers their picture in another folder. It is a ship's corridor: large windows onto a planet;
+  - as the game would show it: `media/2026-11-13/corridor_model_game_look.png`. Procedural materials do not exist in Unreal, so the walls become plain painted metal (the wear is lost); the screens get their picture back; nothing is outside the windows, since the base is under a castle.
+- **Waiting for the owner** before importing (his standing rule for reworked art: renders first, import after his yes).
