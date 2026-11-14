@@ -18,6 +18,8 @@ namespace GBEnemyAnimLocal
 	const FName UpperBodyRoot(TEXT("spine_01"));
 	const FName ShoulderBone(TEXT("clavicle_r"));
 	const FName HandBone(TEXT("hand_r"));
+	// The arms driven by FGBArmIK: left (0) and right (1), upper arm, forearm, hand.
+	const FName ArmBones[2][3] = { { FName(TEXT("upperarm_l")), FName(TEXT("lowerarm_l")), FName(TEXT("hand_l")) }, { FName(TEXT("upperarm_r")), FName(TEXT("lowerarm_r")), FName(TEXT("hand_r")) } };
 	constexpr int32 NumSpineBones = UE_ARRAY_COUNT(SpineBones);
 
 	const TCHAR* const ClipNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("StrafeLeft"), TEXT("StrafeRight"), TEXT("WalkBack"), TEXT("Attack"), TEXT("Hit"), TEXT("Death"),
@@ -194,6 +196,8 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		{
 			ApplyUpperBodyOffsets(Output.Pose);
 			ApplyPoseLayer(Output.Pose);
+			ApplyArmIK(Output.Pose, 0);
+			ApplyArmIK(Output.Pose, 1);
 		}
 		return true;
 	}
@@ -262,6 +266,90 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		}
 	}
 
+	/**
+	 * Two-bone IK of one arm (upperarm, lowerarm, hand): the hand goes to the goal, the elbow bends towards the pole, the hand
+	 * keeps its rotation relative to the forearm unless the goal gives one. Lengths never stretch: a goal out of reach gets
+	 * the straight arm pointing at it.
+	 */
+	void ApplyArmIK(FCompactPose& Pose, int32 Side) const
+	{
+		const FGBArmIK& Goal = Frame.Arm[Side];
+		const FCompactPoseBoneIndex U = ArmIndex[Side][0];
+		const FCompactPoseBoneIndex L = ArmIndex[Side][1];
+		const FCompactPoseBoneIndex H = ArmIndex[Side][2];
+		if (Goal.Alpha <= 0.001f || U.GetInt() < 0 || L.GetInt() < 0 || H.GetInt() < 0 || Pose.GetParentBoneIndex(L) != U || Pose.GetParentBoneIndex(H) != L)
+		{
+			return;
+		}
+		FTransform ParentCS = FTransform::Identity;
+		for (FCompactPoseBoneIndex Parent = Pose.GetParentBoneIndex(U); Parent.GetInt() >= 0; Parent = Pose.GetParentBoneIndex(Parent))
+		{
+			ParentCS = ParentCS * Pose[Parent];
+		}
+		const FTransform UCS = Pose[U] * ParentCS;
+		const FTransform LCS = Pose[L] * UCS;
+		const FTransform HCS = Pose[H] * LCS;
+		const FVector A = UCS.GetLocation();
+		const FVector J0 = LCS.GetLocation();
+		const FVector E0 = HCS.GetLocation();
+		const double UpperLen = FVector::Dist(A, J0);
+		const double LowerLen = FVector::Dist(J0, E0);
+		if (UpperLen < 1.0 || LowerLen < 1.0)
+		{
+			return;
+		}
+
+		FVector Target = Goal.bFromShoulder ? A + Goal.Location * (UpperLen + LowerLen) : Goal.Location;
+		FQuat Recoil = FQuat::Identity;
+		if (Goal.RecoilDegrees > 0.f && Frame.RecoilKick > 0.01f)
+		{
+			// The kick turns the aim up about the arm's horizontal axis.
+			const FVector Axis = FVector::CrossProduct((Target - A).GetSafeNormal(), FVector::UpVector).GetSafeNormal();
+			if (!Axis.IsNearlyZero())
+			{
+				Recoil = FQuat(Axis, FMath::DegreesToRadians(Goal.RecoilDegrees * Frame.RecoilKick));
+				Target = A + Recoil.RotateVector(Target - A);
+			}
+		}
+		Target = FMath::Lerp(E0, Target, FMath::Clamp(Goal.Alpha, 0.f, 1.f));
+
+		const FVector ToTarget = Target - A;
+		const double Reach = ToTarget.Size();
+		if (Reach < 1.0)
+		{
+			return;
+		}
+		const FVector Dir = ToTarget / Reach;
+		const double D = FMath::Clamp(Reach, FMath::Abs(UpperLen - LowerLen) + 0.1, (UpperLen + LowerLen) * 0.999);
+		const double CosA = FMath::Clamp((UpperLen * UpperLen + D * D - LowerLen * LowerLen) / (2.0 * UpperLen * D), -1.0, 1.0);
+		const double SinA = FMath::Sqrt(FMath::Max(0.0, 1.0 - CosA * CosA));
+		FVector Bend = Goal.Pole - Dir * FVector::DotProduct(Goal.Pole, Dir);
+		if (Bend.SizeSquared() < 1e-4)
+		{
+			Bend = (J0 - A) - Dir * FVector::DotProduct(J0 - A, Dir);
+		}
+		if (!Bend.Normalize())
+		{
+			return;
+		}
+		const FVector J = A + Dir * (UpperLen * CosA) + Bend * (UpperLen * SinA);
+		const FVector E = A + Dir * D;
+
+		const FQuat DeltaUpper = FQuat::FindBetweenNormals((J0 - A).GetSafeNormal(), (J - A).GetSafeNormal());
+		const FQuat DeltaLower = FQuat::FindBetweenNormals(DeltaUpper.RotateVector(E0 - J0).GetSafeNormal(), (E - J).GetSafeNormal());
+		const FQuat NewU = DeltaUpper * UCS.GetRotation();
+		const FQuat NewL = DeltaLower * DeltaUpper * LCS.GetRotation();
+		FQuat NewH = DeltaLower * DeltaUpper * HCS.GetRotation();
+		if (Goal.bRotation)
+		{
+			NewH = FQuat::Slerp(NewH, Recoil * Goal.Rotation, FMath::Clamp(Goal.Alpha, 0.f, 1.f));
+		}
+		// Component rotation = parent's component rotation * local rotation (unit scales along the arm).
+		Pose[U].SetRotation((ParentCS.GetRotation().Inverse() * NewU).GetNormalized());
+		Pose[L].SetRotation((NewU.Inverse() * NewL).GetNormalized());
+		Pose[H].SetRotation((NewL.Inverse() * NewH).GetNormalized());
+	}
+
 	/** Aim pitch / yaw spread over the spine and neck, plus the recoil and the flinch. */
 	void ApplyUpperBodyOffsets(FCompactPose& Pose) const
 	{
@@ -321,6 +409,13 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		ShoulderIndex = Find(ShoulderBone);
 		HandIndex = Find(HandBone);
 		UpperBodyRootIndex = Find(UpperBodyRoot);
+		for (int32 Side = 0; Side < 2; ++Side)
+		{
+			for (int32 Link = 0; Link < 3; ++Link)
+			{
+				ArmIndex[Side][Link] = Find(ArmBones[Side][Link]);
+			}
+		}
 
 		IsUpperBody.Init(false, CachedBoneCount);
 		if (UpperBodyRootIndex.GetInt() >= 0)
@@ -357,6 +452,8 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 	FCompactPoseBoneIndex ShoulderIndex = FCompactPoseBoneIndex(INDEX_NONE);
 	FCompactPoseBoneIndex HandIndex = FCompactPoseBoneIndex(INDEX_NONE);
 	FCompactPoseBoneIndex UpperBodyRootIndex = FCompactPoseBoneIndex(INDEX_NONE);
+	FCompactPoseBoneIndex ArmIndex[2][3] = { { FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE) },
+		{ FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE) } };
 	TArray<bool> IsUpperBody;
 };
 
@@ -498,7 +595,8 @@ bool UGBEnemyAnimInstance::PlayOneShot(EGBEnemyClip Clip, bool bUpperBodyOnly)
 
 void UGBEnemyAnimInstance::NotifyShot()
 {
-	if (!PlayOneShot(EGBEnemyClip::Attack, true))
+	// An arm driven by IK fires with the procedural kick: a clip would fight the IK.
+	if (Frame.Arm[1].Alpha > 0.f || !PlayOneShot(EGBEnemyClip::Attack, true))
 	{
 		Frame.RecoilKick = 1.f;
 	}
@@ -511,7 +609,7 @@ void UGBEnemyAnimInstance::NotifyHit(float Side)
 	{
 		return;
 	}
-	if (!PlayOneShot(EGBEnemyClip::Hit, true))
+	if (HasArmIK() || !PlayOneShot(EGBEnemyClip::Hit, true))
 	{
 		Frame.FlinchKick = 1.f;
 		Frame.FlinchSide = Side >= 0.f ? 1.f : -1.f;

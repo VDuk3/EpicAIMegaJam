@@ -6587,17 +6587,21 @@ namespace GBSmokeRun
 		Add(E3H + 17.f, TEXT("Chief: lowered front shot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("chief_lowered_front")); });
 		Add(E3H + 18.f, TEXT("Chief: lowered left"), [](UWorld*, AGBPlayerCharacter* Player) { E3ChiefView(Player, false); });
 		Add(E3H + 21.f, TEXT("Chief: lowered left shot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("chief_lowered_left")); });
+		Add(E3H + 22.f, TEXT("Chief: bash front"), [](UWorld*, AGBPlayerCharacter* Player) { if (AGBShieldEnemy* Chief = E3CFindChief()) { Chief->DebugHold(3); } E3ChiefView(Player, true); });
+		Add(E3H + 25.f, TEXT("Chief: bash front shot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("chief_bash_front")); });
+		Add(E3H + 26.f, TEXT("Chief: bash left"), [](UWorld*, AGBPlayerCharacter* Player) { E3ChiefView(Player, false); });
+		Add(E3H + 29.f, TEXT("Chief: bash left shot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("chief_bash_left")); });
 		E3PoseTryLoad();
 		for (int32 Try = 0; Try < E3PoseTries.Num() && Try < 8; ++Try)
 		{
 			static TArray<TSharedPtr<FString>> TryPool;
 			auto TryName = [](const FString& Text) -> const TCHAR* { TryPool.Add(MakeShared<FString>(Text)); return **TryPool.Last(); };
-			Add(E3H + 22.f + 5.f * Try, TryName(FString::Printf(TEXT("Chief: pose try %d"), Try)), [Try](UWorld*, AGBPlayerCharacter* Player) { E3PoseTry(Player, Try); });
-			Add(E3H + 24.5f + 5.f * Try, TryName(FString::Printf(TEXT("Chief: pose try %d shot"), Try)), [Try](UWorld*, AGBPlayerCharacter*) { Shot(*FString::Printf(TEXT("chief_try_%d"), Try)); });
+			Add(E3H + 30.f + 5.f * Try, TryName(FString::Printf(TEXT("Chief: pose try %d"), Try)), [Try](UWorld*, AGBPlayerCharacter* Player) { E3PoseTry(Player, Try); });
+			Add(E3H + 32.5f + 5.f * Try, TryName(FString::Printf(TEXT("Chief: pose try %d shot"), Try)), [Try](UWorld*, AGBPlayerCharacter*) { Shot(*FString::Printf(TEXT("chief_try_%d"), Try)); });
 		}
 		const float E3Tries = 5.f * FMath::Min(E3PoseTries.Num(), 8);
-		Add(E3H + 22.f + E3Tries, TEXT("Chief: kill"), [](UWorld*, AGBPlayerCharacter* Player) { if (AGBShieldEnemy* Chief = E3CFindChief()) { Chief->DebugHold(0); } E3DKillGroup(Player); });
-		Add(E3H + 25.f + E3Tries, TEXT("Chief: done"), [](UWorld*, AGBPlayerCharacter*)
+		Add(E3H + 30.f + E3Tries, TEXT("Chief: kill"), [](UWorld*, AGBPlayerCharacter* Player) { if (AGBShieldEnemy* Chief = E3CFindChief()) { Chief->DebugHold(0); } E3DKillGroup(Player); });
+		Add(E3H + 33.f + E3Tries, TEXT("Chief: done"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			if (bFilteredRun)
 			{
@@ -6605,7 +6609,7 @@ namespace GBSmokeRun
 				FPlatformMisc::RequestExit(false);
 			}
 		});
-		const float E3End = E3H + 26.f + E3Tries;
+		const float E3End = E3H + 34.f + E3Tries;
 		// A filtered run (gb.Smoke Enemies3D) has no seal block to end it: it quits here. The full run goes on.
 		Add(E3End, TEXT("Enemies3D: done"), [](UWorld*, AGBPlayerCharacter*)
 		{

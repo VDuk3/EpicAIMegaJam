@@ -4,9 +4,13 @@
 // inside the frontal arc is multiplied by ShieldDamageTaken (0) through the attribute component's incoming-damage hook, so
 // bullets, projectiles and spells are all blocked; a box as big as the shield stops the player's shot traces. Enough blocked
 // damage, a lightning stun or a freeze knocks the shield aside for StaggerTime. Close to him he bashes with the shield.
-// The shield itself is carried on the capsule, not on a hand bone: raised it stands upright in front of him, exactly where
-// its hit box is; lowered it swings to his left side (stats ShieldForward, ShieldSide, ShieldLoweredSide, ShieldLoweredBack,
-// ShieldLoweredDrop, ShieldLoweredYaw, at scale 1). The left arm follows with the pose layer. When he dies it goes with the hand.
+// The shield's place is kept on the capsule (raised: upright in front of his chest, where its hit box is; lowered: turned to
+// his left side at the hip; pushed forward in the bash) and his left hand is put on its handle by two-bone IK, so the shield
+// is always in his fist. The right arm holds the pistol one-handed, like a revolver: low at his side while he walks behind
+// the shield, stretched out at the player while he aims (IK too, the pistol turned along the aim). Shots and hits use
+// procedural kicks, never a clip (the clips are two-handed and would pull the arms off). When he dies it goes with the hand.
+// Places (cm at scale 1, from the capsule centre): ShieldHandleForward / Side / Height, ShieldLoweredForward / Side / Height,
+// ShieldLoweredYaw; ShieldScale (the mesh's scale, default MeshScale), ShieldGripBack, BashPull, BashPush.
 // Everything comes from Enemies.json (Strings: Shield, ShieldSocket, Pose.ShieldRaised; stats: ShieldArc,
 // ShieldDamageTaken, ShieldRecover, ShieldStaggerDamage, StaggerTime, ShieldWidth, ShieldHeight, ShieldThickness,
 // ShieldPoseBlend, MeleeRange, MeleeDamageMult). Without the shield art a slab of the same size stands in.
@@ -46,7 +50,7 @@ public:
 	UStaticMeshComponent* GetShieldMesh() const { return ShieldMesh; }
 	/** Smoke: lowers or raises the shield now (a screenshot of each pose). */
 	void DebugSetShield(bool bUp);
-	/** Smoke closeups: 0 normal behaviour, 1 hold the shield raised, 2 hold it lowered with the pistol aimed at the player. */
+	/** Smoke closeups: 0 normal behaviour, 1 hold the shield raised, 2 hold it lowered with the pistol aimed at the player, 3 hold the bash's strike. */
 	void DebugHold(int32 Mode) { DebugHoldMode = Mode; }
 	/** Smoke: replaces the raised-shield pose layer (bone:pitch,yaw,roll;...) to try values on the closeups. */
 	void DebugSetPose(const FString& Spec);
@@ -64,6 +68,10 @@ private:
 	void BuildShield();
 	void HandleIncomingDamage(FGBDamageInfo& Info);
 	void UpdateShieldVisuals(float DeltaSeconds = 0.f);
+	/** The arms' IK goals: the left hand on the shield's handle, the right one with the pistol (low, or aimed). */
+	void UpdateArms(float DeltaSeconds);
+	/** cm the shield is pushed forward by the bash right now (negative while he pulls it back). */
+	float ComputeBashPush() const;
 
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> ShieldMesh;
 	UPROPERTY() TObjectPtr<UBoxComponent> ShieldBox;
@@ -88,4 +96,13 @@ private:
 	float ShieldAlpha = 1.f;
 	FTransform ShieldRaisedPlace = FTransform::Identity;
 	FTransform ShieldLoweredPlace = FTransform::Identity;
+	/** The shield's place on the capsule this frame (the hand's IK goal follows it). */
+	FTransform ShieldPlace = FTransform::Identity;
+	float ShieldScale = 1.f;
+	/** 0 pistol low at his side, 1 aimed at the player. */
+	float AimAlpha = 0.f;
+	FVector AimPoint = FVector::ZeroVector;
+	bool bHasAimPoint = false;
+	/** Seconds left of the bash's follow-through (the shield comes back). */
+	float BashRecover = 0.f;
 };

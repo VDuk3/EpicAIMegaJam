@@ -76,6 +76,24 @@ struct FGBClipInfo
 	float Length = 0.f;
 };
 
+/**
+ * A two-bone IK goal for one arm (upperarm, lowerarm, hand), in the mesh component's space (unscaled mesh cm).
+ * The hand keeps its rotation relative to the forearm unless bRotation gives one in component space.
+ */
+struct FGBArmIK
+{
+	float Alpha = 0.f;               // 0 = the clip's arm, 1 = the goal
+	/** False: Location is a point. True: Location is a direction from the upper arm's root, its length a fraction of the arm's reach. */
+	bool bFromShoulder = false;
+	FVector Location = FVector::ZeroVector;
+	bool bRotation = false;
+	FQuat Rotation = FQuat::Identity;
+	/** Component-space direction, from the shoulder, towards which the elbow bends. */
+	FVector Pole = FVector(0.f, 0.f, -1.f);
+	/** Degrees the recoil kick turns this arm's aim up (0 for an arm that does not shoot). */
+	float RecoilDegrees = 0.f;
+};
+
 /** What the game thread hands to the proxy each frame. */
 struct FGBEnemyAnimFrame
 {
@@ -94,6 +112,7 @@ struct FGBEnemyAnimFrame
 	float FlinchKick = 0.f;          // 0..1, decaying
 	float FlinchSide = 1.f;          // +1 / -1
 	float PoseAlpha = 0.f;           // 0..1: how much of the data-driven pose layer (a raised shield) is applied
+	FGBArmIK Arm[2];                 // two-bone IK of the left (0) and right (1) arm, applied last
 };
 
 /** One bone rotation of the pose layer (Enemies.json "Pose.ShieldRaised" = "bone:pitch,yaw,roll;bone:..."). */
@@ -118,6 +137,9 @@ public:
 	/** Parses a pose layer string and keeps it; PoseTarget (0..1) is blended to over BlendSeconds. */
 	void SetPoseLayer(const FString& Spec);
 	void SetPoseTarget(float Target, float BlendSeconds) { PoseTarget = Target; PoseBlend = FMath::Max(BlendSeconds, 0.01f); }
+	/** Two-bone IK of an arm (0 left, 1 right); Alpha 0 turns it off. While an arm is driven, shots and hits use the procedural kicks, not clips. */
+	void SetArmIK(int32 Side, const FGBArmIK& Goal) { if (Side == 0 || Side == 1) { Frame.Arm[Side] = Goal; } }
+	bool HasArmIK() const { return Frame.Arm[0].Alpha > 0.f || Frame.Arm[1].Alpha > 0.f; }
 	const TArray<FGBPoseOffset>& GetPoseOffsets() const { return PoseOffsets; }
 	/** The slot a locomotion slot currently plays (posture and sprint substitutes). */
 	int32 ResolveSlot(int32 Slot) const;
