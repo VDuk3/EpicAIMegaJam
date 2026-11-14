@@ -70,8 +70,22 @@ Rendered from the player's eye and corrected:
 - **A new smoke block, `gb.Smoke tour`.** A map marks review spots with actors tagged `GBTour`; the block puts the player on each one, checks the floor and takes a screenshot through the real game camera. It replaces the deleted `sitemap` block with one that knows nothing about any particular map.
 - **GDD:** no version change; §4 "The site" already says there is no map yet. It will be updated when the owner accepts a version.
 
+## The two side rooms (after the owner's "Sí, sigue")
+The owner saw version 1 and answered *"Sí, sigue"* (yes, go on) to "do I keep this approach and build the corridor's two rooms?".
+
+- **Source:** the Modular SciFi Station example map, written to `Design/Levels/kits/mss_demo.json` (1,694 pieces). Its small stair module (11 x 9 m, two floors) was read piece by piece: lower door, four stair modules, the gallery ring 4 m up, the roof assembly.
+- **Air plant** (behind the right alcove's door, reached over the kit's bridge across the service pit): the module placed whole, as its author built it. The demo's upper door led to an outside tunnel; here that wall is closed with the kit's plain wall piece.
+- **Store room** (behind a new door in the first bay's left wall): the module's lower story only, closed by its own roof assembly brought down 4 m. The door is the same frame the High Tech Base demo uses in the right alcove, put in place of one wall panel (same 2 x 3 m module). What the demo kept behind that wall was removed to make room.
+- **Furnishing of the store:** seven crates stacked against the back wall, three glass-door cabinets from the lab kit (dark skin), a desk by the door, barrels and two drums.
+- **Lamps:** the demo's lamp Blueprints are replaced by the same lamp mesh with a light of our own, in the units and levels of the rest of the map (the pack's lamps are 5 to 35 lumens and rely on its own exposure).
+
+**Self-review, in the game** (`gb.Smoke tour`, now 17 spots):
+- First pass: both rooms were white and far brighter than the corridor (the pack's walls are white panels); the gallery ended in a door onto black nothing; the store was nearly empty.
+- Fixes: every station material except glass, lamps and signs now uses a darker instance of itself; room lamps cut to a third; the blind door closed; the store furnished.
+- Second pass: `SMOKE tour block passed: 17 spots, 0 without floor`, no errors, 76 s. Screenshots: `media/2026-11-13/futurebase_v2_rooms.png`.
+- Also fixed: the bay's stairs sat 20 cm high against the kit's own convention (a floor tile's surface is 20 cm above its origin, a stair module sits at origin height).
+
 ## Not done in this block
-- The two side rooms off the corridor (the plan's store room and a second room). The corridor door leads nowhere yet.
 - The containment pit, the lock, the corridor bend, the bay's entry landing and a walkable pit (plan sections 3.1 to 3.3 and 3.6).
 - Enemies, the portal back, pickups and encounters on this map.
 - The game's default map is still the test arena, and nothing was packaged.

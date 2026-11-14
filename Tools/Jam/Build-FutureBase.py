@@ -66,8 +66,9 @@ def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=Tr
         # The pack's steel is painted white (it is a Mars station). In our base it is dark service steel.
         for i, slot in enumerate(asset(path).static_materials):
             name = slot.material_interface.get_name() if slot.material_interface else ''
-            if name in STEEL:
-                c.set_material(i, asset(STEEL[name]))
+            dark = dark_instance(slot.material_interface) if slot.material_interface else None
+            if dark:
+                c.set_material(i, asset(dark))
     c.set_collision_profile_name('BlockAll' if collide else 'NoCollision')
     c.set_editor_property('cast_shadow', shadow)
     tag(a, stage, folder)
@@ -100,6 +101,33 @@ STEEL_DEF = {'MI_interior_trim_01': ('MI_GB_SteelTrim', '/Game/ModularSciFiStati
              'MI_metal_01': ('MI_GB_SteelPlate', '/Game/ModularSciFiStation/Materials/Metal/MI_metal_01', (0.30, 0.30, 0.31)),
              'MI_exterior_trim_01': ('MI_GB_SteelTruss', '/Game/ModularSciFiStation/Materials/Trims/MI_exterior_trim_01', (0.34, 0.33, 0.32))}
 STEEL = {}
+
+
+PANEL_TINT = (0.34, 0.36, 0.40)   # the pack's white wall and ceiling panels, brought down to painted grey-blue steel
+NO_TINT = ('glass', 'lights', 'cable', 'decal', 'numbers', 'red', 'sky', 'sun', 'landscape', 'rocks', 'shape_u')
+
+
+def dark_instance(mi):
+    """Our darker instance of one of the pack's materials (made on first use), or None for the ones left alone
+    (glass, lamps, signs)."""
+    name = mi.get_name()
+    if name in STEEL:
+        return STEEL[name]
+    if not name.startswith('MI_') or any(k in name for k in NO_TINT):
+        return None
+    mel = unreal.MaterialEditingLibrary
+    ours = 'MI_GB_' + name[3:]
+    path = KIT_MATS + '/' + ours
+    if not eal.does_asset_exist(path):
+        new = unreal.AssetToolsHelpers.get_asset_tools().create_asset(ours, KIT_MATS, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
+        mel.set_material_instance_parent(new, mi)
+    new = unreal.load_asset(path)
+    base = mel.get_material_instance_vector_parameter_value(mi, 'BaseColor01')
+    mel.set_material_instance_vector_parameter_value(new, 'BaseColor01', unreal.LinearColor(base.r * PANEL_TINT[0], base.g * PANEL_TINT[1], base.b * PANEL_TINT[2], 1.0))
+    mel.update_material_instance(new)
+    eal.save_asset(path, only_if_is_dirty=False)
+    STEEL[name] = path
+    return path
 
 
 def ensure_steel():
@@ -209,9 +237,24 @@ async def stage_world():
 async def stage_corridor():
     s = 'corridor'
     htb = kit('htb_demo')
-    n = place_section(s, 'Kit', select(htb, x=(880, 2905)), HTB_ORIGIN)
+    items = []
+    for it in select(htb, x=(880, 2905)):
+        name = it.get('mesh', '')
+        x0, y0 = it.get('bmin', it['loc'])[0] - HTB_ORIGIN[0], it.get('bmin', it['loc'])[1] - HTB_ORIGIN[1]
+        x1, y1 = it.get('bmax', it['loc'])[0] - HTB_ORIGIN[0], it.get('bmax', it['loc'])[1] - HTB_ORIGIN[1]
+        if name.endswith('SM_Door_01'):
+            continue                                   # the right alcove's door stands open: the air plant is behind it
+        if 'SM_Grate_02' in name and 540 <= x0 <= 560 and y1 < 0:
+            continue                                   # this wall panel of the first bay becomes the store room's door
+        if it['kind'] == 'mesh' and 90 <= x0 and x1 <= 1110 and y1 <= -495 and y0 < -640:
+            continue                                   # what the demo kept behind that wall; the store room stands there now
+        items.append(it)
+    n = place_section(s, 'Kit', items, HTB_ORIGIN)
     box(s, 'Collision', (-20, 2020), (-520, 520), (-60, -2))
-    log.append('corridor: %d pieces from the kit demo (two bays)' % n)
+    # The store room's door: the same frame the kit uses in the right alcove, in place of one wall panel.
+    mesh(s, 'Doors', HTB + 'SM_Door_01_Frame', (550, -600, 0), rot(yaw=180),
+         mats=['/Game/High_Tech_Base/Materials/MI_Tile_Machine_01', '/Game/High_Tech_Base/Materials/MI_Tile_Grate', '/Game/High_Tech_Base/Materials/MI_Rubber_02'])
+    log.append('corridor: %d pieces from the kit demo (two bays), door frame for the store room' % n)
 
 
 async def stage_hall():
@@ -275,7 +318,7 @@ def stairs(s, x, y, z, yaw, steps, rails=(True, True)):
     climbing along `yaw` (0 = +X). The module itself climbs towards its own -X, so it is turned by yaw + 180."""
     rad = math.radians(yaw)
     for k in range(steps):
-        p = (x + math.cos(rad) * 150 * k, y + math.sin(rad) * 150 * k, z + 100 * k)
+        p = (x + math.cos(rad) * 150 * k, y + math.sin(rad) * 150 * k, z - DECK + 100 * k)
         mesh(s, 'Stairs', MSS + 'Stairs/SM_stairs_01', p, rot(yaw=yaw + 180), collide=True)
         if rails[0]:
             mesh(s, 'Stairs', MSS + 'Railing/SM_railing_stairs_left_02', p, rot(yaw=yaw + 180), collide=True)
@@ -362,12 +405,95 @@ async def stage_arrival():
     log.append('arrival: seal plinth, emitters, cable trays, player start in front of the seal')
 
 
+# ---- the two side rooms: a module of the Modular SciFi Station demo, placed as its author built it ----
+MOD_BOX = (-2160.0, -1040.0, -1760.0, -840.0)     # the module's walls in the demo map (x0, x1, y0, y1)
+MOD_DOOR = (-1050.0, -1300.0, 170.0)              # outer threshold of its lower door, at floor-surface height
+LAMP_OF = {'BP_Wall_Lamp_120_C': ('SM_lamp_120_01', (186, 228, 255), 0.7, 550.0), 'BP_Door_Lamp_01_C': ('SM_lamp_120_01', (186, 228, 255), 0.7, 550.0),
+           'BP_Tunnel_Lamp_120_C': ('SM_lamp_120_01', (186, 228, 255), 0.7, 550.0), 'BP_Wall_Lamp_80_red_C': ('SM_lamp_80_01', (255, 85, 64), 0.9, 450.0),
+           'BP_Ceiling_Lamp_200_C': ('SM_lamp_200_02', (186, 228, 255), 1.4, 800.0)}
+
+
+def module_room(stage, to, yaw, two_story):
+    """Places the demo's stair module with its lower door's threshold on our point `to`, turned `yaw`.
+    two_story: the whole module (lower floor, the stair, the gallery 4 m up, its roof).
+    Otherwise only its lower story, closed by the module's own roof assembly brought down 4 m."""
+    rad = math.radians(yaw)
+    cs, sn = math.cos(rad), math.sin(rad)
+    turn = rot(yaw=yaw)
+    n = 0
+    for it in kit('mss_demo'):
+        if it['kind'] == 'mesh':
+            cx, cy = (it['bmin'][0] + it['bmax'][0]) / 2.0, (it['bmin'][1] + it['bmax'][1]) / 2.0
+        else:
+            cx, cy = it['loc'][0], it['loc'][1]
+        if not (MOD_BOX[0] <= cx <= MOD_BOX[1] and MOD_BOX[2] <= cy <= MOD_BOX[3]):
+            continue
+        name = it.get('mesh', it.get('class', '')).split('.')[-1]
+        if any(k in name for k in ('hydraulic', 'antenna', 'radar', 'wall_roof', 'tunnel_connection', 'rock')):
+            continue                                   # stilts, roof gear and the outer skin's trim: nothing of the inside
+        z = it['loc'][2]
+        dz = 0.0
+        if z < 150 or z >= 1000:
+            continue
+        if not two_story:
+            if z >= 940:
+                dz = -400.0                            # the roof slab with its pipes and trusses becomes this room's ceiling
+            elif z >= 550 or 'stairs' in name or name.startswith('SM_railing'):
+                continue
+        dx, dy = it['loc'][0] - MOD_DOOR[0], it['loc'][1] - MOD_DOOR[1]
+        loc = (to[0] + dx * cs - dy * sn, to[1] + dx * sn + dy * cs, to[2] + z + dz - MOD_DOOR[2])
+        r = unreal.MathLibrary.compose_rotators(rot(*it['rot']), turn)
+        if it['kind'] == 'mesh':
+            path = it['mesh']
+            if name == 'SM_wall_door_400_a_01' and z >= 550:
+                path = MSS + 'Walls/A/SM_wall_400_a_02'      # the demo's upper door went outside; here the gallery ends in a wall
+            mesh(stage, 'Module', path, loc, r, it['scale'], it['mats'])
+            n += 1
+        elif name in LAMP_OF:
+            lamp, color, cd, radius = LAMP_OF[name]
+            folder = 'Lamps/Meshes/' if True else ''
+            mesh(stage, 'Lamps', MSS + folder + lamp, loc, r)
+            light(stage, 'Lamps', 'PointLight', (loc[0], loc[1], loc[2] - 25), rot(), {'intensity': cd, 'color': color, 'attenuation_radius': radius, 'shadow': False})
+            n += 1
+    return n
+
+
+async def stage_rooms():
+    """Plan 3.5 and its second room. Both are the same kind of module, as rooms of one base would be; one keeps
+    its two floors, the other is a single low store."""
+    s = 'rooms'
+    # Air plant, behind the right alcove's door (bridge over the service pit, then the door at Y 900..950).
+    # Two floors joined by a stair: vent drums and cable trays below, the control gallery 4 m up.
+    n1 = module_room(s, (1550.0, 950.0, 0.0), -90.0, True)
+    # Store room, behind the new door of the first bay (wall at Y -600). One story.
+    n2 = module_room(s, (650.0, -650.0, 0.0), 90.0, False)
+    # What a store holds, where a storeman would put it: stacked against the back wall, a clear lane from the door.
+    crate = HTB + 'SM_Prop_02'
+    for x, y, yaw, z in ((480, -1640, 0, 0), (590, -1645, 6, 0), (535, -1642, -8, 105), (700, -1640, 0, 0),
+                         (320, -1200, 90, 0), (320, -1090, 84, 0), (322, -1146, 95, 105)):
+        mesh(s, 'Store', crate, (x, y, z + 2), rot(yaw=yaw), collide=True)
+    for i, (x, y) in enumerate(((985, -820), (990, -880), (940, -850))):
+        mesh(s, 'Store', '/Game/SciFiWorld/Meshes/SM_LabBarrels01_%d' % (i + 1), (x, y, 0), rot(yaw=40 * i), collide=True)
+    # Cabinets along the east wall (glass-door units from the lab kit, dark skin) and the storeman's desk by the door.
+    lab = '/Game/SciFiWorld/Meshes/'
+    dark = ['/Game/SciFiWorld/Materials/MI_LabFridge01B']
+    for y in (-1080, -1260, -1440):
+        mesh(s, 'Store', lab + 'SM_LabFridge01_2_Base', (1040, y, 0), rot(yaw=180), mats=dark, collide=True)
+        mesh(s, 'Store', lab + 'SM_LabFridge01_2_Shelves', (1040, y, 0), rot(yaw=180), mats=dark)
+    mesh(s, 'Store', lab + 'SM_LabDesk03_2', (300, -760, 0), rot(yaw=0), mats=['/Game/SciFiWorld/Materials/MI_LabDesk03B'], collide=True)
+    mesh(s, 'Store', HTB + 'SM_Prop_04', (400, -1600, 0), collide=True)
+    mesh(s, 'Store', HTB + 'SM_Prop_04', (860, -1610, 0), rot(yaw=30), collide=True)
+    log.append('rooms: air plant (%d pieces, two floors) and store room (%d pieces, one story), 7 crates, 3 barrels' % (n1, n2))
+
+
 # Review spots: (name, x, y, floor z, yaw). The game's smoke block "tour" puts the player on each one and takes a
 # screenshot through the real game camera (gb.Smoke tour).
 TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('03_corridor', 300, -50, 0, 0),
         ('04_corridor_alcove', 1500, 0, 0, 90), ('05_enter_bay', 2050, -200, 0, 12), ('06_west_stair', 2000, -100, 0, 35),
         ('07_catwalk', 2700, 200, 300, -5), ('08_bridge', 4250, -100, 300, -90), ('09_lookout', 4250, -600, 300, 150),
-        ('10_bay_floor_east', 4600, -150, 0, 180), ('11_branch', 3380, 2200, 0, -90), ('12_under_catwalk', 3380, 500, 0, -90)]
+        ('10_bay_floor_east', 4600, -150, 0, 180), ('11_branch', 3380, 2200, 0, -90), ('12_under_catwalk', 3380, 500, 0, -90),
+        ('13_alcove_bridge', 1550, 620, 0, 90), ('14_air_plant', 1350, 1400, 0, 20), ('15_air_plant_gallery', 1550, 1150, 410, 90),
+        ('16_store_door', 650, -350, 0, -90), ('17_store', 650, -1000, 0, -90)]
 
 
 async def stage_tour():
@@ -376,8 +502,8 @@ async def stage_tour():
         a = eas.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(x, y, z), rot(yaw=yaw))
         a.tags = [unreal.Name(TAG), unreal.Name('stage_' + s), unreal.Name('GBTour'), unreal.Name('tour_' + name)]
         a.set_folder_path(unreal.Name('Base/tour'))
-    nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(1900, 650, 300), rot())
-    nav.set_actor_scale3d(unreal.Vector(80.0, 40.0, 6.0))    # the volume's brush is a 2 m cube
+    nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(1900, 400, 300), rot())
+    nav.set_actor_scale3d(unreal.Vector(80.0, 44.0, 8.0))    # the volume's brush is a 2 m cube
     tag(nav, s, 'Gameplay')
     log.append('tour: %d review spots, nav bounds' % len(TOUR))
 
@@ -408,7 +534,7 @@ def enable_collision():
 
 
 ALL = [('world', stage_world), ('corridor', stage_corridor), ('hall', stage_hall), ('control', stage_control),
-       ('hall_design', stage_hall_design), ('arrival', stage_arrival), ('tour', stage_tour)]
+       ('hall_design', stage_hall_design), ('arrival', stage_arrival), ('rooms', stage_rooms), ('tour', stage_tour)]
 
 # ---- run ----
 if not eal.does_asset_exist(MAP):

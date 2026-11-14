@@ -1,0 +1,6339 @@
+{
+"level": "SciFiCreaturesResearchRoomB",
+"items": [
+{
+"loc": [
+1225.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+1050,
+50,
+0
+],
+"bmax": [
+1400,
+400,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+875.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+700,
+50,
+0
+],
+"bmax": [
+1050,
+400,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+875.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+700,
+400,
+0
+],
+"bmax": [
+1050,
+750,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+1225.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+1050,
+400,
+0
+],
+"bmax": [
+1400,
+750,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+1425.0,
+400.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MGate01-500x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MGate01-500x350-1_GateFrame.SM_MGate01-500x350-1_GateFrame",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MGates01B.MI_MGates01B"
+],
+"bmin": [
+1175,
+150,
+0
+],
+"bmax": [
+1675,
+650,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1399.2,
+700.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-50x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-50x350-1.SM_MWall03-50x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+1394,
+700,
+0
+],
+"bmax": [
+1399,
+750,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+50.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-50x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-50x350-1.SM_MWall03-50x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+1395,
+50,
+0
+],
+"bmax": [
+1400,
+100,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+675.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MPillar02_1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MPillar02_1.SM_MPillar02_1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MPillar02B.MI_MPillar02B"
+],
+"bmin": [
+1300,
+650,
+0
+],
+"bmax": [
+1400,
+700,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1400.0,
+125.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MPillar02_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MPillar02_1.SM_MPillar02_1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MPillar02B.MI_MPillar02B"
+],
+"bmin": [
+1300,
+100,
+0
+],
+"bmax": [
+1400,
+150,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1050.0,
+50.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+700,
+49,
+0
+],
+"bmax": [
+1400,
+55,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1050.0,
+750.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+700,
+745,
+0
+],
+"bmax": [
+1400,
+751,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+1225.0,
+225.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+1050,
+50,
+350
+],
+"bmax": [
+1400,
+400,
+354
+],
+"shadow": true
+},
+{
+"loc": [
+875.0,
+225.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+700,
+50,
+350
+],
+"bmax": [
+1050,
+400,
+354
+],
+"shadow": true
+},
+{
+"loc": [
+1225.0,
+575.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+1050,
+400,
+350
+],
+"bmax": [
+1400,
+750,
+354
+],
+"shadow": true
+},
+{
+"loc": [
+875.0,
+575.0,
+350.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+700,
+400,
+350
+],
+"bmax": [
+1050,
+750,
+354
+],
+"shadow": true
+},
+{
+"loc": [
+1050.0,
+400.0,
+275.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "PointLight",
+"kind": "light",
+"class": "PointLight",
+"intensity": 3.0,
+"color": [
+255,
+255,
+255
+],
+"shadow": false,
+"units": "<LightUnits.CANDELAS: 1>",
+"attenuation_radius": 600.0,
+"source_radius": 0.0
+},
+{
+"loc": [
+700.0,
+400.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MPilaster01-700x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MPilaster01-700x350-2.SM_MPilaster01-700x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MPilaster01B.MI_MPilaster01B"
+],
+"bmin": [
+675,
+49,
+0
+],
+"bmax": [
+700,
+751,
+376
+],
+"shadow": true
+},
+{
+"loc": [
+675.0,
+775.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MPillar02_3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MPillar02_1.SM_MPillar02_1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MPillar02B.MI_MPillar02B"
+],
+"bmin": [
+575,
+750,
+0
+],
+"bmax": [
+675,
+800,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+675.0,
+25.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MPillar02_4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MPillar02_1.SM_MPillar02_1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MPillar02B.MI_MPillar02B"
+],
+"bmin": [
+575,
+0,
+0
+],
+"bmax": [
+675,
+50,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+500.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+325,
+-300,
+0
+],
+"bmax": [
+675,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-25,
+-300,
+0
+],
+"bmax": [
+325,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-9",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+-300,
+0
+],
+"bmax": [
+-25,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+750,
+0
+],
+"bmax": [
+-25,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-11",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-25,
+750,
+0
+],
+"bmax": [
+325,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-13",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-725,
+-300,
+0
+],
+"bmax": [
+-375,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-14",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1075,
+-300,
+0
+],
+"bmax": [
+-725,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-15",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1425,
+-300,
+0
+],
+"bmax": [
+-1075,
+50,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-16",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1425,
+750,
+0
+],
+"bmax": [
+-1075,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-17",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1075,
+750,
+0
+],
+"bmax": [
+-725,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-18",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-725,
+750,
+0
+],
+"bmax": [
+-375,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-700x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-700x350-2.SM_MFloor02-700x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-25,
+1100,
+0
+],
+"bmax": [
+675,
+1450,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-700x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-700x350-2.SM_MFloor02-700x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-725,
+1100,
+0
+],
+"bmax": [
+-25,
+1450,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-700x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-700x350-2.SM_MFloor02-700x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1425,
+1100,
+0
+],
+"bmax": [
+-725,
+1450,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+1450.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03BOff.MI_MWall03BOff"
+],
+"bmin": [
+-25,
+1445,
+0
+],
+"bmax": [
+675,
+1451,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+1450.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03BOff.MI_MWall03BOff"
+],
+"bmin": [
+-725,
+1445,
+0
+],
+"bmax": [
+-25,
+1451,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+1450.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03BOff.MI_MWall03BOff"
+],
+"bmin": [
+-1425,
+1445,
+0
+],
+"bmax": [
+-725,
+1451,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-25,
+1100,
+350
+],
+"bmax": [
+325,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner2.SM_MCeiling03-2-350x350-Corner2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+325,
+1100,
+350
+],
+"bmax": [
+675,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-375,
+1100,
+350
+],
+"bmax": [
+-25,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-725,
+1100,
+350
+],
+"bmax": [
+-375,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1075,
+1100,
+350
+],
+"bmax": [
+-725,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+1100.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner2.SM_MCeiling03-2-350x350-Corner2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1425,
+1100,
+350
+],
+"bmax": [
+-1075,
+1450,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-9",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1425,
+750,
+350
+],
+"bmax": [
+-1075,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1425,
+400,
+350
+],
+"bmax": [
+-1075,
+750,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-11",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1425,
+50,
+350
+],
+"bmax": [
+-1075,
+400,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+500.0,
+-650.0,
+175.0
+],
+"rot": [
+0.0,
+180.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-2.SM_MCeiling03-350x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+325,
+-672,
+0
+],
+"bmax": [
+675,
+-649,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+-650.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall07-350x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall07-350x350-1.SM_MWall07-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall07B.MI_MWall07B",
+"/Game/SciFiWorld/Materials/MI_ScreenAspect15x6-4.MI_ScreenAspect15x6-4"
+],
+"bmin": [
+-25,
+-741,
+0
+],
+"bmax": [
+325,
+-504,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+-650.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall07-350x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall07-350x350-1.SM_MWall07-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall07B.MI_MWall07B",
+"/Game/SciFiWorld/Materials/MI_ScreenAspect15x6-3.MI_ScreenAspect15x6-3"
+],
+"bmin": [
+-375,
+-741,
+0
+],
+"bmax": [
+-25,
+-504,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+-650.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall07-350x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall07-350x350-1.SM_MWall07-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall07B.MI_MWall07B",
+"/Game/SciFiWorld/Materials/MI_ScreenAspect15x6-2.MI_ScreenAspect15x6-2"
+],
+"bmin": [
+-725,
+-741,
+0
+],
+"bmax": [
+-375,
+-504,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+-650.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall07-350x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall07-350x350-1.SM_MWall07-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall07B.MI_MWall07B",
+"/Game/SciFiWorld/Materials/MI_ScreenAspect15x6-1.MI_ScreenAspect15x6-1"
+],
+"bmin": [
+-1075,
+-741,
+0
+],
+"bmax": [
+-725,
+-504,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+-650.0,
+175.0
+],
+"rot": [
+0.0,
+180.0,
+90.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-2.SM_MCeiling03-350x350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+-1425,
+-672,
+0
+],
+"bmax": [
+-1075,
+-649,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-12",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+-1425,
+-300,
+350
+],
+"bmax": [
+-1075,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner2.SM_MCeiling03-2-350x350-Corner2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1425,
+-650,
+350
+],
+"bmax": [
+-1075,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-13",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-725,
+-650,
+350
+],
+"bmax": [
+-375,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-14",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1075,
+-650,
+350
+],
+"bmax": [
+-725,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-15",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-25,
+-650,
+350
+],
+"bmax": [
+325,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-16",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-375,
+-650,
+350
+],
+"bmax": [
+-25,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+-300.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner2.SM_MCeiling03-2-350x350-Corner2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+325,
+-650,
+350
+],
+"bmax": [
+675,
+-300,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-17",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+325,
+750,
+350
+],
+"bmax": [
+675,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-18",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+325,
+400,
+350
+],
+"bmax": [
+675,
+750,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-19",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+325,
+50,
+350
+],
+"bmax": [
+675,
+400,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-20",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-3.SM_MCeiling03-2-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2BOff.MI_MCeiling03-2BOff"
+],
+"bmin": [
+325,
+-300,
+350
+],
+"bmax": [
+675,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner.SM_MCeiling03-2-350x350-Corner",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-25,
+-300,
+525
+],
+"bmax": [
+325,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner.SM_MCeiling03-2-350x350-Corner",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-25,
+750,
+525
+],
+"bmax": [
+325,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner.SM_MCeiling03-2-350x350-Corner",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1075,
+750,
+525
+],
+"bmax": [
+-725,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-Corner8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-Corner.SM_MCeiling03-2-350x350-Corner",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1075,
+-300,
+525
+],
+"bmax": [
+-725,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-21",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-725,
+-300,
+525
+],
+"bmax": [
+-375,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+-125.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-22",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-375,
+-300,
+525
+],
+"bmax": [
+-25,
+50,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-23",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-725,
+750,
+525
+],
+"bmax": [
+-375,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+925.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-24",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-375,
+750,
+525
+],
+"bmax": [
+-25,
+1100,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-3.SM_MCeiling03-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+-375,
+50,
+524
+],
+"bmax": [
+-25,
+400,
+547
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-3.SM_MCeiling03-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+-375,
+400,
+524
+],
+"bmax": [
+-25,
+750,
+547
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-3.SM_MCeiling03-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+-725,
+50,
+524
+],
+"bmax": [
+-375,
+400,
+547
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_MCeiling03-350x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-350x350-3.SM_MCeiling03-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03B.MI_MCeiling03B"
+],
+"bmin": [
+-725,
+400,
+524
+],
+"bmax": [
+-375,
+750,
+547
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-25",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-25,
+50,
+525
+],
+"bmax": [
+325,
+400,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-26",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-25,
+400,
+525
+],
+"bmax": [
+325,
+750,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+225.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-27",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1075,
+50,
+525
+],
+"bmax": [
+-725,
+400,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+575.0,
+525.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MCeiling03-2-350x350-28",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MCeiling03-2-350x350-1.SM_MCeiling03-2-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MCeiling03-2B.MI_MCeiling03-2B"
+],
+"bmin": [
+-1075,
+400,
+525
+],
+"bmax": [
+-725,
+750,
+529
+],
+"shadow": true
+},
+{
+"loc": [
+-1425.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+-1426,
+1100,
+0
+],
+"bmax": [
+-1420,
+1450,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1425.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+-1426,
+750,
+0
+],
+"bmax": [
+-1420,
+1100,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1425.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+-1426,
+-650,
+0
+],
+"bmax": [
+-1420,
+-300,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1425.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+-1426,
+-300,
+0
+],
+"bmax": [
+-1420,
+50,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+-1425.0,
+400.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-700x350-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-700x350-1.SM_MWall03-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03BOff.MI_MWall03BOff"
+],
+"bmin": [
+-1426,
+50,
+0
+],
+"bmax": [
+-1420,
+750,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+322,
+-650,
+0
+],
+"bmax": [
+337,
+-300,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1078,
+-650,
+0
+],
+"bmax": [
+-1063,
+-300,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+-585.0,
+12.5
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair09",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair09.SM_Chair09",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair09B.MI_Chair09B"
+],
+"bmin": [
+-942,
+-631,
+12
+],
+"bmax": [
+-858,
+-519,
+165
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+-585.0,
+12.5
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair09.SM_Chair09",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair09B.MI_Chair09B"
+],
+"bmin": [
+-592,
+-631,
+12
+],
+"bmax": [
+-508,
+-519,
+165
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+-585.0,
+12.5
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair11",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair09.SM_Chair09",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair09B.MI_Chair09B"
+],
+"bmin": [
+-242,
+-631,
+12
+],
+"bmax": [
+-158,
+-519,
+165
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+-585.0,
+12.5
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair12",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair09.SM_Chair09",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair09B.MI_Chair09B"
+],
+"bmin": [
+108,
+-631,
+12
+],
+"bmax": [
+192,
+-519,
+165
+],
+"shadow": true
+},
+{
+"loc": [
+-901.3,
+-701.0,
+159.7
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight",
+"kind": "light",
+"class": "RectLight",
+"intensity": 8.0,
+"color": [
+101,
+235,
+255
+],
+"shadow": false,
+"units": "<LightUnits.CANDELAS: 1>",
+"attenuation_radius": 1000.0,
+"source_width": 200.0,
+"source_height": 64.0
+},
+{
+"loc": [
+-551.3,
+-701.0,
+159.7
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight2",
+"kind": "light",
+"class": "RectLight",
+"intensity": 8.0,
+"color": [
+101,
+235,
+255
+],
+"shadow": false,
+"units": "<LightUnits.CANDELAS: 1>",
+"attenuation_radius": 1000.0,
+"source_width": 200.0,
+"source_height": 64.0
+},
+{
+"loc": [
+-201.3,
+-701.0,
+159.7
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight3",
+"kind": "light",
+"class": "RectLight",
+"intensity": 8.0,
+"color": [
+101,
+235,
+255
+],
+"shadow": false,
+"units": "<LightUnits.CANDELAS: 1>",
+"attenuation_radius": 1000.0,
+"source_width": 200.0,
+"source_height": 64.0
+},
+{
+"loc": [
+148.7,
+-701.0,
+159.7
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "RectLight4",
+"kind": "light",
+"class": "RectLight",
+"intensity": 8.0,
+"color": [
+101,
+235,
+255
+],
+"shadow": false,
+"units": "<LightUnits.CANDELAS: 1>",
+"attenuation_radius": 1000.0,
+"source_width": 200.0,
+"source_height": 64.0
+},
+{
+"loc": [
+675.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+670,
+-650,
+0
+],
+"bmax": [
+676,
+-300,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+675.0,
+-125.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+670,
+-300,
+0
+],
+"bmax": [
+676,
+50,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+675.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+670,
+750,
+0
+],
+"bmax": [
+676,
+1100,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+675.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MWall03-350x350-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MWall03-350x350-1.SM_MWall03-350x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MWall03B.MI_MWall03B"
+],
+"bmin": [
+670,
+1100,
+0
+],
+"bmax": [
+676,
+1450,
+350
+],
+"shadow": true
+},
+{
+"loc": [
+275.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector01",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+147,
+1097,
+-62
+],
+"bmax": [
+403,
+1353,
+194
+],
+"shadow": true
+},
+{
+"loc": [
+-176.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+-304,
+1097,
+-62
+],
+"bmax": [
+-48,
+1353,
+194
+],
+"shadow": true
+},
+{
+"loc": [
+-576.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+-704,
+1097,
+-62
+],
+"bmax": [
+-448,
+1353,
+194
+],
+"shadow": true
+},
+{
+"loc": [
+-926.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+-1054,
+1097,
+-62
+],
+"bmax": [
+-798,
+1353,
+194
+],
+"shadow": true
+},
+{
+"loc": [
+-1326.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+-1454,
+1097,
+-62
+],
+"bmax": [
+-1198,
+1353,
+194
+],
+"shadow": true
+},
+{
+"loc": [
+-1000.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1003,
+1100,
+0
+],
+"bmax": [
+-988,
+1450,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+-675.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-678,
+1100,
+0
+],
+"bmax": [
+-663,
+1450,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+-275.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-278,
+1100,
+0
+],
+"bmax": [
+-263,
+1450,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+175.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+172,
+1100,
+0
+],
+"bmax": [
+187,
+1450,
+120
+],
+"shadow": true
+},
+{
+"loc": [
+275.0,
+1225.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_CreatureAlien05-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien05-Pose3.SM_CreatureAlien05-Pose3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien05HologramA.MI_CreatureAlien05HologramA"
+],
+"bmin": [
+234,
+1201,
+50
+],
+"bmax": [
+316,
+1245,
+266
+],
+"shadow": true
+},
+{
+"loc": [
+-175.0,
+1225.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_CreatureAlien04-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien04-Pose3.SM_CreatureAlien04-Pose3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien04HologramA.MI_CreatureAlien04HologramA"
+],
+"bmin": [
+-213,
+1199,
+50
+],
+"bmax": [
+-137,
+1266,
+264
+],
+"shadow": true
+},
+{
+"loc": [
+-575.0,
+1225.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_CreatureAlien03-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien03-Pose3.SM_CreatureAlien03-Pose3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien03HologramA.MI_CreatureAlien03HologramA"
+],
+"bmin": [
+-620,
+1197,
+50
+],
+"bmax": [
+-530,
+1248,
+266
+],
+"shadow": true
+},
+{
+"loc": [
+-925.0,
+1225.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_CreatureAlien02-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien02-Pose3.SM_CreatureAlien02-Pose3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien02HologramA.MI_CreatureAlien02HologramA"
+],
+"bmin": [
+-954,
+1201,
+50
+],
+"bmax": [
+-896,
+1239,
+253
+],
+"shadow": true
+},
+{
+"loc": [
+-1325.0,
+1225.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_CreatureAlien01-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien01-Pose3.SM_CreatureAlien01-Pose3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien01HologramA.MI_CreatureAlien01HologramA"
+],
+"bmin": [
+-1360,
+1211,
+50
+],
+"bmax": [
+-1290,
+1247,
+255
+],
+"shadow": true
+},
+{
+"loc": [
+25.0,
+1250.0,
+15.6
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_CreatureAlien04-Pose4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien04-Pose4.SM_CreatureAlien04-Pose4",
+"mats": [],
+"bmin": [
+-15,
+1183,
+37
+],
+"bmax": [
+63,
+1260,
+227
+],
+"shadow": true
+},
+{
+"loc": [
+475.0,
+1225.0,
+42.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_CreatureAlien05-Pose2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien05-Pose2.SM_CreatureAlien05-Pose2",
+"mats": [],
+"bmin": [
+431,
+1189,
+58
+],
+"bmax": [
+519,
+1242,
+270
+],
+"shadow": true
+},
+{
+"loc": [
+-397.8,
+1228.6,
+57.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_CreatureAlien03-Pose1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien03-Pose1.SM_CreatureAlien03-Pose1",
+"mats": [],
+"bmin": [
+-439,
+1185,
+57
+],
+"bmax": [
+-357,
+1251,
+258
+],
+"shadow": true
+},
+{
+"loc": [
+-1127.2,
+1208.2,
+62.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+-1.0,
+1.0,
+1.0
+],
+"label": "SM_CreatureAlien01-Pose4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien01-Pose4.SM_CreatureAlien01-Pose4",
+"mats": [],
+"bmin": [
+-1158,
+1182,
+54
+],
+"bmax": [
+-1079,
+1240,
+271
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+50.0,
+25.0
+],
+"rot": [
+90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1425,
+49,
+0
+],
+"bmax": [
+-1075,
+50,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+50.0,
+25.0
+],
+"rot": [
+90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1075,
+49,
+0
+],
+"bmax": [
+-725,
+50,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+50.0,
+25.0
+],
+"rot": [
+90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-725,
+49,
+0
+],
+"bmax": [
+-375,
+50,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+750.0,
+25.0
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1425,
+750,
+0
+],
+"bmax": [
+-1075,
+751,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+750.0,
+25.0
+],
+"rot": [
+-90.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1075,
+749,
+0
+],
+"bmax": [
+-725,
+750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+750.0,
+25.0
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-725,
+750,
+0
+],
+"bmax": [
+-375,
+751,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+750.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-StepsSide-50-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-StepsSide-50-1.SM_MFloor02-StepsSide-50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+750,
+0
+],
+"bmax": [
+-288,
+750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+50.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+-1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-StepsSide-50-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-StepsSide-50-1.SM_MFloor02-StepsSide-50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02A.MI_MFloor02A"
+],
+"bmin": [
+-375,
+50,
+0
+],
+"bmax": [
+-288,
+50,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-Steps-50-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-Steps-50-1.SM_MFloor02-Steps-50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+50,
+0
+],
+"bmax": [
+-288,
+400,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-Steps-50-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-Steps-50-1.SM_MFloor02-Steps-50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+400,
+0
+],
+"bmax": [
+-288,
+750,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Steps-350x50-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Steps-350x50-1.SM_MStair01-Steps-350x50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-368,
+72,
+7
+],
+"bmax": [
+-270,
+378,
+49
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Steps-350x50-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Steps-350x50-1.SM_MStair01-Steps-350x50-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-368,
+422,
+7
+],
+"bmax": [
+-270,
+728,
+49
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+750.0,
+25.0
+],
+"rot": [
+-90.0,
+90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x50-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x50-2.SM_MFloor02-350x50-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-1075,
+750,
+0
+],
+"bmax": [
+-725,
+751,
+50
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+50.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-725,
+47,
+50
+],
+"bmax": [
+-375,
+62,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+50.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-9",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1075,
+47,
+50
+],
+"bmax": [
+-725,
+62,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+50.0,
+50.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1425,
+47,
+50
+],
+"bmax": [
+-1075,
+62,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+750.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-11",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-725,
+738,
+50
+],
+"bmax": [
+-375,
+753,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+750.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-12",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1075,
+738,
+50
+],
+"bmax": [
+-725,
+753,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+750.0,
+50.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-13",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-1425,
+738,
+50
+],
+"bmax": [
+-1075,
+753,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-1421.0,
+400.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "BP_LabCapsule11_1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule11_1_Capsule.SM_LabCapsule11_1_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule11B.MI_LabCapsule11B"
+],
+"bmin": [
+-1421,
+193,
+50
+],
+"bmax": [
+-999,
+607,
+504
+],
+"shadow": true
+},
+{
+"loc": [
+-675.0,
+600.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDesk03_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDesk03_2.SM_LabDesk03_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDesk03B.MI_LabDesk03B"
+],
+"bmin": [
+-675,
+480,
+50
+],
+"bmax": [
+-549,
+720,
+140
+],
+"shadow": true
+},
+{
+"loc": [
+-675.0,
+200.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDesk03_3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDesk03_2.SM_LabDesk03_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDesk03B.MI_LabDesk03B"
+],
+"bmin": [
+-675,
+80,
+50
+],
+"bmax": [
+-549,
+320,
+140
+],
+"shadow": true
+},
+{
+"loc": [
+-644.0,
+600.5,
+140.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDisplay01_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDisplay01_2.SM_LabDisplay01_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDisplay01B.MI_LabDisplay01B"
+],
+"bmin": [
+-644,
+542,
+140
+],
+"bmax": [
+-631,
+658,
+210
+],
+"shadow": true
+},
+{
+"loc": [
+-647.8,
+198.7,
+140.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDisplay01_3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDisplay01_2.SM_LabDisplay01_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDisplay01B.MI_LabDisplay01B"
+],
+"bmin": [
+-648,
+141,
+140
+],
+"bmax": [
+-635,
+257,
+210
+],
+"shadow": true
+},
+{
+"loc": [
+-599.2,
+199.7,
+140.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDisplay01_4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDisplay01_3.SM_LabDisplay01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDisplay01B.MI_LabDisplay01B"
+],
+"bmin": [
+-608,
+168,
+140
+],
+"bmax": [
+-589,
+232,
+141
+],
+"shadow": true
+},
+{
+"loc": [
+-599.5,
+598.8,
+140.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabDisplay01_5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabDisplay01_3.SM_LabDisplay01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabDisplay01B.MI_LabDisplay01B"
+],
+"bmin": [
+-609,
+567,
+140
+],
+"bmax": [
+-589,
+631,
+141
+],
+"shadow": true
+},
+{
+"loc": [
+-482.9,
+602.8,
+51.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair08",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair08.SM_Chair08",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair08B.MI_Chair08B"
+],
+"bmin": [
+-534,
+562,
+51
+],
+"bmax": [
+-448,
+643,
+189
+],
+"shadow": true
+},
+{
+"loc": [
+-482.9,
+195.2,
+51.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_Chair9",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_Chair08.SM_Chair08",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_Chair08B.MI_Chair08B"
+],
+"bmin": [
+-534,
+155,
+51
+],
+"bmax": [
+-448,
+236,
+189
+],
+"shadow": true
+},
+{
+"loc": [
+-725.0,
+611.2,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+0.78,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-14",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-728,
+475,
+50
+],
+"bmax": [
+-713,
+748,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-725.0,
+189.6,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+0.78,
+1.0
+],
+"label": "SM_MStair01-Parapet-350-15",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MStair01-Parapet-350-2.SM_MStair01-Parapet-350-2",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MStairs01B.MI_MStairs01B"
+],
+"bmin": [
+-728,
+53,
+50
+],
+"bmax": [
+-713,
+326,
+170
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+200.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabHoloProjector6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabHoloProjector01_Base.SM_LabHoloProjector01_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabHoloProjector01B.MI_LabHoloProjector01B"
+],
+"bmin": [
+-1028,
+72,
+-12
+],
+"bmax": [
+-772,
+328,
+244
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+575.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "SM_ControlPanel01",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_ControlPanel01.SM_ControlPanel01",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_ControlPanel01B.MI_ControlPanel01B"
+],
+"bmin": [
+-945,
+526,
+50
+],
+"bmax": [
+-863,
+624,
+219
+],
+"shadow": true
+},
+{
+"loc": [
+-787.2,
+1233.8,
+37.7
+],
+"rot": [
+3.6,
+-30.0,
+-0.0
+],
+"scale": [
+1.15,
+1.15,
+1.15
+],
+"label": "SM_CreatureAlien02-Pose10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien02-Pose10.SM_CreatureAlien02-Pose10",
+"mats": [],
+"bmin": [
+-834,
+1172,
+46
+],
+"bmax": [
+-723,
+1289,
+261
+],
+"shadow": true
+},
+{
+"loc": [
+500.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-19",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+325,
+50,
+0
+],
+"bmax": [
+675,
+400,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-20",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-25,
+50,
+0
+],
+"bmax": [
+325,
+400,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+225.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-21",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+50,
+0
+],
+"bmax": [
+-25,
+400,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-200.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-22",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-375,
+400,
+0
+],
+"bmax": [
+-25,
+750,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+150.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-23",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+-25,
+400,
+0
+],
+"bmax": [
+325,
+750,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+500.0,
+575.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-24",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+325,
+400,
+0
+],
+"bmax": [
+675,
+750,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+200.0,
+100.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+0.6,
+0.6,
+0.6
+],
+"label": "BP_CreatureAlien06-Hologram",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien06-Pose1.SM_CreatureAlien06-Pose1",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_CreatureAlien06HologramA.MI_CreatureAlien06HologramA"
+],
+"bmin": [
+-1000,
+98,
+97
+],
+"bmax": [
+-788,
+252,
+289
+],
+"shadow": true
+},
+{
+"loc": [
+-1125.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabCapsule01",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule01_Capsule.SM_LabCapsule01_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule01B.MI_LabCapsule01B"
+],
+"bmin": [
+-1241,
+1138,
+0
+],
+"bmax": [
+-1009,
+1361,
+293
+],
+"shadow": true
+},
+{
+"loc": [
+-400.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabCapsule02_1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule02_1_Capsule.SM_LabCapsule02_1_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule02B.MI_LabCapsule02B"
+],
+"bmin": [
+-494,
+1131,
+0
+],
+"bmax": [
+-306,
+1322,
+328
+],
+"shadow": true
+},
+{
+"loc": [
+475.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabCapsule02_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule02_2_Capsule.SM_LabCapsule02_2_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule02B.MI_LabCapsule02B"
+],
+"bmin": [
+347,
+1131,
+0
+],
+"bmax": [
+603,
+1319,
+328
+],
+"shadow": true
+},
+{
+"loc": [
+25.0,
+1275.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabCapsule05",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule05_Capsule.SM_LabCapsule05_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule05B.MI_LabCapsule05B"
+],
+"bmin": [
+-101,
+1133,
+0
+],
+"bmax": [
+151,
+1386,
+328
+],
+"shadow": true
+},
+{
+"loc": [
+-775.0,
+1225.0,
+0.0
+],
+"rot": [
+0.0,
+-90.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabCapsule10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabCapsule10_Capsule.SM_LabCapsule10_Capsule",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabCapsule10B.MI_LabCapsule10B"
+],
+"bmin": [
+-844,
+1156,
+0
+],
+"bmax": [
+-706,
+1294,
+311
+],
+"shadow": true
+},
+{
+"loc": [
+-1421.7,
+-50.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabFridge01_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabFridge01_2_Base.SM_LabFridge01_2_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabFridge01B.MI_LabFridge01B"
+],
+"bmin": [
+-1503,
+-255,
+-85
+],
+"bmax": [
+-1246,
+154,
+259
+],
+"shadow": true
+},
+{
+"loc": [
+-1421.7,
+-200.0,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabFridge01_1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabFridge01_1_Base.SM_LabFridge01_1_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabFridge01B.MI_LabFridge01B"
+],
+"bmin": [
+-1503,
+-374,
+-85
+],
+"bmax": [
+-1245,
+-27,
+257
+],
+"shadow": true
+},
+{
+"loc": [
+-1390.3,
+-177.5,
+16.0
+],
+"rot": [
+0.0,
+45.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_3.SM_LabBarrels01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1417,
+-204,
+16
+],
+"bmax": [
+-1364,
+-151,
+131
+],
+"shadow": true
+},
+{
+"loc": [
+-1389.6,
+-221.9,
+16.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_3.SM_LabBarrels01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1408,
+-241,
+16
+],
+"bmax": [
+-1371,
+-203,
+131
+],
+"shadow": true
+},
+{
+"loc": [
+-1391.0,
+-11.4,
+16.2
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_1.SM_LabBarrels01_1",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1411,
+-31,
+16
+],
+"bmax": [
+-1371,
+8,
+129
+],
+"shadow": true
+},
+{
+"loc": [
+-1392.7,
+-86.9,
+15.8
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_2.SM_LabBarrels01_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1415,
+-109,
+16
+],
+"bmax": [
+-1370,
+-65,
+126
+],
+"shadow": true
+},
+{
+"loc": [
+-1421.8,
+850.1,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabFridge01_3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabFridge01_2_Base.SM_LabFridge01_2_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabFridge01B.MI_LabFridge01B"
+],
+"bmin": [
+-1503,
+645,
+-85
+],
+"bmax": [
+-1246,
+1055,
+259
+],
+"shadow": true
+},
+{
+"loc": [
+-1421.8,
+998.3,
+0.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "BP_LabFridge01_4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabFridge01_1_Base.SM_LabFridge01_1_Base",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabFridge01B.MI_LabFridge01B"
+],
+"bmin": [
+-1503,
+824,
+-85
+],
+"bmax": [
+-1245,
+1171,
+257
+],
+"shadow": true
+},
+{
+"loc": [
+-1390.3,
+1020.8,
+16.0
+],
+"rot": [
+0.0,
+45.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_3.SM_LabBarrels01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1417,
+994,
+16
+],
+"bmax": [
+-1364,
+1047,
+131
+],
+"shadow": true
+},
+{
+"loc": [
+-1389.6,
+976.4,
+16.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_3.SM_LabBarrels01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1408,
+958,
+16
+],
+"bmax": [
+-1371,
+995,
+131
+],
+"shadow": true
+},
+{
+"loc": [
+-1391.0,
+888.8,
+16.2
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_7",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_1.SM_LabBarrels01_1",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1411,
+869,
+16
+],
+"bmax": [
+-1371,
+908,
+129
+],
+"shadow": true
+},
+{
+"loc": [
+-1392.7,
+813.2,
+15.8
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_8",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_2.SM_LabBarrels01_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+-1415,
+791,
+16
+],
+"bmax": [
+-1370,
+836,
+126
+],
+"shadow": true
+},
+{
+"loc": [
+606.4,
+-136.1,
+1.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_9",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_4.SM_LabBarrels01_4",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+574,
+-204,
+1
+],
+"bmax": [
+640,
+-69,
+12
+],
+"shadow": true
+},
+{
+"loc": [
+603.2,
+-173.6,
+11.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "SM_LabBarrels01_10",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_1.SM_LabBarrels01_1",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+578,
+-199,
+11
+],
+"bmax": [
+629,
+-148,
+157
+],
+"shadow": true
+},
+{
+"loc": [
+609.2,
+-112.0,
+11.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "SM_LabBarrels01_11",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_2.SM_LabBarrels01_2",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+580,
+-141,
+11
+],
+"bmax": [
+638,
+-83,
+155
+],
+"shadow": true
+},
+{
+"loc": [
+620.0,
+862.7,
+1.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_12",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_5.SM_LabBarrels01_5",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+587,
+815,
+1
+],
+"bmax": [
+654,
+910,
+12
+],
+"shadow": true
+},
+{
+"loc": [
+619.7,
+986.7,
+1.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_LabBarrels01_13",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_5.SM_LabBarrels01_5",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+587,
+939,
+1
+],
+"bmax": [
+653,
+1034,
+12
+],
+"shadow": true
+},
+{
+"loc": [
+615.2,
+858.0,
+11.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "SM_LabBarrels01_14",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_3.SM_LabBarrels01_3",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+591,
+834,
+11
+],
+"bmax": [
+640,
+882,
+160
+],
+"shadow": true
+},
+{
+"loc": [
+615.8,
+984.6,
+11.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.3,
+1.3,
+1.3
+],
+"label": "SM_LabBarrels01_15",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_LabBarrels01_1.SM_LabBarrels01_1",
+"mats": [
+"/Game/SciFiWorld/Materials/MI_LabBarrels01B.MI_LabBarrels01B"
+],
+"bmin": [
+590,
+959,
+11
+],
+"bmax": [
+641,
+1010,
+157
+],
+"shadow": true
+},
+{
+"loc": [
+325.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-1",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-25,
+-650,
+0
+],
+"bmax": [
+675,
+-300,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-375.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-725,
+-650,
+0
+],
+"bmax": [
+-25,
+-300,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-1075.0,
+-475.0,
+0.0
+],
+"rot": [
+0.0,
+90.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-3",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-1425,
+-650,
+0
+],
+"bmax": [
+-725,
+-300,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-550.0,
+400.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-4",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-725,
+50,
+50
+],
+"bmax": [
+-375,
+750,
+51
+],
+"shadow": true
+},
+{
+"loc": [
+-900.0,
+400.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-5",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-1075,
+50,
+50
+],
+"bmax": [
+-725,
+750,
+51
+],
+"shadow": true
+},
+{
+"loc": [
+-1250.0,
+400.0,
+50.0
+],
+"rot": [
+0.0,
+0.0,
+0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor01-700x350-6",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor01-700x350-1.SM_MFloor01-700x350-1",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor01B.MI_MFloor01B"
+],
+"bmin": [
+-1425,
+50,
+50
+],
+"bmax": [
+-1075,
+750,
+51
+],
+"shadow": true
+},
+{
+"loc": [
+500.0,
+925.0,
+0.0
+],
+"rot": [
+0.0,
+180.0,
+-0.0
+],
+"scale": [
+1.0,
+1.0,
+1.0
+],
+"label": "SM_MFloor02-350x350-12",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Modules/Meshes/SM_MFloor02-350x350-3.SM_MFloor02-350x350-3",
+"mats": [
+"/Game/SciFiWorld/Modules/Materials/MI_MFloor02B.MI_MFloor02B"
+],
+"bmin": [
+325,
+750,
+0
+],
+"bmax": [
+675,
+1100,
+1
+],
+"shadow": true
+},
+{
+"loc": [
+-1234.2,
+377.9,
+59.4
+],
+"rot": [
+0.0,
+49.4,
+-0.0
+],
+"scale": [
+0.95,
+0.95,
+0.95
+],
+"label": "SM_CreatureAlien06-Pose2",
+"kind": "mesh",
+"mesh": "/Game/SciFiWorld/Meshes/SM_CreatureAlien06-Pose2.SM_CreatureAlien06-Pose2",
+"mats": [],
+"bmin": [
+-1377,
+237,
+66
+],
+"bmax": [
+-1036,
+595,
+355
+],
+"shadow": true
+}
+]
+}
