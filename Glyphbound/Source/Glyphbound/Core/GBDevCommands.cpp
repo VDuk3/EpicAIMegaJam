@@ -39,6 +39,7 @@
 #include "Spells/GBSpell_Beam.h"
 #include "Spells/GBSpell_Trap.h"
 #include "Spells/GBSpell_Zone.h"
+#include "Spells/GBSpell_Wall.h"
 #include "Spells/GBSpellbookComponent.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
@@ -867,6 +868,7 @@ namespace GBSmokeRun
 		static double PhaseStart = 0.0;
 		static bool bPlaced = false;
 		static bool bShot = false;
+		static bool bCast = false;
 		static int32 Failures = 0;
 
 		static bool Tick(float)
@@ -902,10 +904,25 @@ namespace GBSmokeRun
 				}
 				bPlaced = true;
 				bShot = false;
+				bCast = false;
 				PhaseStart = Now;
 				return true;
 			}
 			const double InPhase = Now - PhaseStart;
+			// A spot named "castwall": the ice wall at full strength (every quick-time step right) must stand on this
+			// floor, in sight. At full size it used to rise on the roof of a low corridor (owner, 2026-11-14).
+			const bool bCastWall = Names[Index].Contains(TEXT("castwall"));
+			if (bCastWall && !bCast && InPhase > 1.0)
+			{
+				bCast = true;
+				for (TActorIterator<AGBSpell_Wall> It(World); It; ++It)
+				{
+					It->Destroy();          // a wall left by an earlier spot would be counted with this one
+				}
+				SetQTEEnabled(false);
+				Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+				Player->GetSpellbook()->DebugCastAtFullStrength(TEXT("IceWall"));
+			}
 			if (!bShot && InPhase > 2.5) // lighting and exposure need a moment after a jump of many metres
 			{
 				const FVector Feet = Player->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
@@ -922,6 +939,29 @@ namespace GBSmokeRun
 				{
 					++Failures;
 					UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: no floor where the map marks one (hit=%d falling=%d, feet %.0f cm below the mark)"), *Names[Index], bHit ? 1 : 0, bFalling ? 1 : 0, Drop);
+				}
+				if (bCastWall)
+				{
+					int32 Walls = 0;
+					float BaseOff = 0.f;
+					float Height = 0.f;
+					for (TActorIterator<AGBSpell_Wall> It(World); It; ++It)
+					{
+						FVector Origin, Extent;
+						It->GetActorBounds(false, Origin, Extent);
+						BaseOff = static_cast<float>(Origin.Z - Extent.Z - Feet.Z);
+						Height = static_cast<float>(Extent.Z * 2.0);
+						++Walls;
+					}
+					if (Walls == 1 && FMath::Abs(BaseOff) < 40.f)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the ice wall at full strength (%.0f cm tall) stands on the floor, %.0f cm from the feet"), *Names[Index], Height, BaseOff);
+					}
+					else
+					{
+						++Failures;
+						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the ice wall at full strength is not on this floor (%d walls, base %.0f cm from the feet)"), *Names[Index], Walls, BaseOff);
+					}
 				}
 				Shot(*FString::Printf(TEXT("tour_%s"), *Names[Index]));
 				bShot = true;
@@ -4071,7 +4111,7 @@ namespace GBSmokeRun
 		const float Z = U + 43.8f;
 		Add(Z, TEXT("seal: seal, era block with a real doorway, captions, cancel, gun drop"), SealRun::Start);
 		Add(Z + 0.5f, TEXT("tour: a real map's own review spots (skipped on a map without them)"), TourRun::Start);
-		Add(Z + 150.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(Z + 400.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

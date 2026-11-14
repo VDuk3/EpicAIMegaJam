@@ -497,6 +497,16 @@ void UGBSpellbookComponent::HandleQTEFinished(const FGBQTEResult& Result, FName 
 	FinishCast(SpellId, Result);
 }
 
+void UGBSpellbookComponent::DebugCastAtFullStrength(FName SpellId)
+{
+	FGBQTEResult Result;
+	Result.Power = 1.f;
+	Result.Reach = 1.f;
+	Result.bUsedQTE = true;
+	Result.bSuccess = true;
+	FinishCast(SpellId, Result);
+}
+
 void UGBSpellbookComponent::FinishCast(FName SpellId, const FGBQTEResult& Result)
 {
 	PendingSpellId = NAME_None;

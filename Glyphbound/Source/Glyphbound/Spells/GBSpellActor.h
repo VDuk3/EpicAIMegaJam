@@ -98,6 +98,13 @@ protected:
 	/** Finds the ground under a point (line trace down, world static). False if nothing within MaxDistance. */
 	bool FindGround(const FVector& From, FVector& OutGround, float MaxDistance = 2000.f) const;
 
+	/**
+	 * The ground under Point, for a spell that must stand on it. The search starts up to Lift above Point (so a
+	 * step or a slope there is found) but never through a ceiling: started above a low roof it would find the roof,
+	 * and the spell would appear on top of it, out of sight. MaxDistance is measured down from Point.
+	 */
+	bool FindGroundUnder(const FVector& Point, float Lift, FVector& OutGround, float MaxDistance = 2000.f) const;
+
 	// ---- Helpers shared by the behaviors ----
 
 	/** SpellCast.Get with a warning when the spell's data does not define the param (the default is then used). */

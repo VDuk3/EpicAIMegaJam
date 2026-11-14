@@ -21,6 +21,8 @@ namespace
 	// the ground search starts (so a slope or a step under the aimed point is still found).
 	constexpr float SpellActorAimPullBackCm = 20.f;
 	constexpr float SpellActorGroundLiftCm = 100.f;
+	// A ground search that meets a ceiling on its way up starts this far below it.
+	constexpr float SpellActorCeilingClearanceCm = 2.f;
 	constexpr float SpellActorMinTickInterval = 0.05f;
 }
 
@@ -114,6 +116,30 @@ bool AGBSpellActor::FindGround(const FVector& From, FVector& OutGround, float Ma
 		return true;
 	}
 	return false;
+}
+
+bool AGBSpellActor::FindGroundUnder(const FVector& Point, float Lift, FVector& OutGround, float MaxDistance) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+	FVector From = Point + FVector::UpVector * FMath::Max(0.f, Lift);
+	if (Lift > 0.f)
+	{
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSpellFindCeiling), false, this);
+		if (AActor* Caster = GetCaster())
+		{
+			Params.AddIgnoredActor(Caster);
+		}
+		FHitResult Ceiling;
+		if (World->LineTraceSingleByObjectType(Ceiling, Point, From, FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+		{
+			From.Z = FMath::Max(Point.Z, Ceiling.ImpactPoint.Z - SpellActorCeilingClearanceCm);
+		}
+	}
+	return FindGround(From, OutGround, (From.Z - Point.Z) + MaxDistance);
 }
 
 float AGBSpellActor::ReadParam(FName Param, float DefaultValue) const
@@ -215,11 +241,11 @@ FVector AGBSpellActor::FindAimedGroundPoint(float MaxRange) const
 	}
 	else
 	{
-		return FindGround(Fallback + FVector::UpVector * SpellActorGroundLiftCm, Point) ? Point : Fallback;
+		return FindGroundUnder(Fallback, SpellActorGroundLiftCm, Point) ? Point : Fallback;
 	}
 
 	FVector Ground;
-	if (FindGround(Point + FVector::UpVector * SpellActorGroundLiftCm, Ground))
+	if (FindGroundUnder(Point, SpellActorGroundLiftCm, Ground))
 	{
 		return Ground;
 	}

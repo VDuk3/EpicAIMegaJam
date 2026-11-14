@@ -15,6 +15,10 @@ namespace
 	// Visual and geometric limits only.
 	constexpr int32 MaxWallSprites = 8;
 	constexpr float WallGroundSearchExtraCm = 2000.f;
+	// A wall that cannot stand at its full distance stops this far from what is in its way, and never closer to
+	// its caster's body than this.
+	constexpr float WallObstacleGapCm = 5.f;
+	constexpr float WallCasterGapCm = 10.f;
 }
 
 AGBSpell_Wall::AGBSpell_Wall()
@@ -40,16 +44,43 @@ void AGBSpell_Wall::StartSpell()
 	const float Duration = ReadParam(GBStat::Duration, 5.f);
 	const bool bBlocking = SpellCast.Get(GBSpellParam::Blocking, 0.f) > 0.5f;
 
-	// Stand on the ground in front of the caster, facing the caster's yaw.
+	// Stand on the ground in front of the caster, facing the caster's yaw. The wall always appears, whatever its size
+	// and whatever the room (owner, 2026-11-14): it stops short of anything solid in its way, and its ground is
+	// searched from the caster's own height. (It used to be searched from the wall's height above the caster: with a
+	// wall taller than the room that started over the ceiling, and the wall rose on the roof, out of sight.)
 	AActor* Caster = GetCaster();
 	const FVector CasterLocation = Caster ? Caster->GetActorLocation() : SpellCast.Origin;
+	const float CasterHalfHeight = Caster ? Caster->GetSimpleCollisionHalfHeight() : 0.f;
+	const float CasterRadius = Caster ? Caster->GetSimpleCollisionRadius() : 0.f;
 	const FRotator WallRotation(0.f, SpellCast.Direction.Rotation().Yaw, 0.f);
-	const FVector Point = CasterLocation + WallRotation.Vector() * Distance;
+	const FVector Forward = WallRotation.Vector();
+	float Reach = Distance;
+	bool bOnCaster = false;
+	if (UWorld* World = GetWorld())
+	{
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSpellWallReach), false, this);
+		if (Caster)
+		{
+			Params.AddIgnoredActor(Caster);
+		}
+		FHitResult Blocked;
+		const FVector End = CasterLocation + Forward * (Distance + Thickness * 0.5f);
+		if (World->LineTraceSingleByObjectType(Blocked, CasterLocation, End, FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+		{
+			// In front of what is in the way. With the caster's face against it there is no room in front: the wall
+			// then stands where the caster is, in sight, and the two do not block each other. Keeping it clear of
+			// the caster instead would push it into the obstacle, out of sight (code review, 2026-11-14).
+			const float Fits = Blocked.Distance - Thickness * 0.5f - WallObstacleGapCm;
+			Reach = FMath::Clamp(Fits, FMath::Min(Thickness * 0.5f, Distance), Distance);
+			bOnCaster = Reach < FMath::Min(CasterRadius + Thickness * 0.5f + WallCasterGapCm, Distance);
+		}
+	}
+	const FVector Point = CasterLocation + Forward * Reach;
 	FVector Ground;
-	if (!FindGround(Point + FVector::UpVector * Height, Ground, Height + WallGroundSearchExtraCm))
+	if (!FindGroundUnder(Point, CasterHalfHeight, Ground, CasterHalfHeight + WallGroundSearchExtraCm))
 	{
 		Ground = Point;
-		Ground.Z = CasterLocation.Z - (Caster ? Caster->GetSimpleCollisionHalfHeight() : 0.f);
+		Ground.Z = CasterLocation.Z - CasterHalfHeight;
 	}
 	SetActorLocationAndRotation(Ground + FVector::UpVector * (Height * 0.5f), WallRotation, false, nullptr, ETeleportType::TeleportPhysics);
 
@@ -92,6 +123,15 @@ void AGBSpell_Wall::StartSpell()
 	if (bBlocking)
 	{
 		Box->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
+		if (bOnCaster && Caster)
+		{
+			// Raised on its caster for lack of room: it never traps the one who cast it.
+			Box->IgnoreActorWhenMoving(Caster, true);
+			if (UPrimitiveComponent* CasterBody = Cast<UPrimitiveComponent>(Caster->GetRootComponent()))
+			{
+				CasterBody->IgnoreActorWhenMoving(this, true);
+			}
+		}
 		// Projectiles only overlap WorldDynamic: without this they pass through the wall untouched.
 		Box->SetGenerateOverlapEvents(true);
 		SetupHealth(ReadParam(GBStat::Health, 100.f));

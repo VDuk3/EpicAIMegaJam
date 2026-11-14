@@ -100,6 +100,9 @@ public:
 	/** Mana cost right now (with modifiers, at default strength). */
 	float GetManaCost(FName SpellId) const;
 
+	/** Development and smoke runs only: casts the spell at once as if every quick-time step had been right (no checks, no mana). */
+	void DebugCastAtFullStrength(FName SpellId);
+
 	void SaveToSnapshot(FGBPlayerSnapshot& Snapshot) const;
 	void LoadFromSnapshot(const FGBPlayerSnapshot& Snapshot);
 

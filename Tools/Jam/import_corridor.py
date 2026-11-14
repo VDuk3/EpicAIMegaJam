@@ -76,17 +76,25 @@ def master(name):
 
 
 # ---- masters
-m = master('M_ShipCorridor')
-mel.connect_material_property(vector(m, 'Color', (0.2, 0.2, 0.2), -500, -200), '', MP.MP_BASE_COLOR)
-mel.connect_material_property(scalar(m, 'Metallic', 0.0, -500, 0), '', MP.MP_METALLIC)
-mel.connect_material_property(scalar(m, 'Roughness', 0.5, -500, 100), '', MP.MP_ROUGHNESS)
-em = mel.create_material_expression(m, unreal.MaterialExpressionMultiply, -250, 300)
-mel.connect_material_expressions(vector(m, 'Emissive', (0.0, 0.0, 0.0), -500, 250), '', em, 'A')
-mel.connect_material_expressions(scalar(m, 'EmissiveStrength', 0.0, -500, 450), '', em, 'B')
-mel.connect_material_property(em, '', MP.MP_EMISSIVE_COLOR)
-mel.recompile_material(m)
-eal.save_asset(DST + '/M_ShipCorridor', only_if_is_dirty=False)
-base = m
+def plain_master(name, two_sided):
+    m = master(name)
+    m.set_editor_property('two_sided', two_sided)
+    mel.connect_material_property(vector(m, 'Color', (0.2, 0.2, 0.2), -500, -200), '', MP.MP_BASE_COLOR)
+    mel.connect_material_property(scalar(m, 'Metallic', 0.0, -500, 0), '', MP.MP_METALLIC)
+    mel.connect_material_property(scalar(m, 'Roughness', 0.5, -500, 100), '', MP.MP_ROUGHNESS)
+    em = mel.create_material_expression(m, unreal.MaterialExpressionMultiply, -250, 300)
+    mel.connect_material_expressions(vector(m, 'Emissive', (0.0, 0.0, 0.0), -500, 250), '', em, 'A')
+    mel.connect_material_expressions(scalar(m, 'EmissiveStrength', 0.0, -500, 450), '', em, 'B')
+    mel.connect_material_property(em, '', MP.MP_EMISSIVE_COLOR)
+    mel.recompile_material(m)
+    eal.save_asset(DST + '/' + name, only_if_is_dirty=False)
+    return m
+
+
+base = plain_master('M_ShipCorridor', False)
+# The crates' shells are one face thick and some of their faces look inwards: seen from outside, half of each crate was
+# missing in the game (owner, 2026-11-14). Blender draws both sides of a face; Unreal does only with a two-sided material.
+base_two_sided = plain_master('M_ShipCorridor_TwoSided', True)
 
 task = unreal.AssetImportTask()
 task.set_editor_property('filename', SCREEN)
@@ -120,9 +128,9 @@ for prefix, look, color, metal, rough, emissive, strength in LOOKS:
     name = 'MI_ShipCorridor_' + look
     path = DST + '/' + name
     if not eal.does_asset_exist(path):
-        mi = tools.create_asset(name, DST, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
-        mel.set_material_instance_parent(mi, base)
+        tools.create_asset(name, DST, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
     mi = unreal.load_asset(path)
+    mel.set_material_instance_parent(mi, base_two_sided if look.startswith('Crate') else base)
     mel.set_material_instance_vector_parameter_value(mi, 'Color', unreal.LinearColor(color[0], color[1], color[2], 1.0))
     mel.set_material_instance_scalar_parameter_value(mi, 'Metallic', metal)
     mel.set_material_instance_scalar_parameter_value(mi, 'Roughness', rough)
@@ -135,7 +143,7 @@ for prefix, look, color, metal, rough, emissive, strength in LOOKS:
 
 # ---- meshes (legacy FBX importer: it honours FbxImportUI)
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX false')
-for name in ('SM_ShipCorridor_Body', 'SM_ShipCorridor_Details'):
+for name in ('SM_ShipCorridor_Body', 'SM_ShipCorridor_Details', 'SM_ShipCorridor_DoorA', 'SM_ShipCorridor_DoorB'):
     ui = unreal.FbxImportUI()
     ui.set_editor_property('import_mesh', True)
     ui.set_editor_property('import_as_skeletal', False)
@@ -182,7 +190,7 @@ for name in ('SM_ShipCorridor_Body', 'SM_ShipCorridor_Details'):
             sm.set_material(i, chosen)
         else:
             unmatched.append(str(slot.material_slot_name))
-    if name.endswith('Body'):
+    if not name.endswith('Details'):          # the body and the door leaves block with their own triangles
         bs = sm.get_editor_property('body_setup')
         bs.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
     eal.save_asset(DST + '/' + name, only_if_is_dirty=False)
