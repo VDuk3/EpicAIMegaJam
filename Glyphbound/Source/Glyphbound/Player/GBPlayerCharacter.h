@@ -121,6 +121,12 @@ public:
 	GBMantle::FMantlePose GetMantlePose() const;
 	/** To Falling, everything visual back to rest. Called by anything that takes control away from the player. */
 	void CancelMantle();
+	/**
+	 * A hand ladder (AGBLadder): the ledge climb's machinery between two standing points (capsule centres). Up goes
+	 * from FootCentre straight up and then across to HeadCentre; down goes back the same way. The view turns to
+	 * FacingYaw, the way the climber faces on the ladder. Ignored while another climb runs.
+	 */
+	void StartLadder(const FVector& FootCentre, const FVector& HeadCentre, bool bUp, float Seconds, float FacingYaw, bool bStraight = false);
 	/** Jump press: climbs a ledge in front instead when there is one (the smoke run calls this directly). */
 	void PressJump();
 	/** Test hook for the smoke run (it has no keys): the next PressJump reads this as the held movement input, and a jump takes off in its direction. */
@@ -316,4 +322,11 @@ protected:
 	float MantlePrevTurnFraction = 0.f;
 	/** Jump count when the climb started: restored if the climb is cancelled (releasing jump while Flying clears it). */
 	int32 MantleSavedJumpCount = 0;
+	/** The climb is a ladder: hand-over-hand sway, and the player is eased onto its line from where it stood. */
+	bool bMantleLadder = false;
+	/** The path runs from MantleEnd to MantleStart (a ladder taken downwards). */
+	bool bMantleReversed = false;
+	/** The path is one straight line between the two points (a slanted ship's ladder), not up-then-across. */
+	bool bMantleStraight = false;
+	FVector MantleEntryFrom = FVector::ZeroVector;
 };

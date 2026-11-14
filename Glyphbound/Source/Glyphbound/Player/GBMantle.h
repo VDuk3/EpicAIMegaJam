@@ -56,4 +56,9 @@ namespace GBMantle
 	 * Alpha 0 to 1 at Alpha = RiseShare, 1 after. The climb adds deltas of this times the total turn.
 	 */
 	float TurnFraction(float Alpha, float RiseShare);
+	/**
+	 * Hand over hand on a ladder, from the height climbed so far: X = lean to one side (-1..1, the other way on the
+	 * next rung), Y = dip between two rungs (0..1). Both exactly 0 on every rung, and with RungCm <= 0.
+	 */
+	FVector2D LadderSway(float ClimbedCm, float RungCm);
 }

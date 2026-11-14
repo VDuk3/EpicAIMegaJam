@@ -49,6 +49,26 @@ bool FGBPlayerJumpDirectionTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerLadderSwayTest, "Glyphbound.Player.LadderSway",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerLadderSwayTest::RunTest(const FString& Parameters)
+{
+	// Still on every rung, leaning one way and then the other between them, never more than the full lean.
+	for (int32 Rung = 0; Rung <= 4; ++Rung)
+	{
+		TestTrue(TEXT("No lean or dip on a rung"), GBMantle::LadderSway(30.f * Rung, 30.f).IsNearlyZero(0.001f));
+	}
+	const FVector2D First = GBMantle::LadderSway(15.f, 30.f);
+	const FVector2D Second = GBMantle::LadderSway(45.f, 30.f);
+	TestTrue(TEXT("Full lean and dip half way between rungs"), FMath::IsNearlyEqual(FMath::Abs(First.X), 1.f, 0.001f) && FMath::IsNearlyEqual(First.Y, 1.f, 0.001f));
+	TestTrue(TEXT("The next rung leans the other way"), First.X * Second.X < 0.f);
+	TestTrue(TEXT("The dip is never upwards"), Second.Y >= 0.f && GBMantle::LadderSway(52.f, 30.f).Y >= 0.f);
+	TestTrue(TEXT("Going down a ladder sways too"), !GBMantle::LadderSway(-15.f, 30.f).IsNearlyZero(0.001f));
+	TestTrue(TEXT("A ladder without rungs does not sway"), GBMantle::LadderSway(15.f, 0.f).IsNearlyZero());
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerMantleReachTest, "Glyphbound.Player.MantleReach",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 

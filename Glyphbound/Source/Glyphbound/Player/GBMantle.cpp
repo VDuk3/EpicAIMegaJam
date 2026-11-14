@@ -112,6 +112,16 @@ namespace GBMantle
 		}
 	}
 
+	FVector2D LadderSway(float ClimbedCm, float RungCm)
+	{
+		if (RungCm <= KINDA_SMALL_NUMBER)
+		{
+			return FVector2D::ZeroVector;
+		}
+		const float Lean = FMath::Sin(UE_PI * ClimbedCm / RungCm);
+		return FVector2D(Lean, FMath::Abs(Lean));
+	}
+
 	float TurnFraction(float Alpha, float RiseShare)
 	{
 		const float A = FMath::Clamp(Alpha, 0.f, 1.f);

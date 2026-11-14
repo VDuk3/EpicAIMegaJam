@@ -646,6 +646,16 @@ bool AGBPlayerCharacter::TryStartMantle(bool bFromGround)
 	return true;
 }
 
+namespace
+{
+	// A ladder climb, how it looks (cm, seconds, share of the time). The speed is the ladder's own (AGBLadder).
+	constexpr float LadderRiseShare = 0.86f;       // of the time on the ladder itself; the rest steps on or off at the top
+	constexpr float LadderRungCm = 30.f;
+	constexpr float LadderLeanCm = 2.5f;
+	constexpr float LadderDipCm = 3.5f;
+	constexpr float LadderEntrySeconds = 0.2f;
+}
+
 void AGBPlayerCharacter::StartMantle(const FGBMantleLedge& Ledge)
 {
 	ReleaseHeldInputs();
@@ -682,6 +692,38 @@ void AGBPlayerCharacter::StartMantle(const FGBMantleLedge& Ledge)
 	ApplyCameraPose();
 }
 
+void AGBPlayerCharacter::StartLadder(const FVector& FootCentre, const FVector& HeadCentre, bool bUp, float Seconds, float FacingYaw, bool bStraight)
+{
+	if (bMantling || IsDead())
+	{
+		return;
+	}
+	ReleaseHeldInputs();
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MantleSavedJumpCount = JumpCurrentCount;
+		MoveComp->SetMovementMode(MOVE_Flying);
+		JumpCurrentCount = MantleSavedJumpCount;
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	MantleStart = FootCentre;
+	MantleEnd = HeadCentre;
+	MantleLedgePoint = HeadCentre;
+	MantleRiseShare = LadderRiseShare;
+	MantleDuration = FMath::Max(Seconds, 0.1f);
+	MantleElapsed = 0.f;
+	MantlePrevTurnFraction = 0.f;
+	const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+	MantleTotalTurn = FRotator::NormalizeAxis(FacingYaw - ViewYaw);
+	bMantleLadder = true;
+	bMantleStraight = bStraight;
+	bMantleReversed = !bUp;
+	MantleEntryFrom = GetActorLocation();
+	bMantling = true;
+	ApplyCameraPose();
+}
+
 void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
 {
 	if (!bMantling)
@@ -704,15 +746,30 @@ void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
 			Controller->SetControlRotation(ControlRotation);
 		}
 	}
-	SetActorLocation(GBMantle::EvaluatePath(MantleStart, MantleEnd, Alpha, MantleRiseShare),
-		false, nullptr, ETeleportType::TeleportPhysics);
+	const float PathAlpha = bMantleReversed ? 1.f - Alpha : Alpha;
+	FVector PathPoint = bMantleStraight
+		? FMath::Lerp(MantleStart, MantleEnd, PathAlpha * PathAlpha * (3.f - 2.f * PathAlpha))
+		: GBMantle::EvaluatePath(MantleStart, MantleEnd, PathAlpha, MantleRiseShare);
+	if (bMantleLadder)
+	{
+		// Hand over hand: a small lean and dip between rungs, from the height climbed. Then eased in from where
+		// the player stood when the climb began, so nothing jumps.
+		const FVector2D Sway = GBMantle::LadderSway(static_cast<float>(PathPoint.Z - MantleStart.Z), LadderRungCm);
+		PathPoint += GetActorRightVector() * (Sway.X * LadderLeanCm) - FVector::UpVector * (Sway.Y * LadderDipCm);
+		const float Entry = FMath::Clamp(MantleElapsed / LadderEntrySeconds, 0.f, 1.f);
+		PathPoint = FMath::Lerp(MantleEntryFrom, PathPoint, Entry * Entry * (3.f - 2.f * Entry));
+	}
+	SetActorLocation(PathPoint, false, nullptr, ETeleportType::TeleportPhysics);
 	if (MoveComp)
 	{
 		MoveComp->Velocity = FVector::ZeroVector;
 	}
 	if (Alpha >= 1.f)
 	{
-		SetActorLocation(MantleEnd, false, nullptr, ETeleportType::TeleportPhysics);
+		SetActorLocation(bMantleReversed ? MantleStart : MantleEnd, false, nullptr, ETeleportType::TeleportPhysics);
+		bMantleLadder = false;
+		bMantleReversed = false;
+		bMantleStraight = false;
 		if (MoveComp)
 		{
 			MoveComp->SetMovementMode(MOVE_Walking);
@@ -732,6 +789,9 @@ void AGBPlayerCharacter::CancelMantle()
 		return;
 	}
 	bMantling = false;
+	bMantleLadder = false;
+	bMantleReversed = false;
+	bMantleStraight = false;
 	MantleElapsed = 0.f;
 	MantleDuration = 0.f;
 	MantleTotalTurn = 0.f;

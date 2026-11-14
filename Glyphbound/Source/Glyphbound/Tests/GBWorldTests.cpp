@@ -5,6 +5,7 @@
 #include "World/GBBreakable.h"
 #include "World/GBDoor.h"
 #include "World/GBEnergyGate.h"
+#include "World/GBLadder.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -96,6 +97,22 @@ bool FGBBreakableHitsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Each hit shows more"), AGBBreakable::ComputeCrackStage(3, 4) > AGBBreakable::ComputeCrackStage(2, 4));
 	TestEqual(TEXT("Never past full"), AGBBreakable::ComputeCrackStage(9, 4), 1.f);
 	TestEqual(TEXT("A bad setup shows as broken, not as whole"), AGBBreakable::ComputeCrackStage(0, 0), 1.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBLadderSecondsTest, "Glyphbound.World.LadderSeconds",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBLadderSecondsTest::RunTest(const FString& Parameters)
+{
+	TestEqual(TEXT("6 m at 3 m/s plus half a second to step off"), AGBLadder::ComputeClimbSeconds(600.f, 300.f, 0.5f), 2.5f);
+	TestEqual(TEXT("Down takes as long as up"), AGBLadder::ComputeClimbSeconds(-600.f, 300.f, 0.5f), AGBLadder::ComputeClimbSeconds(600.f, 300.f, 0.5f));
+	TestTrue(TEXT("A longer ladder takes longer"), AGBLadder::ComputeClimbSeconds(900.f, 300.f, 0.5f) > AGBLadder::ComputeClimbSeconds(600.f, 300.f, 0.5f));
+	TestTrue(TEXT("A speed of zero does not hang the player on the ladder for ever"), FMath::IsFinite(AGBLadder::ComputeClimbSeconds(600.f, 0.f, 0.5f)));
+	TestTrue(TEXT("Usable from its own standing place"), AGBLadder::IsWithinUse(40.f, 3.f, 160.f));
+	TestFalse(TEXT("Not from across the room"), AGBLadder::IsWithinUse(240.f, 0.f, 160.f));
+	TestFalse(TEXT("The head is not usable from the floor under it"), AGBLadder::IsWithinUse(30.f, -405.f, 160.f));
+	TestFalse(TEXT("Nor the foot from the landing above it"), AGBLadder::IsWithinUse(30.f, 405.f, 160.f));
 	return true;
 }
 

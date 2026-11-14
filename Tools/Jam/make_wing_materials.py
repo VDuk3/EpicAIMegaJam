@@ -1,7 +1,8 @@
 # make_wing_materials.py - materials our own level pieces need (owner's notes of 2026-11-14). Run in the Editor:
 #   node Tools/Jam/mcp_call.js py Tools/Jam/make_wing_materials.py
 # Makes, or rebuilds:
-#   M_GB_Cracks             overlay on a thing that breaks: dark cracks that grow with its scalar "Stage" (0..1)
+#   M_GB_Cracks             overlay on a thing that breaks: cracks that grow with its scalar "Stage" (0..1)
+#   M_GB_FrostedGlass       an opaque glass wall: pale, glossy, nothing seen through it
 #   M_GB_EnergyGate         the sheet of an energy door: see-through, with slow bright bands; scalar "Fade" (1 on, 0 out)
 #   M_GB_LightFlicker       light function: a failing lamp (mostly off, with bursts)
 #   M_ShipCorridor_Flicker  the same flicker on a glowing surface, in step with the lamp
@@ -123,9 +124,20 @@ link(gain, sat)
 opacity = node(m, 'Multiply', 200, 100, const_b=0.95)
 link(sat, opacity, 'A')
 mel.connect_material_property(opacity, '', MP.MP_OPACITY)
-dark = node(m, 'Constant3Vector', 50, -150, constant=unreal.LinearColor(0.006, 0.006, 0.008, 1.0))
-mel.connect_material_property(dark, '', MP.MP_EMISSIVE_COLOR)
+# Pale: the wall that breaks is frosted glass, and glass cracks white.
+mel.connect_material_property(vector(m, 'Color', (0.55, 0.6, 0.64), 50, -150), '', MP.MP_EMISSIVE_COLOR)
 finish(m, OUR, 'M_GB_Cracks')
+
+# ---- M_GB_FrostedGlass (owner, 2026-11-14: "change it for a wall of opaque glass")
+m = master(OUR, 'M_GB_FrostedGlass')
+mel.connect_material_property(vector(m, 'Color', (0.07, 0.1, 0.115), -400, -150), '', MP.MP_BASE_COLOR)      # the bay's lamps turned a paler glass white
+mel.connect_material_property(scalar(m, 'Roughness', 0.32, -400, 50), '', MP.MP_ROUGHNESS)
+mel.connect_material_property(scalar(m, 'Metallic', 0.0, -400, 150), '', MP.MP_METALLIC)
+inner = node(m, 'Multiply', -200, 300)
+link(vector(m, 'Glow', (0.35, 0.6, 0.65), -450, 250), inner, 'A')
+link(scalar(m, 'GlowStrength', 0.004, -450, 420), inner, 'B')
+mel.connect_material_property(inner, '', MP.MP_EMISSIVE_COLOR)
+finish(m, OUR, 'M_GB_FrostedGlass')
 
 # ---- M_GB_EnergyGate: what is behind it must stay in sight (owner: the Valkyrie has to be seen through the shut door)
 m = master(OUR, 'M_GB_EnergyGate')

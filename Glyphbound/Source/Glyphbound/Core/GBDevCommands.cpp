@@ -52,6 +52,7 @@
 #include "World/GBBreakable.h"
 #include "World/GBChest.h"
 #include "World/GBEnergyGate.h"
+#include "World/GBLadder.h"
 #include "World/GBFinalPortal.h"
 #include "World/GBPortal.h"
 #include "World/GBCutsceneSubsystem.h"
@@ -876,6 +877,9 @@ namespace GBSmokeRun
 		static int32 BreakHits = 0;
 		static bool bBreakFound = false;
 		static bool bBreakStoodThreeHits = false;
+		static float LadderRise = 0.f;
+		static FVector LadderOtherEnd = FVector::ZeroVector;
+		static bool bLadderChecked = false;
 
 		/** The tour leaves no energy gate open behind it: the flags its socket checks set are cleared. */
 		static void ClearGateFlags(UWorld* World)
@@ -913,6 +917,9 @@ namespace GBSmokeRun
 			if (!bPlaced)
 			{
 				const FTransform& Spot = Spots[Index];
+				Player->CancelMantle();          // a climb still running from the last spot would carry the player back
+				LadderRise = 0.f;
+				bLadderChecked = false;
 				Player->SetActorLocation(Spot.GetLocation() + FVector(0.f, 0.f, HalfHeight + 5.f), false, nullptr, ETeleportType::TeleportPhysics);
 				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
 				{
@@ -971,6 +978,48 @@ namespace GBSmokeRun
 					UGBCombatLibrary::DealDamage(BreakTarget.Get(), Hit);
 				}
 			}
+			// A spot named "laddertest" stands at one end of a ladder: the nearest end is used, and before the tour moves
+			// on the player must have arrived, on its feet, at the height of the other end.
+			const bool bLadderTest = Names[Index].Contains(TEXT("laddertest"));
+			if (bLadderTest && !bCast && InPhase > 0.5)
+			{
+				bCast = true;
+				AGBLadder* Nearest = nullptr;
+				float Best = TNumericLimits<float>::Max();
+				for (TActorIterator<AGBLadder> It(World); It; ++It)
+				{
+					const float Dist = static_cast<float>(FVector::DistSquared(It->GetActorLocation(), Spots[Index].GetLocation()));
+					if (Dist < Best)
+					{
+						Best = Dist;
+						Nearest = *It;
+					}
+				}
+				if (Nearest && Best < FMath::Square(150.f))
+				{
+					LadderRise = Nearest->Rise;
+					LadderOtherEnd = Nearest->GetOtherEnd();
+					Nearest->Interact(Player);
+				}
+			}
+			if (bLadderTest && !bLadderChecked && InPhase > 3.4)
+			{
+				bLadderChecked = true;
+				const float Climbed = static_cast<float>(Player->GetActorLocation().Z - HalfHeight - Spots[Index].GetLocation().Z);
+				const FVector Feet = Player->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
+				const bool bOnItsFeet = Move && Move->IsMovingOnGround();
+				const bool bAtTheOtherEnd = FVector::Dist2D(Feet, LadderOtherEnd) < 60.f;
+				if (!FMath::IsNearlyZero(LadderRise) && !Player->IsMantling() && FMath::Abs(Climbed - LadderRise) < 40.f && bOnItsFeet && bAtTheOtherEnd)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the ladder carried the player %.0f cm and set it down"), *Names[Index], Climbed);
+				}
+				else
+				{
+					++Failures;
+					UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the ladder did not work (ladder rise %.0f, player moved %.0f cm, still climbing: %d, on its feet: %d, at the other end: %d)"),
+						*Names[Index], LadderRise, Climbed, Player->IsMantling() ? 1 : 0, bOnItsFeet ? 1 : 0, bAtTheOtherEnd ? 1 : 0);
+				}
+			}
 			// A spot named "gatetest" stands by one socket of an energy gate: the player is handed one power cell there.
 			const bool bGateTest = Names[Index].Contains(TEXT("gatetest"));
 			if (bGateTest && !bCast && InPhase > 0.8)
@@ -999,7 +1048,11 @@ namespace GBSmokeRun
 				const bool bHit = World->LineTraceSingleByChannel(Hit, Feet + FVector(0.f, 0.f, 20.f), Feet - FVector(0.f, 0.f, 200.f), ECC_Visibility, Params);
 				const bool bFalling = Move && Move->IsFalling();
 				const float Drop = static_cast<float>(Spots[Index].GetLocation().Z - Feet.Z);
-				if (bHit && !bFalling && FMath::Abs(Drop) < 60.f)
+				if (bLadderTest)
+				{
+					// In the middle of its climb when the picture is taken: judged by the ladder check, not by the floor.
+				}
+				else if (bHit && !bFalling && FMath::Abs(Drop) < 60.f)
 				{
 					UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: standing on %s, %.0f cm from the marked height"), *Names[Index], *GetNameSafe(Hit.GetActor()), Drop);
 				}

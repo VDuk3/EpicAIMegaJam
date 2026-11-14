@@ -361,10 +361,15 @@ async def stage_hall():
     htb = kit('htb_demo')
     items = [it for it in select(htb, x=(2905, 99999)) if not it.get('mesh', '').endswith(('.SM_Door_02', '.SM_Hangar_Door_01'))]
     n = place_section(s, 'Kit', items, HTB_ORIGIN)
-    # The grated shutter at the bay's east end, past the east stair, is a weak wall (owner, 2026-11-14): it breaks
-    # after four hits, cracks spreading over it with each one, and the way down to the deep wing is behind it.
-    breakable(s, HTB + 'SM_Hangar_Door_01', (5300, -500, 0), rot(yaw=180), (1, 1, 1.13),
-              ['/Game/High_Tech_Base/Materials/MI_Tile_Grate_Ceiling_06'], 4, 'FutureBayShutterBroken')
+    # The wall at the bay's east end, past the east stair, is a weak wall (owner, 2026-11-14): it breaks after four
+    # hits, cracks spreading over it with each one, and the way down to the deep wing is behind it. It was the kit's
+    # grated shutter; it is a wall of frosted glass now (owner: "change it for a wall of opaque glass"), in a dark
+    # steel frame that stays.
+    breakable(s, '/Engine/BasicShapes/Cube', (5300, 0, 281), rot(), (0.12, 10.0, 5.62),
+              ['/Game/Glyphbound/Materials/M_GB_FrostedGlass'], 4, 'FutureBayShutterBroken')
+    box(s, 'Frame', (5292, 5308), (-512, -500), (0, 575))
+    box(s, 'Frame', (5292, 5308), (500, 512), (0, 575))
+    box(s, 'Frame', (5292, 5308), (-512, 512), (562, 575))
     # The freight door at the end of the branch is a working door (owner): it lifts when the player comes near.
     door(s, HTB + 'SM_Door_02', (3805, 2450, 0), 180, slide=(0, 0, 430), centre=(425, 25, 150), distance=600,
          mats=['/Game/High_Tech_Base/Materials/MI_Door_03', '/Game/High_Tech_Base/Materials/MI_Tile_Machine_02'])
@@ -897,9 +902,17 @@ def hall_corners(s, bounds, z_list):
     walls that meet leave an open slot down the corner (owner, 2026-11-14: "all the corners have gaps between
     walls"). The pillar (1.42 m square) stands over the slot, 62 cm into the room on each side."""
     x0, x1, y0, y1 = bounds
-    for cx, cy in ((x0 - 9, y0 - 9), (x1 + 9, y0 - 9), (x0 - 9, y1 + 9), (x1 + 9, y1 + 9)):
+    # The pillar is finished on two sides only, its own -X and +Y (seen where the kit's author uses it, on the two
+    # outer corners of the branch's mouth). Each corner turns it so those two face the room; the first version stood
+    # all four the same way and three corners showed its open back (owner: "some corners came out wrong").
+    for cx, cy, yaw in ((x0 - 9, y0 - 9, -90.0), (x1 + 9, y0 - 9, 0.0), (x1 + 9, y1 + 9, 90.0), (x0 - 9, y1 + 9, 180.0)):
+        rad = math.radians(yaw)
+        mx, my = -69.7, -30.0                                         # the pillar's middle, from its pivot
+        ox, oy = mx * math.cos(rad) - my * math.sin(rad), mx * math.sin(rad) + my * math.cos(rad)
         for z in z_list:
-            mesh(s, 'Walls', HTB + 'SM_Wall_03', (cx + 69.7, cy + 30.0, z), mats=WALL3_MATS, collide=True)
+            mesh(s, 'Walls', HTB + 'SM_Wall_03', (cx - ox, cy - oy, z), rot(yaw=yaw), mats=WALL3_MATS, collide=True)
+        box(s, 'Backing', (min(cx, cx + (30 if cx < x0 else -30)), max(cx, cx + (30 if cx < x0 else -30))),
+            (min(cy, cy + (30 if cy < y0 else -30)), max(cy, cy + (30 if cy < y0 else -30))), (z_list[0], z_list[-1] + 600))    # nothing shows through the joint
 
 
 def floor_fit(s, x0, x1, y0, y1, z):
@@ -1028,6 +1041,8 @@ WORN_X = (6954.0, 11000.0)                    # the worn corridor: its open end 
 NEST = (11054.0, 12254.0, -600.0, 600.0)      # the small room that will be infested
 DARK = (12254.0, 14762.0, -200.0, 200.0)      # the dark corridor, wall face to wall face
 PIT = (14762.0, 18362.0, -1400.0, 1400.0)     # the hall of the tentacle boss: a dead end
+LADDER_Y = 200.0                              # where the stairwell's hand ladder is, across the landing's edge
+LADDER_DROP = 405.0                           # from the pack platform's deck down to its ladder's foot
 RUBBLE = '/Game/CastleTown/Candle/StaticMeshes/Rubble/'
 DWS = '/Game/DeepWaterStation/Meshes/'
 
@@ -1096,12 +1111,33 @@ async def stage_deep():
     floor_fit(s, x0, x1, y0, y1, Z)
     floor_fit(s, x0, x0 + 400, y0, y1, 0.0)                         # the landing
     roof_fit(s, x0, x1, y0, y1, 600.0)
-    for y, rails in ((-100, (True, False)), (100, (False, True))):
-        stairs(s, x0 + 1300, y, Z, 180, 6, rails=rails)
-    rail(s, x0 + 400, -600, x0 + 400, -200, 0.0)
-    rail(s, x0 + 400, 200, x0 + 400, 600, 0.0)
-    for y in (-590, -300, 300, 590):
-        post(s, x0 + 390, y, 0.0, Z)
+    # Down by hand ladder (owner, 2026-11-14: "change the stairs for hand ladders with a simple animation of going up
+    # and down; those ladders are in the Deep Water Station asset", and then a picture of the one he means: a
+    # vertical ladder with hoops at its top, on a small railed platform). That ladder is not a piece of its own: it is
+    # part of SM_PropsA09, a 1.5 x 4.7 m platform with the ladder at one end, 4.05 m from its foot to its deck.
+    # (The pack's "SM_Ladder" pieces are short ship's stairs; the first try used those.)
+    # So the way down has two stages: the platform stands out from the landing's edge, level with it; its ladder
+    # goes down 4.05 m to a dock; from the dock it is a 1.95 m drop to the floor, with crates to get back up.
+    # An AGBLadder at the ladder's foot and one at its head: the Interact key carries the player along it.
+    edge = x0 + 400
+    dock_z = -LADDER_DROP
+    dock_x = edge + 450
+    box(s, 'Backing', (edge - 12, edge), (y0, y1), (dock_z, -22))   # under the landing is shut
+    floor_fit(s, edge, dock_x, y0, y1, dock_z)
+    box(s, 'Dock', (edge, dock_x), (y0, y1), (Z, dock_z - 2))       # the dock is a solid block; its face is the drop
+    for cy in (-380.0, 420.0):
+        boss_crate(s, dock_x + BIG_W / 2.0 + 1.0, cy, 0, 0, Z)      # 1.38 m, then 0.57 m more onto the dock
+    # The platform: its deck is 85 cm below its own origin and spans its own Y -264..203; its ladder is at its +X edge,
+    # 170 cm towards +Y. Placed with the deck centred on the landing's middle.
+    mesh(s, 'Ladder', DWS + 'SM_PropsA09', (edge - 90, LADDER_Y - 170.0, 85.0), collide=True)
+    foot = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(edge + 215, LADDER_Y, dock_z), rot(yaw=180))
+    head = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(edge + 80, LADDER_Y, 0), rot(yaw=0))
+    for end, rise in ((foot, LADDER_DROP), (head, -LADDER_DROP)):
+        end.set_editor_property('rise', rise)
+        end.set_editor_property('step_off', 135.0)
+        tag(end, s, 'Ladder')
+    rail(s, edge, y0, edge, LADDER_Y - 434.0, 0.0)                  # the landing's railing, open where the platform stands out
+    rail(s, edge, LADDER_Y + 33.0, edge, y1, 0.0)
     box(s, 'Frame', (x1 - 4, x1 + 54), (-215, -200), (Z, 0))        # the worn corridor's mouth in the east wall
     box(s, 'Frame', (x1 - 4, x1 + 54), (200, 215), (Z, 0))
     box(s, 'Frame', (x1 - 4, x1 + 54), (-215, 215), (Z + 318, 0))
@@ -1119,20 +1155,29 @@ async def stage_deep():
     # gives this stairwell is the sea: portholes with the glow of deep water behind them, its tube lamps, a rack of
     # divers' gas cylinders, and shellfish and stones that have got in.
     water = SHIP + 'MI_ShipCorridor_Water'
-    for px in (x0 + 700, x0 + 1050, x0 + 1400):
+    for px in (x0 + 650, x0 + 1050, x0 + 1400):
+        pz = (dock_z if px < dock_x else Z) + 230                   # the first pair looks onto the dock
         for wall_y, behind in ((y1 - 4, 14), (y0 + 4, -14)):
-            mesh(s, 'Sea', DWS + 'SM_WinMetal02', (px, wall_y, Z + 230), rot(yaw=90))
-            mesh(s, 'Sea', '/Engine/BasicShapes/Cylinder', (px, wall_y + behind, Z + 230), rot(pitch=90, yaw=90), scale=(1.3, 1.3, 0.02), mats=[water])
-    for px in (x0 + 875, x0 + 1225):
+            mesh(s, 'Sea', DWS + 'SM_WinMetal02', (px, wall_y, pz), rot(yaw=90))
+            mesh(s, 'Sea', '/Engine/BasicShapes/Cylinder', (px, wall_y + behind, pz), rot(pitch=90, yaw=90), scale=(1.3, 1.3, 0.02), mats=[water])
+    for px in (x0 + 1225,):
         mesh(s, 'Sea', DWS + 'SM_Lamp05', (px, y1 - 2, Z + 240), rot(yaw=90))
         mesh(s, 'Sea', DWS + 'SM_Lamp05', (px, y0 + 2, Z + 240), rot(yaw=-90))
-    mesh(s, 'Sea', DWS + 'SM_GasCylinderA02', (x1 - 420, y0 + 340, Z + 36), collide=True)
-    mesh(s, 'Sea', DWS + 'SM_GasCylinderA03', (x1 - 420, y1 - 120, Z + 17), collide=True)
-    for k, (mx, my, size) in enumerate(((x0 + 120, y0 + 110, 1.5), (x0 + 210, y0 + 80, 1.0), (x0 + 90, y0 + 230, 1.2), (x1 - 110, y1 - 500, 1.3),
-                                        (x1 - 190, y1 - 420, 0.9), (x0 + 520, y1 - 90, 1.4), (x0 + 610, y1 - 150, 1.0))):
-        mesh(s, 'Sea', DWS + 'SM_Mollusk02', (mx, my, Z), rot(yaw=51.0 * k), scale=(size, size, size))
-    for k, (mx, my) in enumerate(((x0 + 160, y0 + 170), (x1 - 150, y1 - 470), (x0 + 560, y1 - 120))):
-        mesh(s, 'Sea', DWS + 'SM_RockSet05', (mx, my, Z + 30), rot(yaw=80.0 * k), scale=(0.6, 0.6, 0.6))
+    mesh(s, 'Sea', DWS + 'SM_GasCylinderA02', (x1 - 370, y0 + 340, Z + 36), collide=True)
+    mesh(s, 'Sea', DWS + 'SM_GasCylinderA03', (x1 - 370, y1 - 120, Z + 17), collide=True)
+    # The tanks can be climbed (owner): crates beside each rack, one for the low rack (2.2 m), a stack of two with a
+    # single one before it for the tall rack (3.5 m). Every step is under the player's jump.
+    half = BIG_W / 2.0 + 2.0
+    boss_crate(s, x1 - 425 - half, y0 + 210, 0, 0, Z)
+    boss_crate(s, x1 - 425 - half, y0 + 210, 0, 1, Z)
+    boss_crate(s, x1 - 425 - half - BIG_W, y0 + 210, 0, 0, Z)
+    boss_crate(s, x1 - 408 - half, y1 - 260, 0, 0, Z)
+    # Shellfish and stones, with collision (owner: "give those white objects collision"): on the dock and on the floor.
+    for k, (mx, my, mz, size) in enumerate(((edge + 90, y0 + 110, dock_z, 1.5), (edge + 180, y0 + 80, dock_z, 1.0), (edge + 70, y0 + 230, dock_z, 1.2),
+                                            (x1 - 110, y1 - 500, Z, 1.3), (x1 - 190, y1 - 420, Z, 0.9), (dock_x + 120, y1 - 90, Z, 1.4), (dock_x + 210, y1 - 150, Z, 1.0))):
+        mesh(s, 'Sea', DWS + 'SM_Mollusk02', (mx, my, mz), rot(yaw=51.0 * k), scale=(size, size, size), collide=True)
+    for k, (mx, my, mz) in enumerate(((edge + 130, y0 + 170, dock_z), (x1 - 150, y1 - 470, Z), (dock_x + 160, y1 - 120, Z))):
+        mesh(s, 'Sea', DWS + 'SM_RockSet05', (mx, my, mz + 30), rot(yaw=80.0 * k), scale=(0.6, 0.6, 0.6), collide=True)
     # ---- the worn corridor
     origin = (WORN_X[0] + 2256.0, 0.0, Z - 13.0)                    # turned 90: its open end to the stairwell, its door 40 m east
     hull = SHIP + 'MI_ShipCorridor_HullWorn'
@@ -1208,17 +1253,20 @@ async def stage_deep():
     rail(s, x1 - 400, y0 + 1200, x1 - 400, y1 - 400, G)             # east: its south end is open
     # What fell: deck tiles and railing from the torn ends, on the floor under them.
     tile, railing = MSS + 'Floor/SM_floor_200x200_02', MSS + 'Railing/SM_railing_200_02'
-    mesh(s, 'Wreck', tile, (x0 + 2050, y0 + 260, Z + 95), rot(pitch=-38, yaw=12), collide=True)          # one end still on the gallery's edge line
+    # Two of the tiles came down flat on crates and serve as platforms (owner: "it should work as a platform"; the
+    # first version left them tilted in the air). A deck tile's walking face is 20 cm above its own origin.
+    for cx, cy in ((x0 + 2150, y0 + 300), (x1 - 600, y0 + 760)):
+        boss_crate(s, cx, cy, 0, 0, Z)
+        mesh(s, 'Wreck', tile, (cx - 100, cy + 100, Z + BIG_H), collide=True)
     mesh(s, 'Wreck', tile, (x0 + 2260, y0 + 520, Z + 4), rot(yaw=31), collide=True)
     mesh(s, 'Wreck', railing, (x0 + 1750, y0 + 640, Z + 8), rot(roll=86, yaw=-24), collide=True)
     mesh(s, 'Wreck', railing, (x1 - 620, y0 + 900, Z + 8), rot(roll=84, yaw=70), collide=True)
-    mesh(s, 'Wreck', tile, (x1 - 560, y0 + 700, Z + 60), rot(pitch=24, roll=18, yaw=-40), collide=True)
     # The castle above has come through the roof: its stone lies in a heap off the middle, under a cold shaft of light.
     hx, hy = x0 + 2300, 350.0
     for k, (dx, dy, size, yaw, which) in enumerate(((0, 0, 420, 0, 'SM_Rubble_02'), (190, 120, 300, 70, 'SM_Rubble_02'), (-210, 90, 340, 160, 'SM_Rubble_02'),
                                                     (60, -230, 280, 250, 'SM_Rubble_02'), (-120, -140, 260, 30, 'SM_PillarTop_Broken'), (260, -90, 220, 200, 'SM_PillarTop_Broken'))):
         sized(s, 'Rubble', RUBBLE + which, (hx + dx, hy + dy, Z), size, rot(yaw=yaw))
-    light(s, 'Lamps', 'SpotLight', (hx, hy, 560), rot(pitch=-90), {'intensity': 260.0, 'color': (170, 215, 255), 'attenuation_radius': 1500.0, 'shadow': False})
+    light(s, 'Lamps', 'SpotLight', (hx, hy, 560), rot(pitch=-90), {'intensity': 160.0, 'color': (170, 215, 255), 'attenuation_radius': 1500.0, 'shadow': False})
     # Crates thrown about (one way up to the south gallery is still standing), scorch and grime.
     half = BIG_W / 2.0 + 1.0
     boss_crate(s, x0 + 900, y0 + 400 + half, 0, 0, Z)
@@ -1232,14 +1280,14 @@ async def stage_deep():
     for k, (x, y, size, which) in enumerate(((x0 + 1800, 0, 600, 1), (x1 - 1000, 600, 520, 3), (x0 + 900, -900, 480, 2))):
         decal(s, DIRT % which, (x, y, Z + 5), size, yaw=77.0 * k)
     # Light: what is left of it. Two of the hall's lamps, one of them failing, and red where the galleries broke.
-    light(s, 'Lamps', 'RectLight', (x0 + 900, -500, 560), rot(pitch=-90), {'intensity': 80.0, 'color': (255, 232, 205), 'attenuation_radius': 2200.0,
+    light(s, 'Lamps', 'RectLight', (x0 + 900, -500, 560), rot(pitch=-90), {'intensity': 40.0, 'color': (255, 232, 205), 'attenuation_radius': 2200.0,
                                                                           'source_width': 300.0, 'source_height': 600.0, 'shadow': False, 'flicker': True})
-    light(s, 'Lamps', 'RectLight', (x1 - 900, 300, 560), rot(pitch=-90), {'intensity': 70.0, 'color': (255, 232, 205), 'attenuation_radius': 2400.0,
+    light(s, 'Lamps', 'RectLight', (x1 - 900, 300, 560), rot(pitch=-90), {'intensity': 34.0, 'color': (255, 232, 205), 'attenuation_radius': 2400.0,
                                                                          'source_width': 300.0, 'source_height': 600.0, 'shadow': False})
-    light(s, 'Lamps', 'RectLight', (x0 + 1900, -700, 560), rot(pitch=-90), {'intensity': 45.0, 'color': (255, 225, 200), 'attenuation_radius': 2200.0,
+    light(s, 'Lamps', 'RectLight', (x0 + 1900, -700, 560), rot(pitch=-90), {'intensity': 22.0, 'color': (255, 225, 200), 'attenuation_radius': 2200.0,
                                                                            'source_width': 300.0, 'source_height': 600.0, 'shadow': False})
     for x, y in ((x0 + 2000, y0 + 420), (x1 - 420, y0 + 800), (x0 + 400, y0 + 1000)):
-        light(s, 'Lamps', 'PointLight', (x, y, G + 150), rot(), {'intensity': 14.0, 'color': (255, 70, 45), 'attenuation_radius': 1000.0, 'shadow': False})
+        light(s, 'Lamps', 'PointLight', (x, y, G + 150), rot(), {'intensity': 8.0, 'color': (255, 70, 45), 'attenuation_radius': 1000.0, 'shadow': False})
     nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector((WELL[0] + PIT[1]) / 2.0, 0, Z + 300), rot())
     nav.set_actor_scale3d(unreal.Vector((PIT[1] - WELL[0]) / 200.0 + 1.0, 15.0, 8.0))
     tag(nav, s, 'Gameplay')
@@ -1266,12 +1314,14 @@ TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('
         ('22b_long_door', 3380, 3150, 0, 90), ('23_long_start', 3380, 3600, 0, 90), ('23b_long_exit', 3380, 3950, 0, -90), ('24_long_mid', 3380, 5300, 0, 90), ('24b_long_screen', 3380, 5600, 0, 0), ('24c_long_castwall', 3380, 4600, 0, 90), ('25_long_end', 3380, 7000, 0, 90), ('25b_long_back', 3380, 7300, 0, -90), ('25c_long_far_door', 3380, 7250, 0, 90), ('25d_long_crates', 3420, 5800, 0, 130),
         ('28_boss_entry', 3380, 7720, 0, 90), ('29_boss_centre', 3380, 9500, 0, 90), ('29b_boss_back', 3380, 10900, 0, -90), ('29c_boss_floor_west', 3300, 8800, 0, 160),
         ('30_boss_west_gallery', 2180, 9100, 400, 0), ('31_boss_east_gallery', 4580, 10100, 400, 140), ('32_boss_bridge', 3380, 7800, 400, 90),
-        ('33_boss_corner_pile', 3500, 10400, 0, 50),
+        ('33_boss_corner_pile', 3500, 10400, 0, 50), ('34_boss_corner_sw', 2700, 8300, 0, -135), ('34b_boss_corner_se', 4000, 8300, 0, -45),
+        ('34c_boss_corner_ne', 4000, 10500, 0, 45), ('34d_boss_corner_nw', 2700, 10500, 0, 135),
         ('26_east_stair', 5200, -100, 0, 150), ('27_alcove_pit', 1250, 700, -290, 20),
-        ('49_bay_shutter', 4800, 0, 0, 0), ('50_bay_breakwall', 4800, 0, 0, 0), ('51_well_top', 5450, 0, 0, 0), ('52_well_bottom', 6750, 300, -600, 190), ('52b_well_ports', 6350, -150, -600, 80), ('53_worn_start', 7150, 0, -600, 0),
+        ('49_bay_shutter', 4800, 0, 0, 0), ('50_bay_breakwall', 4800, 0, 0, 0), ('51_well_top', 5450, 0, 0, 0), ('51b_laddertest_down', 5780, 200, 0, 0), ('51c_well_platform', 5550, -150, 0, 25), ('52_well_bottom', 6600, -20, -600, 180), ('52b_well_ladder', 6080, -150, -405, 140),
+        ('52c_laddertest_up', 5915, 200, -405, 180), ('52d_well_tanks', 6250, 0, -600, -25), ('53_worn_start', 7150, 0, -600, 0),
         ('54_worn_mid', 8900, 0, -600, 0), ('55_worn_end', 10700, 0, -600, 0), ('56_nest', 11250, 0, -600, 0), ('57_nest_back', 12100, -350, -600, 150),
         ('58_dark', 12500, 0, -600, 0), ('59_dark_end', 14450, 0, -600, 0), ('60_pit_entry', 14950, 0, -600, 0), ('61_pit_middle', 16300, -300, -600, 30),
-        ('62_pit_back', 18000, 0, -600, 180), ('63_pit_north_gallery', 17000, 1200, -200, -120), ('64_pit_south_end', 16500, -1000, -600, 200)]
+        ('62_pit_back', 18000, 0, -600, 180), ('63_pit_north_gallery', 17000, 1200, -200, -120), ('64_pit_south_end', 16500, -1000, -600, 200), ('65_pit_corner_ne', 17600, 700, -600, 45), ('66_pit_platform', 16700, -800, -600, -70)]
 
 
 TOUR_ONLY = ()        # while reviewing one part: beginnings of spot names; empty = every spot (always, before a commit)
@@ -1298,7 +1348,9 @@ WALKS = [('arrival to corridor', [(-500, 60, 0), (300, 0, 0)]), ('corridor to st
          ('gallery into the lab room', [(1550, 1960, 410), (1550, 3600, 410)]),
          ('lab floor up the steps onto the dais and to the energy gate', [(1550, 3700, 410), (1550, 3797, 410), (1550, 3904, 460), (1550, 4900, 460)]),
          ('long corridor through its far door into the sub-boss hall', [(3380, 7300, 0), (3380, 8300, 0)]),
-         ('bay through the shutter and down the stairs', [(5000, -100, 0), (5690, -100, 0), (6610, -100, -600), (6890, 0, -600)]),
+         ('bay through the glass wall onto the landing', [(5000, -100, 0), (5600, -100, 0)]),
+         ('from the ladder\'s foot across the dock', [(5915, 200, -405), (6120, 200, -405)]),
+         ('from the dock\'s foot to the worn corridor', [(6300, 0, -600), (6890, 0, -600)]),
          ('deep wing: worn corridor, small room, dark corridor, the last hall', [(6890, 0, -600), (11100, 0, -600), (12300, 0, -600), (14800, 0, -600), (16000, 0, -600)]),
          ('second freight door into the long corridor', [(3380, 3350, 0), (3380, 7450, 0)]), ('bay floor to west stair', [(2250, 200, 0), (2360, 200, 0)])]
 
@@ -1342,7 +1394,7 @@ def enable_collision():
         if not sm or sm.get_path_name().startswith('/Engine/'):
             continue
         name = sm.get_name()
-        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Chair', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_', 'ShipCorridor_Details', 'MStair01-Steps', 'MFloor02-Steps', 'Mollusk', 'WinMetal', 'SM_Lamp0', 'RockSet')):
+        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Chair', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_', 'ShipCorridor_Details', 'MStair01-Steps', 'MFloor02-Steps', 'WinMetal', 'SM_Lamp0')):
             c.set_collision_profile_name('NoCollision')
             continue
         bs = sm.get_editor_property('body_setup')
