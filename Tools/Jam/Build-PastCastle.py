@@ -292,16 +292,23 @@ GATE_DROP = ()
 
 
 WALL = CK + 'CurtainWall/SM_Curtain_Wall_01'      # 4 m long from its pivot along its own +X, 4.3 m thick, 13.6 m high
+WALL_STAIR = CK + 'CurtainWall/SM_Curtain_Wall_02'  # the same wall with an opening in one side's teeth, for a stair
 WALL_Y = WARD_Y + 216.0                           # the side walls' middle line
 FRONT_X = -525.0                                  # the front wall's middle line (the gatehouse's too)
-STAIR_X = 6050.0                                  # the wall stair's own origin along the wall
 SIDE_X0 = FRONT_X + 345.0 - 62.0                  # where a side wall starts: the corner tower's face, 62 cm in
+STAIR_PIECE = 15                                  # which piece of the King's side wall is the stair piece (X 5758..6158)
+# The wall stair's own origin along the wall: its landing (its own x -400..-150) lies under the stair piece's opening,
+# which, with the piece turned to face inside, is 100 to 350 cm back from the piece's far end.
+STAIR_X = SIDE_X0 + 400.0 * (STAIR_PIECE + 1) - 225.0 + 275.0
 END_TOWER_X = SIDE_X0 + 7200.0 + 345.0            # the keep-end towers: their far face (7646) meets the wings' wall
 WALL_OUT = -1.0                                   # the piece's crenels are on its own -Y side: that side faces outward (seen in renders)
 
 
-def wall_run(s, x0, y0, x1, y1, out):
-    """Curtain wall pieces from (x0, y0) to (x1, y1), a straight run along X or along Y. out = (ox, oy): the outside."""
+def wall_run(s, x0, y0, x1, y1, out, stair=None):
+    """Curtain wall pieces from (x0, y0) to (x1, y1), a straight run along X or along Y. out = (ox, oy): the outside.
+    stair = the index of the piece (counted from the low end of the run, along X only) that is the pack's stair piece:
+    the same wall with no teeth on one side over 2.5 m (its own X 100..350, on its own -Y side) and a sill there at
+    1214, the height the author's wall stair arrives at. It is turned so that its open side faces the inside."""
     along_x = abs(x1 - x0) > abs(y1 - y0)
     length = abs(x1 - x0) if along_x else abs(y1 - y0)
     n = int(round(length / 400.0))
@@ -320,6 +327,15 @@ def wall_run(s, x0, y0, x1, y1, out):
         else:
             px = x0
             py = (min(y0, y1) + t) if dy > 0 else (max(y0, y1) - t)
+        if stair is not None and along_x and i == (stair if dx > 0 else n - 1 - stair):
+            # open side (its -Y) to the inside: turned half round against a piece whose -Y faces out, and set at the
+            # piece's other end, since a turned piece runs the other way from its pivot
+            inside_is_minus_y = (out[1] > 0) == (yaw == 0.0)
+            if inside_is_minus_y:
+                mesh(s, 'Wall', WALL_STAIR, (px, py, 0.0), rot(yaw=yaw))
+            else:
+                mesh(s, 'Wall', WALL_STAIR, (px + 400.0 * dx, py, 0.0), rot(yaw=yaw + 180.0))
+            continue
         mesh(s, 'Wall', WALL, (px, py, 0.0), rot(yaw=yaw))
     return n
 
@@ -342,7 +358,7 @@ async def stage_walls():
     # 4 x 4 m inside, with a door in each face across the wall's line and a window in the other two.
     # The two side walls: 18 pieces from the corner tower's face (62 cm into its wall's thickness) to the keep-end
     # tower's face.
-    n += wall_run(s, SIDE_X0, -WALL_Y, SIDE_X0 + 7200.0, -WALL_Y, (0, -1))
+    n += wall_run(s, SIDE_X0, -WALL_Y, SIDE_X0 + 7200.0, -WALL_Y, (0, -1), stair=STAIR_PIECE)
     n += wall_run(s, SIDE_X0, WALL_Y, SIDE_X0 + 7200.0, WALL_Y, (0, 1))
     # The front wall, either side of the gatehouse: 3 pieces from inside its round towers to the corner tower's face.
     n += wall_run(s, FRONT_X, -2440.0, FRONT_X, -1240.0, (-1, 0))
@@ -361,24 +377,8 @@ async def stage_walls():
             stone_block(s, x + dx, y - 70.0, WALK_Z - 17.0, 155.0, 140.0, 20.0)
     # The author's wall stair, in the side yard on the King's Hall side, its foot on the upper ward.
     k, _ = place_level(s, 'WallStair', 'LI_CurtainWall_Stairs_01', (STAIR_X, -WARD_Y - 6.0, TERRACE_Z), 0.0)
-    # From the stair's landing onto the wall walk (owner: "so that one can get up onto the wall"). Measured with traces:
-    # the landing is at 1210, the walk at 1203, and between them stands the wall's inner parapet, 54 cm thick, its
-    # merlons 1.34 m above the landing. A mounting block of the kit's own stone blocks goes over it: four steps of
-    # 34 cm up from the landing, a cap on the parapet, three steps down onto the walk. Every step can be walked.
-    yf = -WARD_Y
-    b = 0
-    for xa in (STAIR_X - 350.0, STAIR_X - 290.0):
-        for r in range(4):                                   # landing side: the row nearest the wall is the highest
-            for layer in range(4 - r):
-                stone_block(s, xa, yf - 4.0 + 40.0 * r, 1207.0 + 34.0 * layer, 60.0, 40.0, 34.0)
-                b += 1
-        stone_block(s, xa, yf - 58.0, 1312.0, 60.0, 54.0, 34.0)      # the cap, over crenels and merlons alike
-        b += 1
-        for r in range(3):                                   # walk side
-            for layer in range(3 - r):
-                stone_block(s, xa, yf - 58.0 - 40.0 * (r + 1), 1203.0 + 34.0 * layer, 60.0, 40.0, 34.0)
-                b += 1
-    log.append('walls: %d wall pieces, %d tower pieces, %d wall stair pieces, %d blocks of the mounting step' % (n, t, k, b))
+    # Its landing meets the stair piece's sill (1214), 11 cm above the wall walk: no teeth in the way.
+    log.append('walls: %d wall pieces (one of them the stair piece), %d tower pieces, %d wall stair pieces' % (n, t, k))
 
 
 RET = CK + 'Buildings/Hall_1/SM_Wall_1x5'          # 4 m long along its own +X, 1.25 m thick, 5 m high
@@ -707,6 +707,7 @@ WALKS = [('road through the gate into the ward', [(-2300, 0, 0), (2300, 0, 0)]),
          ('terrace to the far side yard', [(4500, 2100, 210), (6800, 2100, 210)]),
          ('along the wall walk on the King\'s side, from inside the keep-end tower through the corner tower to its far door', [(7300, -2816, 1203), (-640, -2816, 1203)]),
          ('along the wall walk on the other side, tower to tower', [(7300, 2816, 1203), (-640, 2816, 1203)]),
+         ('from the wall stair\'s landing through the opening onto the wall walk', [(STAIR_X - 275, -2500, 1212), (STAIR_X - 275, -2690, 1212), (STAIR_X - 275, -2816, 1203)]),
          ('across the terrace in front of the keep, wall to wall', [(4700, -2400, 210), (4700, 2400, 210)]),
          ('Main Hall down the crypt stair to the landing', [(9300, -600, 260), (9695, -600, 240), (10485, -600, -60), (11285, -600, -360), (11690, -600, -360)]),
          ('landing down to the cells and into the seal\'s hall', [(11690, -600, -360), (11690, -1005, -360), (11690, -1795, -660), (11690, -2595, -960), (11690, -6800, -960)])]
