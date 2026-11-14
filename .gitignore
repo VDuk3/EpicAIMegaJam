@@ -25,6 +25,7 @@ Build/
 **/SourceArt/**
 !**/SourceArt/**/
 !**/SourceArt/**/README.md
+!**/SourceArt/**/provenance/*.md
 Incoming/
 *.uasset
 *.umap
