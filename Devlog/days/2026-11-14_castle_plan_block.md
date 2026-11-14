@@ -251,3 +251,58 @@ Translation: arrange that stair so that it goes on naturally onto the wall. For 
 - **Still not checked by a person:** the corrected places on foot (the tour teleports), the seal's travel itself, the opening fight with its enemies.
 
 **Pictures of this part** (`media/2026-11-14/`, through the game's camera): `castle_notes_gate_wall.png` (no slit beside the gate), `castle_notes_cart.png`, `castle_notes_wide_stair.png`, `castle_notes_wall_stair.png`, `castle_notes_wall_stair_landing.png`, `castle_notes_wall_walk.png`, `castle_notes_keep_end_tower.png` (the tower's room, clear).
+
+---
+
+## Fifth part: the way down to the crypt, and a pixel-art test in the first zone
+Two messages from the owner (Spanish), the second with a screenshot of the crypt stair's mouth:
+
+> *"Prueba pixel art solo en la primera zona"*
+
+> *"No se puede ir al sotano, arreglalo cuando puedas"*
+
+Translation: try pixel art only in the first zone. / One cannot get to the basement; fix it when you can.
+
+### The crypt could not be reached, and the checks said it could
+- **What was wrong.** The stair's first flight went down under the Main Hall's back wall (X 10090). Where it passed, the wall's foot stood **1.3 m above the steps**: a player 1.8 m tall stops there. Version 1 called it "a low doorway, about 2 m"; nobody had measured it with a body.
+- **Why two checks passed it.** The builder's walk check drew a line at chest height along each route and sampled the floor under it. The line ran under the wall's foot, and the floor was there. The tour teleports the player to each spot, so it never tried the doorway either. A check that could not fail on the fault it was written for (CLAUDE.md, tests, rule 3).
+- **The new check: `body_walk`.** A capsule of the player's size (radius 38 cm, 180 cm tall, less the 45 cm he steps up) is swept from sample to sample, every 30 cm, on the floor found under it. It reports what stops the body at any height (a lintel, a kerb above a step) and any rise in the floor higher than a step. It runs on every walk now, in both directions on the crypt's (a twelfth walk: back up from the seal's hall to the Main Hall).
+- **The fix.** The stair's mouth moved 4 m toward the middle of the hall (the four floor tiles left out are now X 9290 to 10090, were 9690 to 10490), so the stair is 3 m under the back wall's foot when it reaches it, and 3.6 m under the keep's outer wall behind it. The second flight has plain side walls and a ceiling where it leaves the keep, and a wall closes the space over the stair's mouth at the landing; the rock around the crypt starts further back.
+- **Checks.** Builder: `walks: clear on 12 walks`; `windows: ... still open after that: 0`. Tour on the Editor build: `SMOKE tour block passed: 42 spots, 0 without floor`, no LogGB errors, 0 engine errors, 192 s. The landing's two dark slivers in the game's picture were looked at from six angles in unlit renders: floor and kerb, no hole.
+- Pictures (the game's camera): `media/2026-11-14/castle_crypt_mouth_moved.png`, `castle_crypt_stair_flight1.png`, `castle_crypt_landing.png`.
+- **Still not done by a person:** walking down it. The body sweep is the nearest thing to feet the builder has; it is not feet.
+
+### Pixel-art test: the first zone, two variants side by side
+The zone is the gatehouse and the lower ward (everything of the map up to the upper ward's edge: 727 pieces). The rule being tested is the GDD's (section 3): *pixel-art environments are 3D geometry with low-resolution pixel textures, nearest filtering*. The castle pack is the opposite: photographic stone on sculpted geometry. Two ways to get from one to the other were built, one on each side of the map's axis, so the owner sees both from one spot:
+
+| | **A, drawn tiles** (left of the road, the King's Hall side) | **B, the pack's own pictures in large pixels** (right of the road) |
+|---|---|---|
+| What it is | Eight seamless 32 x 32 tiles drawn for the castle (wall, dressed stone, dark stone, cobble, wood, iron, earth, cloth), in the style guide's ramps plus a new stone ramp; each piece's material is replaced by the tile that fits it, laid on the world by `M_PixelSurface` (the material the test arena already uses) | Each of the pack's materials keeps its own colour picture, cut down to 64 px and read without filtering on the piece's own UVs; its occlusion picture darkens it (the pack's stone has its joints there, not in its colour); the brightness is cut to 7 steps |
+| Made by | `Tools/Jam/make_castle_tiles.js` (seeded rules, no hand drawing, no AI image model) | A new master material, `M_GBPixelUV`, and one instance per pack material (23) |
+| The floor | The modelled cobbles are hidden and a flat floor carries the cobble tile | The modelled cobbles, with their picture in pixels |
+
+Applied by `Tools/Jam/castle_pixel_test.py` (settings in `Saved/castle_pixel.json`: `tiles`, `uv` or `both_sides`). It only overrides materials on placed pieces of that zone; building the map again takes the test away.
+
+**What went wrong on the way**
+- *B, first pass: speckles of yellow, purple and green.* Cutting each colour channel to steps on its own makes near-grey stone round three different ways. Now the brightness is cut to steps and the hue is kept.
+- *B, second pass: a wall with no joints.* The pack's bricks are in its occlusion and normal pictures, not in its colour. The occlusion picture, in the same large pixels, now darkens the colour.
+- *B, third pass: the material did not compile*, and the whole side rendered as the engine's grey checker. The pack's 4096 px pictures are virtual textures, which need their own kind of sampler; one material cannot serve both kinds. The fix is also the simpler design: a copy of each picture cut to 64 px, not virtual, no filtering, no mips (`small_copy`). The copy **is** the large-pixel picture; the UV-snapping maths went away.
+- *A: a drawn cobble on a modelled cobble is two floors at once.* On A's side the modelled cobbles are hidden and a flat floor carries the tile.
+
+**The architect's own reading of the pictures** (the game's camera; `castle_pixel_ward_A_left_B_right.png`, `castle_pixel_gate_A_left_B_right.png`, `castle_pixel_A_drawn_tiles_wall.png`, `castle_pixel_B_pack_pictures_wall.png`, unlit `castle_pixel_unlit_sheet.png`, the tiles `castle_pixel_tiles_preview.png`):
+- **A's floor is the one thing that is plainly pixel art**: flat, drawn, crisp at every distance, and it sits well under the pixel HUD and the pixel hands.
+- **A's walls read as pixel bricks from the middle of the ward and further.** Close to the gatehouse's rough stone they do not: the drawn joints and the modelled stones are two patterns that do not agree, and the low sun lights the modelled one.
+- **B is not pixel art.** It reads as the same sculpted castle with a blurry texture swapped for a blocky one. The geometry and its shadows carry the image, the pixels only colour it. Unlit, B's walls are noise: a 64 px cut of a photograph of stone has no drawn shapes in it.
+- **Neither variant touches the real obstacle: the pack's relief is in its geometry.** A material cannot flatten it. A wall that is truly pixel art here is a flat wall with a drawn tile, as A's floor is.
+
+**Recommendation to the owner (his decision, not taken):** A, and where a surface is simple (floors, the curtain walls, the retaining wall, the wide stair) replace the sculpted piece with a flat one that carries the tile, as was done for the cobbles; keep the pack's shapes where the shape is the point (gatehouse, towers, keep) with A's tiles on them. B is dropped unless he sees something in it the architect does not.
+
+**State of the map.** The test is left in the map and in today's package, both variants side by side, so the owner can walk it (`Glyphbound/Play-Castle.bat`). The rest of the castle is untouched.
+
+**Checks of this part**
+- Tour on the Editor build with the test applied: 42 spots, 0 without floor, 0 engine errors (the same run as above).
+- Package: `BUILD SUCCESSFUL` (BuildCookRun 178 s), `TeamTBD_Glyphbound.zip` 2,628.8 MB. Still over the jam's 1 GB limit; the test adds 0.2 MB.
+- Packaged tour: `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 42 spots, 0 without floor`, the seal's map can be opened, no LogGB warnings or errors, 0 engine errors. Both variants are in the packaged pictures (the test's materials cooked).
+- No C++ changed in this part. Not reviewed by Sol: the changes are Editor scripts (the builder's check and stair, the test's two tools), checked by their own output and by the pictures.
+
+**Tools used in this part:** Unreal Editor 5.9 Python over MCP; Node.js (tile drawing, patches); no image model.
