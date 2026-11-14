@@ -175,6 +175,7 @@ void AGBPlayerCharacter::BeginPlay()
 
 	// Passives learned above changed stats before the binding existed.
 	ApplyMovementStats();
+	ConfigureFirstPersonCamera();
 
 	if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
 	{
@@ -204,6 +205,7 @@ void AGBPlayerCharacter::HandleDataReloaded()
 	{
 		Stats->SetBaseStats(Data->GetPlayer().Stats);
 	}
+	ConfigureFirstPersonCamera();
 }
 
 void AGBPlayerCharacter::Tick(float DeltaSeconds)
@@ -325,6 +327,22 @@ void AGBPlayerCharacter::ApplyMovementStats()
 
 	BaseEyeHeight = ReadStat(GBStat::EyeHeight, 70.f);
 	ApplyCameraPose();
+}
+
+void AGBPlayerCharacter::ConfigureFirstPersonCamera()
+{
+	if (!Camera)
+	{
+		return;
+	}
+	// Game.json holds both FOVs (vertical degrees, Maintain Y-Axis): the hip FOV the camera runs on and the
+	// fixed weapon FOV the gun viewmodels are rendered with (aiming only moves the world FOV).
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		Camera->SetFieldOfView(Data->GetGameValue(FName(TEXT("HipFOV")), 58.72f));
+		Camera->SetEnableFirstPersonFieldOfView(true);
+		Camera->SetFirstPersonFieldOfView(Data->GetGameValue(FName(TEXT("ViewModelFOV")), 58.72f));
+	}
 }
 
 void AGBPlayerCharacter::UpdateWalkSpeed()

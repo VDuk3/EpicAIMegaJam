@@ -88,6 +88,8 @@
 		"PrecisionRecoveryCooldownMin": 1,
 		"PistolWeakPointFlashHold": 0.06,
 		"PistolWeakPointFlashFade": 0.15,
+		"HipFOV": 58.72,
+		"ViewModelFOV": 58.72,
 		"GunEnchantBlinkSeconds": 3,
 		"GunEnchantBlinkHz": 4,
 		"FrostSlowMax": 0.95,

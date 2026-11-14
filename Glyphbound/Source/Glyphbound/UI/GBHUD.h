@@ -81,6 +81,11 @@ public:
 	/** Skin of the menus both eras share: the current era's look (past = RPG, future = cyberpunk). */
 	EGBHudSkin GetMenuSkin() const;
 
+	/** Full-screen hand overlay for the CENTRAL art (gb.HandOverlay): a 480x270 PNG drawn with the same motion as the hands. */
+	void SetHandOverlay(UTexture2D* Texture);
+	void ClearHandOverlay();
+	bool HasHandOverlay() const { return HandOverlayTexture != nullptr; }
+
 	// ---- Menu input, forwarded by AGBPlayerController while a menu is open ----
 	void OnMenuOpened(EGBMenu Menu);
 	void OnMenuClosed(EGBMenu Menu);
@@ -151,6 +156,9 @@ protected:
 	/** 0 = lowered (off screen), 1 = fully raised. Slides towards IsBlockRaised() every frame. */
 	float ShieldRaise01 = 0.f;
 	double LastShieldUpdateTime = -1.0;
+
+	/** Full-screen hand overlay (gb.HandOverlay); null = draw the normal hands. Nearest filtering, set on load. */
+	UPROPERTY() TObjectPtr<UTexture2D> HandOverlayTexture = nullptr;
 
 	// ---- Smoothed bars (the "lost health" trail behind the health bar) ----
 	float HealthTrail01 = 1.f;
@@ -394,6 +402,8 @@ protected:
 	void DrawMantleHands(AGBPlayerCharacter* Player, float PixelSize);
 	/** The raised ice shield sprite, large, from the lower left. Returns how raised it is (0..1). */
 	float DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, const FVector2D& Bob);
+	/** Draws the hand overlay (nothing when none is set): same bob, kick, reload follow and pump shift as the hands. */
+	void DrawHandOverlay(AGBPlayerCharacter* Player, const FVector2D& BobArt, float Kick01);
 
 	// RPG (GBHUD_Rpg.cpp)
 	void DrawRpgHud(AGBPlayerCharacter* Player);

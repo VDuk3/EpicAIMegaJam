@@ -9,6 +9,7 @@
 #include "Engine/CanvasRenderTarget2D.h"
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
+#include "Engine/GameViewportClient.h"
 #include "Misc/App.h"
 #include "Combat/GBProjectile.h"
 #include "Combat/GBStatusEffectComponent.h"
@@ -176,6 +177,10 @@ namespace
 	constexpr float ReloadSlideInEase = 1.6f;    // exponent of the slide-in (above 1: fastest at the end)
 	// A cancelled reload (or a released preview) blends the gun back to rest over this time.
 	constexpr float ReloadBlendSeconds = 0.12f;
+	// Game.json keys of the camera FOVs (vertical degrees, Maintain Y-Axis): the hip FOV (the camera default
+	// before this feature) and the fixed weapon FOV the viewmodel is rendered with.
+	const FName HipFOVKey(TEXT("HipFOV"));
+	const FName ViewModelFOVKey(TEXT("ViewModelFOV"));
 	// Round-by-round reload (look): the gun leaves rest during this share of the FIRST round's cycle, then holds the pose.
 	// Each round's cycle plays the magazine guns' "fresh magazine" beats (rise, slide in, seat bump) from ReloadEmptyEnd to ReloadSeatEnd.
 	constexpr float PerRoundPoseInShare = 0.35f;
@@ -320,6 +325,15 @@ void AGBGun::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlayer
 {
 	Super::InitFromDefinition(Definition, InOwner);
 
+	// The view pose comes raw from the definition (never through perks/modifiers). ReadDataPose runs during
+	// BuildViewModel, once the model (and its fallback constants) is known. OnEquipped clears any live pose
+	// (gb.ViewPose) and re-reads the data pose, since the same actor is reused across re-equips.
+	bHasLivePose = false;
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		HipFOV = Data->GetGameValue(HipFOVKey, 58.72f);
+	}
+
 	const FName Required[] = { GBStat::Damage, GBStat::FireInterval, GBStat::MagazineSize, GBStat::SpareMagazines, GBStat::ReloadTime, GBStat::Range };
 	for (const FName& Stat : Required)
 	{
@@ -342,6 +356,7 @@ UStaticMeshComponent* AGBGun::AddPart(FName Name, EGBShape Shape, const FVector&
 	Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Part->SetGenerateOverlapEvents(false);
 	Part->SetCastShadow(false);
+	Part->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 	Part->RegisterComponent();
 	GBPlaceholder::SetupShape(Part, Shape, Size, Color, bGlow);
 	Parts.Add(Part);
@@ -354,7 +369,7 @@ void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
 	{
 		if (const FGBGunModelArt* Art = FindModelArt(Definition.ViewModel))
 		{
-			if (TryBuildViewModel(*Art))
+			if (TryBuildViewModel(*Art, Definition))
 			{
 				return;
 			}
@@ -369,7 +384,7 @@ void AGBGun::BuildViewModel(const FGBWeaponDefinition& Definition)
 	BuildPlaceholderViewModel(Definition);
 }
 
-bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
+bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art, const FGBWeaponDefinition& Definition)
 {
 	auto LoadModelMesh = [&Art](const TCHAR* Part) -> UStaticMesh*
 	{
@@ -399,13 +414,16 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 		// rifle looked soft, "made of jelly" (owner). It casts no shadow on the world, where a floating gun would look wrong.
 		Part->SetCastShadow(true);
 		Part->bSelfShadowOnly = true;
+		// Fixed weapon FOV: the camera renders this part with FirstPersonFieldOfView, so aiming never moves the gun.
+		Part->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		Part->SetStaticMesh(Mesh);
 		Part->RegisterComponent();
 		return Part;
 	};
 	ModelArt = &Art;
+	ReadDataPose(Definition, &Art);
 	VMBody = NewViewPart(TEXT("Body"), BodyMesh, Root, FVector::ZeroVector);
-	VMBody->SetRelativeScale3D(FVector(Art.ViewScale));
+	VMBody->SetRelativeScale3D(FVector(DataPose.Scale));
 	VMEnergyBar = Art.bEnergyBarMesh ? NewViewPart(TEXT("EnergyBar"), EnergyBarMesh, VMBody, FVector::ZeroVector) : nullptr;
 	VMWeakPointLight = NewViewPart(TEXT("WeakPointLight"), WeakPointLightMesh, VMBody, FVector::ZeroVector);
 	VMAmmoDisplay = NewViewPart(TEXT("AmmoDisplay"), AmmoDisplayMesh, VMBody, FVector::ZeroVector);
@@ -468,10 +486,11 @@ bool AGBGun::TryBuildViewModel(const FGBGunModelArt& Art)
 	{
 		UStaticMeshComponent* Slab = NewObject<UStaticMeshComponent>(this, Name);
 		Slab->SetupAttachment(Root);
-		Slab->SetRelativeLocation(Art.MuzzleTip * Art.ViewScale);
+		Slab->SetRelativeLocation(Art.MuzzleTip * DataPose.Scale);
 		Slab->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Slab->SetGenerateOverlapEvents(false);
 		Slab->SetCastShadow(false);
+		Slab->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		Slab->RegisterComponent();
 		OutMID = GBPlaceholder::SetupShape(Slab, EGBShape::Cube, FVector(MuzzleFlashThicknessCm, MuzzleFlashSizeCm, MuzzleFlashSizeCm), Art.IdleGlow, true);
 		Slab->SetVisibility(false);
@@ -547,22 +566,91 @@ bool AGBGun::IsViewModelMagazineVisible() const
 
 float AGBGun::GetViewModelRootOffsetCm() const
 {
-	return ModelArt ? (Root->GetRelativeLocation() - ModelArt->RootOffset).Size() : 0.f;
+	return Root ? (Root->GetRelativeLocation() - GetRestPose().Offset).Size() : 0.f;
 }
 
 float AGBGun::GetViewModelRootAngleDeg() const
 {
-	if (!ModelArt)
+	if (!Root)
 	{
 		return 0.f;
 	}
-	const FQuat Rest = FRotator(0.f, ModelArt->RootYaw, 0.f).Quaternion();
+	const FQuat Rest = GetRestPose().Rotation.Quaternion();
 	return FMath::RadiansToDegrees(Root->GetRelativeRotation().Quaternion().AngularDistance(Rest));
 }
 
 FVector2D AGBGun::GetReloadRightHandFollow() const
 {
 	return ModelArt ? ModelArt->ReloadRightHandFollow : FVector2D::ZeroVector;
+}
+
+void AGBGun::ReadDataPose(const FGBWeaponDefinition& Definition, const FGBGunModelArt* FallbackArt)
+{
+	const FVector FallbackOffset = FallbackArt ? FallbackArt->RootOffset : FVector::ZeroVector;
+	const float FallbackYaw = FallbackArt ? FallbackArt->RootYaw : -6.f;
+	const float FallbackScale = FallbackArt ? FallbackArt->ViewScale : 1.f;
+	// No ModelArt yet (BuildViewModel runs after this): fall back to the pistol's pose when the model is unknown.
+	auto Raw = [&Definition](const FName& Key, float Fallback)
+	{
+		if (const float* Found = Definition.Stats.Find(Key))
+		{
+			return *Found;
+		}
+		return Fallback;
+	};
+	DataPose.Offset = FVector(Raw(GBViewPose::OffsetX, FallbackOffset.X), Raw(GBViewPose::OffsetY, FallbackOffset.Y), Raw(GBViewPose::OffsetZ, FallbackOffset.Z));
+	DataPose.Rotation = FRotator(Raw(GBViewPose::Pitch, 0.f), Raw(GBViewPose::Yaw, FallbackYaw), Raw(GBViewPose::Roll, 0.f));
+	DataPose.Scale = FMath::Max(0.01f, Raw(GBViewPose::Scale, FallbackScale));
+	// Warn once per missing key, like the required stats above (a typo in Weapons.json must be visible).
+	const FName Keys[] = { GBViewPose::OffsetX, GBViewPose::OffsetY, GBViewPose::OffsetZ, GBViewPose::Pitch, GBViewPose::Yaw, GBViewPose::Roll, GBViewPose::Scale };
+	for (const FName& Key : Keys)
+	{
+		if (!Definition.Stats.Contains(Key))
+		{
+			UE_LOG(LogGB, Warning, TEXT("Weapons.json '%s': missing view pose stat '%s', using the model fallback"), *Definition.Id.ToString(), *Key.ToString());
+		}
+	}
+}
+
+FGBViewPose AGBGun::GetRestPose() const
+{
+	return bHasLivePose ? LivePose : DataPose;
+}
+
+void AGBGun::SetLivePose(const FGBViewPose& Pose)
+{
+	LivePose = Pose;
+	LivePose.Scale = FMath::Max(0.01f, LivePose.Scale);
+	bHasLivePose = true;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+void AGBGun::ClearLivePose()
+{
+	bHasLivePose = false;
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+}
+
+FString AGBGun::GetPoseJsonLines() const
+{
+	const FGBViewPose Pose = GetRestPose();
+	return FString::Printf(TEXT("\t\t\t\"ViewOffsetX\": %g,\n\t\t\t\"ViewOffsetY\": %g,\n\t\t\t\"ViewOffsetZ\": %g,\n\t\t\t\"ViewPitch\": %g,\n\t\t\t\"ViewYaw\": %g,\n\t\t\t\"ViewRoll\": %g,\n\t\t\t\"ViewScale\": %g"),
+		Pose.Offset.X, Pose.Offset.Y, Pose.Offset.Z, Pose.Rotation.Pitch, Pose.Rotation.Yaw, Pose.Rotation.Roll, Pose.Scale);
+}
+
+float AGBGun::GetViewModelFovDeg() const
+{
+	if (const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
+	{
+		return Data->GetGameValue(ViewModelFOVKey, 58.72f);
+	}
+	return 58.72f;
 }
 
 FVector2D AGBGun::GetReloadHandReach() const
@@ -847,8 +935,71 @@ void AGBGun::ApplyViewModelPose()
 	// The pump's rack: the gun is pulled in, tips up and rolls while the pump is back. It adds to the shot kick.
 	const FVector RackLoc = Art.PumpRackOffset * CurrentPumpAmount;
 	const FRotator RackRot = Art.PumpRackRot * CurrentPumpAmount;
-	Root->SetRelativeLocation(Art.RootOffset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc);
-	Root->SetRelativeRotation(FRotator(Art.KickPitchDeg * Strength, Art.RootYaw, 0.f) + ReloadPoseRot + RackRot);
+	// Rest pose from the data (the live override while set) plus the same walk bob the 2D hands get.
+	const FGBViewPose Rest = GetRestPose();
+	// The live scale resizes the body and moves the muzzle flash wherever the pose is applied, not only at construction.
+	if (VMBody)
+	{
+		VMBody->SetRelativeScale3D(FVector(Rest.Scale));
+	}
+	if (MuzzleFlash)
+	{
+		MuzzleFlash->SetRelativeLocation(Art.MuzzleTip * Rest.Scale);
+	}
+	if (MuzzleFlashCross)
+	{
+		MuzzleFlashCross->SetRelativeLocation(Art.MuzzleTip * Rest.Scale);
+	}
+	Root->SetRelativeLocation(Rest.Offset + FVector(-CurrentKickBackCm, 0.f, 0.f) + ReloadPoseLoc + RackLoc + ComputeBobShiftCm());
+	Root->SetRelativeRotation(FRotator(Rest.Rotation.Pitch + Art.KickPitchDeg * Strength, Rest.Rotation.Yaw, Rest.Rotation.Roll) + ReloadPoseRot + RackRot);
+}
+
+FVector AGBGun::ComputeBobShiftCm() const
+{
+	if (GBViewBob::bFrozen || !ModelArt)
+	{
+		return FVector::ZeroVector;
+	}
+	const UWorld* World = GetWorld();
+	const AGBPlayerCharacter* Player = GetPlayerOwner();
+	if (!World || !Player || !GEngine || !GEngine->GameViewport)
+	{
+		return FVector::ZeroVector;
+	}
+	FVector2D ViewportSize = FVector2D::ZeroVector;
+	GEngine->GameViewport->GetViewportSize(ViewportSize);
+	if (ViewportSize.Y <= 0.f)
+	{
+		return FVector::ZeroVector;
+	}
+	float Speed01 = 0.f;
+	if (const UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+	{
+		if (Move->IsMovingOnGround())
+		{
+			Speed01 = FMath::Clamp(Player->GetVelocity().Size2D() / FMath::Max(1.f, Move->GetMaxSpeed()), 0.f, 1.f);
+		}
+	}
+	const FVector2D BobArt = GBViewBob::CalcBob(static_cast<float>(World->GetTimeSeconds()), Speed01);
+	// One motion grid with the HUD: art * ClipY/120 snapped to the active (hand or overlay) grid, then to cm.
+	const FVector2D ScreenShift = GBViewBob::MotionToScreenPx(BobArt, ViewportSize.Y, GBViewBob::bOverlayShown);
+	if (ScreenShift.IsZero())
+	{
+		return FVector::ZeroVector;
+	}
+	// Forward distance of the root from the camera: the anchor plus the root's full current forward
+	// distance (rest + reload + kick + rack, X = forward), not the rest offset alone.
+	float AnchorForwardCm = 30.f;
+	if (const USceneComponent* Anchor = Player->GetHeldItemAnchor())
+	{
+		AnchorForwardCm = Anchor->GetRelativeLocation().X;
+	}
+	const float RackX = ModelArt->PumpRackOffset.X * CurrentPumpAmount;
+	const float DepthCm = FMath::Max(1.f, AnchorForwardCm + GetRestPose().Offset.X + ReloadPoseLoc.X + RackX - CurrentKickBackCm);
+	// cm = screenPx * 2 * Depth * tan(ViewModelFOV/2) / ClipY (camera plane: art +x is +Y, art +y down is -Z).
+	const float HalfV = FMath::DegreesToRadians(FMath::Clamp(GetViewModelFovDeg(), 0.001f, 179.999f) * 0.5f);
+	const float CmPerScreenPx = 2.f * DepthCm * FMath::Tan(HalfV) / ViewportSize.Y;
+	return FVector(0.f, ScreenShift.X * CmPerScreenPx, -ScreenShift.Y * CmPerScreenPx);
 }
 
 void AGBGun::ApplyReloadMagazine()
@@ -869,7 +1020,7 @@ void AGBGun::ApplyReloadMagazine()
 		{
 			// Straight down on screen whatever the gun's tilt: camera down, brought into the body's own (scaled) frame.
 			const FVector CameraDown(0.f, 0.f, -Art.ReloadFallCm * Look.Drop);
-			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, Art.ViewScale);
+			Offset += Root->GetRelativeRotation().UnrotateVector(CameraDown) / FMath::Max(KINDA_SMALL_NUMBER, GetRestPose().Scale);
 		}
 	}
 	VMMagazine->SetRelativeLocation(Art.MagazineRest + Offset);
@@ -1205,8 +1356,11 @@ void AGBGun::BuildPlaceholderViewModel(const FGBWeaponDefinition& Definition)
 	}
 	// Neon on the camera-facing side (the anchor sits right of the view, so +Y faces away).
 	AddPart(TEXT("Neon"), EGBShape::Cube, FVector(BodyForward, -2.6f, 1.f), FVector(BodyLength * 0.8f, 0.35f, 0.7f), NeonColor, true);
+	// The rest pose comes from the data too (no scale: the placeholder parts are already sized in cm).
 	// Angle the whole viewmodel slightly toward the view center so the barrel points near the crosshair.
-	Root->SetRelativeRotation(FRotator(0.f, -6.f, 0.f));
+	ReadDataPose(Definition, FindModelArt(Definition.ViewModel));
+	Root->SetRelativeLocation(DataPose.Offset);
+	Root->SetRelativeRotation(FRotator(DataPose.Rotation.Pitch, DataPose.Rotation.Yaw, DataPose.Rotation.Roll));
 }
 
 // ---- Ammo ----
@@ -1440,7 +1594,15 @@ void AGBGun::UpdateAimFOV(float DeltaSeconds, bool bInstant)
 	}
 	if (AimAlpha <= 0.f)
 	{
-		HipFOV = Camera->FieldOfView;
+		// Hip FOV from the data (Game.json HipFOV); the camera already runs on it (BeginPlay).
+		if (const UGBDataSubsystem* HipData = UGBDataSubsystem::Get(this))
+		{
+			HipFOV = HipData->GetGameValue(HipFOVKey, Camera->FieldOfView);
+		}
+		else
+		{
+			HipFOV = Camera->FieldOfView;
+		}
 	}
 
 	if (bInstant)
@@ -1454,6 +1616,27 @@ void AGBGun::UpdateAimFOV(float DeltaSeconds, bool bInstant)
 		AimAlpha = FMath::Clamp(Target > AimAlpha ? AimAlpha + Step : AimAlpha - Step, 0.f, 1.f);
 	}
 	Camera->SetFieldOfView(FMath::Lerp(HipFOV, GetStat(GBStat::AimFOV, HipFOV), AimAlpha));
+}
+
+void AGBGun::OnEquipped()
+{
+	Super::OnEquipped();
+	// The same actor is reused across gun -> staff -> gun, so the live override (gb.ViewPose) is cleared
+	// here and the data pose is re-read, not only at spawn.
+	bHasLivePose = false;
+	if (const FGBWeaponDefinition* Def = GetDefinition())
+	{
+		ReadDataPose(*Def, ModelArt);
+	}
+	if (bViewModel)
+	{
+		ApplyViewModelPose();
+	}
+	else if (Root)
+	{
+		Root->SetRelativeLocation(DataPose.Offset);
+		Root->SetRelativeRotation(FRotator(DataPose.Rotation.Pitch, DataPose.Rotation.Yaw, DataPose.Rotation.Roll));
+	}
 }
 
 void AGBGun::OnUnequipped()

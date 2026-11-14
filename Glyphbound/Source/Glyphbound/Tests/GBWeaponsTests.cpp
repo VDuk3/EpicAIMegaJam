@@ -192,4 +192,154 @@ bool FGBWeaponsPerRoundStopTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// ---- View pose (first-person guns): one shared bob, art-px-to-cm conversion, FOV conversion ----
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBWeaponsViewPoseBobTest, "Glyphbound.Weapons.ViewPose.Bob",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBWeaponsViewPoseBobTest::RunTest(const FString& Parameters)
+{
+	// Still: no bob at all (the gun and the hands rest).
+	TestTrue(TEXT("Zero speed at time zero"), GBViewBob::CalcBob(0.f, 0.f).IsZero());
+	TestTrue(TEXT("Zero speed late in the run"), GBViewBob::CalcBob(1234.5f, 0.f).IsZero());
+
+	// Running: bounded and on the move (a constant or a wrong axis would fail below).
+	const FVector2D Start = GBViewBob::CalcBob(0.f, 1.f);
+	TestTrue(TEXT("Full speed at time zero is (3, 0)"), Start.Equals(FVector2D(3.f, 0.f), 0.001f));
+	const FVector2D Quarter = GBViewBob::CalcBob(UE_HALF_PI / 9.f, 1.f);
+	TestTrue(TEXT("A quarter period later it is (0, 2)"), Quarter.Equals(FVector2D(0.f, 2.f), 0.01f));
+	for (float Time = 0.f; Time < 10.f; Time += 0.07f)
+	{
+		const FVector2D Bob = GBViewBob::CalcBob(Time, 1.f);
+		if (FMath::Abs(Bob.X) > 3.001f || Bob.Y < -0.001f || Bob.Y > 2.001f)
+		{
+			AddError(FString::Printf(TEXT("Bob out of bounds at t=%.2f: (%.3f, %.3f), expected |x|<=3 and 0<=y<=2"), Time, Bob.X, Bob.Y));
+			return false;
+		}
+	}
+
+	// Periodic in the phase (9 rad/s): the same time in the next swing gives the same shift.
+	const FVector2D A = GBViewBob::CalcBob(1.3f, 0.6f);
+	const FVector2D B = GBViewBob::CalcBob(1.3f + 2.f * UE_PI / 9.f, 0.6f);
+	TestTrue(TEXT("Periodic with 2 pi / 9 s"), A.Equals(B, 0.01f));
+	const FVector2D Half = GBViewBob::CalcBob(1.3f + UE_PI / 9.f, 0.6f);
+	TestFalse(TEXT("Half a period later it moved"), A.Equals(Half, 0.1f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBWeaponsViewPoseArtPxToCmTest, "Glyphbound.Weapons.ViewPose.ArtPxToCm",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBWeaponsViewPoseArtPxToCmTest::RunTest(const FString& Parameters)
+{
+	// Exact value, computed independently: 4 px/art px * 2 * 30 cm * tan(58.72/2) / 720 px.
+	const float Expected = 4.f * 2.f * 30.f * FMath::Tan(FMath::DegreesToRadians(58.72f * 0.5f)) / 720.f;
+	const float Got = GBViewBob::CmPerArtPixel(4.f, 30.f, 58.72f, 720.f);
+	TestTrue(TEXT("4 art px at 30 cm, weapon FOV 58.72, 720p"), FMath::IsNearlyEqual(Got, Expected, 0.0001f));
+	TestFalse(TEXT("Nonzero for sane input"), FMath::IsNearlyZero(Got, 1e-6f));
+
+	// A shift of N art px projects back to N art px on screen at any depth and screen height: forward (cm)
+	// then back through the same vertical FOV must be the identity (a missing factor of 2, a wrong FOV or a
+	// ClipX mix-up fails this).
+	const float Shifts[3] = { 1.f, 3.f, -2.5f };
+	const float Depths[3] = { 10.f, 30.f, 60.f };
+	const float Heights[3] = { 540.f, 720.f, 1080.f };
+	for (float Shift : Shifts)
+	{
+		for (float Depth : Depths)
+		{
+			for (float ClipY : Heights)
+			{
+				const float Cm = Shift * GBViewBob::CmPerArtPixel(4.f, Depth, 58.72f, ClipY);
+				const float BackPx = Cm / (2.f * Depth * FMath::Tan(FMath::DegreesToRadians(58.72f * 0.5f))) * ClipY;
+				const float BackArt = BackPx / 4.f;
+				if (!FMath::IsNearlyEqual(BackArt, Shift, 0.001f))
+				{
+					AddError(FString::Printf(TEXT("Roundtrip failed: %.2f art px at %.0f cm / %.0f px came back as %.4f"), Shift, Depth, ClipY, BackArt));
+					return false;
+				}
+			}
+		}
+	}
+
+	// Guards: no world, no screen, no depth, no FOV.
+	TestEqual(TEXT("Zero with no screen height"), GBViewBob::CmPerArtPixel(4.f, 30.f, 58.72f, 0.f), 0.f);
+	TestEqual(TEXT("Zero with no depth"), GBViewBob::CmPerArtPixel(4.f, 0.f, 58.72f, 720.f), 0.f);
+	TestEqual(TEXT("Zero with no pixel size"), GBViewBob::CmPerArtPixel(0.f, 30.f, 58.72f, 720.f), 0.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBWeaponsViewPoseFovConvertTest, "Glyphbound.Weapons.ViewPose.FovConvert",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBWeaponsViewPoseFovConvertTest::RunTest(const FString& Parameters)
+{
+	// The shipped conversions (vertical FOV at 16:9 for the same horizontal framing). A linear rescale
+	// (h * 9/16) gives 50.6 for 90 and fails; the formula is 2*atan(tan(h/2)*9/16).
+	TestTrue(TEXT("Hip 90 at 16:9 is 58.72"), FMath::IsNearlyEqual(GBViewBob::HorizontalToVerticalFov(90.f, 16.f / 9.f), 58.72f, 0.05f));
+	TestTrue(TEXT("Pistol aim 70 at 16:9 is 43.0"), FMath::IsNearlyEqual(GBViewBob::HorizontalToVerticalFov(70.f, 16.f / 9.f), 43.0f, 0.05f));
+	TestTrue(TEXT("Rifle aim 60 at 16:9 is 36.0"), FMath::IsNearlyEqual(GBViewBob::HorizontalToVerticalFov(60.f, 16.f / 9.f), 36.0f, 0.05f));
+	// Same horizontal framing on a narrower screen: the vertical FOV grows (73.74 at 4:3, more sky and floor).
+	TestTrue(TEXT("4:3 sees more vertically than 16:9"), GBViewBob::HorizontalToVerticalFov(90.f, 4.f / 3.f) > 58.72f);
+	TestTrue(TEXT("90 at 4:3 is 73.74"), FMath::IsNearlyEqual(GBViewBob::HorizontalToVerticalFov(90.f, 4.f / 3.f), 73.74f, 0.05f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBWeaponsViewPoseMotionGridTest, "Glyphbound.Weapons.ViewPose.MotionGrid",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FGBWeaponsViewPoseMotionGridTest::RunTest(const FString& Parameters)
+{
+	// One motion grid: art * ClipY/120 snapped to the active grid. Hand grid = round(ClipY/120),
+	// overlay grid = 3 * round(ClipY/270) (CENTRAL 3x). The result must be a multiple of the active grid.
+	const float ClipHeights[3] = { 540.f, 720.f, 1080.f };
+	const FVector2D Motions[4] = { FVector2D(3.f, 0.f), FVector2D(-2.5f, 1.5f), FVector2D(0.3f, -0.7f), FVector2D(7.5f, -37.f) };
+	for (float ClipY : ClipHeights)
+	{
+		const float HandGrid = FMath::Max(1.f, FMath::RoundToFloat(ClipY / 120.f));
+		const float OverlayGrid = FMath::Max(1.f, 3.f * FMath::RoundToFloat(ClipY / 270.f));
+		for (const FVector2D& Motion : Motions)
+		{
+			for (int32 Overlay = 0; Overlay < 2; ++Overlay)
+			{
+				const bool bOverlay = Overlay == 1;
+				const float Grid = bOverlay ? OverlayGrid : HandGrid;
+				const FVector2D Screen = GBViewBob::MotionToScreenPx(Motion, ClipY, bOverlay);
+				// Multiple of the active grid (a wrong factor like ClipY/270 for the gun fails here).
+				const float Qx = Screen.X / Grid;
+				const float Qy = Screen.Y / Grid;
+				if (!FMath::IsNearlyEqual(Qx, FMath::RoundToFloat(Qx), 0.001f)
+					|| !FMath::IsNearlyEqual(Qy, FMath::RoundToFloat(Qy), 0.001f))
+				{
+					AddError(FString::Printf(TEXT("Not on the %s grid at ClipY %.0f: motion (%.2f, %.2f) -> screen (%.2f, %.2f), grid %.2f"),
+						bOverlay ? TEXT("overlay") : TEXT("hand"), ClipY, Motion.X, Motion.Y, Screen.X, Screen.Y, Grid));
+					return false;
+				}
+				// A gun shift projects back to exactly the hands' shift: cm then back through the same
+				// vertical FOV must be the identity (a missing factor of 2 or a wrong FOV fails this).
+				const float Depth = 30.f;
+				const float Fov = 58.72f;
+				const float HalfV = FMath::DegreesToRadians(FMath::Clamp(Fov, 0.001f, 179.999f) * 0.5f);
+				const float CmPerScreenPx = 2.f * Depth * FMath::Tan(HalfV) / ClipY;
+				const FVector2D Cm(Screen.X * CmPerScreenPx, Screen.Y * CmPerScreenPx);
+				const FVector2D BackPx(Cm.X / CmPerScreenPx, Cm.Y / CmPerScreenPx);
+				if (!BackPx.Equals(Screen, 0.01f))
+				{
+					AddError(FString::Printf(TEXT("Roundtrip failed at ClipY %.0f: screen (%.2f, %.2f) came back (%.2f, %.2f)"),
+						ClipY, Screen.X, Screen.Y, BackPx.X, BackPx.Y));
+					return false;
+				}
+			}
+		}
+	}
+	// Grids differ at 1080p (hand 9, overlay 12): the overlay snaps coarser than the hands.
+	TestEqual(TEXT("Hand grid at 1080p is 9"), FMath::RoundToInt(1080.f / 120.f), 9);
+	{
+		const FVector2D Hand = GBViewBob::MotionToScreenPx(FVector2D(1.f, 0.f), 1080.f, false);
+		const FVector2D Overlay = GBViewBob::MotionToScreenPx(FVector2D(1.f, 0.f), 1080.f, true);
+		TestTrue(TEXT("One hand art pixel is 9 screen px at 1080p"), Hand.Equals(FVector2D(9.f, 0.f), 0.01f));
+		TestTrue(TEXT("One hand art pixel snaps to 12 screen px with the overlay at 1080p"), Overlay.Equals(FVector2D(12.f, 0.f), 0.01f));
+	}
+	// Guards.
+	TestTrue(TEXT("Zero motion stays zero"), GBViewBob::MotionToScreenPx(FVector2D::ZeroVector, 1080.f, false).IsZero());
+	TestTrue(TEXT("Zero height stays zero"), GBViewBob::MotionToScreenPx(FVector2D(1.f, 1.f), 0.f, false).IsZero());
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

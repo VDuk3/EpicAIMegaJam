@@ -522,7 +522,9 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		+ (bMantling ? MantlePose.ItemLower01 * Canvas->ClipY * 0.7f : 0.f);
 	const float P = FMath::Max(1.f, (float)FMath::RoundToInt(Canvas->ClipY / GBHudLayout::HandPixelDivisor));
 
-	// Walk bob from the horizontal speed (world time, so it slows down with the QTE).
+	// Walk bob from the horizontal speed (world time, so it slows down with the QTE): the one shared motion
+	// of the 2D hands and the 3D gun (GBViewBob). Art pixels (unrounded); the screen shift snaps them to the
+	// active grid (hand or CENTRAL overlay) via GBViewBob::MotionToScreenPx, which the gun uses too.
 	const UWorld* World = GetWorld();
 	const float Time = World ? (float)World->GetTimeSeconds() : 0.f;
 	float Speed01 = 0.f;
@@ -533,8 +535,8 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 			Speed01 = FMath::Clamp(Player->GetVelocity().Size2D() / FMath::Max(1.f, Move->GetMaxSpeed()), 0.f, 1.f);
 		}
 	}
-	const float Phase = Time * 9.f;
-	const FVector2D Bob(FMath::Cos(Phase) * 3.f * P * Speed01, FMath::Abs(FMath::Sin(Phase)) * 2.f * P * Speed01);
+	const FVector2D BobArt = GBViewBob::bFrozen ? FVector2D::ZeroVector : GBViewBob::CalcBob(Time, Speed01);
+	const FVector2D Bob = GBViewBob::MotionToScreenPx(BobArt, Canvas->ClipY, HasHandOverlay());
 
 	UGBEquipmentComponent* Equipment = Player->GetEquipment();
 	AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
@@ -563,7 +565,12 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const FVector2D CastSize = SizeOf(HandCast);
 
 	const EGBHeldSlot Slot = Item ? Item->GetSlot() : EGBHeldSlot::Staff;
-	if (Item && Slot == EGBHeldSlot::Staff)
+	if (HasHandOverlay())
+	{
+		// The CENTRAL art replaces the hands layer: same motion, full screen, over the held gun.
+		DrawHandOverlay(Player, BobArt, Kick01);
+	}
+	else if (Item && Slot == EGBHeldSlot::Staff)
 	{
 		FName StaffId(TEXT("staff_apprentice"));
 		if (WeaponDef)
@@ -584,23 +591,32 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	else if (Item && Slot == EGBHeldSlot::Gun)
 	{
 		// The gun is a 3D model drawn by the world; only the hands are drawn here. Recoil pushes them down.
-		const float KickY = Kick01 * 3.f * P;
+		// With Maintain Y the gun's offset from the screen centre scales with height: anchored at ClipX/2 + k*ClipY
+		// (k chosen so 16:9 stays exactly as today: 0.66 -> 0.5 + 0.16*16/9, 0.54 -> 0.5 + 0.04*16/9).
+		const float RightCenterX = W * 0.5f + (0.16f * 16.f / 9.f) * Canvas->ClipY;
+		const float LeftCenterX = W * 0.5f + (0.04f * 16.f / 9.f) * Canvas->ClipY;
 		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
 		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
 		const AGBGun* GunItem = Cast<AGBGun>(Item);
 		const bool bModelGun = GunItem && GunItem->HasViewModel();
 		const GBReloadAnim::FHandBeat Beat = bModelGun ? GunItem->GetReloadHandBeat() : GBReloadAnim::FHandBeat();
 		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
-		const float PushY = -Beat.Push * GBHudLayout::ReloadSeatPush * P;
-		const FVector2D RightShift = (GunItem ? GunItem->GetReloadRightHandFollow() : FVector2D::ZeroVector) * (RightFollow * P);
-		DrawSprite(HandRight, W * 0.66f - RightSize.X * 0.5f + Bob.X + RightShift.X, H - RightSize.Y * 0.7f + Bob.Y + KickY + RightShift.Y + PushY, P);
+		// One motion grid with the gun: all shifts in old hand art pixels, snapped to screen via MotionToScreenPx.
+		const FVector2D RightMotionArt = BobArt + FVector2D(0.f, Kick01 * 3.f)
+			+ (GunItem ? GunItem->GetReloadRightHandFollow() * RightFollow : FVector2D::ZeroVector)
+			+ FVector2D(0.f, -Beat.Push * GBHudLayout::ReloadSeatPush);
+		const FVector2D RightMotion = GBViewBob::MotionToScreenPx(RightMotionArt, Canvas->ClipY, false);
+		DrawSprite(HandRight, RightCenterX - RightSize.X * 0.5f + RightMotion.X, H - RightSize.Y * 0.7f + RightMotion.Y, P);
 		if (!bCastPose)
 		{
-			const FVector2D Reach = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * (Beat.Reach * P);
-			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(Reach.Y));
+			const FVector2D ReachArt = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * Beat.Reach;
+			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(ReachArt.Y * P));
 			// A gun with a pump: the left hand rides the forend back and forward with it.
-			const FVector2D PumpShift = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector) * P;
-			DrawSprite(HandLeft, W * 0.54f - LeftSize.X * 0.5f + Bob.X + Reach.X + PumpShift.X, H - LeftSize.Y * 0.6f + Bob.Y + KickY + Reach.Y + DropY + PushY + PumpShift.Y, P);
+			const FVector2D PumpArt = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector);
+			const FVector2D LeftMotionArt = BobArt + FVector2D(0.f, Kick01 * 3.f) + ReachArt + PumpArt
+				+ FVector2D(0.f, -Beat.Push * GBHudLayout::ReloadSeatPush);
+			const FVector2D LeftMotion = GBViewBob::MotionToScreenPx(LeftMotionArt, Canvas->ClipY, false);
+			DrawSprite(HandLeft, LeftCenterX - LeftSize.X * 0.5f + LeftMotion.X, H - LeftSize.Y * 0.6f + LeftMotion.Y + DropY, P);
 		}
 	}
 	else if (Item && Slot == EGBHeldSlot::Sword)
@@ -636,13 +652,13 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
 
-	if (bCastPose && ShieldRaise01 < 0.5f && !bMantling)
+	if (!HasHandOverlay() && bCastPose && ShieldRaise01 < 0.5f && !bMantling)
 	{
 		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
 		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
 		DrawSprite(HandCast, CastX - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
 	}
-	else if (!bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
+	else if (!HasHandOverlay() && !bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
 	{
 		DrawSprite(HandLeft, W * 0.22f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.45f + Bob.Y, P);
 	}
@@ -758,6 +774,48 @@ float AGBHUD::DrawRaisedShield(AGBPlayerCharacter* Player, float PixelSize, cons
 	return ShieldRaise01;
 }
 
+void AGBHUD::SetHandOverlay(UTexture2D* Texture)
+{
+	HandOverlayTexture = Texture;
+	GBViewBob::bOverlayShown = (Texture != nullptr);
+}
+
+void AGBHUD::ClearHandOverlay()
+{
+	HandOverlayTexture = nullptr;
+	GBViewBob::bOverlayShown = false;
+}
+
+void AGBHUD::DrawHandOverlay(AGBPlayerCharacter* Player, const FVector2D& BobArt, float Kick01)
+{
+	if (!HandOverlayTexture || !Canvas)
+	{
+		return;
+	}
+	// The same motion the hands get, in old hand art pixels: bob (shared with the gun), kick, reload follow,
+	// seat push and pump shift. A reload parks the pump, so reload follow and pump shift never stack.
+	// One motion grid with the gun: art * ClipY/120, snapped to whole CENTRAL overlay art pixels.
+	FVector2D MotionArt = BobArt + FVector2D(0.f, Kick01 * 3.f);
+	if (const UGBEquipmentComponent* Equipment = Player->GetEquipment())
+	{
+		if (const AGBGun* Gun = Cast<AGBGun>(Equipment->GetActiveItem()))
+		{
+			MotionArt += Gun->GetReloadRightHandFollow() * Gun->GetReloadPoseAmount();
+			MotionArt += Gun->GetPumpHandShift();
+			MotionArt.Y -= Gun->GetReloadHandBeat().Push * GBHudLayout::ReloadSeatPush;
+		}
+	}
+	const FVector2D Motion = GBViewBob::MotionToScreenPx(MotionArt, Canvas->ClipY, true);
+	// A 480x270 file, scaled to the screen height, centred horizontally, bottom-aligned. One CENTRAL art pixel
+	// is 3 file pixels (ClipY/90 screen pixels, 12 at 1080p); nearest filtering keeps whole file pixels whole.
+	const float Q = FMath::Max(1.f, FMath::RoundToFloat(Canvas->ClipY / 270.f));
+	const float W = 480.f * Q;
+	const float H = 270.f * Q;
+	DrawTexture(HandOverlayTexture, FMath::RoundToFloat((Canvas->ClipX - W) * 0.5f + Motion.X),
+		FMath::RoundToFloat(Canvas->ClipY - H + Motion.Y), W, H,
+		0.f, 0.f, 1.f, 1.f, FLinearColor::White, BLEND_Translucent);
+}
+
 // ======================================================================== crosshair, prompt, toasts
 
 void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, EGBHudSkin Skin)
@@ -775,7 +833,7 @@ void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 
 	if (Skin == EGBHudSkin::Cyberpunk || bGun)
 	{
-		// Center dot and four ticks at the current spread cone (degrees -> pixels with the camera FOV), with a dark keyline.
+		// Center dot and four ticks at the current spread cone (degrees -> pixels with the vertical camera FOV), with a dark keyline.
 		const float T = FMath::Max(1.f, FMath::RoundToFloat(2.f * S));
 		const FLinearColor Ink = GBCy::Pale;
 		const FLinearColor Key(0.f, 0.f, 0.f, 0.55f);
@@ -784,9 +842,9 @@ void AGBHUD::DrawCrosshair(AGBPlayerCharacter* Player, EGBHudSkin Skin)
 		{
 			const AGBGun* Gun = Cast<AGBGun>(Item);
 			const float SpreadDeg = Gun ? Gun->GetCurrentSpread() : Item->GetStat(Item->IsAiming() ? GBStat::AimSpread : GBStat::Spread, 0.f);
-			const float FOV = (PlayerOwner && PlayerOwner->PlayerCameraManager) ? PlayerOwner->PlayerCameraManager->GetFOVAngle() : 90.f;
+			const float FOV = (PlayerOwner && PlayerOwner->PlayerCameraManager) ? PlayerOwner->PlayerCameraManager->GetFOVAngle() : 58.72f;
 			const float HalfFOVTan = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(FOV, 5.f, 170.f) * 0.5f));
-			Offset = FMath::Max(FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(SpreadDeg, 0.f, 80.f))) / HalfFOVTan * Canvas->ClipX * 0.5f, 6.f * S);
+			Offset = FMath::Max(FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(SpreadDeg, 0.f, 80.f))) / HalfFOVTan * Canvas->ClipY * 0.5f, 6.f * S);
 		}
 		Offset = FMath::RoundToFloat(Offset);
 		const float L = FMath::RoundToFloat(9.f * S);

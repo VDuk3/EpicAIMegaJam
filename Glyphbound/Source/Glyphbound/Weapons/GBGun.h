@@ -13,6 +13,97 @@ class UCanvasRenderTarget2D;
 struct FGBDamageInfo;
 struct FGBGunModelArt;
 
+/** First-person view pose of one gun (cm and degrees, camera frame, relative to the held-item anchor). */
+struct FGBViewPose
+{
+	FVector Offset = FVector::ZeroVector;
+	FRotator Rotation = FRotator::ZeroRotator;
+	float Scale = 1.f;
+};
+
+/** Weapons.json Stats keys of the view pose. AGBGun reads them raw (no stat modifiers). */
+namespace GBViewPose
+{
+	inline const FName OffsetX(TEXT("ViewOffsetX"));
+	inline const FName OffsetY(TEXT("ViewOffsetY"));
+	inline const FName OffsetZ(TEXT("ViewOffsetZ"));
+	inline const FName Pitch(TEXT("ViewPitch"));
+	inline const FName Yaw(TEXT("ViewYaw"));
+	inline const FName Roll(TEXT("ViewRoll"));
+	inline const FName Scale(TEXT("ViewScale"));
+}
+
+/**
+ * The one shared motion of the 3D gun and the 2D hands: the walk bob in ART pixels from world time
+ * and the ground speed ratio (0 still, 1 full speed). Pure (no world), tested in Tests/GBWeaponsTests.cpp.
+ * MotionToScreenPx turns a motion in old hand art pixels (bob, kick, reload follow, seat push, pump shift,
+ * tuned in units of ClipY/120) into a screen-pixel shift: art * ClipY/120, then snapped to the active grid
+ * (whole overlay art pixels while a hand overlay is shown, else whole hand art pixels). The HUD and the gun
+ * both use that screen shift; the gun converts it to cm at its depth.
+ */
+namespace GBViewBob
+{
+	/** Set by gb.ViewFreeze: while true the bob stays at rest (gun and hands), for clean template screenshots. */
+	inline bool bFrozen = false;
+
+	/** True while the HUD draws the CENTRAL hand overlay (3x) instead of the old hands: the motion grid is coarser. */
+	inline bool bOverlayShown = false;
+
+	inline FVector2D CalcBob(float TimeSeconds, float Speed01)
+	{
+		const float Speed = FMath::Clamp(Speed01, 0.f, 1.f);
+		if (Speed <= 0.f)
+		{
+			return FVector2D::ZeroVector;
+		}
+		const float Phase = TimeSeconds * 9.f;
+		return FVector2D(FMath::Cos(Phase) * 3.f * Speed, FMath::Abs(FMath::Sin(Phase)) * 2.f * Speed);
+	}
+
+	/** Screen-pixel shift for a motion in old hand art pixels: art * ClipY/120, snapped to the active grid. Pure. */
+	inline FVector2D MotionToScreenPx(FVector2D MotionArtPx, float ClipY, bool bOverlay)
+	{
+		if (ClipY <= 0.f || MotionArtPx.IsZero())
+		{
+			return FVector2D::ZeroVector;
+		}
+		const float RawX = MotionArtPx.X * ClipY / 120.f;
+		const float RawY = MotionArtPx.Y * ClipY / 120.f;
+		float Grid = 1.f;
+		if (bOverlay)
+		{
+			Grid = FMath::Max(1.f, 3.f * FMath::RoundToFloat(ClipY / 270.f));
+		}
+		else
+		{
+			Grid = FMath::Max(1.f, FMath::RoundToFloat(ClipY / 120.f));
+		}
+		return FVector2D(FMath::RoundToFloat(RawX / Grid) * Grid, FMath::RoundToFloat(RawY / Grid) * Grid);
+	}
+
+	/** Vertical FOV (degrees) rendering the same height as a horizontal FOV at the given aspect. */
+	inline float HorizontalToVerticalFov(float HorizontalDeg, float AspectWbyH)
+	{
+		if (AspectWbyH <= 0.f)
+		{
+			return HorizontalDeg;
+		}
+		const float HalfH = FMath::DegreesToRadians(FMath::Clamp(HorizontalDeg, 0.001f, 179.999f) * 0.5f);
+		return FMath::RadiansToDegrees(2.f * FMath::Atan(FMath::Tan(HalfH) / AspectWbyH));
+	}
+
+	/** cm of gun motion at DepthCm from the camera projecting back to one art pixel (PixelSize = screen px per art px). */
+	inline float CmPerArtPixel(float PixelSize, float DepthCm, float ViewModelFovDeg, float ClipY)
+	{
+		if (PixelSize <= 0.f || DepthCm <= 0.f || ClipY <= 0.f)
+		{
+			return 0.f;
+		}
+		const float HalfV = FMath::DegreesToRadians(FMath::Clamp(ViewModelFovDeg, 0.001f, 179.999f) * 0.5f);
+		return PixelSize * 2.f * DepthCm * FMath::Tan(HalfV) / ClipY;
+	}
+}
+
 /** Reload animation shared by the gun viewmodel and the HUD hands: everything is a function of the reload progress (0 to 1). */
 namespace GBReloadAnim
 {
@@ -94,6 +185,7 @@ public:
 	virtual void Reload() override;
 
 	virtual void OnUnequipped() override;
+	virtual void OnEquipped() override;
 
 	virtual bool UsesAmmo() const override { return true; }
 	virtual FGBAmmoState GetAmmo() const override { return Ammo; }
@@ -161,6 +253,17 @@ public:
 	float GetReloadPoseAmount() const;
 	/** Per-model art value for the HUD: how far (sprite pixels) the right hand moves at full pose so it stays on the grip. */
 	FVector2D GetReloadRightHandFollow() const;
+	/** Rest pose of the viewmodel root: the live override (gb.ViewPose) if set, else the pose from Weapons.json. */
+	FGBViewPose GetRestPose() const;
+	/** Dev only (gb.ViewPose): replaces the rest pose until re-equip. */
+	void SetLivePose(const FGBViewPose& Pose);
+	/** Dev only: releases the live pose; the gun returns to the pose from Weapons.json. */
+	void ClearLivePose();
+	bool HasLivePose() const { return bHasLivePose; }
+	/** The rest pose as the exact JSON lines to paste into Weapons.json. */
+	FString GetPoseJsonLines() const;
+	/** Fixed weapon FOV (degrees, Game.json ViewModelFOV) the viewmodel is rendered with. */
+	float GetViewModelFovDeg() const;
 	/** Progress (0 to 1) the reload animation is showing: the pinned preview if any, else the real reload; -1 when none. For a round-by-round gun it is the progress inside ONE round's cycle. */
 	float GetReloadAnimProgress() const;
 	/** Dev only (smoke run): pins the reload animation at this progress without touching ammo or the reload itself. */
@@ -186,13 +289,17 @@ protected:
 	UStaticMeshComponent* AddPart(FName Name, EGBShape Shape, const FVector& Location, const FVector& Size, const FLinearColor& Color, bool bGlow);
 
 	/** Loads the model's SM_* meshes and attaches them. False when any mesh is missing (caller falls back to placeholders). */
-	bool TryBuildViewModel(const FGBGunModelArt& Art);
+	bool TryBuildViewModel(const FGBGunModelArt& Art, const FGBWeaponDefinition& Definition);
 	/** Trigger pull, magazine slide, glow color, weak-point light, ammo text, kick and muzzle flash, only while the viewmodel exists. */
 	void UpdateViewModel(float DeltaSeconds);
 	/** Starts the shot kick and the muzzle flash. */
 	void StartShotEffects();
-	/** The one place that writes the viewmodel root's transform: rest pose + reload pose + shot kick. */
+	/** The one place that writes the viewmodel root's transform: rest pose + reload pose + shot kick + pump rack + shared bob. */
 	void ApplyViewModelPose();
+	/** Shared walk bob in cm at the root's depth (camera plane: Y right, Z up), from the rounded art-pixel bob. Zero when still, frozen or without a viewport. */
+	FVector ComputeBobShiftCm() const;
+	/** Reads the rest pose raw from the definition's Stats (no modifiers); missing keys fall back to the model's constants. */
+	void ReadDataPose(const FGBWeaponDefinition& Definition, const FGBGunModelArt* FallbackArt);
 	/** Places the magazine (slide, fall on screen, hidden, rise, slide in) from the reload animation progress. */
 	void ApplyReloadMagazine();
 	/** Starts the short blend from the current reload pose back to rest (a cancelled reload or a released preview). */
@@ -220,6 +327,10 @@ protected:
 
 	/** The art description of the model in use (one constant per model in GBGun.cpp); null without a real viewmodel. */
 	const FGBGunModelArt* ModelArt = nullptr;
+	/** Rest pose from Weapons.json (raw stats, fallback: the model's constants). The live override wins while set. */
+	FGBViewPose DataPose;
+	FGBViewPose LivePose;
+	bool bHasLivePose = false;
 	/** Real viewmodel (only when Definition.ViewModel names a model): body, trigger, magazine, optional energy bar, weak-point light, ammo display. */
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> VMBody = nullptr;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> VMTrigger = nullptr;

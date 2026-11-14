@@ -248,6 +248,8 @@ protected:
 	void TickViewShake(float DeltaSeconds);
 	/** Sets the camera rotation (shake + mantle) and location, and the held item anchor, from the current pose. */
 	void ApplyCameraPose();
+	/** Fixed weapon FOV on the camera (Game.json ViewModelFOV) and the hip FOV (Game.json HipFOV). */
+	void ConfigureFirstPersonCamera();
 	/** Mantle tunables from Player.json (read with modifiers and missing-stat warnings like every movement stat). */
 	GBMantle::FMantleParams GetMantleParams() const;
 	/** True when a mantle may start or continue: alive, enabled, free (no QTE / dash / freeze / mantle). */

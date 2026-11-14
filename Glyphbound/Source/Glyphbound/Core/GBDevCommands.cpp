@@ -14,6 +14,8 @@
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
 #include "HAL/PlatformTime.h"
+#include "ImageUtils.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
 #include "NavigationPath.h"
@@ -24,6 +26,7 @@
 #include "AI/GBShieldEnemy.h"
 #include "World/GBBreakable.h"
 #include "Components/BoxComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Weapons/GBHeldItem.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "AI/GBSquad.h"
@@ -63,6 +66,7 @@
 #include "AI/GBEncounter.h"
 #include "AI/GBEncounterStarter.h"
 #include "Engine/LevelStreaming.h"
+#include "Engine/Texture2D.h"
 #include "World/GBBreakable.h"
 #include "World/GBChest.h"
 #include "World/GBEnergyGate.h"
@@ -2916,6 +2920,109 @@ namespace GBSmokeRun
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: no PowerCell pickup dropped"), *E3BId.ToString());
 		}
+	}
+
+	// ---- gb.ViewPose, gb.ViewFreeze, gb.HandOverlay (first-person gun pose in data, fixed weapon FOV) ----
+	// The held gun, or null (no player, or no gun in hand).
+	static AGBGun* ViewPoseGun(UWorld* World)
+	{
+		const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+		const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+		return Cast<AGBGun>(Equipment ? Equipment->GetActiveItem() : nullptr);
+	}
+
+	// Loads a hand-overlay PNG (or clears it with an empty path). False when nothing was set.
+	static bool SetHandOverlayFile(UWorld* World, const FString& Path)
+	{
+		AGBHUD* HUD = AGBHUD::Get(World);
+		if (!HUD)
+		{
+			UE_LOG(LogGB, Error, TEXT("gb.HandOverlay: no HUD"));
+			return false;
+		}
+		if (Path.IsEmpty())
+		{
+			HUD->ClearHandOverlay();
+			UE_LOG(LogGB, Display, TEXT("gb.HandOverlay: cleared"));
+			return true;
+		}
+		if (!FPaths::FileExists(Path))
+		{
+			// Warning, not Error: the filtered smoke run (gb.Smoke ViewPose) feeds a bad path on purpose and must stay green.
+			// A failed load clears any overlay already shown.
+			HUD->ClearHandOverlay();
+			UE_LOG(LogGB, Warning, TEXT("gb.HandOverlay: file not found '%s' (absolute path to a 480x270 PNG)"), *Path);
+			return false;
+		}
+		UTexture2D* Texture = FImageUtils::ImportFileAsTexture2D(Path);
+		if (!Texture)
+		{
+			HUD->ClearHandOverlay();
+			UE_LOG(LogGB, Warning, TEXT("gb.HandOverlay: could not load '%s' as a texture (need a readable PNG, 480x270)"), *Path);
+			return false;
+		}
+		if (Texture->GetSizeX() != 480 || Texture->GetSizeY() != 270)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.HandOverlay: '%s' is %dx%d, expected 480x270 (drawn stretched)"), *Path, Texture->GetSizeX(), Texture->GetSizeY());
+		}
+		Texture->Filter = TF_Nearest;
+		Texture->UpdateResource();
+		HUD->SetHandOverlay(Texture);
+		UE_LOG(LogGB, Display, TEXT("gb.HandOverlay: showing '%s'"), *Path);
+		return true;
+	}
+
+	static void RunViewPose(const TArray<FString>& Args, UWorld* World)
+	{
+		AGBGun* Gun = ViewPoseGun(World);
+		if (!Gun)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.ViewPose: no gun in hand"));
+			return;
+		}
+		if (Args.Num() == 0)
+		{
+			UE_LOG(LogGB, Display, TEXT("gb.ViewPose %s rest pose (paste into Weapons.json Stats):\n%s"), *Gun->GetWeaponId().ToString(), *Gun->GetPoseJsonLines());
+			return;
+		}
+		if (Args.Num() != 7)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.ViewPose: usage: gb.ViewPose X Y Z Pitch Yaw Roll Scale (no args prints the pose)"));
+			return;
+		}
+		FGBViewPose Pose;
+		Pose.Offset = FVector(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), FCString::Atof(*Args[2]));
+		Pose.Rotation = FRotator(FCString::Atof(*Args[3]), FCString::Atof(*Args[4]), FCString::Atof(*Args[5]));
+		Pose.Scale = FMath::Max(0.01f, FCString::Atof(*Args[6]));
+		Gun->SetLivePose(Pose);
+		UE_LOG(LogGB, Display, TEXT("gb.ViewPose: live pose set on %s (cleared on re-equip)"), *Gun->GetWeaponId().ToString());
+	}
+
+	static void RunViewFreeze(const TArray<FString>& Args, UWorld* World)
+	{
+		(void)World;
+		if (Args.Num() < 1)
+		{
+			UE_LOG(LogGB, Warning, TEXT("gb.ViewFreeze: usage: gb.ViewFreeze 0|1 (freezes the walk bob of gun and hands)"));
+			return;
+		}
+		GBViewBob::bFrozen = Args[0] == TEXT("1") || Args[0].ToBool();
+		UE_LOG(LogGB, Display, TEXT("gb.ViewFreeze: bob %s"), GBViewBob::bFrozen ? TEXT("frozen") : TEXT("running"));
+	}
+
+	static void RunHandOverlay(const TArray<FString>& Args, UWorld* World)
+	{
+		// Paths may contain spaces: the args were split on them, so join them back.
+		FString Path;
+		for (int32 Index = 0; Index < Args.Num(); ++Index)
+		{
+			if (Index > 0)
+			{
+				Path += TEXT(" ");
+			}
+			Path += Args[Index];
+		}
+		SetHandOverlayFile(World, Path);
 	}
 
 	static void BuildSteps()
@@ -6707,6 +6814,256 @@ namespace GBSmokeRun
 				}
 			});
 		}
+		// ---- ViewPose block (gb.Smoke ViewPose): first-person gun pose in data, fixed weapon FOV, one shared motion.
+		// Each gun: equip, freeze the bob, the root sits at the pose from Weapons.json, hip screenshot to
+		// Saved/Screenshots/viewpose_*.png, aim, the gun's screen position (fixed weapon FOV) does not move.
+		// Then gb.HandOverlay with a bad path must log an error and draw nothing.
+		static FVector2D ViewPoseHipScreen = FVector2D::ZeroVector;
+		static float ViewPoseHipFov = 0.f;
+		static bool bViewPoseHipValid = false;
+
+		auto ViewPoseEquip = [](AGBPlayerCharacter* Player, FName WeaponId) -> AGBGun*
+		{
+			UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+			if (!Equipment)
+			{
+				return nullptr;
+			}
+			// GiveWeapon only stores a weapon whose slot is taken (the gun in hand is never replaced), so equip after.
+			if (!Equipment->OwnsWeapon(WeaponId))
+			{
+				Equipment->GiveWeapon(WeaponId, true);
+			}
+			if (!Equipment->IsWeaponEquipped(WeaponId))
+			{
+				Equipment->EquipOwnedWeapon(WeaponId);
+			}
+			else
+			{
+				Equipment->SwitchTo(EGBHeldSlot::Gun);
+			}
+			AGBGun* Gun = Cast<AGBGun>(Equipment->GetActiveItem());
+			if (Gun && Gun->GetWeaponId() == WeaponId)
+			{
+				Gun->RefillAmmo();
+				Gun->ClearReloadPreview();
+				Gun->ClearPumpPreview();
+				return Gun;
+			}
+			return nullptr;
+		};
+
+		auto ViewPoseProject = [](AGBPlayerCharacter* Player, const FVector& WorldPos, float FovDeg, FVector2D& OutScreen) -> bool
+		{
+			UCameraComponent* Camera = Player ? Player->GetCamera() : nullptr;
+			if (!Camera || !GEngine || !GEngine->GameViewport)
+			{
+				return false;
+			}
+			FVector2D ViewSize = FVector2D::ZeroVector;
+			GEngine->GameViewport->GetViewportSize(ViewSize);
+			if (ViewSize.X <= 0.f || ViewSize.Y <= 0.f)
+			{
+				return false;
+			}
+			const FVector Local = Camera->GetComponentTransform().InverseTransformPosition(WorldPos);
+			if (Local.X < 1.f)
+			{
+				return false;
+			}
+			// Maintain Y-Axis (legacy matrix, see DefaultEngine.ini): the FOV value is the vertical one.
+			const float TanHalfV = FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(FovDeg, 1.f, 179.f) * 0.5f));
+			const float Aspect = ViewSize.X / ViewSize.Y;
+			OutScreen = FVector2D(((Local.Y / Local.X) / (TanHalfV * Aspect) * 0.5f + 0.5f) * ViewSize.X,
+				(0.5f - (Local.Z / Local.X) / TanHalfV * 0.5f) * ViewSize.Y);
+			return true;
+		};
+
+		auto ViewPoseShot = [](const TCHAR* Name)
+		{
+			const FString Path = FPaths::ProjectSavedDir() / TEXT("Screenshots") / (FString(TEXT("viewpose_")) + Name + TEXT(".png"));
+			FScreenshotRequest::RequestScreenshot(Path, false, false);
+			UE_LOG(LogGB, Display, TEXT("SMOKE screenshot %s"), *Path);
+		};
+
+		auto ViewPoseCheckAtDataPose = [](const TCHAR* Label, AGBGun* Gun, UWorld* World)
+		{
+			const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
+			const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(Gun->GetWeaponId()) : nullptr;
+			if (!Def || !Gun->GetRootComponent())
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: '%s' has no data or no root"), Label, *Gun->GetWeaponId().ToString());
+				return;
+			}
+			auto Raw = [Def](const TCHAR* Key, float Fallback)
+			{
+				if (const float* Found = Def->Stats.Find(FName(Key)))
+				{
+					return *Found;
+				}
+				return Fallback;
+			};
+			const FVector Expected(Raw(TEXT("ViewOffsetX"), 0.f), Raw(TEXT("ViewOffsetY"), 0.f), Raw(TEXT("ViewOffsetZ"), 0.f));
+			const FRotator ExpectedRot(Raw(TEXT("ViewPitch"), 0.f), Raw(TEXT("ViewYaw"), -6.f), Raw(TEXT("ViewRoll"), 0.f));
+			const FVector Actual = Gun->GetRootComponent()->GetRelativeLocation();
+			const FRotator ActualRot = Gun->GetRootComponent()->GetRelativeRotation();
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose %s: root at (%.2f, %.2f, %.2f) rot (%.2f, %.2f, %.2f), data (%.2f, %.2f, %.2f) rot (%.2f, %.2f, %.2f)"),
+				Label, Actual.X, Actual.Y, Actual.Z, ActualRot.Pitch, ActualRot.Yaw, ActualRot.Roll,
+				Expected.X, Expected.Y, Expected.Z, ExpectedRot.Pitch, ExpectedRot.Yaw, ExpectedRot.Roll);
+			if (!Actual.Equals(Expected, 0.05f) || !ActualRot.Equals(ExpectedRot, 0.1f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the root is not at the pose from Weapons.json"), Label);
+			}
+		};
+
+		auto ViewPoseHip = [ViewPoseEquip, ViewPoseProject, ViewPoseShot, ViewPoseCheckAtDataPose](UWorld* World, AGBPlayerCharacter* Player, FName WeaponId, const TCHAR* Label)
+		{
+			AGBGun* Gun = ViewPoseEquip(Player, WeaponId);
+			if (!Gun)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: could not equip"), Label);
+				bViewPoseHipValid = false;
+				return;
+			}
+			GBViewBob::bFrozen = true;
+			Gun->StopSecondary();
+			ViewPoseCheckAtDataPose(Label, Gun, World);
+			bViewPoseHipValid = ViewPoseProject(Player, Gun->GetActorLocation(), Gun->GetViewModelFovDeg(), ViewPoseHipScreen);
+			ViewPoseHipFov = Player->GetCamera() ? Player->GetCamera()->FieldOfView : 0.f;
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose %s hip: screen (%.1f, %.1f) worldFOV %.2f"), Label, ViewPoseHipScreen.X, ViewPoseHipScreen.Y, ViewPoseHipFov);
+			ViewPoseShot(Label);
+			Gun->StartSecondary(); // the aim check runs in the next step, once AimAlpha had time to reach 1
+		};
+
+		auto ViewPoseAim = [ViewPoseProject, ViewPoseCheckAtDataPose](UWorld* World, AGBPlayerCharacter* Player, FName WeaponId, const TCHAR* Label)
+		{
+			AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment() ? Player->GetEquipment()->GetActiveItem() : nullptr);
+			if (!Gun || Gun->GetWeaponId() != WeaponId)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: '%s' not in hand for the aim check"), Label, *WeaponId.ToString());
+				return;
+			}
+			UCameraComponent* Camera = Player->GetCamera();
+			const float AimFOV = Gun->GetStat(GBStat::AimFOV, 0.f);
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose %s aim: worldFOV %.2f (AimFOV %.2f) weaponFOV %.2f (ViewModelFOV %.2f)"),
+				Label, Camera ? Camera->FieldOfView : -1.f, AimFOV,
+				Camera ? Camera->FirstPersonFieldOfView : -1.f, Gun->GetViewModelFovDeg());
+			if (!Camera || !FMath::IsNearlyEqual(Camera->FieldOfView, AimFOV, 0.5f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the world camera did not reach full AimFOV"), Label);
+			}
+			if (!Camera || !FMath::IsNearlyEqual(Camera->FirstPersonFieldOfView, Gun->GetViewModelFovDeg(), 0.01f))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the weapon FOV moved while aiming"), Label);
+			}
+			// The aim check must be able to fail with the feature off: the camera must render the viewmodel
+			// with the fixed first-person FOV, and every primitive of the held gun (all attached components,
+			// including the muzzle flash) must use it.
+			if (!Camera || !Camera->bEnableFirstPersonFieldOfView)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the camera does not have the first-person FOV enabled"), Label);
+			}
+			{
+				TArray<UPrimitiveComponent*> Prims;
+				Gun->GetComponents<UPrimitiveComponent>(Prims);
+				bool bAllFirstPerson = Prims.Num() > 0;
+				for (UPrimitiveComponent* Prim : Prims)
+				{
+					if (!Prim || Prim->FirstPersonPrimitiveType != EFirstPersonPrimitiveType::FirstPerson)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: component '%s' is not FirstPerson"), Label,
+							Prim ? *Prim->GetName() : TEXT("<null>"));
+						bAllFirstPerson = false;
+					}
+				}
+				if (!bAllFirstPerson && Prims.Num() == 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the held gun has no primitives to check"), Label);
+				}
+			}
+			ViewPoseCheckAtDataPose(Label, Gun, World);
+			FVector2D AimScreen = FVector2D::ZeroVector;
+			if (bViewPoseHipValid && ViewPoseProject(Player, Gun->GetActorLocation(), Gun->GetViewModelFovDeg(), AimScreen))
+			{
+				const float Drift = FVector2D::Distance(AimScreen, ViewPoseHipScreen);
+				UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose %s: hip screen (%.1f, %.1f) aim screen (%.1f, %.1f) drift %.2f px"),
+					Label, ViewPoseHipScreen.X, ViewPoseHipScreen.Y, AimScreen.X, AimScreen.Y, Drift);
+				if (Drift > 1.f)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the gun moved %.2f px on screen between hip and full aim"), Label, Drift);
+				}
+			}
+			else
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: could not project the gun"), Label);
+			}
+			// Sanity: the world-FOV projection must differ a lot (aim really engaged, the check above is not vacuous).
+			FVector2D HipWorld = FVector2D::ZeroVector;
+			FVector2D AimWorld = FVector2D::ZeroVector;
+			if (ViewPoseProject(Player, Gun->GetActorLocation(), ViewPoseHipFov, HipWorld)
+				&& Camera && ViewPoseProject(Player, Gun->GetActorLocation(), Camera->FieldOfView, AimWorld)
+				&& FVector2D::Distance(HipWorld, AimWorld) < 20.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose %s FAILED: the world projection barely changed (aim not engaged?)"), Label);
+			}
+			Gun->StopSecondary();
+		};
+
+		Add(Z + 390.f, TEXT("ViewPose pistol: equip, freeze, root at data pose, hip shot, aim"), [ViewPoseHip](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseHip(World, Player, FName(TEXT("Pistol")), TEXT("pistol")); });
+		Add(Z + 391.5f, TEXT("ViewPose pistol: full aim leaves the gun static on screen"), [ViewPoseAim](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseAim(World, Player, FName(TEXT("Pistol")), TEXT("pistol")); });
+		Add(Z + 393.f, TEXT("ViewPose shotgun: equip, freeze, root at data pose, hip shot, aim"), [ViewPoseHip](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseHip(World, Player, FName(TEXT("Shotgun")), TEXT("shotgun")); });
+		Add(Z + 394.5f, TEXT("ViewPose shotgun: full aim leaves the gun static on screen"), [ViewPoseAim](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseAim(World, Player, FName(TEXT("Shotgun")), TEXT("shotgun")); });
+		Add(Z + 396.f, TEXT("ViewPose rifle: equip, freeze, root at data pose, hip shot, aim"), [ViewPoseHip](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseHip(World, Player, FName(TEXT("Rifle")), TEXT("rifle")); });
+		Add(Z + 397.5f, TEXT("ViewPose rifle: full aim leaves the gun static on screen"), [ViewPoseAim](UWorld* World, AGBPlayerCharacter* Player) { ViewPoseAim(World, Player, FName(TEXT("Rifle")), TEXT("rifle")); });
+		Add(Z + 399.f, TEXT("ViewPose overlay: a good PNG shows, a bad path clears and draws nothing"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			// Write a small 480x270 test PNG into Saved/, load it (must show), then feed a bad path (must clear).
+			const FString GoodPath = FPaths::ProjectSavedDir() / TEXT("viewpose_overlay_test.png");
+			TArray<FColor> Pixels;
+			Pixels.SetNumUninitialized(480 * 270);
+			for (int32 Y = 0; Y < 270; ++Y)
+			{
+				for (int32 X = 0; X < 480; ++X)
+				{
+					const bool bStripe = ((X / 30) + (Y / 30)) % 2 == 0;
+					Pixels[Y * 480 + X] = bStripe ? FColor(200, 50, 50, 255) : FColor(30, 30, 30, 255);
+				}
+			}
+			TArray64<uint8> Compressed;
+			FImageUtils::PNGCompressImageArray(480, 270, TArrayView64<const FColor>(Pixels.GetData(), Pixels.Num()), Compressed);
+			const bool bWrote = FFileHelper::SaveArrayToFile(Compressed, *GoodPath);
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose overlay test PNG: wrote=%d '%s'"), bWrote ? 1 : 0, *GoodPath);
+			if (!bWrote)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose overlay FAILED: could not write the test PNG"));
+				return;
+			}
+			const bool bGoodLoaded = SetHandOverlayFile(World, GoodPath);
+			const AGBHUD* HUD = AGBHUD::Get(World);
+			const bool bShows = HUD && HUD->HasHandOverlay();
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose overlay good path: loaded=%d shows=%d"), bGoodLoaded ? 1 : 0, bShows ? 1 : 0);
+			if (!bGoodLoaded || !bShows)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose overlay FAILED: the valid PNG must load and draw"));
+				return;
+			}
+			const bool bLoaded = SetHandOverlayFile(World, FString(TEXT("Z:/definitely-not-here/viewpose_missing.png")));
+			const bool bDrawsNothing = HUD && !HUD->HasHandOverlay();
+			UE_LOG(LogGB, Display, TEXT("SMOKE ViewPose overlay bad path: loaded=%d draws nothing=%d"), bLoaded ? 1 : 0, bDrawsNothing ? 1 : 0);
+			if (bLoaded || !bDrawsNothing)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE ViewPose overlay FAILED: a bad path must log an error and draw nothing"));
+			}
+		});
+		Add(Z + 399.5f, TEXT("ViewPose done: unfreeze, staff back in hand"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			GBViewBob::bFrozen = false;
+			if (AGBGun* Gun = Cast<AGBGun>(Player->GetEquipment() ? Player->GetEquipment()->GetActiveItem() : nullptr))
+			{
+				Gun->StopSecondary();
+			}
+			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
+		});
 		Add(Z + 400.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
@@ -6964,6 +7321,22 @@ namespace GBSmokeRun
 		TEXT("gb.OpenDoors"),
 		TEXT("Sets every progress flag required by a flagged door or energy gate of this map."),
 		FConsoleCommandWithWorldDelegate::CreateStatic(&RunOpenDoors));
+
+	// ---- gb.ViewPose, gb.ViewFreeze, gb.HandOverlay ----
+	static FAutoConsoleCommandWithWorldAndArgs ViewPoseCommand(
+		TEXT("gb.ViewPose"),
+		TEXT("Held gun's rest pose as Weapons.json lines (no args) or sets it live: gb.ViewPose X Y Z Pitch Yaw Roll Scale (until re-equip)."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunViewPose));
+
+	static FAutoConsoleCommandWithWorldAndArgs ViewFreezeCommand(
+		TEXT("gb.ViewFreeze"),
+		TEXT("Freezes the walk bob of gun and hands for clean template screenshots: gb.ViewFreeze 1 (0 releases)."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunViewFreeze));
+
+	static FAutoConsoleCommandWithWorldAndArgs HandOverlayCommand(
+		TEXT("gb.HandOverlay"),
+		TEXT("Draws a PNG (absolute path, 480x270) as the hands layer over the held gun; no argument clears it."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunHandOverlay));
 }
 
 #endif // !UE_BUILD_SHIPPING
