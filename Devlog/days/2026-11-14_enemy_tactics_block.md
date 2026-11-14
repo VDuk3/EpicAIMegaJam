@@ -132,7 +132,7 @@ Unreal Engine 5.9.0, Claude Code (Claude Fable 5.2 as architect; three Claude So
 
 ## Left open
 - **The owner should play this package.** What only a person can judge: whether the squads read as intelligent (cover, flanks, turns of fire), the chief's fight, the vault's feel, the Valkyrie's awakening.
-- The Valkyrie steps out of her tube by a 150 cm placement and a walk, not a leap.
+- The Valkyrie steps out of her tube by a 150 cm placement and a walk, not a leap. Asked whether he wanted a real leap, the owner answered "Así está bien" (it is fine as it is): closed.
 - The chief's pistol arm with the shield raised; drones that jitter in place in the sub-boss hall.
 - Orc armor up close: jagged plate edges, texture patches on some boots.
 - Two builder walk checks report problems that are not problems (a cover crate on a checked line; one point at an edge): the lines should be moved.
