@@ -25,11 +25,14 @@ ARMOR1_SLOTS = ("Helmet", "Chest", "Hand", "Foot")
 # Blue lights (sentinel core, spider eyes, rifle strips): axis (-0.6, -0.4, 1). Red lens (drone eye): (1, -0.6, -0.6).
 BLUE = (-0.6, -0.4, 1.0)
 RED = (1.0, -0.6, -0.6)
+# The orange light lines painted into the orc's undersuit (collar, elbows, knees, spine): linear (1, 0.09, 0.01) gives
+# 0.95 on this axis; skin, tusks and lips stay under 0.2.
+ORANGE = (1.0, -0.5, -1.0)
 # per asset: material instances {MI name: (glow axis, threshold, boost)}, which mesh gets which MI
 MATS = {
     "EnemyRifle": {"MI_EnemyRifle": (BLUE, 0.12, 6.0)},
     "Robot": {"MI_Robot": (BLUE, 0.15, 4.0)},
-    "Orc": {"MI_Orc": (BLUE, 0.5, 0.0)},
+    "Orc": {"MI_Orc": (ORANGE, 0.35, 4.0)},
     "Valkyrie": {"MI_Valkyrie": (BLUE, 0.2, 3.0)},
     "ValkyrieSword": {"MI_ValkyrieSword": (BLUE, 0.15, 2.0)},
     "Drone": {"MI_Drone": (RED, 0.25, 2.0), "MI_Drone_Eye": (RED, 0.08, 12.0)},
@@ -286,8 +289,10 @@ def do_asset(asset, master):
         path = os.path.join(d, fname)
         if name.startswith("SK_"):
             anims = asset == "Spider"
-            skel = unreal.load_asset(ARMOR_SKELETON) if asset == "OrcArmor" else None
-            if asset == "OrcArmor" and skel is None:
+            # the armor pieces and the body worn under armor go on the orc's own skeleton (SK_Orc is imported first)
+            on_orc = asset == "OrcArmor" or name == "SK_Orc_Armored"
+            skel = unreal.load_asset(ARMOR_SKELETON) if on_orc else None
+            if on_orc and skel is None:
                 err("OrcArmor: no orc skeleton at %s" % ARMOR_SKELETON)
                 continue
             paths = task_import(path, dest, skeletal_options(anims, skel))

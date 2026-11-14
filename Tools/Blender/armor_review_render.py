@@ -16,8 +16,8 @@ bpy.ops.wm.open_mainfile(filepath=os.path.join(STAGE, "OrcArmor", "armor_fit_deb
 sc = bpy.context.scene
 arm = bpy.data.objects["Armature"]
 bodies = [o for o in bpy.data.objects if o.name.startswith("SK_Orc") and not o.name.startswith("SK_OrcArmor")]
-# under gauntlets the game wears the body without hands; hands=1 shows the whole body instead
-body = next((o for o in bodies if o.name.endswith("_NoHands") and not opts.get("hands")), bodies[0])
+# under gauntlets the game wears SK_Orc_Armored (slimmer, no hands); hands=1 shows the whole body instead
+body = next((o for o in bodies if o.name.endswith("_Armored") and not opts.get("hands")), bodies[0])
 for o in bpy.data.objects:
     if o.type == "MESH":
         o.hide_set(False)

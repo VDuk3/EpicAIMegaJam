@@ -290,8 +290,14 @@ def do_robot():
 def do_orc():
     d = out_dir("Orc")
     arm, body, tex, s, bones = humanoid(src("Enemies", "Orc", "Base_Rigged_Orc.glb"), "Orc", 2.10, d)
-    to_cm(arm, [body])
+    # the undersuit is painted into the body's textures; SK_Orc_Armored (slimmer, no hands) is the body worn under
+    # armor. Both are in orc_armor_fit.py; both meshes use the same textures and skeleton.
+    dom = body_regions(body, arm)
+    paint_suit(body, arm, dom)
+    worn = make_armored(body, arm, dom)
+    to_cm(arm, [body, worn])
     export_skeletal(arm, [body], os.path.join(d, "SK_Orc.fbx"))
+    export_skeletal(arm, [worn], os.path.join(d, "SK_Orc_Armored.fbx"))
     write_report(d, {"textures": tex, "scale": s, "height_cm": 210, "bones": bones})
 
 

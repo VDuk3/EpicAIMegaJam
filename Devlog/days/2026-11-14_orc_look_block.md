@@ -55,3 +55,22 @@ Architect's own work in Blender (exception to the Muse rule: the job is a loop o
 - **Undersuit** painted per texel into the body's texture: dark ribbed fabric below a collar line, gloves included; only the head stays skin.
 - **State after three passes:** set A reads as an armored soldier, its gauntlets are right. Still wrong: set B's gauntlet (the registration picks a wrong turn), thigh and upper-arm tubes too wide, set C's helmet too low, set C's knee skulls float, set B's greaves. Emissive accents not started.
 - Media: `media/2026-11-14/orc_refit_wip_A.png`, `orc_refit_wip_C.png`, `orc_refit_wip_A_gauntlet.png`.
+
+## Refit, ready for the owner's eye (not imported)
+
+Fourteen rounds of fit, render, look, correct. What changed after the work-in-progress note above, each change with the render that asked for it:
+
+- **Gauntlets.** A glove's "wrist" (its narrowest section) could not be found from its vertices (a slice of a 900-vertex glove holds five of them): sections are now measured on 20,000 points spread over the surface. The hand part is registered onto the orc's hand from four starting turns, and the winner must also leave the wrist at the wrist and the cuff along the forearm; judged on surface distance alone, set B's mitten was laid across the hand. Cuffs are shortened to 80 % of the forearm (they were drawn elbow-long for a much smaller hand).
+- **The body worn under armor, `SK_Orc_Armored`:** the same mesh and skin, 2.5 cm slimmer on the limbs and 1.5 cm on the chest (by its own bone weights, so it fades out at the joints), no hands, ears laid flat. Rigid plates sized to the bare body either stood off it like barrels or let it through in ragged patches; both were tried.
+- **Tubes** (thigh, upper arm, greave, knee) are widened only where the limb still comes through, in five stations along their length, measured on face points. Growing a whole tube until it cleared made barrels; a greave now keeps its width at the knee and opens at the ankle.
+- **Cuirass:** front to back it follows the torso's profile in four bands, and its back corners are tucked in. With one depth scale its arm-hole rims stood behind the shoulders like hoops.
+- **Shoulder caps** sit on the side of the deltoid; the strap behind the dome is cut off (at four times its size it was a hoop on the back). Left and right pieces take the same sizes (the right is fitted first).
+- **Helmets** placed by hand per set (scale and two offsets) until no tusk or ear came through.
+- **Undersuit:** warm charcoal (a cool one merged with set B's steel), and light lines 7 mm wide in orange: a ring inside the collar, one round each elbow and knee, one down the spine. `import_enemies.py` gives the orc's material a glow on that orange; the review renders show the lines as paint, not as light.
+- **Cost:** 14,500 to 19,400 triangles per set (the first fit cut every plate into 3 cm pieces to wrap it: about 50,000).
+
+Still imperfect, and said to the owner: boots keep some blotched texture; set B's greaves are open shin plates with pistons and stand wide; rigid plates cross each other when a knee or elbow bends far; sets B, C and D are the designs as delivered (iron, bone, scales), not sci-fi.
+
+Media: `media/2026-11-14/orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim` (four sets side by side), `orc_refit_gauntlets.png`, `_heads`, `_torsos`, `_arms`, `_legs` (the same zone of each set).
+
+Next, only on the owner's yes: import (`SK_Orc`, `SK_Orc_Armored`, 36 armor meshes, the body's textures), point the five armed orcs at `SK_Orc_Armored`, look at them in the game.
