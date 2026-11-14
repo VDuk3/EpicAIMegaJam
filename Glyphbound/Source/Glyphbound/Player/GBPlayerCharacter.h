@@ -111,6 +111,37 @@ public:
 	 * bFromGround uses the ground limits (MinHeight .. JumpRise + MaxReach), otherwise the air limits.
 	 */
 	bool FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const;
+	/** A vault over a thin obstacle (a railing): start, apex height (actor centre Z), end, the obstacle's top edge and the face it was found on. */
+	struct FGBVaultPlan
+	{
+		FVector Start = FVector::ZeroVector;
+		FVector End = FVector::ZeroVector;
+		float ApexZ = 0.f;
+		FVector LedgePoint = FVector::ZeroVector;
+		FVector2D WallNormal2D = FVector2D::ZeroVector;
+		/** The obstacle's top height, the landing floor's height and component (re-checked just before the crossing). */
+		float TopZ = 0.f;
+		float FloorZ = 0.f;
+		TWeakObjectPtr<UPrimitiveComponent> FloorComp;
+	};
+	/**
+	 * Looks for a thin obstacle to vault in one probe direction: wall sweep, top between VaultMinHeight and
+	 * VaultMaxHeight, at most VaultMaxDepth thick, room for the capsule beyond within VaultReach, a floor to land on
+	 * within VaultMaxDrop, and a clear path over the top (a shorter capsule: the body is tucked while it goes over).
+	 * Does NOT check the ledge climb: the callers try the mantle first.
+	 */
+	bool FindVault(FGBVaultPlan& Out, bool bFromGround, const FVector2D& ProbeDir, FString* OutWhy = nullptr) const;
+	/** Smoke / diagnosis: while on, every vault tick measures how deep the real capsule is inside world geometry (box shapes only). */
+	void SetVaultMeasure(bool bOn) { bVaultMeasure = bOn; VaultMaxPenetration = 0.f; VaultMaxDrift = 0.f; }
+	float GetVaultMaxPenetration() const { return VaultMaxPenetration; }
+	/** Largest distance between where a vault tick put the actor and where the next tick found it (something moved it). */
+	float GetVaultMaxDrift() const { return VaultMaxDrift; }
+	/** True while the capsule is shrunk for a vault (it is restored where the full one fits). */
+	bool IsVaultTucked() const { return bVaultTucked; }
+	/** Smoke only: runs the vault's tick once with this long a step (a long frame), if a vault is running. */
+	void AdvanceVaultForTest(float Seconds) { if (IsVaulting()) { TickMantle(Seconds); } }
+	/** True while the vault runs (IsMantling is true too: input, jump, dash and attacks are blocked). */
+	bool IsVaulting() const { return bMantling && bMantleVault; }
 	/** True while the climb animation runs (movement input, jump, dash and attacks are blocked). */
 	bool IsMantling() const { return bMantling; }
 	/** 0..1 along the climb; 0 when not mantling. */
@@ -131,6 +162,8 @@ public:
 	void PressJump();
 	/** Test hook for the smoke run (it has no keys): the next PressJump reads this as the held movement input, and a jump takes off in its direction. */
 	void SetMoveInputForTest(const FVector2D& Input);
+	/** Ends SetMoveInputForTest's hold (a PressJump also does): the movement input is the real one again. */
+	void ClearMoveInputForTest();
 
 	// ---- Interaction ----
 	/** The interactable the player is looking at and can use right now, or null. The HUD shows its prompt. */
@@ -223,6 +256,20 @@ protected:
 	bool TryStartMantle(bool bFromGround);
 	void StartMantle(const FGBMantleLedge& Ledge);
 	void TickMantle(float DeltaSeconds);
+	GBMantle::FVaultParams GetVaultParams() const;
+	/** Probes every direction like the mantle (intent first); starts the vault when one is found. */
+	bool TryStartVault(bool bFromGround);
+	void StartVault(const FGBVaultPlan& Plan);
+	/** One vault tick: the path from the last valid place to this Alpha, swept in small steps with the shrunk capsule. */
+	void TickVault(float Alpha);
+	/** Just before the crossing: the floor beyond is still the same component at the same height, and the full capsule fits at the end. */
+	bool ValidateVaultLanding(FString* OutWhy = nullptr) const;
+	/** The full capsule back where it fits (feet kept); false while it does not fit (it stays shrunk and is retried each tick). */
+	bool TryRestoreVaultCapsule();
+	/** On the ground, holding a direction into a vaultable obstacle for VaultPushTime starts the vault. */
+	void TickVaultPush(float DeltaSeconds);
+	/** The shorter capsule the vault path is checked with (the body is tucked): radius, half height. */
+	void GetVaultCheckCapsule(float& OutRadius, float& OutHalfHeight) const;
 
 	// Input handlers (bound to the actions of UGBInputSet)
 	void InputMove(const FInputActionValue& Value);
@@ -329,4 +376,32 @@ protected:
 	/** The path is one straight line between the two points (a slanted ship's ladder), not up-then-across. */
 	bool bMantleStraight = false;
 	FVector MantleEntryFrom = FVector::ZeroVector;
+	// ---- Vault (rides on the mantle's state: path time, view turn, jump count) ----
+	bool bMantleVault = false;
+	float VaultApexZ = 0.f;
+	float VaultDropStart = 0.62f;
+	float VaultPitchDeg = 0.f;
+	float VaultRollDeg = 0.f;
+	float VaultDipCm = 0.f;
+	FVector VaultExitVelocity = FVector::ZeroVector;
+	/** Seconds the movement input has pushed into a vaultable obstacle. */
+	float VaultPushTimer = 0.f;
+	bool bVaultMeasure = false;
+	float VaultMaxPenetration = 0.f;
+	float VaultMaxDrift = 0.f;
+	/** Where the last vault tick put the actor (to see whether anything moved it before the next one). */
+	FVector VaultLastPoint = FVector::ZeroVector;
+	bool bVaultHasLastPoint = false;
+	/** The capsule is shrunk for the vault (a tucked body); the full size is kept here to restore. */
+	bool bVaultTucked = false;
+	float VaultFullRadius = 0.f;
+	float VaultFullHalfHeight = 0.f;
+	/** Actor centre (shrunk capsule) of the last place the swept path reached without hitting anything. */
+	FVector VaultLastValid = FVector::ZeroVector;
+	float VaultPrevAlpha = 0.f;
+	bool bVaultCrossChecked = false;
+	TWeakObjectPtr<UPrimitiveComponent> VaultFloorComp;
+	float VaultFloorZ = 0.f;
+	float VaultTopZ = 0.f;
+	float VaultStartFeetZ = 0.f;
 };

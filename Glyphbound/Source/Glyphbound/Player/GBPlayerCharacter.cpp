@@ -28,6 +28,8 @@
 #include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
 #include "Engine/Engine.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
@@ -145,6 +147,24 @@ void AGBPlayerCharacter::BeginPlay()
 	Inventory->InitializeFromData();
 	SkillTree->InitializeFromData();
 
+	// Test starts (owner, 2026-11-14: "give me the packaged game with every weapon at the start, to test"): with
+	// -AllWeapons on the command line the player gets every weapon of Weapons.json (each gun comes with its own spare
+	// magazines, so no ammunition is added).
+	// A normal start never does this.
+	if (Data && FParse::Param(FCommandLine::Get(), TEXT("AllWeapons")))
+	{
+		TArray<FName> WeaponIds;      // a copy: GiveWeapon reads the data tables
+		for (const FGBWeaponDefinition& Weapon : Data->GetWeapons())
+		{
+			WeaponIds.Add(Weapon.Id);
+		}
+		for (const FName& WeaponId : WeaponIds)
+		{
+			Equipment->GiveWeapon(WeaponId, false);
+		}
+		UE_LOG(LogGB, Display, TEXT("GBPlayerCharacter: -AllWeapons: %d weapons given."), WeaponIds.Num());
+	}
+
 	Stats->OnStatsChanged.AddUObject(this, &AGBPlayerCharacter::ApplyMovementStats);
 	Attributes->OnDeath.AddUObject(this, &AGBPlayerCharacter::HandleDeath);
 	DamageDealtHandle = UGBCombatLibrary::OnDamageDealt().AddUObject(this, &AGBPlayerCharacter::HandlePrecisionRecovery);
@@ -228,8 +248,25 @@ void AGBPlayerCharacter::Tick(float DeltaSeconds)
 		// In the air (rising or falling): grab a ledge around the player instead of sailing past it.
 		if (CanMantleNow() && MoveComp->MovementMode == MOVE_Falling)
 		{
-			TryStartMantle(/*bFromGround*/ false);
+			VaultPushTimer = 0.f;
+			if (!TryStartMantle(/*bFromGround*/ false))
+			{
+				TryStartVault(/*bFromGround*/ false);
+			}
 		}
+		else if (CanMantleNow() && MoveComp->IsMovingOnGround())
+		{
+			TickVaultPush(DeltaSeconds);
+		}
+		else
+		{
+			VaultPushTimer = 0.f;
+		}
+	}
+
+	if (bVaultTucked && !bMantling)
+	{
+		TryRestoreVaultCapsule();
 	}
 
 	TickRecoil(DeltaSeconds);
@@ -274,7 +311,8 @@ void AGBPlayerCharacter::ApplyMovementStats()
 	const float Radius = FMath::Max(1.f, ReadStat(GBStat::CapsuleRadius, 38.f));
 	const float HalfHeight = FMath::Max(Radius, ReadStat(GBStat::CapsuleHalfHeight, 90.f));
 	const float OldHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
-	if (!FMath::IsNearlyEqual(OldHalfHeight, HalfHeight) || !FMath::IsNearlyEqual(Capsule->GetUnscaledCapsuleRadius(), Radius))
+	// Not while the capsule is shrunk for a vault: the full size is restored from what it was.
+	if (!bVaultTucked && (!FMath::IsNearlyEqual(OldHalfHeight, HalfHeight) || !FMath::IsNearlyEqual(Capsule->GetUnscaledCapsuleRadius(), Radius)))
 	{
 		const bool bWasOnGround = MoveComp->IsMovingOnGround();
 		Capsule->SetCapsuleSize(Radius, HalfHeight, true);
@@ -692,6 +730,569 @@ void AGBPlayerCharacter::StartMantle(const FGBMantleLedge& Ledge)
 	ApplyCameraPose();
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Vault (over a thin obstacle)
+
+GBMantle::FVaultParams AGBPlayerCharacter::GetVaultParams() const
+{
+	GBMantle::FVaultParams Params;
+	Params.MinHeight = ReadStat(GBVaultStat::MinHeight, 50.f);
+	Params.MaxHeight = ReadStat(GBVaultStat::MaxHeight, 150.f);
+	Params.MaxDepth = ReadStat(GBVaultStat::MaxDepth, 60.f);
+	Params.Reach = ReadStat(GBVaultStat::Reach, 220.f);
+	Params.MaxDrop = ReadStat(GBVaultStat::MaxDrop, 450.f);
+	Params.Duration = ReadStat(GBVaultStat::Duration, 0.55f);
+	Params.ExitBelowTop = ReadStat(GBVaultStat::ExitBelowTop, 130.f);
+	Params.RiseShare = ReadStat(GBVaultStat::RiseShare, 0.3f);
+	Params.DropStart = ReadStat(GBVaultStat::DropStart, 0.62f);
+	return Params;
+}
+
+void AGBPlayerCharacter::GetVaultCheckCapsule(float& OutRadius, float& OutHalfHeight) const
+{
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	const float Radius = Capsule ? Capsule->GetScaledCapsuleRadius() : 38.f;
+	const float HalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 90.f;
+	// Over the top the body is tucked: the path is checked with half the height, bottom-aligned with the real capsule.
+	constexpr float TuckShare = 0.5f;
+	OutRadius = FMath::Max(1.f, Radius - 2.f);
+	OutHalfHeight = FMath::Max(OutRadius, HalfHeight * TuckShare);
+}
+
+bool AGBPlayerCharacter::FindVault(FGBVaultPlan& Out, bool bFromGround, const FVector2D& ProbeDir, FString* OutWhy) const
+{
+	auto Refuse = [OutWhy](const FString& Why)
+	{
+		if (OutWhy)
+		{
+			*OutWhy = Why;
+		}
+		return false;
+	};
+	UWorld* World = GetWorld();
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	if (!World || !MoveComp || !Capsule)
+	{
+		return Refuse(TEXT("no world, movement or capsule"));
+	}
+	const FVector2D Probe2D = ProbeDir.GetSafeNormal();
+	if (Probe2D.IsNearlyZero())
+	{
+		return Refuse(TEXT("no probe direction"));
+	}
+	(void)bFromGround;
+
+	const float Radius = Capsule->GetScaledCapsuleRadius();
+	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const FVector ActorLocation = GetActorLocation();
+	const float Feet = ActorLocation.Z - HalfHeight;
+	const GBMantle::FVaultParams Params = GetVaultParams();
+	const float ProbeDistance = ReadStat(GBStat::MantleProbeDistance, 40.f);
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBVaultProbe), false, this);
+	FCollisionResponseParams ResponseParams(Capsule->GetCollisionResponseToChannels());
+
+	// ---- Wall: the shrunk capsule swept forward, lifted so it does not catch the floor it stands on. A frame of bars
+	// with gaps stops the capsule too (it is wider than any gap), at the first bar. ----
+	constexpr float LiftCm = 5.f;
+	const FVector WallBase = ActorLocation + FVector(0.f, 0.f, LiftCm);
+	const float ShrunkRadius = FMath::Max(1.f, Radius - 2.f);
+	FHitResult WallHit;
+	if (!World->SweepSingleByChannel(WallHit, WallBase, WallBase + FVector(Probe2D.X, Probe2D.Y, 0.f) * ProbeDistance,
+		FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(ShrunkRadius, HalfHeight), QueryParams, ResponseParams)
+		|| !WallHit.bBlockingHit)
+	{
+		return Refuse(FString::Printf(TEXT("nothing blocks the capsule within %.0f cm in that direction"), ProbeDistance));
+	}
+	if (WallHit.bStartPenetrating)
+	{
+		return Refuse(TEXT("the wall sweep starts inside geometry"));
+	}
+	// The first hit may be a slanted brace of a truss or a bar's edge: its normal says nothing about the obstacle, so it is
+	// not used. Only a pawn or something floor-like (a walkable slope) is not an obstacle. The crossing direction is the
+	// probe direction (the intent); whether this is an obstacle to vault is decided by the top and depth probes below.
+	AActor* WallActor = WallHit.GetActor();
+	if (!WallActor || WallActor->IsA<APawn>() || WallHit.ImpactNormal.Z > 0.7f)
+	{
+		return Refuse(FString::Printf(TEXT("the first hit (%s) is a pawn or a floor-like slope (normal z %.2f)"), *GetNameSafe(WallActor), WallHit.ImpactNormal.Z));
+	}
+	const FVector2D WallNormal2D = -Probe2D;
+	const FQuat WallQuat = FRotationMatrix::MakeFromX(FVector(WallNormal2D.X, WallNormal2D.Y, 0.f)).ToQuat();
+	// Shapes as wide as most of the capsule, so a gap between bars never reads as "nothing there".
+	const float BoxHalfWidth = Radius * 0.7f;
+
+	// ---- Top: a flat box swept down just inside the face (the mantle looks further behind, so it misses thin things). ----
+	constexpr float TopBoxHalfHeightCm = 2.f;
+	constexpr float TopBoxInsetCm = 3.f;
+	// The nearest thing in front, straight ahead of where he stands. The top box covers the whole depth a vault allows
+	// behind it (the top rail of a truss can sit as far back as the obstacle is deep).
+	const FVector2D Start2D(ActorLocation.X, ActorLocation.Y);
+	const float HitDist = FMath::Max(0.f, static_cast<float>(FVector2D::DotProduct(FVector2D(WallHit.ImpactPoint.X, WallHit.ImpactPoint.Y) - Start2D, Probe2D)));
+	const FVector2D Edge2D = Start2D + Probe2D * HitDist;
+	const float TopBoxHalfDepthCm = Params.MaxDepth * 0.5f;
+	const FVector2D TopXY = Edge2D + Probe2D * (TopBoxHalfDepthCm - TopBoxInsetCm);
+	FHitResult TopHit;
+	if (!World->SweepSingleByChannel(TopHit, FVector(TopXY.X, TopXY.Y, Feet + Params.MaxHeight + 20.f), FVector(TopXY.X, TopXY.Y, Feet + Params.MinHeight - 5.f),
+		WallQuat, ECC_Pawn, FCollisionShape::MakeBox(FVector(TopBoxHalfDepthCm, BoxHalfWidth, TopBoxHalfHeightCm)), QueryParams, ResponseParams)
+		|| !TopHit.bBlockingHit)
+	{
+		return Refuse(FString::Printf(TEXT("no top between %.0f and %.0f cm above the feet (wall %s)"), Params.MinHeight, Params.MaxHeight, *GetNameSafe(WallActor)));
+	}
+	if (TopHit.bStartPenetrating)
+	{
+		return Refuse(TEXT("the top probe starts inside geometry: the obstacle is higher than the limit"));
+	}
+	AActor* TopActor = TopHit.GetActor();
+	if (!TopActor || TopActor->IsA<APawn>() || TopHit.ImpactNormal.Z < 0.3f)
+	{
+		return Refuse(FString::Printf(TEXT("the top hit (%s) is not a top (normal z %.2f)"), *GetNameSafe(TopActor), TopHit.ImpactNormal.Z));
+	}
+	const float TopZ = static_cast<float>(TopHit.Location.Z) - TopBoxHalfHeightCm;
+	const float TopHeight = TopZ - Feet;
+	if (TopHeight < Params.MinHeight || TopHeight > Params.MaxHeight)
+	{
+		return Refuse(FString::Printf(TEXT("the top is %.0f cm above the feet, outside %.0f to %.0f"), TopHeight, Params.MinHeight, Params.MaxHeight));
+	}
+
+	// ---- Depth: a thin box swept from beyond the longest crossing back to the face, just under the top, as wide as most
+	// of the capsule: a bar or an upright anywhere in that width is found. Starting inside geometry = too thick. ----
+	constexpr float DepthProbeMarginCm = 5.f;
+	constexpr float DepthBoxHalfHeightCm = 3.f;
+	const FVector2D FarStart2D = Edge2D - WallNormal2D * (Params.MaxDepth + DepthProbeMarginCm);
+	const FVector2D NearEnd2D = Edge2D + WallNormal2D * TopBoxInsetCm;
+	const float DepthZ = TopZ - DepthBoxHalfHeightCm;
+	FHitResult FarHit;
+	const bool bFarHit = World->SweepSingleByChannel(FarHit, FVector(FarStart2D.X, FarStart2D.Y, DepthZ), FVector(NearEnd2D.X, NearEnd2D.Y, DepthZ),
+		WallQuat, ECC_Pawn, FCollisionShape::MakeBox(FVector(1.f, BoxHalfWidth, DepthBoxHalfHeightCm)), QueryParams, ResponseParams);
+	if (bFarHit && FarHit.bStartPenetrating)
+	{
+		return Refuse(FString::Printf(TEXT("thicker than %.0f cm (geometry %.0f cm behind the face)"), Params.MaxDepth, Params.MaxDepth + DepthProbeMarginCm));
+	}
+	if (bFarHit && FarHit.GetActor() && FarHit.GetActor()->IsA<APawn>())
+	{
+		return Refuse(TEXT("a pawn stands behind the obstacle"));
+	}
+	FVector2D FarFace2D = Edge2D - WallNormal2D * TopBoxInsetCm;
+	float DepthCm = TopBoxInsetCm;
+	if (bFarHit)
+	{
+		FarFace2D = Start2D + Probe2D * static_cast<float>(FVector2D::DotProduct(FVector2D(FarHit.ImpactPoint.X, FarHit.ImpactPoint.Y) - Start2D, Probe2D));
+		DepthCm = FMath::Max(0.f, static_cast<float>(FVector2D::DotProduct(Edge2D - FarFace2D, WallNormal2D)));
+	}
+	if (DepthCm > Params.MaxDepth)
+	{
+		return Refuse(FString::Printf(TEXT("%.0f cm deep, the limit is %.0f"), DepthCm, Params.MaxDepth));
+	}
+
+	// ---- Landing: beyond the far face, with the capsule's radius and a small margin. ----
+	constexpr float LandMarginCm = 6.f;
+	// Straight across from where he stands (the contact points of the sweeps can sit anywhere along the obstacle's width).
+	const float IntoObstacleCm = static_cast<float>(FVector2D::DotProduct(FarFace2D - Start2D, -WallNormal2D));
+	const FVector2D Land2D = Start2D - WallNormal2D * (IntoObstacleCm + Radius + LandMarginCm);
+	const float ReachCm = static_cast<float>((Land2D - FVector2D(ActorLocation.X, ActorLocation.Y)).Size());
+	if (ReachCm > Params.Reach)
+	{
+		return Refuse(FString::Printf(TEXT("the landing spot is %.0f cm away, the reach is %.0f"), ReachCm, Params.Reach));
+	}
+	// A floor under the landing spot, found by a trace from just above the top: no floor within the drop = no vault.
+	FHitResult FloorHit;
+	if (!World->LineTraceSingleByChannel(FloorHit, FVector(Land2D.X, Land2D.Y, TopZ + 10.f), FVector(Land2D.X, Land2D.Y, Feet - Params.MaxDrop - 20.f),
+		ECC_Pawn, QueryParams, ResponseParams))
+	{
+		return Refuse(FString::Printf(TEXT("no floor within %.0f cm below the feet beyond the obstacle"), Params.MaxDrop));
+	}
+	if (FloorHit.bStartPenetrating || FloorHit.ImpactNormal.Z < MoveComp->GetWalkableFloorZ()
+		|| (FloorHit.GetActor() && FloorHit.GetActor()->IsA<APawn>()))
+	{
+		return Refuse(FString::Printf(TEXT("what lies beyond (%s) is not a walkable floor (normal z %.2f)"), *GetNameSafe(FloorHit.GetActor()), FloorHit.ImpactNormal.Z));
+	}
+	const float FarFloorZ = FloorHit.ImpactPoint.Z;
+	if (!GBMantle::CanVault(TopHeight, DepthCm, ReachCm, Feet - FarFloorZ, TopZ - FarFloorZ, Params))
+	{
+		return Refuse(FString::Printf(TEXT("limits: top %.0f, depth %.0f, reach %.0f, drop %.0f, top above landing %.0f"), TopHeight, DepthCm, ReachCm, Feet - FarFloorZ, TopZ - FarFloorZ));
+	}
+
+	// ---- Room: the full capsule fits where the move ends. ----
+	const float EndFeet = GBMantle::VaultEndFeetZ(FarFloorZ, TopZ, Params.ExitBelowTop);
+	const FVector End(Land2D.X, Land2D.Y, EndFeet + HalfHeight + 1.f);
+	if (World->OverlapBlockingTestByChannel(End, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(Radius, HalfHeight), QueryParams, ResponseParams))
+	{
+		return Refuse(TEXT("the landing spot is taken (the capsule does not fit there)"));
+	}
+	// The tucked body: the capsule really shrinks during the vault (half height, feet kept), and every query uses that shape.
+	float CheckRadius = 0.f;
+	float CheckHalf = 0.f;
+	GetVaultCheckCapsule(CheckRadius, CheckHalf);
+	const FCollisionShape CheckShape = FCollisionShape::MakeCapsule(CheckRadius, CheckHalf);
+	auto CheckAt = [&](float X, float Y, float ActorZ) { return FVector(X, Y, ActorZ - HalfHeight + CheckHalf + LiftCm); };
+	// The apex: as high above the top as the stat says, lowered while something is above, down to 1 cm over the top.
+	// No room even then = no vault.
+	const float BaseClearance = FMath::Max(1.f, ReadStat(GBVaultStat::ApexClearance, 6.f));
+	const float Clearances[3] = { BaseClearance, BaseClearance * 0.5f, 1.f };
+	float ApexZ = 0.f;
+	bool bApexFits = false;
+	for (const float Clearance : Clearances)
+	{
+		const float Z = TopZ + Clearance + HalfHeight;
+		FHitResult ApexHit;
+		if (!World->SweepSingleByChannel(ApexHit, CheckAt(ActorLocation.X, ActorLocation.Y, Z), CheckAt(Land2D.X, Land2D.Y, Z), FQuat::Identity, ECC_Pawn,
+			CheckShape, QueryParams, ResponseParams))
+		{
+			ApexZ = Z;
+			bApexFits = true;
+			break;
+		}
+	}
+	if (!bApexFits)
+	{
+		return Refuse(TEXT("no room over the top for the tucked body"));
+	}
+	ApexZ = FMath::Max(ApexZ, static_cast<float>(ActorLocation.Z));
+	const FVector P0 = CheckAt(ActorLocation.X, ActorLocation.Y, ActorLocation.Z);
+	const FVector P1 = CheckAt(ActorLocation.X, ActorLocation.Y, ApexZ);
+	const FVector P2 = CheckAt(Land2D.X, Land2D.Y, ApexZ);
+	const FVector P3 = CheckAt(Land2D.X, Land2D.Y, End.Z);
+	FHitResult PathHit;
+	if (World->SweepSingleByChannel(PathHit, P0, P1, FQuat::Identity, ECC_Pawn, CheckShape, QueryParams, ResponseParams)
+		|| World->SweepSingleByChannel(PathHit, P1, P2, FQuat::Identity, ECC_Pawn, CheckShape, QueryParams, ResponseParams)
+		|| World->SweepSingleByChannel(PathHit, P2, P3, FQuat::Identity, ECC_Pawn, CheckShape, QueryParams, ResponseParams))
+	{
+		return Refuse(FString::Printf(TEXT("the path over the top is blocked by %s"), *GetNameSafe(PathHit.GetActor())));
+	}
+
+	Out.Start = ActorLocation;
+	Out.End = End;
+	Out.ApexZ = ApexZ;
+	Out.LedgePoint = FVector(Edge2D.X, Edge2D.Y, TopZ);
+	Out.WallNormal2D = WallNormal2D;
+	Out.TopZ = TopZ;
+	Out.FloorZ = FarFloorZ;
+	Out.FloorComp = FloorHit.GetComponent();
+	return true;
+}
+
+bool AGBPlayerCharacter::TryStartVault(bool bFromGround)
+{
+	if (!CanMantleNow())
+	{
+		return false;
+	}
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (!MoveComp)
+	{
+		return false;
+	}
+	if (bFromGround ? !MoveComp->IsMovingOnGround() : MoveComp->MovementMode != MOVE_Falling)
+	{
+		return false;
+	}
+	// Intent like the mantle's: the held input on the ground (none = look all around, view first); in the air only the
+	// horizontal velocity counts, and only when fast enough ("pressing forward"): no search all around in the air.
+	FVector2D Intent2D = FVector2D::ZeroVector;
+	if (bFromGround)
+	{
+		const FVector WorldDir = GetMoveInputWorldDirection(GetLiveMoveInput());
+		Intent2D = FVector2D(WorldDir.X, WorldDir.Y);
+	}
+	else
+	{
+		const FVector2D Velocity2D(MoveComp->Velocity.X, MoveComp->Velocity.Y);
+		if (Velocity2D.Size() < ReadStat(GBStat::MantleAirSearchMinSpeed, 150.f))
+		{
+			return false;
+		}
+		Intent2D = Velocity2D;
+	}
+	const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+	const FVector ViewForward = FRotator(0.f, ViewYaw, 0.f).Vector();
+	TArray<FVector2D, TInlineAllocator<GBMantle::MaxProbeDirections>> Probes;
+	GBMantle::GetProbeDirections(FVector2D(ViewForward.X, ViewForward.Y), Intent2D, Probes);
+	for (const FVector2D& Probe : Probes)
+	{
+		FGBVaultPlan Plan;
+		if (!FindVault(Plan, bFromGround, Probe))
+		{
+			continue;
+		}
+		if (!bFromGround)
+		{
+			// Still falling away from the obstacle: not a vault, keep looking.
+			const float Approach = -(MoveComp->Velocity.X * Plan.WallNormal2D.X + MoveComp->Velocity.Y * Plan.WallNormal2D.Y);
+			if (Approach < -50.f)
+			{
+				continue;
+			}
+		}
+		StartVault(Plan);
+		return true;
+	}
+	return false;
+}
+
+void AGBPlayerCharacter::StartVault(const FGBVaultPlan& Plan)
+{
+	ReleaseHeldInputs();
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MantleSavedJumpCount = JumpCurrentCount;
+		MoveComp->SetMovementMode(MOVE_Flying);
+		JumpCurrentCount = MantleSavedJumpCount;
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	const GBMantle::FVaultParams Params = GetVaultParams();
+	// The capsule really shrinks for the move (half height, the feet stay where the path puts them).
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		if (!bVaultTucked)
+		{
+			VaultFullRadius = Capsule->GetUnscaledCapsuleRadius();
+			VaultFullHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+		}
+		float TuckRadius = 0.f;
+		float TuckHalf = 0.f;
+		GetVaultCheckCapsule(TuckRadius, TuckHalf);
+		Capsule->SetCapsuleSize(TuckRadius, TuckHalf, false);
+		bVaultTucked = true;
+		VaultLastValid = Plan.Start - FVector(0.f, 0.f, VaultFullHalfHeight - TuckHalf);
+		SetActorLocation(VaultLastValid, false, nullptr, ETeleportType::TeleportPhysics);
+		VaultStartFeetZ = static_cast<float>(Plan.Start.Z) - VaultFullHalfHeight;
+	}
+	VaultPrevAlpha = 0.f;
+	bVaultCrossChecked = false;
+	VaultFloorComp = Plan.FloorComp;
+	VaultFloorZ = Plan.FloorZ;
+	VaultTopZ = Plan.TopZ;
+	MantleStart = Plan.Start;
+	MantleEnd = Plan.End;
+	MantleLedgePoint = Plan.LedgePoint;
+	MantleRiseShare = Params.RiseShare;
+	VaultDropStart = Params.DropStart;
+	VaultApexZ = Plan.ApexZ;
+	MantleDuration = FMath::Max(0.1f, Params.Duration);
+	MantleElapsed = 0.f;
+	VaultPitchDeg = ReadStat(GBVaultStat::CameraPitchDeg, 12.f);
+	VaultRollDeg = ReadStat(GBVaultStat::CameraRollDeg, 4.f);
+	VaultDipCm = ReadStat(GBVaultStat::CameraDipCm, 8.f);
+	const FVector Across(Plan.End.X - Plan.Start.X, Plan.End.Y - Plan.Start.Y, 0.f);
+	VaultExitVelocity = Across.GetSafeNormal() * ReadStat(GBVaultStat::ExitSpeed, 250.f);
+	// The view turns to the obstacle during the rise when it faces away, like the ledge climb.
+	MantleTotalTurn = 0.f;
+	MantlePrevTurnFraction = 0.f;
+	{
+		const float ViewYaw = Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw;
+		const float FacingYaw = FMath::RadiansToDegrees(FMath::Atan2(-Plan.WallNormal2D.Y, -Plan.WallNormal2D.X));
+		const float Turn = FRotator::NormalizeAxis(FacingYaw - ViewYaw);
+		if (FMath::Abs(Turn) > ReadStat(GBStat::MantleTurnMinAngle, 60.f))
+		{
+			MantleTotalTurn = Turn;
+		}
+	}
+	VaultPushTimer = 0.f;
+	bVaultHasLastPoint = false;
+	bMantleLadder = false;
+	bMantleReversed = false;
+	bMantleStraight = false;
+	bMantleVault = true;
+	bMantling = true;
+	ApplyCameraPose();
+}
+
+bool AGBPlayerCharacter::ValidateVaultLanding(FString* OutWhy) const
+{
+	auto Fail = [OutWhy](const FString& Why) { if (OutWhy) { *OutWhy = Why; } return false; };
+	UWorld* World = GetWorld();
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	if (!World || !Capsule || !VaultFloorComp.IsValid())
+	{
+		return Fail(TEXT("the floor component is gone"));
+	}
+	const GBMantle::FVaultParams Params = GetVaultParams();
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBVaultLanding), false, this);
+	FCollisionResponseParams ResponseParams(Capsule->GetCollisionResponseToChannels());
+	// The same floor (component and height), within the drop limit: what was planned is what is there.
+	FHitResult FloorHit;
+	if (!World->LineTraceSingleByChannel(FloorHit, FVector(MantleEnd.X, MantleEnd.Y, VaultTopZ + 10.f),
+		FVector(MantleEnd.X, MantleEnd.Y, VaultStartFeetZ - Params.MaxDrop - 20.f), ECC_Pawn, QueryParams, ResponseParams))
+	{
+		return Fail(TEXT("no floor beyond any more"));
+	}
+	if (FloorHit.bStartPenetrating || FloorHit.GetComponent() != VaultFloorComp.Get()
+		|| !FMath::IsNearlyEqual(static_cast<float>(FloorHit.ImpactPoint.Z), VaultFloorZ, 2.f)
+		|| VaultStartFeetZ - VaultFloorZ > Params.MaxDrop)
+	{
+		return Fail(FString::Printf(TEXT("the floor beyond changed (now %s at z %.1f, planned %s at z %.1f)"), *GetNameSafe(FloorHit.GetComponent()), FloorHit.ImpactPoint.Z, *GetNameSafe(VaultFloorComp.Get()), VaultFloorZ));
+	}
+	// And the room for the full capsule where the move ends.
+	if (World->OverlapBlockingTestByChannel(MantleEnd, FQuat::Identity, ECC_Pawn,
+		FCollisionShape::MakeCapsule(VaultFullRadius, VaultFullHalfHeight), QueryParams, ResponseParams))
+	{
+		return Fail(TEXT("the full capsule no longer fits at the landing"));
+	}
+	return true;
+}
+
+bool AGBPlayerCharacter::TryRestoreVaultCapsule()
+{
+	if (!bVaultTucked)
+	{
+		return true;
+	}
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	UWorld* World = GetWorld();
+	if (!Capsule || !World)
+	{
+		return false;
+	}
+	const FVector Location = GetActorLocation();
+	const FVector FullCentre(Location.X, Location.Y, Location.Z + (VaultFullHalfHeight - Capsule->GetUnscaledCapsuleHalfHeight()));
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBVaultRestore), false, this);
+	if (World->OverlapBlockingTestByChannel(FullCentre, FQuat::Identity, ECC_Pawn,
+		FCollisionShape::MakeCapsule(VaultFullRadius, VaultFullHalfHeight), QueryParams, FCollisionResponseParams(Capsule->GetCollisionResponseToChannels())))
+	{
+		return false;
+	}
+	Capsule->SetCapsuleSize(VaultFullRadius, VaultFullHalfHeight, true);
+	SetActorLocation(FullCentre, false, nullptr, ETeleportType::TeleportPhysics);
+	bVaultTucked = false;
+	ApplyCameraPose();
+	return true;
+}
+
+void AGBPlayerCharacter::TickVault(float Alpha)
+{
+	UWorld* World = GetWorld();
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (!World || !Capsule)
+	{
+		CancelMantle();
+		return;
+	}
+	if (bVaultHasLastPoint)
+	{
+		// Nothing else moves the actor during a vault: a difference is the movement component pushing it out of geometry.
+		VaultMaxDrift = FMath::Max(VaultMaxDrift, static_cast<float>(FVector::Dist(GetActorLocation(), VaultLastValid)));
+	}
+	const float TuckShift = VaultFullHalfHeight - Capsule->GetUnscaledCapsuleHalfHeight();
+	const FCollisionShape Shape = FCollisionShape::MakeCapsule(Capsule->GetScaledCapsuleRadius(), Capsule->GetScaledCapsuleHalfHeight());
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(GBVaultTick), false, this);
+	const FCollisionResponseParams ResponseParams(Capsule->GetCollisionResponseToChannels());
+	constexpr float LiftCm = 3.f;
+	const FVector Lift(0.f, 0.f, LiftCm);
+
+	// The path from the last valid place to this Alpha in steps no larger than VaultMaxAlphaStep (a long frame must not
+	// jump across a thin obstacle), each step swept with the shrunk capsule: the last place reached without a hit is kept.
+	const float From = VaultPrevAlpha;
+	const int32 Steps = GBMantle::VaultSubsteps(Alpha - From, GBMantle::VaultMaxAlphaStep);
+	FVector Position = VaultLastValid;
+	bool bBlocked = false;
+	for (int32 Index = 1; Index <= Steps && !bBlocked; ++Index)
+	{
+		const float A = Index == Steps ? Alpha : From + (Alpha - From) * Index / Steps;
+		if (!bVaultCrossChecked && A > MantleRiseShare)
+		{
+			bVaultCrossChecked = true;
+			FString Why;
+			if (!ValidateVaultLanding(&Why))
+			{
+				UE_LOG(LogGB, Display, TEXT("GBPlayerCharacter: vault stopped before the crossing, the landing is not what was planned: %s."), *Why);
+				bBlocked = true;
+				break;
+			}
+		}
+		const FVector Next = GBMantle::EvaluateVaultPath(MantleStart, MantleEnd, VaultApexZ, A, MantleRiseShare, VaultDropStart) - FVector(0.f, 0.f, TuckShift);
+		FHitResult Hit;
+		if (World->SweepSingleByChannel(Hit, Position + Lift, Next + Lift, FQuat::Identity, ECC_Pawn, Shape, QueryParams, ResponseParams))
+		{
+			UE_LOG(LogGB, Display, TEXT("GBPlayerCharacter: vault stopped at alpha %.2f, %s is in the way."), A, *GetNameSafe(Hit.GetActor()));
+			bBlocked = true;
+			break;
+		}
+		if (bVaultMeasure)
+		{
+			FCollisionQueryParams MeasureParams(SCENE_QUERY_STAT(GBVaultMeasure), false, this);
+			TArray<FOverlapResult> Overlaps;
+			World->OverlapMultiByChannel(Overlaps, Next, FQuat::Identity, ECC_Pawn, Shape, MeasureParams, ResponseParams);
+			for (const FOverlapResult& Overlap : Overlaps)
+			{
+				FMTDResult Mtd;
+				if (UPrimitiveComponent* Other = Overlap.GetComponent())
+				{
+					if (Other->ComputePenetration(Mtd, Shape, Next, FQuat::Identity))
+					{
+						VaultMaxPenetration = FMath::Max(VaultMaxPenetration, static_cast<float>(Mtd.Distance));
+					}
+				}
+			}
+		}
+		Position = Next;
+	}
+	VaultLastValid = Position;
+	bVaultHasLastPoint = true;
+	SetActorLocation(Position, false, nullptr, ETeleportType::TeleportPhysics);
+	if (MoveComp)
+	{
+		MoveComp->Velocity = FVector::ZeroVector;
+	}
+	if (bBlocked)
+	{
+		// From the last valid place: he falls from there, and the full capsule comes back where it fits.
+		CancelMantle();
+		return;
+	}
+	VaultPrevAlpha = Alpha;
+	if (Alpha < 1.f)
+	{
+		return;
+	}
+	// The end was swept like every other step. Control returns in the air with some forward speed: he falls or lands, and
+	// walks on. The full capsule comes back where it fits (if not, he stays tucked until it does).
+	bMantleVault = false;
+	bVaultHasLastPoint = false;
+	bMantling = false;
+	MantleElapsed = 0.f;
+	MantleTotalTurn = 0.f;
+	MantlePrevTurnFraction = 0.f;
+	if (MoveComp)
+	{
+		MoveComp->SetMovementMode(MOVE_Falling);
+		MoveComp->Velocity = VaultExitVelocity;
+	}
+	if (!TryRestoreVaultCapsule())
+	{
+		UE_LOG(LogGB, Display, TEXT("GBPlayerCharacter: the full capsule does not fit at the end of the vault yet, staying tucked."));
+	}
+	ApplyCameraPose();
+}
+
+void AGBPlayerCharacter::TickVaultPush(float DeltaSeconds)
+{
+	const UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	const FVector WorldDir = GetMoveInputWorldDirection(GetLiveMoveInput());
+	const FVector2D Intent2D(WorldDir.X, WorldDir.Y);
+	// Pushing = holding a direction and not getting anywhere (blocked by the obstacle).
+	if (!MoveComp || Intent2D.IsNearlyZero() || GetVelocity().Size2D() > ReadStat(GBVaultStat::PushMaxSpeed, 120.f))
+	{
+		VaultPushTimer = 0.f;
+		return;
+	}
+	FGBVaultPlan Plan;
+	FGBMantleLedge Ledge;
+	// The ledge climb comes first: a real ledge is never vaulted.
+	if (!FindVault(Plan, true, Intent2D) || FindMantleLedge(Ledge, true, Intent2D))
+	{
+		VaultPushTimer = 0.f;
+		return;
+	}
+	VaultPushTimer += DeltaSeconds;
+	if (VaultPushTimer >= ReadStat(GBVaultStat::PushTime, 0.35f))
+	{
+		StartVault(Plan);
+	}
+}
+
 void AGBPlayerCharacter::StartLadder(const FVector& FootCentre, const FVector& HeadCentre, bool bUp, float Seconds, float FacingYaw, bool bStraight)
 {
 	if (bMantling || IsDead())
@@ -746,6 +1347,11 @@ void AGBPlayerCharacter::TickMantle(float DeltaSeconds)
 			Controller->SetControlRotation(ControlRotation);
 		}
 	}
+	if (bMantleVault)
+	{
+		TickVault(Alpha);
+		return;
+	}
 	const float PathAlpha = bMantleReversed ? 1.f - Alpha : Alpha;
 	FVector PathPoint = bMantleStraight
 		? FMath::Lerp(MantleStart, MantleEnd, PathAlpha * PathAlpha * (3.f - 2.f * PathAlpha))
@@ -788,10 +1394,14 @@ void AGBPlayerCharacter::CancelMantle()
 	{
 		return;
 	}
+	const bool bWasVault = bMantleVault;
 	bMantling = false;
 	bMantleLadder = false;
 	bMantleReversed = false;
 	bMantleStraight = false;
+	bMantleVault = false;
+	bVaultHasLastPoint = false;
+	VaultPushTimer = 0.f;
 	MantleElapsed = 0.f;
 	MantleDuration = 0.f;
 	MantleTotalTurn = 0.f;
@@ -806,6 +1416,10 @@ void AGBPlayerCharacter::CancelMantle()
 	}
 	// A cancelled climb never refills jumps (releasing jump while Flying resets the count).
 	JumpCurrentCount = MantleSavedJumpCount;
+	if (bWasVault)
+	{
+		TryRestoreVaultCapsule();
+	}
 	ApplyCameraPose();
 }
 
@@ -824,6 +1438,15 @@ GBMantle::FMantlePose AGBPlayerCharacter::GetMantlePose() const
 	{
 		return GBMantle::FMantlePose();
 	}
+	if (bMantleVault)
+	{
+		const GBMantle::FVaultPose Vault = GBMantle::EvaluateVaultPose(GetMantleAlpha(), MantleRiseShare, VaultDropStart);
+		GBMantle::FMantlePose Pose;
+		Pose.ItemLower01 = Vault.ItemLower01;
+		Pose.Grip01 = Vault.Grip01;
+		Pose.CameraDip01 = Vault.Dip01;
+		return Pose;
+	}
 	return GBMantle::EvaluatePose(GetMantleAlpha(), MantleRiseShare);
 }
 
@@ -837,10 +1460,19 @@ void AGBPlayerCharacter::ApplyCameraPose()
 	// The camera follows the control rotation (bUsePawnControlRotation overwrites its rotation every view), so
 	// the view-only offsets go through the camera's additive offset, applied after it. The aim never moves.
 	const GBMantle::FMantlePose Pose = GetMantlePose();
-	const FRotator MantleRot(-Pose.CameraDip01 * MantlePitchDipDeg, 0.f, Pose.CameraDip01 * MantleRollDeg);
+	FRotator MantleRot(-Pose.CameraDip01 * MantlePitchDipDeg, 0.f, Pose.CameraDip01 * MantleRollDeg);
+	FVector ViewOffset(0.f, 0.f, -Pose.Grip01 * MantlePullDownCm);
+	if (bMantling && bMantleVault)
+	{
+		// The vault: the view tips forward and rolls to the supporting hand's side over the top, the camera dips.
+		const GBMantle::FVaultPose Vault = GBMantle::EvaluateVaultPose(GetMantleAlpha(), MantleRiseShare, VaultDropStart);
+		MantleRot = FRotator(-Vault.PitchDown01 * VaultPitchDeg, 0.f, Vault.Roll01 * VaultRollDeg);
+		ViewOffset = FVector(0.f, 0.f, -Vault.Dip01 * VaultDipCm);
+	}
 	const FRotator ViewRot = ViewShakeRot + MantleRot;
-	const FVector ViewOffset(0.f, 0.f, -Pose.Grip01 * MantlePullDownCm);
-	Camera->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+	// A shrunk capsule (the vault) has its centre lower: the camera stays where the full capsule's eye would be.
+	const float TuckShift = bVaultTucked ? VaultFullHalfHeight - GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
+	Camera->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight + TuckShift));
 	Camera->ClearAdditiveOffset();
 	if (!ViewRot.IsNearlyZero(1.e-4f) || !ViewOffset.IsNearlyZero(1.e-4f))
 	{
@@ -1551,7 +2183,7 @@ void AGBPlayerCharacter::PressJump()
 	}
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
-		const bool bClimbed = MoveComp->IsMovingOnGround() && TryStartMantle(/*bFromGround*/ true);
+		const bool bClimbed = MoveComp->IsMovingOnGround() && (TryStartMantle(/*bFromGround*/ true) || TryStartVault(/*bFromGround*/ true));
 		MoveInputTestOverride.Reset();
 		if (bClimbed)
 		{
@@ -1568,6 +2200,12 @@ void AGBPlayerCharacter::SetMoveInputForTest(const FVector2D& Input)
 	// Also as if a Move event came this frame, so the jump that may follow takes off in this direction (OnJumped).
 	LastMoveInput = Input;
 	LastMoveInputFrame = GFrameCounter;
+}
+
+void AGBPlayerCharacter::ClearMoveInputForTest()
+{
+	MoveInputTestOverride.Reset();
+	LastMoveInput = FVector2D::ZeroVector;
 }
 
 FVector2D AGBPlayerCharacter::GetLiveMoveInput() const

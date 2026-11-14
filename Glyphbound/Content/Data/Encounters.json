@@ -711,42 +711,46 @@
 			"Rewards": []
 		},
 		{
-			"Id": "SubBoss_Future",
-			"Waves": [
-				{
-					"DelayBefore": 0,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Future_Warlord",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Future_Enforcer",
-							"Count": 2
-						},
-						{
-							"EnemyId": "Drone_Future",
-							"Count": 2
-						}
-					]
-				}
-			],
-			"SkillPoints": 2,
-			"Rewards": [
-				{
-					"ItemId": "PowerCell",
-					"Count": 1,
-					"Chance": 1
-				},
-				{
-					"ItemId": "Ammo_Magazine",
-					"Count": 2,
-					"Chance": 1
-				}
-			],
-			"Comment": "Provisional (enemies block, 2026-11-14): the sub-boss hall. Clearing it opens the hall's freight door (FutureSubBossDefeated) and gives the first Power Cell of the lab gate.",
-			"ClearedFlag": "FutureSubBossDefeated"
-		},
+				"Id": "SubBoss_Future",
+				"Prespawn": true,
+				"Waves": [
+					{
+						"DelayBefore": 0,
+						"Spawns": [
+							{
+								"EnemyId": "Orc_Future_Warlord",
+								"Count": 1,
+								"Behavior": "Guard"
+							},
+							{
+								"EnemyId": "Orc_Future_Enforcer",
+								"Count": 2,
+								"Behavior": "Patrol"
+							},
+							{
+								"EnemyId": "Drone_Future",
+								"Count": 2,
+								"Behavior": "Patrol"
+							}
+						]
+					}
+				],
+				"SkillPoints": 2,
+				"Rewards": [
+					{
+						"ItemId": "PowerCell",
+						"Count": 1,
+						"Chance": 1
+					},
+					{
+						"ItemId": "Ammo_Magazine",
+						"Count": 2,
+						"Chance": 1
+					}
+				],
+				"Comment": "Provisional (enemies block, 2026-11-14): the sub-boss hall. Clearing it opens the hall freight door (FutureSubBossDefeated) and gives the first Power Cell of the lab gate.",
+				"ClearedFlag": "FutureSubBossDefeated"
+			},
 		{
 			"Id": "Zone_Fire",
 			"Waves": [
@@ -1214,118 +1218,162 @@
 			"Rewards": []
 		},
 		{
-			"Comment": "Provisional (enemies block, 2026-11-14): the transfer bay, the base's combat hall. Robots and drones first, then armed orcs with spiders, then a sentinel and an enforcer.",
-			"Id": "Future_Bay",
-			"Waves": [
-				{
-					"DelayBefore": 0,
-					"Spawns": [
-						{
-							"EnemyId": "Robot_Future",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Drone_Future",
-							"Count": 2
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Future",
-							"Count": 2
-						},
-						{
-							"EnemyId": "Orc_Future_GunCarrier",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Spider_Future",
-							"Count": 3
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Sentinel_Future",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Future_Enforcer",
-							"Count": 1
-						}
-					]
-				}
-			],
-			"SkillPoints": 1,
-			"Rewards": [
-				{
-					"ItemId": "Ammo_Magazine",
-					"Count": 2,
-					"Chance": 1
-				}
-			]
-		},
+				"Comment": "Provisional (enemies block, 2026-11-14): the transfer bay, the base combat hall. Prespawned and patrolling: robots, orcs and a drone first, then orcs with spiders as reinforcements, then a sentinel and an enforcer.",
+				"Id": "Future_Bay",
+				"Prespawn": true,
+				"Waves": [
+					{
+						"DelayBefore": 0,
+						"Spawns": [
+							{
+								"EnemyId": "Robot_Future",
+								"Count": 2,
+								"Behavior": "Patrol"
+							},
+							{
+								"EnemyId": "Orc_Future",
+								"Count": 1,
+								"Behavior": "Patrol"
+							},
+							{
+								"EnemyId": "Orc_Future",
+								"Count": 1,
+								"Behavior": "Guard"
+							},
+							{
+								"EnemyId": "Drone_Future",
+								"Count": 1,
+								"Behavior": "Patrol"
+							}
+						]
+					},
+					{
+						"DelayBefore": 2,
+						"Spawns": [
+							{
+								"EnemyId": "Orc_Future_GunCarrier",
+								"Count": 1
+							},
+							{
+								"EnemyId": "Orc_Future",
+								"Count": 1
+							},
+							{
+								"EnemyId": "Spider_Future",
+								"Count": 2
+							}
+						]
+					},
+					{
+						"DelayBefore": 2,
+						"Spawns": [
+							{
+								"EnemyId": "Sentinel_Future",
+								"Count": 1
+							},
+							{
+								"EnemyId": "Orc_Future_Enforcer",
+								"Count": 1
+							}
+						]
+					}
+				],
+				"SkillPoints": 1,
+				"Rewards": [
+					{
+						"ItemId": "Ammo_Magazine",
+						"Count": 2,
+						"Chance": 1
+					}
+				]
+			},
 		{
-			"Comment": "Provisional (enemies block): a spider ambush in a corridor.",
-			"Id": "Future_Spiders",
-			"Waves": [
-				{
-					"DelayBefore": 0,
-					"Spawns": [
-						{
-							"EnemyId": "Spider_Future",
-							"Count": 4
-						}
-					]
-				}
-			],
-			"SkillPoints": 1,
-			"Rewards": []
-		},
+				"Comment": "Provisional (enemies block): a spider ambush in a corridor. The spiders lie dormant until he comes close.",
+				"Id": "Future_Spiders",
+				"Prespawn": true,
+				"Waves": [
+					{
+						"DelayBefore": 0,
+						"Spawns": [
+							{
+								"EnemyId": "Spider_Future",
+								"Count": 4,
+								"Behavior": "Dormant"
+							}
+						]
+					}
+				],
+				"SkillPoints": 1,
+				"Rewards": []
+			},
 		{
-			"Comment": "Provisional (enemies block): the deep wing. Its sentinel guards the second Power Cell of the lab gate.",
-			"Id": "Future_DeepWing",
-			"Waves": [
-				{
-					"DelayBefore": 0,
-					"Spawns": [
-						{
-							"EnemyId": "Spider_Future",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Robot_Future",
-							"Count": 2
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Sentinel_Future",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Drone_Future",
-							"Count": 2
-						}
-					]
-				}
-			],
-			"SkillPoints": 1,
-			"Rewards": [
-				{
-					"ItemId": "PowerCell",
-					"Count": 1,
-					"Chance": 1
-				}
-			]
-		}
-	]
+				"Comment": "Provisional (enemies block): the deep wing. Its sentinel guards the second Power Cell of the lab gate.",
+				"Id": "Future_DeepWing",
+				"Prespawn": true,
+				"Waves": [
+					{
+						"DelayBefore": 0,
+						"Spawns": [
+							{
+								"EnemyId": "Orc_Future",
+								"Count": 2,
+								"Behavior": "Patrol"
+							},
+							{
+								"EnemyId": "Robot_Future",
+								"Count": 1,
+								"Behavior": "Patrol"
+							},
+							{
+								"EnemyId": "Spider_Future",
+								"Count": 2,
+								"Behavior": "Dormant"
+							}
+						]
+					},
+					{
+						"DelayBefore": 2,
+						"Spawns": [
+							{
+								"EnemyId": "Sentinel_Future",
+								"Count": 1
+							},
+							{
+								"EnemyId": "Drone_Future",
+								"Count": 2
+							}
+						]
+					}
+				],
+				"SkillPoints": 1,
+				"Rewards": [
+					{
+						"ItemId": "PowerCell",
+						"Count": 1,
+						"Chance": 1
+					}
+				]
+			},
+			{
+				"Comment": "Provisional (enemies AI block, 2026-11-14): the Valkyrie in her room. Dormant until he comes in; the architect places the encounter actor.",
+				"Id": "Boss_Valkyrie_Future",
+				"Prespawn": true,
+				"Waves": [
+					{
+						"DelayBefore": 0,
+						"Spawns": [
+							{
+								"EnemyId": "Valkyrie_Future",
+								"Count": 1,
+								"Behavior": "Dormant"
+							}
+						]
+					}
+				],
+				"SkillPoints": 3,
+				"Rewards": [],
+				"ClearedFlag": "FutureValkyrieDefeated",
+				"WakeFlag": "ValkyrieTubeBroken"
+			}
+		]
 }

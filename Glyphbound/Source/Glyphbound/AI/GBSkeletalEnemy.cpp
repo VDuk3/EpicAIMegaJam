@@ -17,6 +17,7 @@
 #include "AI/GBEngage.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Core/GBStatNames.h"
+#include "Stats/GBAttributeComponent.h"
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBStatsComponent.h"
 #include "World/GBEraComponent.h"
@@ -32,7 +33,8 @@ namespace GBSkeletalEnemyLocal
 	const FName RagdollProfile(TEXT("Ragdoll"));
 	const FName PhysicsActorProfile(TEXT("PhysicsActor"));
 	const TCHAR* const ClipKeys[GBEnemyAnim::NumClips] = { TEXT("Anim.Idle"), TEXT("Anim.Walk"), TEXT("Anim.Run"), TEXT("Anim.StrafeLeft"), TEXT("Anim.StrafeRight"),
-		TEXT("Anim.WalkBack"), TEXT("Anim.Attack"), TEXT("Anim.Hit"), TEXT("Anim.Death") };
+		TEXT("Anim.WalkBack"), TEXT("Anim.Attack"), TEXT("Anim.Hit"), TEXT("Anim.Death"),
+		TEXT("Anim.RelaxedIdle"), TEXT("Anim.PatrolWalk"), TEXT("Anim.Sprint"), TEXT("Anim.CrouchIdle"), TEXT("Anim.CrouchWalk") };
 	constexpr float SightInterval = 0.1f;          // s between line-of-sight traces
 	constexpr float StrafeReachRadius = 80.f;      // cm: a strafe goal this close counts as reached
 	constexpr float StrafeNavExtentXY = 150.f;
@@ -59,8 +61,9 @@ void AGBSkeletalEnemy::InitFromDefinition(const FGBEnemyDefinition& Definition)
 	Super::InitFromDefinition(Definition);
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
 	{
-		// Ranged shooters face the player while they strafe; melee ones turn the way they run.
+		// Ranged shooters turn by their own rules (they face the player, or the way they run a long move); melee ones turn the way they run.
 		Move->bOrientRotationToMovement = !IsRanged();
+		Move->RotationRate = FRotator(0.f, FMath::Max(StatOr("TurnRate", 540.f), 1.f), 0.f);
 	}
 }
 
@@ -176,6 +179,11 @@ void AGBSkeletalEnemy::BuildLook()
 		Tuning.FlinchYaw = S(TEXT("AnimFlinchYaw"), Tuning.FlinchYaw);
 		Tuning.FlinchDecay = S(TEXT("AnimFlinchDecay"), Tuning.FlinchDecay);
 		Tuning.MeshYaw = MeshYaw;
+		Tuning.MeshScale = MeshScale;
+		Tuning.AnimRateMin = S(TEXT("AnimRateMin"), Tuning.AnimRateMin);
+		Tuning.AnimRateMax = S(TEXT("AnimRateMax"), Tuning.AnimRateMax);
+		Tuning.MoveBlendSpeed = S(TEXT("AnimMoveBlendSpeed"), Tuning.MoveBlendSpeed);
+		Tuning.TravelBone = FName(*GBEnemy3D::Str(*Def, FName(TEXT("Anim.TravelBone")), TEXT("pelvis")));
 		AnimInst->Configure(Clips, Tuning);
 	}
 	else
@@ -201,9 +209,15 @@ FVector AGBSkeletalEnemy::GetMuzzleLocation() const
 
 FString AGBSkeletalEnemy::DescribeLook() const
 {
-	return FString::Printf(TEXT("%s look=%d mesh=%s armor=%d weapon=%d muzzleSocket=%d anim[%s] aware=%d shots=%d bursts=%d lunges=%d ragdoll=%d strafe[picks=%d fails=%d goal=%d intent=%d]"),
+	FString Speeds;
+	if (AnimInst)
+	{
+		Speeds = FString::Printf(TEXT(" ref[walk=%.0f%s run=%.0f%s]"), AnimInst->GetClipRefSpeed(EGBEnemyClip::Walk), AnimInst->ClipHasDrift(EGBEnemyClip::Walk) ? TEXT("d") : TEXT(""),
+			AnimInst->GetClipRefSpeed(EGBEnemyClip::Run), AnimInst->ClipHasDrift(EGBEnemyClip::Run) ? TEXT("d") : TEXT(""));
+	}
+	return FString::Printf(TEXT("%s look=%d mesh=%s armor=%d weapon=%d muzzleSocket=%d anim[%s]%s aware=%d shots=%d bursts=%d lunges=%d ragdoll=%d maxPelvisDist=%.0f | %s"),
 		*EnemyId.ToString(), bLookBuilt ? 1 : 0, MeshName.IsEmpty() ? TEXT("-") : *MeshName, ArmorParts.Num(), WeaponComp ? 1 : 0, bHasMuzzleSocket ? 1 : 0,
-		AnimInst ? *AnimInst->DescribeClips() : TEXT("none"), bAware ? 1 : 0, ShotCount, BurstCount, LungeCount, bRagdoll ? 1 : 0, StrafePicks, StrafePickFails, bHasStrafeGoal ? 1 : 0, static_cast<int32>(Intent));
+		AnimInst ? *AnimInst->DescribeClips() : TEXT("none"), *Speeds, bAware ? 1 : 0, ShotCount, BurstCount, LungeCount, bRagdoll ? 1 : 0, MaxPelvisDistance, *DescribeTactics());
 }
 
 FGBDamageInfo AGBSkeletalEnemy::MakeShotInfo() const
@@ -272,274 +286,383 @@ void AGBSkeletalEnemy::TurnTowards(const AActor* Goal, float DeltaSeconds)
 	SetActorRotation(FMath::RInterpConstantTo(Current, Wanted, DeltaSeconds, S(TEXT("TurnRate"), 420.f)));
 }
 
-void AGBSkeletalEnemy::SetIntent(EMoveIntent NewIntent)
+void AGBSkeletalEnemy::MoveToPoint(const FVector& Point, const AActor* Goal, float DeltaSeconds)
 {
-	if (NewIntent == Intent)
+	MoveToZonePoint(Point, 40.f, Goal, DeltaSeconds);
+}
+
+void AGBSkeletalEnemy::AbortBurst(float Cooldown)
+{
+	BurstPhase = EBurstPhase::Cooldown;
+	ShotsLeft = 0;
+	BurstCooldown = FMath::Max(BurstCooldown, Cooldown);
+	if (State == EGBEnemyState::Windup || State == EGBEnemyState::Recover)
 	{
-		return;
-	}
-	// A new kind of move cancels the old path (a MoveToActor must not keep running when it should strafe).
-	Intent = NewIntent;
-	RepathTimer = 0.f;
-	bPointPathing = false;
-	bHasStrafeGoal = false;
-	if (AController* C = GetController())
-	{
-		C->StopMovement();
+		SetState(EGBEnemyState::Chase);
 	}
 }
 
-void AGBSkeletalEnemy::MoveToPoint(const FVector& Point, const AActor* Goal, bool bRequestPath)
+void AGBSkeletalEnemy::StartBurst()
 {
-	bWantsToMove = true;   // the stuck check of the parent runs after this behaviour
-	AAIController* AI = Cast<AAIController>(GetController());
-	const UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(GetWorld());
-	if (AI && Nav && Nav->GetDefaultNavDataInstance() != nullptr)
-	{
-		if (bRequestPath)
-		{
-			const EPathFollowingRequestResult::Type Result = AI->MoveToLocation(Point, GBSkeletalEnemyLocal::StrafeReachRadius * 0.4f, true, true, false, true);
-			bPointPathing = Result != EPathFollowingRequestResult::Failed;
-		}
-		if (bPointPathing)
-		{
-			bSteering = false;
-			return;
-		}
-	}
-	// No navmesh or no path: walk straight at it while nothing blocks the way (the parent's sweep also checks ledges).
-	// Fed every tick: a single AddMovementInput is consumed in one frame.
-	bSteering = true;
-	const FVector Direction = (Point - GetActorLocation()).GetSafeNormal2D();
-	if (!Direction.IsNearlyZero() && !IsDirectionBlocked(Direction, GetGameValue(GBEnemyKey::SteerFeelerLength, 150.f), Goal))
-	{
-		AddMovementInput(Direction, 1.f);
-	}
+	BurstPhase = EBurstPhase::Telegraph;
+	BurstTimer = Stats->GetStat(GBStat::AttackWindup, 0.4f);
+	SetState(EGBEnemyState::Windup);
 }
 
-bool AGBSkeletalEnemy::PickStrafeGoal(const AActor* Goal, float RangeMin, float RangeMax)
+bool AGBSkeletalEnemy::TickMeleeSwing(AActor* Goal, float DeltaSeconds, float Distance)
 {
-	const FVector Loc = GetActorLocation();
-	const FVector ToGoal = (Goal->GetActorLocation() - Loc).GetSafeNormal2D();
-	if (ToGoal.IsNearlyZero())
+	const float MeleeRange = S(TEXT("MeleeRange"), 0.f);
+	if (MeleeRange <= 0.f)
 	{
 		return false;
 	}
-	const float DistMin = S(TEXT("StrafeDistMin"), 300.f);
-	const float DistMax = FMath::Max(S(TEXT("StrafeDistMax"), 600.f), DistMin);
-	const float SideJitter = S(TEXT("StrafeJitterAngle"), 35.f);
-	const UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(GetWorld());
-	for (int32 Try = 0; Try < GBSkeletalEnemyLocal::StrafeTries; ++Try)
+	SwingCooldown = FMath::Max(0.f, SwingCooldown - DeltaSeconds);
+	if (SwingTimer >= 0.f)
 	{
-		const float Side = Random.FRand() < 0.5f ? 1.f : -1.f;
-		const FVector Direction = ToGoal.RotateAngleAxis(Side * (90.f + Random.FRandRange(-SideJitter, SideJitter)), FVector::UpVector);
-		const float Distance = Random.FRandRange(DistMin, DistMax);
-		FVector Candidate = Loc + Direction * Distance;
-		if (Nav && Nav->GetDefaultNavDataInstance() != nullptr)
+		SwingTimer -= DeltaSeconds;
+		StopMoving();
+		FaceTowards(Goal);
+		if (SwingTimer <= 0.f)
 		{
-			FNavLocation Projected;
-			if (!Nav->ProjectPointToNavigation(Candidate, Projected, FVector(GBSkeletalEnemyLocal::StrafeNavExtentXY, GBSkeletalEnemyLocal::StrafeNavExtentXY, GBSkeletalEnemyLocal::StrafeNavExtentZ)))
+			SwingTimer = -1.f;
+			SwingCooldown = Stats->GetStat(GBStat::AttackInterval, 1.5f);
+			if (Distance <= MeleeRange * 1.2f && bSight)
 			{
-				continue;
+				FGBDamageInfo Info = MakeShotInfo();
+				Info.Amount *= S(TEXT("MeleeDamageMult"), 1.5f);
+				Info.HitLocation = Goal->GetActorLocation();
+				Info.HitDirection = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+				UGBCombatLibrary::DealDamage(Goal, Info);
 			}
-			Candidate = Projected.Location;
 		}
-		const float FromPlayer = FVector::Dist2D(Candidate, Goal->GetActorLocation());
-		if (FromPlayer < RangeMin * 0.7f || FromPlayer > RangeMax * 1.1f)
+		return true;
+	}
+	if (Distance <= MeleeRange && bSight && SwingCooldown <= 0.f)
+	{
+		if (BurstPhase != EBurstPhase::Cooldown)
 		{
-			continue;
+			AbortBurst(0.5f);
 		}
-		if (IsDirectionBlocked(Direction, Distance, Goal))
+		SwingTimer = S(TEXT("MeleeWindup"), 0.45f);
+		if (AnimInst)
 		{
-			continue;
+			AnimInst->PlayOneShot(EGBEnemyClip::Attack, false);
 		}
-		StrafeGoal = Candidate;
-		bHasStrafeGoal = true;
 		return true;
 	}
 	return false;
 }
 
-void AGBSkeletalEnemy::AlertOthers()
-{
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
-	const float Radius = S(TEXT("AlertRadius"), 1800.f);
-	for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
-	{
-		AGBEnemyCharacter* Other = *It;
-		if (!Other || Other == this || Other->IsDead() || !Other->GetEraComponent()->IsPresent())
-		{
-			continue;
-		}
-		const float Distance = FVector::Dist(Other->GetActorLocation(), GetActorLocation());
-		if (Distance > Radius)
-		{
-			continue;
-		}
-		bool bReaches = Distance <= Radius * 0.5f;
-		if (!bReaches)
-		{
-			FCollisionQueryParams Params(SCENE_QUERY_STAT(GBEnemyAlert), false, this);
-			Params.AddIgnoredActor(Other);
-			bReaches = !World->LineTraceTestByChannel(GetChestLocation(), Other->GetActorLocation(), ECC_Visibility, Params);
-		}
-		if (bReaches)
-		{
-			Other->Alert();
-		}
-	}
-}
-
 bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 {
 	using namespace GBSkeletalEnemyLocal;
-	const FVector ToGoal = Goal->GetActorLocation() - GetActorLocation();
-	const float Distance = ToGoal.Size();
+	UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this);
+	bSight = bSightCached;
+	const FVector Me = GetActorLocation();
+	const FVector GoalPos = Goal->GetActorLocation();
+	const float Distance = FVector::Dist(Me, GoalPos);
 
-	SightTimer -= DeltaSeconds;
-	if (SightTimer <= 0.f)
+	// What it knows: the player while somebody sees him, otherwise the squad's last known position.
+	FVector Known = GoalPos;
+	float KnownAge = 0.f;
+	if (!bSight)
 	{
-		bSight = HasLineOfSight(Goal);
-		SightTimer = SightInterval;
+		if (!(Squad && Squad->GetLastKnown(this, Known, KnownAge)))
+		{
+			Known = GoalPos;
+			KnownAge = 99.f;
+		}
 	}
 
-	// Notice: inside the sight cone with line of sight, or already hit / alerted.
-	if (!bAware)
+	if (!bWasAware)
 	{
-		const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
-		const float Angle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(Forward, ToGoal.GetSafeNormal2D()), -1.f, 1.f)));
-		if (GBEngage::Notices(Distance, Angle, bSight, Stats->GetStat(GBStat::AggroRange, 0.f), S(TEXT("SightAngle"), 140.f), bProvoked))
+		bWasAware = true;
+		BurstPhase = EBurstPhase::Cooldown;
+		BurstCooldown = S(TEXT("FirstShotDelay"), 0.4f);
+		HealthWindowStart = -1.f;
+		bHasPosition = false;
+		bAwaitingPosition = false;
+		RelocateCooldown = 0.f;
+		CState = ECombatState::Hold;
+	}
+	BurstCooldown = FMath::Max(0.f, BurstCooldown - DeltaSeconds);
+	RelocateCooldown = FMath::Max(0.f, RelocateCooldown - DeltaSeconds);
+
+	if (TickMeleeSwing(Goal, DeltaSeconds, Distance))
+	{
+		UpdateAnimAim(Goal, true);
+		return true;
+	}
+
+	const EGBSquadRole SquadRole = Squad ? Squad->GetRole(this) : EGBSquadRole::Suppress;
+	const float AttackRange = Stats->GetStat(GBStat::AttackRange, 0.f);
+	const bool bCanShoot = Stats->GetStat(GBStat::AttackDamage, 0.f) > 0.f && AttackRange > 0.f;
+	const float RangeMin = S(TEXT("PreferredRangeMin"), 600.f);
+	const float SuppressWindow = S(TEXT("SuppressWindow"), 8.f);
+
+	// Hurt: 30 percent of the health in 2 seconds.
+	const float Health = Attributes->GetHealth();
+	const float MaxHealth = Attributes->GetMaxHealth();
+	if (HealthWindowStart < 0.f)
+	{
+		HealthWindowStart = Health;
+		HealthWindowTime = 0.f;
+	}
+	HealthWindowTime += DeltaSeconds;
+	const bool bHurt = MaxHealth > 0.f && (HealthWindowStart - Health) >= 0.3f * MaxHealth;
+	if (HealthWindowTime >= 2.f)
+	{
+		HealthWindowStart = Health;
+		HealthWindowTime = 0.f;
+	}
+
+	FGBTacticalPosition TempPosition;
+	TempPosition.Cover = Me;
+	TempPosition.FiringSpot = Me;
+	TempPosition.bValid = true;
+	const FGBTacticalPosition& Pos = bHasPosition ? Position : TempPosition;
+	const FVector CoverPoint = Pos.Cover;
+	const FVector FiringPoint = Pos.FiringSpot;
+	const float DistCover = FVector::Dist2D(Me, CoverPoint);
+	const bool bAtCover = DistCover < 90.f;
+
+	// ---- When to ask for a new position ----
+	bool bRelocate = !bHasPosition;
+	if (Squad && Squad->TakeRoleChanged(this))
+	{
+		bRelocate = true;
+	}
+	if (bHasPosition && CState != ECombatState::MoveToPosition)
+	{
+		StayTimer -= DeltaSeconds;
+		bRelocate |= StayTimer <= 0.f;
+		bRelocate |= bHurt;
+		// The cover is compromised when he has a clear line to the cover point itself for too long.
+		if (Pos.bCovered && CState == ECombatState::Hold && bAtCover && bSight)
 		{
-			bAware = true;
-			BurstPhase = EBurstPhase::Cooldown;
-			BurstTimer = S(TEXT("FirstShotDelay"), 0.4f);
-			AlertOthers();
-			SetState(EGBEnemyState::Chase);
+			CoverCompromisedTimer += DeltaSeconds;
 		}
 		else
 		{
-			if (State != EGBEnemyState::Idle)
-			{
-				StopMoving();
-				SetState(EGBEnemyState::Idle);
-			}
-			UpdateAnimAim(Goal, false);
-			return true;
+			CoverCompromisedTimer = 0.f;
+		}
+		bRelocate |= CoverCompromisedTimer >= S(TEXT("CoverCompromisedTime"), 1.2f);
+		bRelocate |= Distance < RangeMin * 0.9f && CState == ECombatState::Hold;
+		if (CState == ECombatState::Peek && !bSight && KnownAge < 3.f)
+		{
+			NoLineTimer += DeltaSeconds;
+		}
+		else if (bSight)
+		{
+			NoLineTimer = 0.f;
+		}
+		bRelocate |= NoLineTimer >= S(TEXT("NoLineTime"), 3.f);
+		// Nobody has seen him for a while: everyone but the base of fire advances in bounds to see the last known position.
+		if (!bSight && KnownAge > S(TEXT("SearchDelay"), 4.f) && SquadRole != EGBSquadRole::Suppress && SquadRole != EGBSquadRole::Anchor)
+		{
+			SearchTimer += DeltaSeconds;
+			bRelocate |= SearchTimer >= S(TEXT("SearchRelocateInterval"), 4.f);
+		}
+		else
+		{
+			SearchTimer = 0.f;
 		}
 	}
-
-	TurnTowards(Goal, DeltaSeconds);
-	UpdateAnimAim(Goal, true);
-
-	// The distance band.
-	const float RangeMin = S(TEXT("PreferredRangeMin"), 600.f);
-	const float RangeMax = FMath::Max(S(TEXT("PreferredRangeMax"), 1400.f), RangeMin);
-	bool bCanRetreat = false;
-	if (Distance < RangeMin)
+	if (bRelocate && !bAwaitingPosition && RelocateCooldown <= 0.f && BurstPhase == EBurstPhase::Cooldown && Squad)
 	{
-		const FVector Away = -ToGoal.GetSafeNormal2D();
-		bCanRetreat = !Away.IsNearlyZero() && !IsDirectionBlocked(Away, RetreatProbe, Goal);
+		Squad->ReleaseToken(this);
+		Squad->RequestPosition(this);
+		bAwaitingPosition = true;
+		RelocateCooldown = S(TEXT("RelocateCooldown"), 1.5f);
+		CoverCompromisedTimer = 0.f;
+		NoLineTimer = 0.f;
+		SearchTimer = 0.f;
+		++Relocations;
 	}
-	// Hysteresis: while strafing, drifting a little past the band is not a reason to start advancing again (it would flip every tick).
-	const float BandDistance = (Intent == EMoveIntent::Strafe && Distance <= RangeMax + S(TEXT("BandHysteresis"), 150.f)) ? FMath::Min(Distance, RangeMax) : Distance;
-	const EGBEngageAction Action = GBEngage::Decide(BandDistance, bSight, RangeMin, RangeMax, bCanRetreat);
-
-	RepathTimer -= DeltaSeconds;
-	switch (Action)
+	if (bAwaitingPosition && Squad)
 	{
-	case EGBEngageAction::Advance:
-		SetIntent(EMoveIntent::Advance);
-		MoveTowards(Goal, DeltaSeconds);
-		break;
-
-	case EGBEngageAction::Retreat:
-		SetIntent(EMoveIntent::Retreat);
+		FGBTacticalPosition Assigned;
+		if (Squad->TakeAssignedPosition(this, Assigned))
 		{
-			const bool bRequest = RepathTimer <= 0.f;
-			if (bRequest)
+			bAwaitingPosition = false;
+			// A burst that started while the answer was on its way does not go on in the open while it moves.
+			if (BurstPhase != EBurstPhase::Cooldown)
 			{
-				RepathTimer = S(TEXT("RepathInterval"), 0.4f);
+				AbortBurst(0.5f);
 			}
-			MoveToPoint(GetActorLocation() - ToGoal.GetSafeNormal2D() * RetreatStep, Goal, bRequest);
-		}
-		break;
-
-	case EGBEngageAction::Hold:
-		SetIntent(EMoveIntent::Strafe);
-		StrafeTimer -= DeltaSeconds;
-		if (bHasStrafeGoal && FVector::Dist2D(GetActorLocation(), StrafeGoal) <= StrafeReachRadius)
-		{
-			bHasStrafeGoal = false;
-		}
-		if (StrafeTimer <= 0.f)
-		{
-			StrafeTimer = Random.FRandRange(S(TEXT("StrafeTimeMin"), 2.f), FMath::Max(S(TEXT("StrafeTimeMax"), 4.f), S(TEXT("StrafeTimeMin"), 2.f)));
-			++StrafePicks;
-			if (PickStrafeGoal(Goal, RangeMin, RangeMax))
+			Squad->ReleaseToken(this);
+			if (Assigned.bValid)
 			{
-				RepathTimer = 0.f;
+				Position = Assigned;
 			}
 			else
 			{
-				++StrafePickFails;
+				// Nothing passed: hold in place and fire from the open.
+				Position = TempPosition;
+				Position.Cover = GetActorLocation();
+				Position.FiringSpot = Position.Cover;
+			}
+			bHasPosition = true;
+			CState = ECombatState::MoveToPosition;
+			MoveTimer = 0.f;
+			BurstsDone = 0;
+			const float StayMin = S(TEXT("CoverStayMin"), 6.f);
+			StayTimer = Random.FRandRange(StayMin, FMath::Max(S(TEXT("CoverStayMax"), 12.f), StayMin));
+			return true;
+		}
+	}
+	if (!Squad)
+	{
+		bHasPosition = true;
+		Position = TempPosition;
+		StayTimer = 1.0e6f;
+	}
+
+	// Which way it faces while it moves: where it runs on a long move, the player (or where it thinks he is) on a short one.
+	auto FaceWhileMoving = [&](bool bRunning)
+	{
+		const FVector Velocity = GetVelocity();
+		if ((bRunning || !bSight) && Velocity.Size2D() > 25.f)
+		{
+			TurnYawTowards(Velocity.Rotation().Yaw, DeltaSeconds, S(TEXT("TurnRate"), 420.f));
+		}
+		else
+		{
+			const FVector To = (Known - GetActorLocation()).GetSafeNormal2D();
+			if (!To.IsNearlyZero())
+			{
+				TurnYawTowards(To.Rotation().Yaw, DeltaSeconds, S(TEXT("TurnRate"), 420.f));
 			}
 		}
-		if (bHasStrafeGoal)
+	};
+
+	const FVector AimPoint = bSight ? GBEnemy3D::TargetChest(Goal) : Known + FVector(0.f, 0.f, 60.f);
+	const bool bCanAim = bSight || (SquadRole == EGBSquadRole::Suppress && KnownAge < SuppressWindow);
+	const float BurstsPerPeek = FMath::Clamp(FMath::RoundToFloat(S(TEXT("BurstsPerPeek"), 1.f)), 1.f, 2.f);
+
+	switch (CState)
+	{
+	case ECombatState::MoveToPosition:
+	{
+		MoveTimer += DeltaSeconds;
+		if (DistCover < 70.f || MoveTimer > S(TEXT("MoveTimeout"), 14.f))
 		{
-			const bool bRequest = RepathTimer <= 0.f;
-			if (bRequest)
+			StopMoving();
+			CState = ECombatState::Hold;
+			break;
+		}
+		const bool bFar = DistCover > S(TEXT("RunDistance"), 700.f);
+		SetGait(bFar ? EGBGait::Run : EGBGait::Combat);
+		MoveToPoint(CoverPoint, Goal, DeltaSeconds);
+		FaceWhileMoving(bFar);
+		UpdateAnimAim(Goal, !bFar && bSight);
+		break;
+	}
+
+	case ECombatState::Hold:
+	{
+		SetGait(EGBGait::Combat);
+		bCrouchPose = bAtCover && Pos.bCovered && CanCrouchInCover();
+		if (!bAtCover)
+		{
+			MoveToPoint(CoverPoint, Goal, DeltaSeconds);
+			FaceWhileMoving(false);
+		}
+		else
+		{
+			if (GetVelocity().Size2D() > 10.f)
 			{
-				RepathTimer = S(TEXT("RepathInterval"), 0.4f);
+				StopMoving();
 			}
-			MoveToPoint(StrafeGoal, Goal, bRequest);
+			FaceWhileMoving(false);
+			if (Pos.bCovered)
+			{
+				CoverTime += DeltaSeconds;
+			}
+		}
+		UpdateAnimAim(Goal, bAtCover && bSight);
+		const bool bHasTarget = bSight || KnownAge < SuppressWindow;
+		if (bAtCover && bCanShoot && !bAwaitingPosition && BurstCooldown <= 0.f && bHasTarget && Distance <= AttackRange * 1.05f)
+		{
+			if (!Squad || Squad->TryAcquireToken(this, 1.f))
+			{
+				CState = ECombatState::Peek;
+				PeekTimer = 0.f;
+				BurstsDone = 0;
+			}
 		}
 		break;
 	}
 
-	TickBurst(Goal, DeltaSeconds, bSight, Distance);
+	case ECombatState::Peek:
+	{
+		PeekTimer += DeltaSeconds;
+		const float DistFire = FVector::Dist2D(Me, FiringPoint);
+		const bool bSameSpot = FVector::Dist2D(CoverPoint, FiringPoint) < 30.f;
+		const bool bAtFire = DistFire < 45.f || (bSameSpot && bAtCover);
+		SetGait(EGBGait::Combat);
+		if (BurstPhase == EBurstPhase::Cooldown && !bAtFire)
+		{
+			MoveToPoint(FiringPoint, Goal, DeltaSeconds);
+			FaceWhileMoving(false);
+		}
+		else
+		{
+			if (GetVelocity().Size2D() > 10.f)
+			{
+				StopMoving();
+			}
+			TurnTowards(Goal, DeltaSeconds);
+		}
+		UpdateAnimAim(Goal, true);
+
+		if (bAtFire)
+		{
+			if (BurstPhase == EBurstPhase::Cooldown && BurstsDone < static_cast<int32>(BurstsPerPeek) && bCanAim && bCanShoot && Distance <= AttackRange * 1.05f)
+			{
+				StartBurst();
+			}
+			TickBurst(Goal, DeltaSeconds, bCanAim, AimPoint);
+		}
+		else if (BurstPhase != EBurstPhase::Cooldown)
+		{
+			AbortBurst(0.5f);
+		}
+		if (BurstPhase == EBurstPhase::Cooldown && (BurstsDone >= static_cast<int32>(BurstsPerPeek) || PeekTimer > S(TEXT("PeekTimeout"), 3.5f)))
+		{
+			if (Squad)
+			{
+				Squad->ReleaseToken(this);
+			}
+			const float RoleMult = SquadRole == EGBSquadRole::Suppress ? 0.8f : ((SquadRole == EGBSquadRole::FlankLeft || SquadRole == EGBSquadRole::FlankRight) ? 1.2f : 1.f);
+			BurstCooldown = BurstsDone > 0 ? Stats->GetStat(GBStat::AttackInterval, 1.f) * RoleMult : 1.f;
+			CState = ECombatState::Hold;
+		}
+		break;
+	}
+	}
 	return true;
 }
 
-void AGBSkeletalEnemy::TickBurst(AActor* Goal, float DeltaSeconds, bool bHasSight, float Distance)
+void AGBSkeletalEnemy::TickBurst(AActor* Goal, float DeltaSeconds, bool bCanAim, const FVector& AimPoint)
 {
-	const float AttackRange = Stats->GetStat(GBStat::AttackRange, 0.f);
-	const bool bCanShoot = Stats->GetStat(GBStat::AttackDamage, 0.f) > 0.f && AttackRange > 0.f;
-
 	// A lightning interrupt (the parent's InterruptAttack) moved the state out of Windup: the telegraph is cancelled.
 	if (BurstPhase == EBurstPhase::Telegraph && State != EGBEnemyState::Windup)
 	{
-		BurstPhase = EBurstPhase::Cooldown;
-		BurstTimer = Stats->GetStat(GBStat::AttackInterval, 1.f);
+		AbortBurst(Stats->GetStat(GBStat::AttackInterval, 1.f));
+		return;
 	}
 
 	switch (BurstPhase)
 	{
 	case EBurstPhase::Cooldown:
-		BurstTimer -= DeltaSeconds;
-		if (State != EGBEnemyState::Chase)
-		{
-			SetState(EGBEnemyState::Chase);
-		}
-		if (bCanShoot && BurstTimer <= 0.f && bHasSight && Distance <= AttackRange)
-		{
-			BurstPhase = EBurstPhase::Telegraph;
-			BurstTimer = Stats->GetStat(GBStat::AttackWindup, 0.4f);
-			SetState(EGBEnemyState::Windup);
-		}
 		break;
 
 	case EBurstPhase::Telegraph:
 		BurstTimer -= DeltaSeconds;
-		if (!bHasSight)
+		if (!bCanAim)
 		{
-			// Lost the line during the aim: nothing to shoot at.
-			BurstPhase = EBurstPhase::Cooldown;
-			BurstTimer = 0.2f;
-			SetState(EGBEnemyState::Chase);
+			AbortBurst(0.3f);
 		}
 		else if (BurstTimer <= 0.f)
 		{
@@ -547,36 +670,41 @@ void AGBSkeletalEnemy::TickBurst(AActor* Goal, float DeltaSeconds, bool bHasSigh
 			ShotsLeft = FMath::Max(1, FMath::RoundToInt(S(TEXT("BurstCount"), 3.f)));
 			ShotTimer = 0.f;
 			++BurstCount;
+			bBurstBlind = !bSight;
+			if (CState == ECombatState::Peek)
+			{
+				++PeekBursts;
+			}
 			SetState(EGBEnemyState::Recover);
 		}
 		break;
 
 	case EBurstPhase::Firing:
 		ShotTimer -= DeltaSeconds;
-		if (!bHasSight)
+		if (!bCanAim)
 		{
 			ShotsLeft = 0;
 		}
 		else if (ShotTimer <= 0.f && ShotsLeft > 0)
 		{
-			FireShot(Goal);
+			FireShot(Goal, AimPoint, bBurstBlind ? S(TEXT("BlindSpreadDegrees"), 4.f) : 0.f);
 			--ShotsLeft;
 			ShotTimer = S(TEXT("BurstShotInterval"), 0.12f);
 		}
 		if (ShotsLeft <= 0)
 		{
 			BurstPhase = EBurstPhase::Cooldown;
-			BurstTimer = Stats->GetStat(GBStat::AttackInterval, 1.f);
+			++BurstsDone;
 			SetState(EGBEnemyState::Chase);
 		}
 		break;
 	}
 }
 
-void AGBSkeletalEnemy::FireShot(AActor* Goal)
+void AGBSkeletalEnemy::FireShot(AActor* Goal, const FVector& AimPoint, float ExtraSpread)
 {
 	const FVector Muzzle = GetMuzzleLocation();
-	FVector Direction = (GBEnemy3D::TargetChest(Goal) - Muzzle).GetSafeNormal();
+	FVector Direction = (AimPoint - Muzzle).GetSafeNormal();
 	if (Direction.IsNearlyZero())
 	{
 		Direction = GetActorForwardVector();
@@ -589,7 +717,7 @@ void AGBSkeletalEnemy::FireShot(AActor* Goal)
 		PlayerSpeed = PlayerChar->GetCharacterMovement()->Velocity.Size2D();
 		PlayerFullSpeed = PlayerChar->GetCharacterMovement()->MaxWalkSpeed;
 	}
-	const float Spread = UGBCombatLibrary::ComputeMovementSpread(S(TEXT("SpreadDegrees"), 4.f), S(TEXT("MoveSpreadDegrees"), 3.f), PlayerSpeed, PlayerFullSpeed);
+	const float Spread = UGBCombatLibrary::ComputeMovementSpread(S(TEXT("SpreadDegrees"), 4.f), S(TEXT("MoveSpreadDegrees"), 3.f), PlayerSpeed, PlayerFullSpeed) + ExtraSpread;
 	Direction = UGBCombatLibrary::ApplySpread(Direction, Spread, Random);
 
 	const float Range = Stats->GetStat(GBStat::AggroRange, 3000.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
@@ -599,6 +727,115 @@ void AGBSkeletalEnemy::FireShot(AActor* Goal)
 	{
 		AnimInst->NotifyShot();
 	}
+}
+
+float AGBSkeletalEnemy::GetPelvisDistance() const
+{
+	const USkeletalMeshComponent* Body = GetMesh();
+	const FName Pelvis(TEXT("pelvis"));
+	if (!Body || !Body->GetSkeletalMeshAsset() || Body->GetBoneIndex(Pelvis) == INDEX_NONE)
+	{
+		return -1.f;
+	}
+	return FVector::Dist2D(Body->GetBoneLocation(Pelvis, EBoneSpaces::WorldSpace), GetActorLocation());
+}
+
+bool AGBSkeletalEnemy::bTrackPelvis = false;
+
+void AGBSkeletalEnemy::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (bHoldsMeleeSlot && !IsMeleeCommitted())
+	{
+		bHoldsMeleeSlot = false;   // the windup and the lunge are over (or it died / lost him): the place goes back
+		if (UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this))
+		{
+			Squad->EndMeleeAttack(this);
+		}
+	}
+	if (State == EGBEnemyState::Dead || !EraComponent->IsPresent())
+	{
+		return;
+	}
+	if (AnimInst)
+	{
+		AnimInst->SetPosture(ForcedPosture == 1 ? true : (ForcedPosture == 2 ? false : !bAware), ForcedPosture == 2 ? true : (bCrouchPose && bAware));
+		if (!bAware)
+		{
+			AnimInst->SetAim(0.f, 0.f);
+		}
+	}
+	if (bTrackPelvis && bLookBuilt && !bRagdoll)
+	{
+		MaxPelvisDistance = FMath::Max(MaxPelvisDistance, GetPelvisDistance());
+	}
+	// The crouched pose: in covered hold only (the cover logic sets it each tick it applies).
+	bCrouchPose = bCrouchPose && CState == ECombatState::Hold;
+}
+
+bool AGBSkeletalEnemy::TryStartMelee()
+{
+	if (IsRanged() || AlwaysMeleeAttacks())
+	{
+		return true;
+	}
+	UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this);
+	if (!Squad)
+	{
+		return true;
+	}
+	// Asked at the moment of every windup / lunge start; the place is held until the windup and the lunge are over.
+	if (Squad->TryBeginMeleeAttack(this))
+	{
+		bHoldsMeleeSlot = true;
+		return true;
+	}
+	return false;
+}
+
+bool AGBSkeletalEnemy::GetMoveGoalOverride(FVector& OutPoint)
+{
+	if (IsRanged() || !bAware || !IsReadyToFight())
+	{
+		return false;
+	}
+	UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this);
+	bool bMayAttack = false;
+	FVector Slot;
+	if (Squad && Squad->GetMeleeSlot(this, Slot, bMayAttack))
+	{
+		(void)bMayAttack;   // the attack permission itself is asked at the windup / lunge start (TryStartMelee)
+		OutPoint = Slot;
+		return true;
+	}
+	return false;
+}
+
+void AGBSkeletalEnemy::OnReturnedToUnaware()
+{
+	bWasAware = false;
+	CState = ECombatState::Hold;
+	bHasPosition = false;
+	bAwaitingPosition = false;
+	BurstPhase = EBurstPhase::Cooldown;
+	bCrouchPose = false;
+	if (UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this))
+	{
+		Squad->ReleaseToken(this);
+	}
+}
+
+void AGBSkeletalEnemy::OnBecameAware(bool bSource)
+{
+	Super::OnBecameAware(bSource);
+	bCrouchPose = false;
+}
+
+FString AGBSkeletalEnemy::DescribeTactics() const
+{
+	static const TCHAR* const StateNames[] = { TEXT("Hold"), TEXT("Move"), TEXT("Peek") };
+	return FString::Printf(TEXT("%s%s cover=%d atPos=%d coverTime=%.0f peekBursts=%d reloc=%d"), StateNames[static_cast<int32>(CState)], BurstPhase != EBurstPhase::Cooldown ? TEXT("+burst") : TEXT(""),
+		(bHasPosition && Position.bCovered) ? 1 : 0, static_cast<int32>(bHasPosition ? FMath::RoundToInt(FVector::Dist2D(GetActorLocation(), Position.Cover)) : -1), CoverTime, PeekBursts, Relocations);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -637,7 +874,8 @@ void AGBSkeletalEnemy::TickLunge(AActor* Goal, float DeltaSeconds)
 
 	// Windup of a lunge: close enough to jump, too far to bite, with a clear line, and rested.
 	const float AttackRange = Stats->GetStat(GBStat::AttackRange, 0.f);
-	if (State == EGBEnemyState::Chase && LungeCooldown <= 0.f && Distance <= LungeRange && Distance > AttackRange && HasLineOfSight(Goal))
+	// No lunge towards a landing point outside the zone, and none from the wait radius of a slot.
+	if (State == EGBEnemyState::Chase && LungeCooldown <= 0.f && Distance <= LungeRange && Distance > AttackRange && IsInsideZone(Goal->GetActorLocation()) && HasLineOfSight(Goal) && TryStartMelee())
 	{
 		bLungeQueued = true;
 		StopMoving();
@@ -652,8 +890,31 @@ void AGBSkeletalEnemy::TickLunge(AActor* Goal, float DeltaSeconds)
 
 void AGBSkeletalEnemy::StartLunge(AActor* Goal)
 {
+	if (!IsInsideZone(Goal->GetActorLocation()))
+	{
+		return;   // the landing point would be outside the zone
+	}
 	const FVector Flat = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
-	const FVector Velocity = Flat * S(TEXT("LungeSpeed"), 1400.f) + FVector::UpVector * S(TEXT("LungeUpSpeed"), 350.f);
+	// The lunge is limited by its own landing: start + horizontal speed x air time must be inside the zone and not carry it far past him.
+	const float UpSpeed = S(TEXT("LungeUpSpeed"), 350.f);
+	const float Gravity = FMath::Max(FMath::Abs(GetCharacterMovement()->GetGravityZ()), 1.f);
+	const float AirTime = 2.f * UpSpeed / Gravity;
+	float Horizontal = S(TEXT("LungeSpeed"), 1400.f);
+	const float ToPlayer = FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation());
+	Horizontal = FMath::Min(Horizontal, (ToPlayer + 100.f) / FMath::Max(AirTime, 0.1f));
+	if (bHasHomeZone)
+	{
+		const FVector Landing = GetActorLocation() + Flat * Horizontal * AirTime;
+		if (!IsInsideZone(Landing))
+		{
+			Horizontal = FVector::Dist2D(GetActorLocation(), ClampToZone(Landing)) / FMath::Max(AirTime, 0.1f);
+		}
+		if (Horizontal < 150.f)
+		{
+			return;   // no room to land inside the zone
+		}
+	}
+	const FVector Velocity = Flat * Horizontal + FVector::UpVector * UpSpeed;
 	LaunchCharacter(Velocity, true, true);
 	bLunging = true;
 	bLungeHit = false;

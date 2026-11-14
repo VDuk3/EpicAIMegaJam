@@ -23,6 +23,12 @@ enum class EGBEnemyClip : uint8
 	Attack,
 	Hit,
 	Death,
+	// Optional extras (Enemies.json Anim.RelaxedIdle / PatrolWalk / Sprint / CrouchIdle / CrouchWalk): they replace a locomotion slot by posture.
+	RelaxedIdle,
+	PatrolWalk,
+	Sprint,
+	CrouchIdle,
+	CrouchWalk,
 	Count
 };
 
@@ -48,6 +54,26 @@ struct FGBEnemyAnimTuning
 	float FlinchYaw = 7.f;           // degrees
 	float FlinchDecay = 8.f;         // 1/s
 	float MeshYaw = -90.f;           // the mesh component's yaw in the actor (the bend axes are turned by it)
+	float MeshScale = 1.f;           // the mesh component's scale (authored ground speed is measured in its units)
+	float AnimRateMin = 0.7f;        // locomotion play rate limits: a little foot slide is better than slow motion
+	float AnimRateMax = 1.35f;
+	float MoveBlendSpeed = 60.f;     // cm/s of ground speed at which the idle clip has faded out completely
+	float DriftMin = 15.f;           // cm: a clip whose travel bone moves less than this has no drift
+	FName TravelBone = FName(TEXT("pelvis"));   // the bone that carries a clip's travel (the root bone never moves in these clips)
+};
+
+/** What the game thread measured on each clip when it was configured (the proxy reads it on the animation thread). */
+struct FGBClipInfo
+{
+	/** Travel bone, last frame minus first frame, in the bone's local space. */
+	FVector Drift = FVector::ZeroVector;
+	/** Travel bone at time 0 (the attack overlay is pinned to it). */
+	FVector BoneStart = FVector::ZeroVector;
+	bool bHasDrift = false;
+	bool bHasBone = false;
+	/** cm/s the clip was authored for: drift length x mesh scale / clip length; the stat fallback for clips without drift. */
+	float RefSpeed = 150.f;
+	float Length = 0.f;
 };
 
 /** What the game thread hands to the proxy each frame. */
@@ -67,6 +93,14 @@ struct FGBEnemyAnimFrame
 	float RecoilKick = 0.f;          // 0..1, decaying
 	float FlinchKick = 0.f;          // 0..1, decaying
 	float FlinchSide = 1.f;          // +1 / -1
+	float PoseAlpha = 0.f;           // 0..1: how much of the data-driven pose layer (a raised shield) is applied
+};
+
+/** One bone rotation of the pose layer (Enemies.json "Pose.ShieldRaised" = "bone:pitch,yaw,roll;bone:..."). */
+struct FGBPoseOffset
+{
+	FName Bone = NAME_None;
+	FRotator Delta = FRotator::ZeroRotator;
 };
 
 UCLASS()
@@ -79,6 +113,14 @@ public:
 	void Configure(const TArray<UAnimSequence*>& InClips, const FGBEnemyAnimTuning& InTuning);
 
 	bool HasClip(EGBEnemyClip Clip) const;
+	/** Unaware (relaxed idle / patrol walk) and crouched (crouch idle / walk): the clips used in the locomotion slots. Missing clips change nothing. */
+	void SetPosture(bool bInRelaxed, bool bInCrouched) { bRelaxed = bInRelaxed; bCrouched = bInCrouched; }
+	/** Parses a pose layer string and keeps it; PoseTarget (0..1) is blended to over BlendSeconds. */
+	void SetPoseLayer(const FString& Spec);
+	void SetPoseTarget(float Target, float BlendSeconds) { PoseTarget = Target; PoseBlend = FMath::Max(BlendSeconds, 0.01f); }
+	const TArray<FGBPoseOffset>& GetPoseOffsets() const { return PoseOffsets; }
+	/** The slot a locomotion slot currently plays (posture and sprint substitutes). */
+	int32 ResolveSlot(int32 Slot) const;
 	int32 GetClipCount() const;
 
 	/** Aim of the upper body: pitch in degrees (positive = up), yaw offset in degrees. Smoothed. */
@@ -102,6 +144,10 @@ public:
 
 	const FGBEnemyAnimFrame& GetFrame() const { return Frame; }
 	const FGBEnemyAnimTuning& GetTuning() const { return Tuning; }
+	const FGBClipInfo& GetClipInfo(int32 Index) const { return ClipInfo[Index]; }
+	/** Smoke / log: the authored speed of a locomotion clip (the stat fallback when it has no drift). */
+	float GetClipRefSpeed(EGBEnemyClip Clip) const { return ClipInfo[static_cast<int32>(Clip)].RefSpeed; }
+	bool ClipHasDrift(EGBEnemyClip Clip) const { return ClipInfo[static_cast<int32>(Clip)].bHasDrift; }
 	UAnimSequence* GetClip(EGBEnemyClip Clip) const;
 
 protected:
@@ -111,10 +157,17 @@ protected:
 
 private:
 	void ComputeLocomotionTargets(float Speed, float LocalAngleDegrees);
+	bool bRelaxed = false;
+	bool bCrouched = false;
+	bool bUseSprint = false;
+	TArray<FGBPoseOffset> PoseOffsets;
+	float PoseTarget = 0.f;
+	float PoseBlend = 0.3f;
 
 	UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> Clips;
 
 	FGBEnemyAnimTuning Tuning;
+	FGBClipInfo ClipInfo[GBEnemyAnim::NumClips];
 	FGBEnemyAnimFrame Frame;
 	float AimPitchTarget = 0.f;
 	float AimYawTarget = 0.f;

@@ -8,6 +8,8 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "UObject/ConstructorHelpers.h"
@@ -24,11 +26,16 @@ namespace
 	// The burst when it gives way: visual only.
 	constexpr float BreakBurstSeconds = 0.6f;
 	const FName CrackStageParam(TEXT("Stage"));
+	// Pieces: how far below its start a piece looks for a floor, how high it lies over it, how fast it tumbles.
+	constexpr float ShardFloorProbeCm = 1500.f;
+	constexpr float ShardRestLiftCm = 2.f;
+	constexpr float ShardSpinDegrees = 420.f;
 }
 
 AGBBreakable::AGBBreakable()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;          // only while pieces are in the air
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = Root;
@@ -91,6 +98,15 @@ void AGBBreakable::BeginPlay()
 	Extent.Z = FMath::Max(Extent.Z, BreakableMinHalfThicknessCm);
 	Box->SetRelativeLocation(Local.Origin);
 	Box->SetBoxExtent(Extent);
+	if (bMeshCollision)
+	{
+		// The box stays only as the measure of where the pieces start; the mesh takes the hits and stops bodies.
+		Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Box->SetGenerateOverlapEvents(false);
+		Mesh->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
+		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Mesh->SetGenerateOverlapEvents(true);
+	}
 
 	UGBStatsComponent* Stats = NewObject<UGBStatsComponent>(this, TEXT("BreakableStats"));
 	Stats->RegisterComponent();
@@ -126,6 +142,7 @@ void AGBBreakable::HandleDamaged(const FGBDamageInfo& Info, float ActualDamage)
 		return;
 	}
 	LastHitSeconds = Now;
+	LastHitDirection = Info.HitDirection;
 	++Hits;
 	if (Hits >= HitsToBreak)
 	{
@@ -153,14 +170,131 @@ void AGBBreakable::Break()
 			Progress->SetFlag(BrokenFlag, true);
 		}
 	}
-	if (UWorld* World = GetWorld())
+	const int32 Thrown = Shatter();
+	if (Thrown == 0)
 	{
-		const FVector Centre = Box->GetComponentLocation();
-		const float Radius = static_cast<float>(Box->GetScaledBoxExtent().GetMax());
-		AGBExplosionEffect::Spawn(World, Centre, Radius, FLinearColor(0.75f, 0.72f, 0.68f), BreakBurstSeconds);
+		if (UWorld* World = GetWorld())
+		{
+			const FVector Centre = Box->GetComponentLocation();
+			const float Radius = static_cast<float>(Box->GetScaledBoxExtent().GetMax());
+			AGBExplosionEffect::Spawn(World, Centre, Radius, FLinearColor(0.75f, 0.72f, 0.68f), BreakBurstSeconds);
+		}
 	}
 	// The hit that broke it is still being dealt by whoever called: gone from sight and out of the way now, removed after.
 	Mesh->SetVisibility(false);
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SetLifeSpan(BreakRemoveSeconds);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetLifeSpan(Thrown > 0 ? FMath::Max(ShardSeconds, BreakRemoveSeconds) : BreakRemoveSeconds);
+}
+
+int32 AGBBreakable::Shatter()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return 0;
+	}
+	const FTransform BoxTransform = Box->GetComponentTransform();
+	const FVector Extent = Box->GetUnscaledBoxExtent();
+	// The thin axis of the box is the way through the wall; the pieces go the way the last hit went.
+	FVector Through = BoxTransform.GetUnitAxis(Extent.X <= Extent.Y ? EAxis::X : EAxis::Y);
+	if (FVector::DotProduct(Through, LastHitDirection) < 0.f)
+	{
+		Through = -Through;
+	}
+
+	if (BreakEffect)
+	{
+		for (int32 Index = 0; Index < BreakEffectCount; ++Index)
+		{
+			const FVector Local(FMath::FRandRange(-Extent.X, Extent.X), FMath::FRandRange(-Extent.Y, Extent.Y) * 0.85f, FMath::FRandRange(-Extent.Z, Extent.Z) * 0.85f);
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, BreakEffect, BoxTransform.TransformPosition(Local), Through.Rotation());
+		}
+	}
+
+	ShardMeshes.RemoveAll([](const TObjectPtr<UStaticMesh>& Piece) { return Piece == nullptr; });
+	if (ShardMeshes.Num() == 0 || ShardCount <= 0)
+	{
+		return 0;
+	}
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBBreakableShardFloor), false, this);
+	for (int32 Index = 0; Index < ShardCount; ++Index)
+	{
+		const FVector Local(FMath::FRandRange(-Extent.X, Extent.X), FMath::FRandRange(-Extent.Y, Extent.Y), FMath::FRandRange(-Extent.Z, Extent.Z));
+		const FVector Start = BoxTransform.TransformPosition(Local);
+
+		UStaticMeshComponent* Piece = NewObject<UStaticMeshComponent>(this);
+		Piece->SetMobility(EComponentMobility::Movable);
+		Piece->SetStaticMesh(ShardMeshes[FMath::RandRange(0, ShardMeshes.Num() - 1)]);
+		if (ShardMaterial)
+		{
+			for (int32 Slot = 0; Slot < Piece->GetNumMaterials(); ++Slot)
+			{
+				Piece->SetMaterial(Slot, ShardMaterial);
+			}
+		}
+		Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Piece->SetGenerateOverlapEvents(false);
+		Piece->SetCanEverAffectNavigation(false);
+		Piece->SetCastShadow(false);
+		Piece->SetUsingAbsoluteLocation(true);
+		Piece->SetUsingAbsoluteRotation(true);
+		Piece->SetUsingAbsoluteScale(true);
+		Piece->SetupAttachment(Root);
+		Piece->RegisterComponent();
+		Piece->SetWorldLocationAndRotation(Start, FRotator(FMath::FRandRange(0.f, 360.f), FMath::FRandRange(0.f, 360.f), FMath::FRandRange(0.f, 360.f)));
+		Piece->SetWorldScale3D(FVector(FMath::FRandRange(static_cast<float>(ShardScale.X), static_cast<float>(FMath::Max(ShardScale.X, ShardScale.Y)))));
+
+		FShardMotion Motion;
+		// Mostly through the wall, a little to every side, some kicked up: it falls in a heap past the frame.
+		const FVector Side = FVector(FMath::FRandRange(-1.f, 1.f), FMath::FRandRange(-1.f, 1.f), FMath::FRandRange(-0.2f, 0.9f)) * 0.35f;
+		Motion.Velocity = (Through * FMath::FRandRange(0.15f, 1.f) + Side) * ShardSpeed;
+		Motion.Spin = FRotator(FMath::FRandRange(-1.f, 1.f), FMath::FRandRange(-1.f, 1.f), FMath::FRandRange(-1.f, 1.f)) * ShardSpinDegrees;
+		// Where it will come down, roughly: under a point a little along its flight.
+		const FVector Ahead = Start + FVector(Motion.Velocity.X, Motion.Velocity.Y, 0.f) * 0.5f;
+		FHitResult Floor;
+		const bool bFloor = World->LineTraceSingleByObjectType(Floor, FVector(Ahead.X, Ahead.Y, Start.Z), FVector(Ahead.X, Ahead.Y, Start.Z - ShardFloorProbeCm),
+			FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+		Motion.FloorZ = bFloor ? static_cast<float>(Floor.ImpactPoint.Z) + ShardRestLiftCm : static_cast<float>(Start.Z) - ShardFloorProbeCm;
+		ShardComps.Add(Piece);
+		ShardMotion.Add(Motion);
+	}
+	SetActorTickEnabled(true);
+	return ShardComps.Num();
+}
+
+void AGBBreakable::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	const UWorld* World = GetWorld();
+	const float Gravity = World ? World->GetGravityZ() : -980.f;
+	bool bAnyMoving = false;
+	for (int32 Index = 0; Index < ShardComps.Num() && Index < ShardMotion.Num(); ++Index)
+	{
+		UStaticMeshComponent* Piece = ShardComps[Index];
+		FShardMotion& Motion = ShardMotion[Index];
+		if (!Piece || Motion.bResting)
+		{
+			continue;
+		}
+		Motion.Velocity.Z += Gravity * DeltaSeconds;
+		FVector Location = Piece->GetComponentLocation() + Motion.Velocity * DeltaSeconds;
+		FRotator Rotation = Piece->GetComponentRotation() + Motion.Spin * DeltaSeconds;
+		if (Location.Z <= Motion.FloorZ && Motion.Velocity.Z < 0.f)
+		{
+			// Landed: it lies flat where it fell.
+			Location.Z = Motion.FloorZ;
+			Rotation = FRotator(0.f, Rotation.Yaw, FMath::RandBool() ? 0.f : 180.f);
+			Motion.bResting = true;
+		}
+		else
+		{
+			bAnyMoving = true;
+		}
+		Piece->SetWorldLocationAndRotation(Location, Rotation);
+	}
+	if (!bAnyMoving)
+	{
+		SetActorTickEnabled(false);
+	}
 }

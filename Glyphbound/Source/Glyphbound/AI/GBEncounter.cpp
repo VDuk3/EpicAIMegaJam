@@ -4,6 +4,9 @@
 #include "Engine/World.h"
 
 #include "AI/GBEnemyCharacter.h"
+#include "NavigationSystem.h"
+#include "AI/GBTactics.h"
+#include "GameFramework/PlayerController.h"
 #include "Data/GBDataSubsystem.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Progression/GBSkillTreeComponent.h"
@@ -47,6 +50,7 @@ void AGBEncounter::BeginPlay()
 	}
 
 	ApplyClearedFlagIfSet();
+	TryPrespawn();
 }
 
 void AGBEncounter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -162,9 +166,9 @@ void AGBEncounter::HandleEraChanged(EGBEra NewEra)
 
 void AGBEncounter::TryStartFromTrigger(bool bPlayerKnownInside)
 {
-	if (State != EGBEncounterState::Waiting || EncounterId.IsNone() || !AreRequiredFlagsMet())
+	if (State != EGBEncounterState::Waiting || EncounterId.IsNone() || !AreRequiredFlagsMet() || IsPrespawn())
 	{
-		return;
+		return;   // a prespawned encounter starts when one of its enemies notices the player, not at its trigger
 	}
 
 	AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this);
@@ -198,6 +202,11 @@ void AGBEncounter::StartEncounter()
 	ApplyClearedFlagIfSet();
 	if (State == EGBEncounterState::Cleared)
 	{
+		return;
+	}
+	if (IsPrespawnedWaiting())
+	{
+		ActivatePrespawned();
 		return;
 	}
 
@@ -237,7 +246,18 @@ void AGBEncounter::SpawnWave(int32 WaveIndex)
 		return;
 	}
 
+	// A reinforcement wave appears out of the player's sight only: with every point in view the wave is held (see ComputeReinforcePoints).
+	TArray<FVector> HiddenPoints;
+	bool bWaitRanOut = false;
+	if (Def->Prespawn && WaveIndex > 0 && !ComputeReinforcePoints(HiddenPoints, bWaitRanOut))
+	{
+		NextWaveTimer = 0.5f;
+		return;
+	}
+
 	CurrentWave = WaveIndex;
+	const bool bPrespawn = Def->Prespawn;
+	const bool bReinforcement = bPrespawn && WaveIndex > 0;
 	const FGBEncounterWave& Wave = Def->Waves[WaveIndex];
 	const int32 NumWaves = Def->Waves.Num();
 
@@ -256,12 +276,54 @@ void AGBEncounter::SpawnWave(int32 WaveIndex)
 	const TArray<FGBEncounterSpawn> Spawns = Wave.Spawns;
 	UWorld* World = GetWorld();
 	int32 SpawnIndex = 0;
+
+	// Zone, route candidates and (for reinforcements) the spawn points ordered: out of the player's sight first, the furthest first.
+	const FBox Zone = bPrespawn ? GetZone() : FBox(ForceInit);
+	const TArray<FVector> WorldPoints = GetWorldSpawnPoints();
+	const TArray<FVector>& Ordered = bReinforcement ? HiddenPoints : WorldPoints;
+	TArray<AGBEnemyCharacter*> NewEnemies;
 	for (const FGBEncounterSpawn& Spawn : Spawns)
 	{
 		for (int32 i = 0; i < Spawn.Count; ++i, ++SpawnIndex)
 		{
 			FVector Location;
-			if (SpawnPoints.Num() > 0)
+			if (bReinforcement && Ordered.Num() > 0)
+			{
+				// Several enemies may share a hidden point: the later ones stand spaced round it, on the navmesh.
+				const int32 Round = SpawnIndex / Ordered.Num();
+				Location = Ordered[SpawnIndex % Ordered.Num()];
+				if (Round > 0)
+				{
+					const float Angle = FMath::DegreesToRadians(137.5f * static_cast<float>(SpawnIndex));
+					const FVector HiddenBase = Location;
+					Location += FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * (150.f * Round);
+					if (const UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(World))
+					{
+						FNavLocation Projected;
+						if (Nav->ProjectPointToNavigation(Location, Projected, FVector(200.f, 200.f, 300.f)))
+						{
+							Location = Projected.Location;
+						}
+						else
+						{
+							Location = HiddenBase;
+						}
+					}
+					// The spaced spot must be hidden too: a spot in view falls back to the hidden point itself.
+					if (const AGBPlayerCharacter* EyePlayer = AGBPlayerCharacter::Get(this))
+					{
+						FCollisionQueryParams EyeParams(SCENE_QUERY_STAT(GBReinforceSpot), false, EyePlayer);
+						const FVector Eye = EyePlayer->GetAimOrigin();
+						const bool bSpotHidden = World->LineTraceTestByChannel(Eye, Location + FVector(0.f, 0.f, 100.f), ECC_Visibility, EyeParams)
+							&& World->LineTraceTestByChannel(Eye, Location + FVector(0.f, 0.f, 180.f), ECC_Visibility, EyeParams);
+						if (!bSpotHidden)
+						{
+							Location = HiddenBase;
+						}
+					}
+				}
+			}
+			else if (SpawnPoints.Num() > 0)
 			{
 				Location = ActorTransform.TransformPosition(SpawnPoints[SpawnIndex % SpawnPoints.Num()]);
 			}
@@ -276,13 +338,73 @@ void AGBEncounter::SpawnWave(int32 WaveIndex)
 			{
 				Enemy->OnDied.AddUObject(this, &AGBEncounter::HandleEnemyDied);
 				AliveEnemies.Add(Enemy);
+				NewEnemies.Add(Enemy);
+				if (bPrespawn)
+				{
+					EGBUnawareBehavior Behavior = EGBUnawareBehavior::Patrol;
+					if (Spawn.Behavior == FName(TEXT("Guard")))
+					{
+						Behavior = EGBUnawareBehavior::Guard;
+					}
+					else if (Spawn.Behavior == FName(TEXT("Dormant")))
+					{
+						Behavior = EGBUnawareBehavior::Dormant;
+					}
+					TArray<FVector> Candidates;
+					for (const FVector& Point : WorldPoints)
+					{
+						if (FVector::Dist2D(Point, Location) > 100.f)
+						{
+							Candidates.Add(Point);
+						}
+					}
+					Enemy->SetEncounterContext(this, Zone, Location, Behavior, Candidates);
+					if (WaveIndex == 0 && Behavior == EGBUnawareBehavior::Dormant && IsSealedNow())
+					{
+						Enemy->SetSealed(true);
+						bEnemiesSealed = true;
+					}
+					if (bReinforcement)
+					{
+						Enemy->BecomeAwareNow();
+					}
+				}
+				else
+				{
+					// The classic encounters start with the player inside: their enemies come already hunting.
+					Enemy->BecomeAwareNow();
+				}
 			}
 		}
 	}
 
-	if (AGBHUD* HUD = AGBHUD::Get(this))
+	if (bReinforcement)
 	{
-		HUD->ShowMessage(FString::Printf(TEXT("Wave %d / %d"), WaveIndex + 1, NumWaves));
+		// For the smoke run: how many of them could the player see the moment they appeared?
+		++ReinforceWaves;
+		ReinforceWaitStart = -1.f;
+		bLastReinforceWaitRanOut = bWaitRanOut;
+		LastReinforceVisible = 0;
+		if (const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this))
+		{
+			FCollisionQueryParams Params(SCENE_QUERY_STAT(GBReinforceSeen), false, Player);
+			for (AGBEnemyCharacter* Enemy : NewEnemies)
+			{
+				Params.AddIgnoredActor(Enemy);
+			}
+			for (const AGBEnemyCharacter* Enemy : NewEnemies)
+			{
+				LastReinforceVisible += World->LineTraceTestByChannel(Player->GetAimOrigin(), Enemy->GetActorLocation() + FVector(0.f, 0.f, 40.f), ECC_Visibility, Params) ? 0 : 1;
+			}
+		}
+		UE_LOG(LogGB, Display, TEXT("ENCOUNTER %s reinforcement wave %d: %d enemies, %d in the player's view at once, wait ran out=%d"), *EncounterId.ToString(), WaveIndex + 1, NewEnemies.Num(), LastReinforceVisible, bWaitRanOut ? 1 : 0);
+	}
+	if (!bPrespawn)
+	{
+		if (AGBHUD* HUD = AGBHUD::Get(this))
+		{
+			HUD->ShowMessage(FString::Printf(TEXT("Wave %d / %d"), WaveIndex + 1, NumWaves));
+		}
 	}
 	OnWaveStarted.Broadcast(this);
 }
@@ -295,6 +417,10 @@ void AGBEncounter::HandleEnemyDied(AGBEnemyCharacter* Enemy)
 	}
 	AliveEnemies.Remove(Enemy);
 
+	if (IsPrespawnedWaiting() && GetAliveCount() == 0)
+	{
+		ActivatePrespawned();   // every one of them was killed before it noticed anything
+	}
 	if (State == EGBEncounterState::Active && GetAliveCount() == 0)
 	{
 		HandleWaveDefeated();
@@ -329,6 +455,19 @@ void AGBEncounter::Tick(float DeltaSeconds)
 	case EGBEncounterState::Waiting:
 		// Covers the player already standing inside (revived at a checkpoint in the box, encounter configured late).
 		TryStartFromTrigger();
+		TryPrespawn();
+		if (bEnemiesSealed && !IsSealedNow())
+		{
+			WakeSealedEnemies();
+		}
+		if (IsPrespawnedWaiting())
+		{
+			AliveEnemies.RemoveAll([](const TObjectPtr<AGBEnemyCharacter>& Enemy) { return !IsValid(Enemy) || Enemy->IsDead(); });
+			if (AliveEnemies.Num() == 0)
+			{
+				ActivatePrespawned();
+			}
+		}
 		break;
 
 	case EGBEncounterState::Active:
@@ -434,9 +573,174 @@ void AGBEncounter::ResetEncounter()
 		}
 	}
 	AliveEnemies.Reset();
+	bEnemiesSealed = false;
 
 	State = EGBEncounterState::Waiting;
 	CurrentWave = -1;
 	NextWaveTimer = -1.f;
 	SetActorTickEnabled(true);
+	TryPrespawn();   // a prespawned encounter stands in the world again, unaware
+}
+
+bool AGBEncounter::IsSealedNow() const
+{
+	const FGBEncounterDefinition* Def = FindDefinition();
+	if (!Def || Def->WakeFlag.IsNone())
+	{
+		return false;
+	}
+	const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this);
+	return !(Progress && Progress->HasFlag(Def->WakeFlag));
+}
+
+void AGBEncounter::WakeSealedEnemies()
+{
+	bEnemiesSealed = false;
+	const FVector Centre = GetActorLocation();
+	for (const TObjectPtr<AGBEnemyCharacter>& Enemy : AliveEnemies)
+	{
+		if (!IsValid(Enemy) || Enemy->IsDead() || !Enemy->IsSealed())
+		{
+			continue;
+		}
+		// She comes out to a point in front of where she lay, towards the encounter's middle, at least 5 m away, inside the zone, on the navmesh.
+		FVector Dir = (Centre - Enemy->GetActorLocation()).GetSafeNormal2D();
+		if (Dir.IsNearlyZero())
+		{
+			Dir = Enemy->GetActorForwardVector();
+		}
+		const float Distance = FMath::Max(FVector::Dist2D(Centre, Enemy->GetActorLocation()), 500.f);
+		FVector Target = Enemy->ClampToZone(Enemy->GetActorLocation() + Dir * Distance);
+		Enemy->ProjectPointToNavigationForWake(Target);
+		UE_LOG(LogGB, Display, TEXT("ENCOUNTER %s: wake flag set, %s comes out to %s"), *EncounterId.ToString(), *Enemy->GetEnemyId().ToString(), *Target.ToCompactString());
+		Enemy->BeginWake(Target);
+	}
+}
+
+bool AGBEncounter::IsPrespawn() const
+{
+	const FGBEncounterDefinition* Def = FindDefinition();
+	return Def && Def->Prespawn;
+}
+
+TArray<FVector> AGBEncounter::GetWorldSpawnPoints() const
+{
+	TArray<FVector> Points;
+	const FTransform& ActorTransform = GetActorTransform();
+	for (const FVector& Local : SpawnPoints)
+	{
+		Points.Add(ActorTransform.TransformPosition(Local));
+	}
+	return Points;
+}
+
+FBox AGBEncounter::GetZone() const
+{
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const FGBEncounterDefinition* Def = FindDefinition();
+	float Padding = Data ? Data->GetGameValue(FName(TEXT("EncounterLeashPadding")), 400.f) : 400.f;
+	if (Def && Def->LeashPadding >= 0.f)
+	{
+		Padding = Def->LeashPadding;
+	}
+	const float ZMargin = Data ? Data->GetGameValue(FName(TEXT("EncounterLeashZMargin")), 400.f) : 400.f;
+	return GBTactics::MakeZone(Trigger->Bounds.GetBox(), GetWorldSpawnPoints(), Padding, ZMargin);
+}
+
+bool AGBEncounter::ComputeReinforcePoints(TArray<FVector>& OutPoints, bool& bOutWaitRanOut)
+{
+	bOutWaitRanOut = false;
+	OutPoints.Reset();
+	TArray<FVector> Points = GetWorldSpawnPoints();
+	if (Points.Num() == 0)
+	{
+		Points.Add(GetActorLocation());
+	}
+	const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this);
+	UWorld* World = GetWorld();
+	if (!Player || !World)
+	{
+		OutPoints = Points;
+		return true;
+	}
+	const FVector Eye = Player->GetAimOrigin();
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBReinforcement), false, Player);
+	// Hidden: no line from his eyes to the point at chest or head height.
+	for (const FVector& Point : Points)
+	{
+		const bool bChestHidden = World->LineTraceTestByChannel(Eye, Point + FVector(0.f, 0.f, 100.f), ECC_Visibility, Params);
+		const bool bHeadHidden = World->LineTraceTestByChannel(Eye, Point + FVector(0.f, 0.f, 180.f), ECC_Visibility, Params);
+		if (bChestHidden && bHeadHidden)
+		{
+			OutPoints.Add(Point);
+		}
+	}
+	auto FurthestFirst = [&Eye](TArray<FVector>& Array)
+	{
+		Array.Sort([&Eye](const FVector& A, const FVector& B) { return FVector::DistSquared(A, Eye) > FVector::DistSquared(B, Eye); });
+	};
+	if (OutPoints.Num() > 0)
+	{
+		FurthestFirst(OutPoints);
+		return true;
+	}
+	// Every point is in view: hold the wave; after EncounterReinforceMaxWait use the furthest ones.
+	const float Now = World->GetTimeSeconds();
+	if (ReinforceWaitStart < 0.f)
+	{
+		ReinforceWaitStart = Now;
+	}
+	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+	const float MaxWait = Data ? Data->GetGameValue(FName(TEXT("EncounterReinforceMaxWait")), 6.f) : 6.f;
+	if (Now - ReinforceWaitStart < MaxWait)
+	{
+		return false;
+	}
+	FurthestFirst(Points);
+	OutPoints = Points;
+	bOutWaitRanOut = true;
+	return true;
+}
+
+void AGBEncounter::TryPrespawn()
+{
+	if (State != EGBEncounterState::Waiting || CurrentWave >= 0 || EncounterId.IsNone() || !IsPrespawn() || !HasActorBegunPlay())
+	{
+		return;
+	}
+	if (!AreRequiredFlagsMet())
+	{
+		return;
+	}
+	const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this);
+	if (Progress && Progress->HasFlag(GetClearedFlag()))
+	{
+		return;
+	}
+	SpawnWave(0);
+}
+
+void AGBEncounter::ActivatePrespawned()
+{
+	if (State != EGBEncounterState::Waiting)
+	{
+		return;
+	}
+	State = EGBEncounterState::Active;
+	NextWaveTimer = -1.f;
+	SetActorTickEnabled(true);
+	OnStarted.Broadcast(this);
+	if (GetAliveCount() == 0)
+	{
+		HandleWaveDefeated();
+	}
+}
+
+void AGBEncounter::NotifyEnemyAware(AGBEnemyCharacter* Enemy)
+{
+	(void)Enemy;
+	if (IsPrespawnedWaiting())
+	{
+		ActivatePrespawned();
+	}
 }

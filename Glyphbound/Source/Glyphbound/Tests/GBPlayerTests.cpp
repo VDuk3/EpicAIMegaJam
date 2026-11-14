@@ -324,4 +324,190 @@ bool FGBPlayerMantleProbeTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// ---- Vault over a thin obstacle ----
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerVaultQualifyTest, "Glyphbound.Player.VaultQualify",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerVaultQualifyTest::RunTest(const FString& Parameters)
+{
+	GBMantle::FVaultParams P;
+	P.MinHeight = 50.f;
+	P.MaxHeight = 150.f;
+	P.MaxDepth = 60.f;
+	P.Reach = 220.f;
+	P.MaxDrop = 450.f;
+	P.MinTopAboveLanding = 10.f;
+	// A baseline that qualifies; each check below moves one number across its limit.
+	TestTrue(TEXT("Baseline qualifies"), GBMantle::CanVault(127.f, 10.f, 150.f, 0.f, 127.f, P));
+	TestTrue(TEXT("Height: MinHeight qualifies"), GBMantle::CanVault(50.f, 10.f, 150.f, 0.f, 50.f, P));
+	TestTrue(TEXT("Height: below MinHeight does not"), !GBMantle::CanVault(49.9f, 10.f, 150.f, 0.f, 49.9f, P));
+	TestTrue(TEXT("Height: MaxHeight qualifies"), GBMantle::CanVault(150.f, 10.f, 150.f, 0.f, 150.f, P));
+	TestTrue(TEXT("Height: above MaxHeight does not (a 200 cm wall)"), !GBMantle::CanVault(200.f, 10.f, 150.f, 0.f, 200.f, P));
+	TestTrue(TEXT("Depth: MaxDepth qualifies"), GBMantle::CanVault(127.f, 60.f, 150.f, 0.f, 127.f, P));
+	TestTrue(TEXT("Depth: past MaxDepth does not (a thick wall is a ledge)"), !GBMantle::CanVault(127.f, 60.1f, 150.f, 0.f, 127.f, P));
+	TestTrue(TEXT("Reach: Reach qualifies"), GBMantle::CanVault(127.f, 10.f, 220.f, 0.f, 127.f, P));
+	TestTrue(TEXT("Reach: past Reach does not"), !GBMantle::CanVault(127.f, 10.f, 220.1f, 0.f, 127.f, P));
+	TestTrue(TEXT("Drop: MaxDrop qualifies"), GBMantle::CanVault(127.f, 10.f, 150.f, 450.f, 577.f, P));
+	TestTrue(TEXT("Drop: past MaxDrop does not (no floor close enough)"), !GBMantle::CanVault(127.f, 10.f, 150.f, 450.1f, 577.1f, P));
+	TestTrue(TEXT("Drop: a floor above the feet is fine while it is below the top"), GBMantle::CanVault(127.f, 10.f, 150.f, -30.f, 97.f, P));
+	TestTrue(TEXT("Landing: top 10 above the landing floor qualifies"), GBMantle::CanVault(127.f, 10.f, 150.f, 117.f, 10.f, P));
+	TestTrue(TEXT("Landing: top less than 10 above the landing floor does not (that is a ledge)"), !GBMantle::CanVault(127.f, 10.f, 150.f, 118.f, 9.f, P));
+	// The limits follow the parameters, not fixed numbers.
+	GBMantle::FVaultParams Other;
+	Other.MinHeight = 80.f;
+	Other.MaxHeight = 100.f;
+	Other.MaxDepth = 20.f;
+	Other.Reach = 100.f;
+	Other.MaxDrop = 30.f;
+	TestTrue(TEXT("Other: 90 high, 20 deep, reach 100, drop 30 qualifies"), GBMantle::CanVault(90.f, 20.f, 100.f, 30.f, 90.f, Other));
+	TestTrue(TEXT("Other: 79 high does not"), !GBMantle::CanVault(79.f, 20.f, 100.f, 30.f, 79.f, Other));
+	TestTrue(TEXT("Other: 101 high does not"), !GBMantle::CanVault(101.f, 20.f, 100.f, 30.f, 101.f, Other));
+	TestTrue(TEXT("Other: 21 deep does not"), !GBMantle::CanVault(90.f, 21.f, 100.f, 30.f, 90.f, Other));
+	TestTrue(TEXT("Other: drop 31 does not"), !GBMantle::CanVault(90.f, 20.f, 100.f, 31.f, 90.f, Other));
+	TestTrue(TEXT("Other: reach 101 does not"), !GBMantle::CanVault(90.f, 20.f, 101.f, 30.f, 90.f, Other));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerVaultEndFeetTest, "Glyphbound.Player.VaultEndFeet",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerVaultEndFeetTest::RunTest(const FString& Parameters)
+{
+	// The far floor is the same as the near one (0), the top 120 above: he ends on the floor.
+	TestTrue(TEXT("Same floor: ends on the far floor"), FMath::IsNearlyEqual(GBMantle::VaultEndFeetZ(0.f, 120.f, 130.f), 0.f, 1.e-4f));
+	// A pit 250 below a platform whose top is 370: he ends 130 under the top (240) and falls the rest.
+	TestTrue(TEXT("Deep far floor: ends under the top and falls"), FMath::IsNearlyEqual(GBMantle::VaultEndFeetZ(0.f, 370.f, 130.f), 240.f, 1.e-4f));
+	// A far floor higher than that is where he ends.
+	TestTrue(TEXT("Far floor within reach: ends on it"), FMath::IsNearlyEqual(GBMantle::VaultEndFeetZ(300.f, 370.f, 130.f), 300.f, 1.e-4f));
+	TestTrue(TEXT("ExitBelowTop is a parameter"), FMath::IsNearlyEqual(GBMantle::VaultEndFeetZ(0.f, 370.f, 50.f), 320.f, 1.e-4f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerVaultPathTest, "Glyphbound.Player.VaultPath",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerVaultPathTest::RunTest(const FString& Parameters)
+{
+	const FVector Start(100.f, 200.f, 90.f);
+	const FVector End(100.f, 300.f, 20.f);
+	constexpr float Apex = 224.f;
+	constexpr float Rise = 0.3f;
+	constexpr float Drop = 0.62f;
+	auto At = [&](float Alpha) { return GBMantle::EvaluateVaultPath(Start, End, Apex, Alpha, Rise, Drop); };
+
+	TestTrue(TEXT("Alpha 0 is exactly Start"), At(0.f).Equals(Start, 1.e-4f));
+	TestTrue(TEXT("Alpha 1 is exactly End"), At(1.f).Equals(End, 1.e-4f));
+	TestTrue(TEXT("Alpha is clamped below"), At(-1.f).Equals(Start, 1.e-4f));
+	TestTrue(TEXT("Alpha is clamped above"), At(2.f).Equals(End, 1.e-4f));
+	TestTrue(TEXT("The rise ends at the apex height"), FMath::IsNearlyEqual(At(Rise).Z, Apex, 0.01f));
+	TestTrue(TEXT("The drop starts at the apex height"), FMath::IsNearlyEqual(At(Drop).Z, Apex, 0.01f));
+	TestTrue(TEXT("Over the top the body holds the apex"), FMath::IsNearlyEqual(At(0.46f).Z, Apex, 0.01f));
+
+	float PrevZ = Start.Z;
+	bool bRising = true;
+	for (int32 i = 0; i <= 100; ++i)
+	{
+		const float Alpha = i / 100.f;
+		const FVector P = At(Alpha);
+		TestTrue(TEXT("Never above the apex"), P.Z <= Apex + 0.01f);
+		if (bRising && P.Z < PrevZ - 1.e-3f)
+		{
+			bRising = false;
+		}
+		TestTrue(TEXT("Z rises, holds, then only falls (never rises again)"), bRising || P.Z <= PrevZ + 1.e-3f);
+		PrevZ = P.Z;
+		// The core rule: the body crosses over the obstacle only at the apex (a railing is passed over, not through).
+		const float Crossed = static_cast<float>(FMath::Abs(P.Y - Start.Y) / FMath::Abs(End.Y - Start.Y));
+		if (Crossed > 0.02f && Crossed < 0.98f)
+		{
+			TestTrue(TEXT("Moving across only at the apex height"), FMath::IsNearlyEqual(P.Z, Apex, 0.01f));
+		}
+		if (Alpha < Rise - 1.e-4f)
+		{
+			TestTrue(TEXT("No sideways motion during the rise"), FMath::IsNearlyEqual(P.Y, Start.Y, 1.e-3f));
+		}
+		if (Alpha > Drop + 1.e-4f)
+		{
+			TestTrue(TEXT("No sideways motion during the drop"), FMath::IsNearlyEqual(P.Y, End.Y, 1.e-3f));
+		}
+	}
+	// An apex below the start or the end never digs the path under them.
+	const FVector Low = GBMantle::EvaluateVaultPath(Start, End, 10.f, 0.46f, Rise, Drop);
+	TestTrue(TEXT("A too low apex is lifted to the higher of Start and End"), FMath::IsNearlyEqual(Low.Z, Start.Z, 0.01f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerVaultStepsTest, "Glyphbound.Player.VaultSteps",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerVaultStepsTest::RunTest(const FString& Parameters)
+{
+	using namespace GBMantle;
+	TestEqual(TEXT("No time passed is one step"), VaultSubsteps(0.f, 0.03f), 1);
+	TestEqual(TEXT("Exactly one step's worth is one step"), VaultSubsteps(0.03f, 0.03f), 1);
+	TestEqual(TEXT("A little over one step's worth is two"), VaultSubsteps(0.0301f, 0.03f), 2);
+	TestEqual(TEXT("0.9 of the move is 30 steps"), VaultSubsteps(0.9f, 0.03f), 30);
+	TestEqual(TEXT("The sign does not matter"), VaultSubsteps(-0.9f, 0.03f), 30);
+	TestEqual(TEXT("A zero step size falls back to one step"), VaultSubsteps(0.5f, 0.f), 1);
+
+	// A 1 s hitch (the whole vault in one frame): cut into steps, no step of the path is longer than the capsule is wide.
+	const FVector Start(100.f, 200.f, 90.f);
+	const FVector End(100.f, 300.f, 20.f);
+	auto LongestSegment = [&](int32 Steps)
+	{
+		float Longest = 0.f;
+		FVector Prev = Start;
+		for (int32 i = 1; i <= Steps; ++i)
+		{
+			const FVector P = EvaluateVaultPath(Start, End, 224.f, static_cast<float>(i) / Steps, 0.3f, 0.62f);
+			Longest = FMath::Max(Longest, static_cast<float>(FVector::Dist(P, Prev)));
+			Prev = P;
+		}
+		return Longest;
+	};
+	TestTrue(TEXT("In steps of VaultMaxAlphaStep no segment is longer than 40 cm"), LongestSegment(VaultSubsteps(1.f, VaultMaxAlphaStep)) <= 40.f);
+	TestTrue(TEXT("In one step the segment would jump across the obstacle (over 100 cm)"), LongestSegment(1) > 100.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBPlayerVaultPoseTest, "Glyphbound.Player.VaultPose",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBPlayerVaultPoseTest::RunTest(const FString& Parameters)
+{
+	constexpr float Rise = 0.3f;
+	constexpr float Drop = 0.62f;
+	for (const float Edge : { 0.f, 1.f })
+	{
+		const GBMantle::FVaultPose Pose = GBMantle::EvaluateVaultPose(Edge, Rise, Drop);
+		TestTrue(TEXT("Every weight is exactly 0 at the ends"),
+			Pose.ItemLower01 == 0.f && Pose.Grip01 == 0.f && Pose.PitchDown01 == 0.f && Pose.Roll01 == 0.f && Pose.Dip01 == 0.f);
+	}
+	const GBMantle::FVaultPose Top = GBMantle::EvaluateVaultPose(0.46f, Rise, Drop);
+	TestTrue(TEXT("Over the top: the item is lowered"), Top.ItemLower01 > 0.99f);
+	TestTrue(TEXT("Over the top: the hand is on the obstacle"), Top.Grip01 > 0.99f);
+	TestTrue(TEXT("Over the top: the view is tipped forward"), Top.PitchDown01 > 0.99f);
+	TestTrue(TEXT("Over the top: the view is rolled"), Top.Roll01 > 0.99f);
+	TestTrue(TEXT("Over the top: the camera dips"), Top.Dip01 > 0.99f);
+	// On the way up the view has tipped forward but not rolled yet; on the way down it has settled.
+	const GBMantle::FVaultPose Early = GBMantle::EvaluateVaultPose(0.12f, Rise, Drop);
+	TestTrue(TEXT("On the way up: tipping forward has begun"), Early.PitchDown01 > 0.1f && Early.PitchDown01 < 0.9f);
+	TestTrue(TEXT("On the way up: the roll is behind the tip"), Early.Roll01 < Early.PitchDown01);
+	const GBMantle::FVaultPose Late = GBMantle::EvaluateVaultPose(0.92f, Rise, Drop);
+	TestTrue(TEXT("On the way down: the tip has mostly settled"), Late.PitchDown01 < 0.2f);
+	TestTrue(TEXT("On the way down: the hand has let go"), Late.Grip01 < 0.05f);
+	TestTrue(TEXT("On the way down: the roll has mostly settled"), Late.Roll01 < 0.2f);
+	for (int32 i = 0; i <= 100; ++i)
+	{
+		const GBMantle::FVaultPose Pose = GBMantle::EvaluateVaultPose(i / 100.f, Rise, Drop);
+		const float Weights[5] = { Pose.ItemLower01, Pose.Grip01, Pose.PitchDown01, Pose.Roll01, Pose.Dip01 };
+		for (const float W : Weights)
+		{
+			TestTrue(TEXT("Weights stay within 0..1"), W >= 0.f && W <= 1.f);
+		}
+	}
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

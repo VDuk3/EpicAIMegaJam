@@ -360,6 +360,10 @@ struct GLYPHBOUND_API FGBEncounterSpawn
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	int32 Count = 1;
+
+	/** Optional: what it does while unaware: "Patrol" (default), "Guard" or "Dormant". */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName Behavior = NAME_None;
 };
 
 USTRUCT(BlueprintType)
@@ -398,6 +402,18 @@ struct GLYPHBOUND_API FGBEncounterDefinition
 	/** Extra rewards dropped at the encounter's location when cleared. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TArray<FGBDropDefinition> Rewards;
+
+	/** The first wave stands in the world, unaware, from BeginPlay; the fight starts when one of them notices the player. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	bool Prespawn = false;
+
+	/** Optional progress flag: while it is NOT set the encounter's dormant enemies are sealed (they notice nothing and cannot be hurt); setting it wakes them. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName WakeFlag = NAME_None;
+
+	/** cm the zone grows past the trigger and spawn points; negative = Game.json EncounterLeashPadding. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	float LeashPadding = -1.f;
 };
 
 /** Skills.json: nodes of the two skill trees (GDD 5). */

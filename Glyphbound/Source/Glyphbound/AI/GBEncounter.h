@@ -81,6 +81,26 @@ public:
 	/** Removes living enemies and goes back to Waiting (player death). */
 	void ResetEncounter();
 
+	/**
+	 * The zone of the encounter in world space: the bounds of its trigger box and spawn points grown by the leash padding
+	 * (Game.json EncounterLeashPadding, or the definition's LeashPadding), with a generous margin in Z. Its enemies never leave it.
+	 */
+	FBox GetZone() const;
+	/** A prespawned encounter: one of its enemies noticed the player; it becomes Active and the fight starts. */
+	void NotifyEnemyAware(AGBEnemyCharacter* Enemy);
+	/** True while the definition has a WakeFlag and it is not set: the first wave's dormant enemies are sealed. */
+	bool IsSealedNow() const;
+	/** True when the definition says Prespawn. */
+	bool IsPrespawn() const;
+	/** The enemies of the current wave (smoke). */
+	const TArray<TObjectPtr<AGBEnemyCharacter>>& GetEnemies() const { return AliveEnemies; }
+	/** Smoke: what the last reinforcement wave did: how many of its enemies the player could see, and whether the wait for a hidden point ran out. */
+	int32 GetLastReinforceVisible() const { return LastReinforceVisible; }
+	bool DidLastReinforceWaitRunOut() const { return bLastReinforceWaitRanOut; }
+	int32 GetReinforceWaves() const { return ReinforceWaves; }
+	/** Spawn points in world space. */
+	TArray<FVector> GetWorldSpawnPoints() const;
+
 	FGBOnEncounterEvent OnStarted;
 	FGBOnEncounterEvent OnWaveStarted;
 	FGBOnEncounterEvent OnCleared;
@@ -94,6 +114,17 @@ protected:
 	void HandleTriggerOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	void SpawnWave(int32 WaveIndex);
+	/**
+	 * Spawn points for a reinforcement wave: only points the player cannot see (from his eyes). False = none is hidden: the wave is held and
+	 * tried again every half second; after EncounterReinforceMaxWait the furthest points are used (bOutWaitRanOut).
+	 */
+	bool ComputeReinforcePoints(TArray<FVector>& OutPoints, bool& bOutWaitRanOut);
+	/** Spawns the first wave of a Prespawn encounter, unaware, when its flags are met. */
+	void TryPrespawn();
+	/** A prespawned encounter whose first wave stands in the world but has not been noticed yet. */
+	bool IsPrespawnedWaiting() const { return State == EGBEncounterState::Waiting && CurrentWave >= 0; }
+	/** Waiting -> Active for a prespawned encounter. */
+	void ActivatePrespawned();
 	void HandleEnemyDied(AGBEnemyCharacter* Enemy);
 	void Clear();
 
@@ -118,4 +149,11 @@ protected:
 	float NextWaveTimer = -1.f;
 	UPROPERTY() TArray<TObjectPtr<AGBEnemyCharacter>> AliveEnemies;
 	bool bLoggedMissingDefinition = false;
+	float ReinforceWaitStart = -1.f;
+	bool bEnemiesSealed = false;
+	/** The flag is set: unseal the first wave's enemies and make them come out. */
+	void WakeSealedEnemies();
+	int32 LastReinforceVisible = 0;
+	bool bLastReinforceWaitRanOut = false;
+	int32 ReinforceWaves = 0;
 };

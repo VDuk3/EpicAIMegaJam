@@ -41,7 +41,23 @@
 		"MantleTopInset": 10,
 		"MantleBaseDuration": 0.22,
 		"MantleDurationPerMeter": 0.18,
-		"MantleRiseShare": 0.6
+		"MantleRiseShare": 0.6,
+		"VaultMinHeight": 50,
+		"VaultMaxHeight": 150,
+		"VaultMaxDepth": 60,
+		"VaultReach": 220,
+		"VaultMaxDrop": 450,
+		"VaultPushTime": 0.35,
+		"VaultPushMaxSpeed": 120,
+		"VaultTime": 0.55,
+		"VaultExitSpeed": 250,
+		"VaultExitBelowTop": 130,
+		"VaultApexClearance": 6,
+		"VaultRiseShare": 0.3,
+		"VaultDropStart": 0.62,
+		"VaultCameraPitchDeg": 12,
+		"VaultCameraRollDeg": 4,
+		"VaultCameraDipCm": 8
 	},
 	"StartingWeapons": [
 		"Staff_Apprentice"

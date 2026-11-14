@@ -1,11 +1,14 @@
 #include "AI/GBFlyerEnemy.h"
 
+#include "EngineUtils.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+#include "AI/GBSquad.h"
+#include "AI/GBTactics.h"
 #include "Combat/GBCombatLibrary.h"
 #include "Core/GBStatNames.h"
 #include "Data/GBDataSubsystem.h"
@@ -61,7 +64,9 @@ void AGBFlyerEnemy::InitFromDefinition(const FGBEnemyDefinition& Definition)
 	Super::InitFromDefinition(Definition);
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
 	{
-		Move->MaxFlySpeed = FMath::Max(1.f, Stats->GetStat(GBStat::MoveSpeed, 600.f));
+		Move->BrakingDecelerationFlying = FMath::Max(1.f, StatOr("BrakingDeceleration", 1500.f));
+		Move->bUseRVOAvoidance = false;   // flyers keep apart through FlyerSeparation; RVO jittered them
+		Move->MaxFlySpeed = FMath::Max(1.f, GetGaitSpeed(Gait));
 		Move->SetMovementMode(MOVE_Flying);
 	}
 }
@@ -75,7 +80,7 @@ void AGBFlyerEnemy::BeginPlay()
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
 	{
 		Move->SetMovementMode(MOVE_Flying);
-		Move->MaxFlySpeed = FMath::Max(1.f, Stats->GetStat(GBStat::MoveSpeed, 600.f));
+		Move->MaxFlySpeed = FMath::Max(1.f, GetGaitSpeed(Gait));
 	}
 	GroundZ = GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	if (const FGBEnemyDefinition* Def = GetDefinition())
@@ -91,14 +96,36 @@ void AGBFlyerEnemy::BeginPlay()
 
 FVector AGBFlyerEnemy::DesiredFlightDirection(const AActor* Goal, float Distance, bool bSight)
 {
-	const FVector Flat = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+	// It knows where the player is only while the squad sees him: otherwise it goes to the last known position.
+	FVector Known = Goal->GetActorLocation();
+	UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this);
+	if (!bSight && Squad)
+	{
+		float Age = 0.f;
+		Squad->GetLastKnown(this, Known, Age);
+	}
+	const FVector Flat = (Known - GetActorLocation()).GetSafeNormal2D();
 	if (Flat.IsNearlyZero())
 	{
 		return FVector::ZeroVector;
 	}
 	const float RangeMin = S(TEXT("PreferredRangeMin"), 500.f);
 	const float RangeMax = FMath::Max(S(TEXT("PreferredRangeMax"), 1200.f), RangeMin);
-	const float Flat2D = FVector::Dist2D(Goal->GetActorLocation(), GetActorLocation());
+	const float Flat2D = FVector::Dist2D(Known, GetActorLocation());
+
+	// With a line of sight: an orbit slot (angles spread among the squad's flyers) instead of a random side.
+	// The slot is asked for a few times a second (staggered): it moves slowly and the query traces.
+	const float WorldNow = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	if (WorldNow >= OrbitNextTime)
+	{
+		OrbitNextTime = WorldNow + 0.3f + Random.FRandRange(0.f, 0.1f);
+		bOrbitValid = Squad && Squad->GetOrbitPoint(this, 0.5f * (RangeMin + RangeMax), OrbitCache);
+	}
+	if (bSight && Flat2D <= RangeMax * 1.5f && bOrbitValid)
+	{
+		const FVector To = ClampToZone(OrbitCache) - GetActorLocation();
+		return To.GetSafeNormal2D() * FMath::Clamp(To.Size2D() / 300.f, 0.f, 1.f);
+	}
 
 	// Radial pull into the band (always closing in without a line of sight), plus an orbit round the player.
 	float Radial = 0.f;
@@ -214,7 +241,13 @@ void AGBFlyerEnemy::UpdateHeight(float DeltaSeconds)
 	const float Bob = FMath::Sin(FlightTime * UE_TWO_PI * S(TEXT("BobHz"), 0.4f)) * S(TEXT("BobAmp"), 15.f);
 	WantedHeight = S(TEXT("HoverHeight"), 250.f) + Bob + (LiftTimer > 0.f ? S(TEXT("ClimbHeight"), 260.f) : 0.f);
 	const float CeilingLimit = CeilingZ - GBFlyerLocal::CeilingMargin;   // CeilingZ is already the highest capsule centre the sweep allows
-	const float TargetZ = FMath::Min(GroundZ + WantedHeight, CeilingLimit);
+	float TargetZ = FMath::Min(GroundZ + WantedHeight, CeilingLimit);
+	if (bHasHomeZone)
+	{
+		// The zone has a ceiling and a floor too.
+		const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		TargetZ = FMath::Clamp(TargetZ, HomeZone.Min.Z + HalfHeight, FMath::Max(HomeZone.Max.Z - HalfHeight, HomeZone.Min.Z + HalfHeight));
+	}
 	WantedHeight = TargetZ - GroundZ;   // what is really wanted: a low ceiling lowers it
 
 	const float VerticalSpeed = S(TEXT("VerticalSpeed"), 350.f);
@@ -241,26 +274,15 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 		OrbitSign = Random.FRand() < 0.4f ? -OrbitSign : OrbitSign;
 	}
 
-	SightTimer -= DeltaSeconds;
-	if (SightTimer <= 0.f)
-	{
-		bSightNow = HasLineOfSight(Goal);
-		SightTimer = GBFlyerLocal::SightInterval;
-	}
+	bSightNow = bSightCached;
 	LostSightTime = bSightNow ? 0.f : LostSightTime + DeltaSeconds;
 
 	const float Aggro = Stats->GetStat(GBStat::AggroRange, 0.f);
 	const float Distance = FVector::Dist(GetActorLocation(), Goal->GetActorLocation());
+	(void)Aggro;
 	if (State == EGBEnemyState::Idle)
 	{
-		if (Aggro > 0.f && (bProvoked || Distance <= Aggro))
-		{
-			SetState(EGBEnemyState::Chase);
-		}
-		else
-		{
-			return true;
-		}
+		SetState(EGBEnemyState::Chase);   // aware: the base class has already decided
 	}
 
 	// The whole body turns towards the player at its own rate.
@@ -272,11 +294,60 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 
 	// Flight: pulled into the band and round the player, steered round whatever is in the way.
 	FVector Desired = DesiredFlightDirection(Goal, Distance, bSightNow);
+	// Flyers keep their distance from each other: the push is recomputed a few times a second (staggered), not every frame.
+	{
+		SeparationTimer -= DeltaSeconds;
+		if (SeparationTimer <= 0.f)
+		{
+			SeparationTimer = 0.25f + Random.FRandRange(0.f, 0.1f);
+			const float Separation = S(TEXT("FlyerSeparation"), 250.f);
+			SeparationAway = FVector::ZeroVector;
+			TArray<const AGBEnemyCharacter*> Neighbours;
+			if (UGBSquadSubsystem* SeparationSquad = UGBSquadSubsystem::Get(this))
+			{
+				SeparationSquad->GetFlyerNeighbours(this, Neighbours);   // own squad, era filter before the loop
+			}
+			for (const AGBEnemyCharacter* Other : Neighbours)
+			{
+				const FVector Offset = GetActorLocation() - Other->GetActorLocation();
+				const float Gap = Offset.Size();
+				if (Gap < Separation && Gap > KINDA_SMALL_NUMBER)
+				{
+					SeparationAway += Offset / Gap * (1.f - Gap / Separation);
+				}
+			}
+			SeparationAway.Z = 0.f;
+		}
+		Desired = (Desired + SeparationAway * 1.5f).GetClampedToMaxSize(1.f);
+	}
 	if (State == EGBEnemyState::Windup)
 	{
 		Desired *= S(TEXT("WindupMoveScale"), 0.3f);
 	}
-	const FVector Steered = SteerAround(Desired, Goal, DeltaSeconds);
+	SetGait(EGBGait::Run);
+	FVector Steered = SteerAround(Desired, Goal, DeltaSeconds);
+	if (bHasHomeZone && !Steered.IsNearlyZero())
+	{
+		// Never leaves its zone: a step that would cross the edge is turned back in (it stops at the edge).
+		const FVector Loc = GetActorLocation();
+		const float Speed = GetVelocity().Size2D();
+		const float Brake = FMath::Max(1.f, GetCharacterMovement()->BrakingDecelerationFlying);
+		const float Lookahead = GetCapsuleComponent()->GetScaledCapsuleRadius() * 3.f + 100.f + Speed * Speed / (2.f * Brake);   // room to stop
+		const FVector Ahead = Loc + Steered.GetSafeNormal2D() * Lookahead;
+		if (!IsInsideZone(FVector(Loc.X, Loc.Y, Ahead.Z)))
+		{
+			// Already outside: straight back in.
+			FVector Back = ClampToZone(FVector(Loc.X, Loc.Y, Loc.Z)) - Loc;
+			Back.Z = 0.f;
+			Steered = Back.GetSafeNormal2D();
+		}
+		else if (!IsInsideZone(FVector(Ahead.X, Ahead.Y, Loc.Z)))
+		{
+			FVector Inward = ClampToZone(FVector(Ahead.X, Ahead.Y, Loc.Z)) - Loc;
+			Inward.Z = 0.f;
+			Steered = Inward.GetSafeNormal2D() * Steered.Size2D() * FMath::Clamp(Inward.Size2D() / FMath::Max(Lookahead, 1.f), 0.f, 1.f);
+		}
+	}
 	if (!Steered.IsNearlyZero())
 	{
 		AddMovementInput(Steered, 1.f);
@@ -290,8 +361,13 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 	case EGBEnemyState::Chase:
 		if (bCanAttack && AttackTimer <= 0.f && Distance <= AttackRange && bSightNow)
 		{
-			SetState(EGBEnemyState::Windup);
-			OnWindupChanged(true);
+			// A flyer counts as half a shooter in the squad's attack tokens.
+			UGBSquadSubsystem* TokenSquad = UGBSquadSubsystem::Get(this);
+			if (!TokenSquad || TokenSquad->TryAcquireToken(this, 0.5f))
+			{
+				SetState(EGBEnemyState::Windup);
+				OnWindupChanged(true);
+			}
 		}
 		break;
 
@@ -301,11 +377,19 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 			SetState(EGBEnemyState::Chase);
 			AttackTimer = S(TEXT("RetryDelay"), 0.4f);
 			OnWindupChanged(false);
+			if (UGBSquadSubsystem* TokenSquad = UGBSquadSubsystem::Get(this))
+			{
+				TokenSquad->ReleaseToken(this);
+			}
 		}
 		else if (StateTime >= Stats->GetStat(GBStat::AttackWindup, 0.f))
 		{
 			PerformAttack();
 			OnWindupChanged(false);
+			if (UGBSquadSubsystem* TokenSquad = UGBSquadSubsystem::Get(this))
+			{
+				TokenSquad->ReleaseToken(this);
+			}
 			if (State == EGBEnemyState::Windup)
 			{
 				SetState(EGBEnemyState::Recover);
@@ -317,6 +401,10 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 		if (StateTime >= Stats->GetStat(GBStat::AttackInterval, 0.f))
 		{
 			SetState(EGBEnemyState::Chase);
+			if (UGBSquadSubsystem* TokenSquad = UGBSquadSubsystem::Get(this))
+			{
+				TokenSquad->ReleaseToken(this);
+			}
 		}
 		break;
 
@@ -324,6 +412,74 @@ bool AGBFlyerEnemy::TickCustomBehavior(AActor* Goal, float DeltaSeconds)
 		break;
 	}
 	return true;
+}
+
+void AGBFlyerEnemy::TickUnaware(AActor* Goal, float DeltaSeconds)
+{
+	FlightTime += DeltaSeconds;
+	if (!bHasHomeZone)
+	{
+		return;
+	}
+	if (!bRouteBuilt)
+	{
+		BuildPatrolRoute();
+	}
+	if (bReturningToPost)
+	{
+		// Lost him: fly back to the post first, then guard / patrol / dormant resume.
+		ReturnTimer += DeltaSeconds;
+		if (FVector::Dist2D(GetActorLocation(), PostLocation) < 150.f || ReturnTimer > 40.f)
+		{
+			bReturningToPost = false;
+		}
+		else
+		{
+			if (State != EGBEnemyState::Idle)
+			{
+				SetState(EGBEnemyState::Idle);
+			}
+			SetGait(EGBGait::Patrol);
+			const FVector Back = SteerAround((PostLocation - GetActorLocation()).GetSafeNormal2D(), nullptr, DeltaSeconds);
+			if (!Back.IsNearlyZero())
+			{
+				AddMovementInput(Back, 1.f);
+				SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(), FRotator(0.f, Back.Rotation().Yaw, 0.f), DeltaSeconds, GetBodyTurnRate()));
+			}
+			return;
+		}
+	}
+	if (UnawareBehavior != EGBUnawareBehavior::Patrol || PatrolRoute.Num() < 2)
+	{
+		Super::TickUnaware(Goal, DeltaSeconds);   // guard / dormant: stand in the air
+		return;
+	}
+	if (State != EGBEnemyState::Idle)
+	{
+		SetState(EGBEnemyState::Idle);
+	}
+	SetGait(EGBGait::Patrol);
+	if (PatrolPauseTimer > 0.f)
+	{
+		PatrolPauseTimer -= DeltaSeconds;
+		return;
+	}
+	const FVector Dest = PatrolRoute[PatrolIndex];
+	PatrolPointTimer += DeltaSeconds;
+	if (FVector::Dist2D(GetActorLocation(), Dest) <= 160.f || PatrolPointTimer > 25.f)
+	{
+		PatrolPointTimer = 0.f;
+		PatrolPauseTimer = AwareRandom.FRandRange(StatOr("PatrolPauseMin", 1.f), FMath::Max(StatOr("PatrolPauseMax", 3.f), StatOr("PatrolPauseMin", 1.f)));
+		PatrolIndex = (PatrolIndex + 1) % PatrolRoute.Num();
+		return;
+	}
+	const FVector Direction = (Dest - GetActorLocation()).GetSafeNormal2D();
+	const FVector Steered = SteerAround(Direction, nullptr, DeltaSeconds);
+	if (!Steered.IsNearlyZero())
+	{
+		AddMovementInput(Steered, 1.f);
+		SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(), FRotator(0.f, Steered.Rotation().Yaw, 0.f), DeltaSeconds, GetBodyTurnRate()));
+	}
 }
 
 void AGBFlyerEnemy::Tick(float DeltaSeconds)

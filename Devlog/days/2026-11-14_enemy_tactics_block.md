@@ -100,7 +100,43 @@ First round (the implementer's own runs on its finished code, then the architect
 - **The Valkyrie sealed**: `WakeFlag` on the encounter; while the flag is unset she notices nothing and cannot be hurt (smoke: 4 s with the player before the tube and a 500-damage call: asleep, 7600 of 7600); when it is set she wakes within 1.5 s and leaps out (843 cm from her spawn point, on the ground, inside her zone).
 - Results: Editor build; AI tests 7 of 7; FutureBase smoke `Enemies3DBase` 0 errors in 289 s. Arena smoke `Enemies3D`: 0 errors in one run, 2 in the next, both from clocks, not logic: four shooters share two attack tokens and 11 s was not always enough for the fourth to fire, and two members crossing paths were within 2 m for 2.2 s against a limit of 2. A check that fails one run in four is not a check: the architect widened both (18 s; 3.5 s, over six measured runs of 0.5 to 2.2 s). Not explained: unaware drones in the sub-boss hall report 9,000 to 17,000 cm "travelled" in 11 s while staying within 360 cm of their posts (a jitter in position; they look still).
 
-(final checks below)
+
+## Third round: the architect's full run and the second review
+- **The architect's first full run** (all agents done): Editor build, **64 tests of 64**, tour of the map **clean on 85 spots** (the vault over the real railing: 232 cm beyond the start, on his feet; a pane broken with 22 pieces). The full arena smoke: 11 errors from three causes. Nine were the architect's own: he had lengthened the shooters' window to 18 s without widening the spacing between the arena's groups (18.5 s), so the flyers spawned into the shooters' check and were killed with them. Two were real: **three spiders attacking at once** against a limit of two, and a check of the chief that could not get a pistol because the player already held a gun from an earlier block. On the real map one encounter did not start "with the player in view": whether a patroller faces him depends on where its patrol is.
+- **Sol 6.1, second pass** (the fixes, the vault, the sealed Valkyrie, the glass): nine findings again, no crash among them. The vault checked a tucked body but moved the full capsule (in the corridor it sat 8 cm in the ceiling at the top of the move); its path was not swept, so a thing moving in the way could leave the player inside it; the landing floor was not looked at again before crossing; the melee permission was only refreshed while moving (the three spiders); a lunge was limited by where the player stood, not by where the spider would land; the Valkyrie's wake leap did not check its landing; a noise alert could still give away the player's place for half a second; the chief's shield blocked before it was seen raised; flyers still listed every flyer in the world.
+- **What changed.** Vault: the capsule really shrinks to half height for the move and comes back only where it fits (ceiling lane: penetration 0.00 cm, was 8.00); the path is cut into steps of at most 3 % and each is swept (a pure test: a whole-vault hitch never moves him more than 40 cm in one step); the landing floor is traced again before the crossing and the vault stops if it is gone; new lanes for a blocker appearing mid-move, a long frame across a thin plate, a floor that vanishes, and a thick crate that pushing must not vault. Melee: the place is asked for at the moment of each windup or lunge and held until it ends (swarm: 2 at once, 7 lunges). Lunges land inside the zone or are refused. The shield blocks only once the mesh has arrived (traces now aimed at the mesh's own visible area). Alerts: the squad's last known position, always. Notice checks made deterministic: on the map the player is stood in front of one named enemy, which must notice; in the arena a robot with its back to him must not, and one facing him must.
+- **Honest leftovers.** The Valkyrie does not leap out of her tube: no candidate leap passed the landing and arc checks in the map, so the fallback runs (after the alert beat she is put 150 cm forward onto the navmesh and walks). With the shield raised the chief's pistol arm points sideways. Unaware drones in the sub-boss hall jitter in place (seen only as a number). The alert-position fix and crouched low cover have no check of their own. Two arena checks (every shooter fires within 16 s under shared tokens; no pair within 2 m for 3.5 s) are stochastic in principle; they passed every run after the change.
+
+## Final checks (the architect's runs on the final code, one after another, 17:20 to 17:50 UTC)
+| Check | Result |
+|---|---|
+| Editor build | succeeded |
+| Tests, whole suite | **65 run, 0 failed**, 1.30 s of test time, 21 s wall (55 at the start of the block: +5 AI, +5 Player) |
+| Smoke, full run (arena) | **0 errors**, 380 s (about 200 s before the block: the tactics, swarm, sight, chief and vault lanes) |
+| Smoke on the real map (`Enemies3DBase`, FutureBase) | **0 errors**, 288 s: five encounters, the Valkyrie sealed, woken and beaten |
+| Tour of the map | **85 spots, none without floor**, 322 s: the vault over the real railing 232 cm beyond the start and on his feet; a pane stood three hits and broke at the fourth with 22 pieces |
+| Package | built in 238 s; `TeamTBD_Glyphbound.zip` 2,018.6 MB (over the jam's 1 GB: the owner said it does not matter for now, and it is noted as open) |
+| Packaged smoke, arena `Enemies3D` | **0 errors**, 200 s |
+| Packaged smoke, FutureBase `Enemies3DBase` | **0 errors**, 275 s |
+| Packaged start with `-AllWeapons` | "6 weapons given" in the log |
+
+Nobody has played this build by hand yet: the owner played the first test package of the session and everything after his notes is checked by the runs above and by screenshots only.
+
+## Third-party assets used in this block
+- **Pistol and Rifle Locomotion Animations 1700**, Kingboars, Fab (listing 509f8c0a-3eb8-46cb-bda9-3cf1a48d6aa0), Fab Standard License, from the owner's library (acquired 2026-11-05). 12 of its 1,688 clips are in the project, retargeted onto our characters.
+- GunFX (already in the project): its four glass shard meshes are the pieces of the broken panes.
+- Orc shield and orc pistol: our own, generated with Tripo on the ASSETS machine (delivery of 2026-11-14, provenance in `SourceArt`).
+
+## Tools used in this block
+Unreal Engine 5.9.0, Claude Code (Claude Fable 5.2 as architect; three Claude Sonnet 5.5 subagents: enemy AI, orc armor in Blender, the player's vault), Codex CLI (GPT Sol 6.1, two code reviews), Blender 5.x (headless: bulkhead model, armor fit, shield and pistol), Tripo (the ASSETS machine's shield and pistol), Fab (the Kingboars pack), git.
+
+## Left open
+- **The owner should play this package.** What only a person can judge: whether the squads read as intelligent (cover, flanks, turns of fire), the chief's fight, the vault's feel, the Valkyrie's awakening.
+- The Valkyrie steps out of her tube by a 150 cm placement and a walk, not a leap.
+- The chief's pistol arm with the shield raised; drones that jitter in place in the sub-boss hall.
+- Orc armor up close: jagged plate edges, texture patches on some boots.
+- Two builder walk checks report problems that are not problems (a cover crate on a checked line; one point at an edge): the lines should be moved.
+- The package is 2.0 GB against the jam's 1 GB.
 
 ## Left open
 (filled in below)

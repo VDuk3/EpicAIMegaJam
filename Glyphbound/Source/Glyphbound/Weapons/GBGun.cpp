@@ -1,6 +1,7 @@
 #include "Weapons/GBGun.h"
 
 #include "AI/GBEnemyCharacter.h"
+#include "AI/GBSquad.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/GBCombatLibrary.h"
 #include "CanvasItem.h"
@@ -1569,6 +1570,9 @@ bool AGBGun::PerformAttack()
 	const float SpreadDegrees = GetCurrentSpread();
 
 	--Ammo.InMagazine;
+
+	// Enemies that have not noticed him yet hear the shot (HearingRange).
+	UGBSquadSubsystem::ReportNoise(this, Player->GetActorLocation());
 
 	const FGBWeaponDefinition* Def = GetDefinition();
 	if (Def && Def->FireMode.Equals(TEXT("Projectile"), ESearchCase::IgnoreCase))

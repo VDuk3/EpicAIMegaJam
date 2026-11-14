@@ -7,6 +7,7 @@
 #include "AnimationRuntime.h"
 #include "BoneContainer.h"
 #include "BonePose.h"
+#include "Animation/Skeleton.h"
 #include "GameFramework/Pawn.h"
 
 namespace GBEnemyAnimLocal
@@ -19,7 +20,8 @@ namespace GBEnemyAnimLocal
 	const FName HandBone(TEXT("hand_r"));
 	constexpr int32 NumSpineBones = UE_ARRAY_COUNT(SpineBones);
 
-	const TCHAR* const ClipNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("StrafeLeft"), TEXT("StrafeRight"), TEXT("WalkBack"), TEXT("Attack"), TEXT("Hit"), TEXT("Death") };
+	const TCHAR* const ClipNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("StrafeLeft"), TEXT("StrafeRight"), TEXT("WalkBack"), TEXT("Attack"), TEXT("Hit"), TEXT("Death"),
+		TEXT("RelaxedIdle"), TEXT("PatrolWalk"), TEXT("Sprint"), TEXT("CrouchIdle"), TEXT("CrouchWalk") };
 	static_assert(UE_ARRAY_COUNT(ClipNames) == GBEnemyAnim::NumClips, "ClipNames must list every EGBEnemyClip");
 
 	/** A rotation given in the actor's frame (pitch up, yaw, roll), turned into the mesh component's frame. */
@@ -70,8 +72,11 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			Tuning = Instance->GetTuning();
 			for (int32 Index = 0; Index < GBEnemyAnim::NumClips; ++Index)
 			{
-				Clips[Index] = Instance->GetClip(static_cast<EGBEnemyClip>(Index));
+				const int32 Resolved = Index < GBEnemyAnim::NumLocomotion ? Instance->ResolveSlot(Index) : Index;
+				Clips[Index] = Instance->GetClip(static_cast<EGBEnemyClip>(Resolved));
+				Info[Index] = Instance->GetClipInfo(Resolved);
 			}
+			PoseOffsets = Instance->GetPoseOffsets();
 		}
 	}
 
@@ -94,9 +99,11 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			{
 				continue;
 			}
-			const float RefSpeed = FMath::Max(Index == static_cast<int32>(EGBEnemyClip::Run) ? Tuning.RunAnimSpeed : Tuning.WalkAnimSpeed, 1.f);
+			// Each clip plays at the rate its own authored ground speed asks for, kept within the limits (foot slide beats slow motion).
+			const float RefSpeed = FMath::Max(Info[Index].RefSpeed, 1.f);
+			const float Rate = FMath::Clamp(Frame.Speed / RefSpeed, Tuning.AnimRateMin, FMath::Max(Tuning.AnimRateMax, Tuning.AnimRateMin));
 			const float Length = FMath::Max(Clip->GetPlayLength(), 0.05f);
-			CyclesPerSecond += Weight[Index] * (Frame.Speed / RefSpeed) / Length;
+			CyclesPerSecond += Weight[Index] * Rate / Length;
 			MovingWeight += Weight[Index];
 		}
 		if (MovingWeight > KINDA_SMALL_NUMBER)
@@ -114,6 +121,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		}
 		Output.ResetToRefPose();
 		FPoseContext Scratch(Output);
+		RefreshBoneCache(Output.Pose.GetBoneContainer());
 
 		// 1. Locomotion: the weighted mean of the clips, accumulated two at a time.
 		float Accumulated = 0.f;
@@ -131,19 +139,19 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			{
 				FAnimationPoseData Data(Output);
 				Clip->GetAnimationPose(Data, Context);
+				RemoveDrift(Output.Pose, Index, Time);
 			}
 			else
 			{
 				Scratch.ResetToRefPose();
 				FAnimationPoseData ScratchData(Scratch);
 				Clip->GetAnimationPose(ScratchData, Context);
+				RemoveDrift(Scratch.Pose, Index, Time);
 				FAnimationPoseData OutputData(Output);
 				FAnimationRuntime::BlendTwoPosesTogetherInPlace(OutputData, ScratchData, Accumulated / (Accumulated + Weight[Index]));
 			}
 			Accumulated += Weight[Index];
 		}
-
-		RefreshBoneCache(Output.Pose.GetBoneContainer());
 
 		// 2. One-shot overlay (Attack / Hit), full body or from spine_01 up.
 		if (Frame.OverlayClip >= 0 && Frame.OverlayWeight > 0.001f && Clips[Frame.OverlayClip])
@@ -164,6 +172,11 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 				Scratch.ResetToRefPose();
 				FAnimationPoseData ScratchData(Scratch);
 				Clip->GetAnimationPose(ScratchData, OverlayContext);
+				if (Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Attack))
+				{
+					// The swing's travel stays in the clip's own space: the body is pinned over the capsule (horizontal axes of the travel bone).
+					PinTravelBone(Scratch.Pose, Frame.OverlayClip);
+				}
 				BlendOver(Output.Pose, Scratch.Pose, Frame.OverlayWeight, Frame.bOverlayUpperBody);
 			}
 		}
@@ -180,8 +193,35 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		else if (!Frame.bDead)
 		{
 			ApplyUpperBodyOffsets(Output.Pose);
+			ApplyPoseLayer(Output.Pose);
 		}
 		return true;
+	}
+
+	/** The travel bone's local translation minus the clip's drift scaled by how far into the clip we are. */
+	void RemoveDrift(FCompactPose& Pose, int32 ClipIndex, float Time) const
+	{
+		const FGBClipInfo& Clip = Info[ClipIndex];
+		if (!Clip.bHasDrift || PelvisIndex.GetInt() < 0 || Clip.Length <= KINDA_SMALL_NUMBER)
+		{
+			return;
+		}
+		const float Alpha = FMath::Clamp(Time / Clip.Length, 0.f, 1.f);
+		FTransform& Bone = Pose[PelvisIndex];
+		Bone.SetTranslation(Bone.GetTranslation() - Clip.Drift * Alpha);
+	}
+
+	/** Keeps the travel bone's first two local axes at their frame-0 values (the travel of the swing), the third untouched. */
+	void PinTravelBone(FCompactPose& Pose, int32 ClipIndex) const
+	{
+		const FGBClipInfo& Clip = Info[ClipIndex];
+		if (!Clip.bHasBone || PelvisIndex.GetInt() < 0)
+		{
+			return;
+		}
+		FTransform& Bone = Pose[PelvisIndex];
+		const FVector Current = Bone.GetTranslation();
+		Bone.SetTranslation(FVector(Clip.BoneStart.X, Clip.BoneStart.Y, Current.Z));
 	}
 
 	/** Pose = lerp(Pose, Over, Alpha) per bone, all bones or only spine_01 and its descendants. */
@@ -194,6 +234,31 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 				continue;
 			}
 			Pose[Bone].BlendWith(Over[Bone], FMath::Clamp(Alpha, 0.f, 1.f));
+		}
+	}
+
+	/** The data-driven pose (a raised shield): local rotation offsets of named bones, applied last, scaled by PoseAlpha. */
+	void ApplyPoseLayer(FCompactPose& Pose) const
+	{
+		if (Frame.PoseAlpha <= 0.001f || PoseOffsets.Num() == 0)
+		{
+			return;
+		}
+		const FBoneContainer& Bones = Pose.GetBoneContainer();
+		for (const FGBPoseOffset& Offset : PoseOffsets)
+		{
+			const int32 MeshIndex = Bones.GetPoseBoneIndexForBoneName(Offset.Bone);
+			if (MeshIndex == INDEX_NONE)
+			{
+				continue;
+			}
+			const FCompactPoseBoneIndex Index = Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
+			if (Index.GetInt() < 0)
+			{
+				continue;
+			}
+			const FQuat Delta = FQuat::Slerp(FQuat::Identity, Offset.Delta.Quaternion(), Frame.PoseAlpha);
+			Pose[Index].SetRotation((Pose[Index].GetRotation() * Delta).GetNormalized());
 		}
 	}
 
@@ -252,6 +317,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 		{
 			SpineIndex[Index] = Find(SpineBones[Index]);
 		}
+		PelvisIndex = Find(Tuning.TravelBone);
 		ShoulderIndex = Find(ShoulderBone);
 		HandIndex = Find(HandBone);
 		UpperBodyRootIndex = Find(UpperBodyRoot);
@@ -274,6 +340,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 	}
 
 	TWeakObjectPtr<UGBEnemyAnimInstance> Owner;
+	TArray<FGBPoseOffset> PoseOffsets;
 	FGBEnemyAnimFrame Frame;
 	FGBEnemyAnimTuning Tuning;
 	const UAnimSequence* Clips[GBEnemyAnim::NumClips] = {};
@@ -285,6 +352,8 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 	int32 CachedBoneCount = -1;
 	FCompactPoseBoneIndex SpineIndex[GBEnemyAnimLocal::NumSpineBones] = { FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE),
 		FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE), FCompactPoseBoneIndex(INDEX_NONE) };
+	FCompactPoseBoneIndex PelvisIndex = FCompactPoseBoneIndex(INDEX_NONE);
+	FGBClipInfo Info[GBEnemyAnim::NumClips];
 	FCompactPoseBoneIndex ShoulderIndex = FCompactPoseBoneIndex(INDEX_NONE);
 	FCompactPoseBoneIndex HandIndex = FCompactPoseBoneIndex(INDEX_NONE);
 	FCompactPoseBoneIndex UpperBodyRootIndex = FCompactPoseBoneIndex(INDEX_NONE);
@@ -311,6 +380,86 @@ void UGBEnemyAnimInstance::Configure(const TArray<UAnimSequence*>& InClips, cons
 		Clips.Add(InClips.IsValidIndex(Index) ? InClips[Index] : nullptr);
 	}
 	Tuning = InTuning;
+
+	// Every clip of the retargeted humanoids carries its travel in the pelvis (the root never moves): measure it once, here.
+	for (int32 Index = 0; Index < GBEnemyAnim::NumClips; ++Index)
+	{
+		FGBClipInfo& Info = ClipInfo[Index];
+		Info = FGBClipInfo();
+		Info.RefSpeed = FMath::Max(Index == static_cast<int32>(EGBEnemyClip::Run) ? Tuning.RunAnimSpeed : Tuning.WalkAnimSpeed, 1.f);
+		const UAnimSequence* Clip = Clips[Index];
+		if (!Clip)
+		{
+			continue;
+		}
+		Info.Length = Clip->GetPlayLength();
+		const USkeleton* Skeleton = Clip->GetSkeleton();
+		const int32 Bone = Skeleton ? Skeleton->GetReferenceSkeleton().FindBoneIndex(Tuning.TravelBone) : INDEX_NONE;
+		if (Bone == INDEX_NONE || Info.Length <= KINDA_SMALL_NUMBER)
+		{
+			continue;
+		}
+		FTransform First;
+		FTransform Last;
+		Clip->GetBoneTransform(First, FSkeletonPoseBoneIndex(Bone), FAnimExtractContext(0.0, false, FDeltaTimeRecord(), false), false);
+		Clip->GetBoneTransform(Last, FSkeletonPoseBoneIndex(Bone), FAnimExtractContext(static_cast<double>(Info.Length), false, FDeltaTimeRecord(), false), false);
+		Info.bHasBone = true;
+		Info.BoneStart = First.GetTranslation();
+		Info.Drift = Last.GetTranslation() - First.GetTranslation();
+		// Only the loops that carry travel (locomotion) are corrected by their drift; the Attack clip is pinned instead.
+		const bool bLoop = Index < GBEnemyAnim::NumLocomotion || Index >= static_cast<int32>(EGBEnemyClip::RelaxedIdle);   // the extra posture clips are loops too
+		if (bLoop && Info.Drift.Size() >= Tuning.DriftMin)
+		{
+			Info.bHasDrift = true;
+			Info.RefSpeed = FMath::Max(Info.Drift.Size() * Tuning.MeshScale / Info.Length, 1.f);
+		}
+	}
+}
+
+void UGBEnemyAnimInstance::SetPoseLayer(const FString& Spec)
+{
+	PoseOffsets.Reset();
+	TArray<FString> Parts;
+	Spec.ParseIntoArray(Parts, TEXT(";"), true);
+	for (FString& Part : Parts)
+	{
+		FString BoneName;
+		FString Angles;
+		if (!Part.TrimStartAndEnd().Split(TEXT(":"), &BoneName, &Angles))
+		{
+			continue;
+		}
+		TArray<FString> Numbers;
+		Angles.ParseIntoArray(Numbers, TEXT(","), true);
+		if (Numbers.Num() < 3)
+		{
+			continue;
+		}
+		FGBPoseOffset Offset;
+		Offset.Bone = FName(*BoneName.TrimStartAndEnd());
+		Offset.Delta = FRotator(FCString::Atof(*Numbers[0]), FCString::Atof(*Numbers[1]), FCString::Atof(*Numbers[2]));
+		PoseOffsets.Add(Offset);
+	}
+}
+
+int32 UGBEnemyAnimInstance::ResolveSlot(int32 Slot) const
+{
+	auto Has = [this](EGBEnemyClip Clip) { return HasClip(Clip); };
+	if (Slot == static_cast<int32>(EGBEnemyClip::Idle))
+	{
+		if (bCrouched && Has(EGBEnemyClip::CrouchIdle)) { return static_cast<int32>(EGBEnemyClip::CrouchIdle); }
+		if (bRelaxed && Has(EGBEnemyClip::RelaxedIdle)) { return static_cast<int32>(EGBEnemyClip::RelaxedIdle); }
+	}
+	else if (Slot == static_cast<int32>(EGBEnemyClip::Walk))
+	{
+		if (bCrouched && Has(EGBEnemyClip::CrouchWalk)) { return static_cast<int32>(EGBEnemyClip::CrouchWalk); }
+		if (bRelaxed && Has(EGBEnemyClip::PatrolWalk)) { return static_cast<int32>(EGBEnemyClip::PatrolWalk); }
+	}
+	else if (Slot == static_cast<int32>(EGBEnemyClip::Run))
+	{
+		if (bUseSprint && Has(EGBEnemyClip::Sprint)) { return static_cast<int32>(EGBEnemyClip::Sprint); }
+	}
+	return Slot;
 }
 
 UAnimSequence* UGBEnemyAnimInstance::GetClip(EGBEnemyClip Clip) const
@@ -386,10 +535,15 @@ FString UGBEnemyAnimInstance::DescribeClips() const
 
 void UGBEnemyAnimInstance::ComputeLocomotionTargets(float Speed, float LocalAngleDegrees)
 {
-	const float Walk = FMath::Max(Tuning.WalkAnimSpeed, 1.f);
-	const float Run = FMath::Max(Tuning.RunAnimSpeed, Walk + 1.f);
-	const float Move = FMath::Clamp(Speed / Walk, 0.f, 1.f);
-	const float RunShare = FMath::Clamp((Speed - Walk) / (Run - Walk), 0.f, 1.f);
+	// The authored ground speeds decide: the walk clip is good up to its speed times AnimRateMax, the run clip from its speed times AnimRateMin.
+	const float WalkRef = ClipInfo[static_cast<int32>(EGBEnemyClip::Walk)].RefSpeed;
+	const float RunRef = ClipInfo[static_cast<int32>(EGBEnemyClip::Run)].RefSpeed;
+	const float WalkEnd = WalkRef * Tuning.AnimRateMax;
+	const float RunStart = RunRef * Tuning.AnimRateMin;
+	const float Middle = 0.5f * (WalkEnd + RunStart);
+	const float HalfWidth = FMath::Max(0.5f * FMath::Abs(RunStart - WalkEnd), 25.f);
+	const float Move = FMath::Clamp(Speed / FMath::Max(Tuning.MoveBlendSpeed, 1.f), 0.f, 1.f);
+	const float RunShare = FMath::Clamp((Speed - (Middle - HalfWidth)) / (2.f * HalfWidth), 0.f, 1.f);
 
 	const float Radians = FMath::DegreesToRadians(LocalAngleDegrees);
 	float Forward = FMath::Max(0.f, FMath::Cos(Radians));
@@ -462,6 +616,11 @@ void UGBEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Frame.Speed = Velocity.Size2D();
 		ComputeLocomotionTargets(Frame.Speed, FMath::RadiansToDegrees(FMath::Atan2(Local.Y, Local.X)));
 	}
+
+	// Sprint replaces Run above the run clip's authored speed; the pose layer follows its target.
+	const float RunRef = ClipInfo[static_cast<int32>(EGBEnemyClip::Run)].RefSpeed;
+	bUseSprint = Frame.Speed > RunRef * Tuning.AnimRateMax * (bUseSprint ? 0.95f : 1.05f);
+	Frame.PoseAlpha = FMath::FInterpConstantTo(Frame.PoseAlpha, PoseTarget, DeltaSeconds, 1.f / PoseBlend);
 
 	// Aim follows its target with a smoothing; the kicks decay.
 	Frame.AimPitch = FMath::FInterpTo(Frame.AimPitch, AimPitchTarget, DeltaSeconds, Tuning.AimSmooth);

@@ -23,6 +23,8 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual FVector GetChestLocation() const override { return GetAimOrigin(); }
+	virtual bool UsesAwareness() const override { return true; }
+	virtual EGBSquadClass GetSquadClass() const override { return EGBSquadClass::Flyer; }
 
 	/** Where the shots and the line of sight start (the eye, the core). */
 	virtual FVector GetAimOrigin() const { return GetActorLocation(); }
@@ -39,10 +41,12 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void InitFromDefinition(const FGBEnemyDefinition& Definition) override;
 	virtual bool TickCustomBehavior(AActor* Goal, float DeltaSeconds) override;
+	virtual void TickUnaware(AActor* Goal, float DeltaSeconds) override;
 	virtual void HandleDeath(const FGBDamageInfo& KillingBlow) override;
 	virtual void OnDamagedVisual(const FGBDamageInfo& Info, float ActualDamage) override;
 	/** A flyer moves at MaxFlySpeed: Slow, data reloads and every other MoveSpeed change must reach it. */
 	virtual void ApplyMovementStats() override;
+	virtual bool PatrolsOnNavMesh() const override { return false; }
 
 	/** Builds the visual parts from Enemies.json. Returns false when the art is missing (the placeholder stays). */
 	virtual bool BuildLook(const FGBEnemyDefinition& Def) { (void)Def; return false; }
@@ -80,6 +84,11 @@ private:
 	void UpdateHeight(float DeltaSeconds);
 
 	float SightTimer = 0.f;
+	float SeparationTimer = 0.f;
+	FVector SeparationAway = FVector::ZeroVector;
+	float OrbitNextTime = 0.f;
+	bool bOrbitValid = false;
+	FVector OrbitCache = FVector::ZeroVector;
 	float OrbitSign = 1.f;
 	float OrbitTimer = 0.f;
 	float SideSign = 1.f;

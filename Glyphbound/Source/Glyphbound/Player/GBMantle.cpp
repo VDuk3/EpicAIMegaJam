@@ -122,6 +122,84 @@ namespace GBMantle
 		return FVector2D(Lean, FMath::Abs(Lean));
 	}
 
+	bool CanVault(float TopHeight, float DepthCm, float ReachCm, float DropCm, float TopAboveLandingCm, const FVaultParams& Params)
+	{
+		return TopHeight >= Params.MinHeight && TopHeight <= Params.MaxHeight
+			&& DepthCm >= 0.f && DepthCm <= Params.MaxDepth
+			&& ReachCm <= Params.Reach
+			&& DropCm <= Params.MaxDrop
+			&& TopAboveLandingCm >= Params.MinTopAboveLanding;
+	}
+
+	float VaultEndFeetZ(float FarFloorZ, float TopZ, float ExitBelowTop)
+	{
+		return FMath::Max(FarFloorZ, TopZ - ExitBelowTop);
+	}
+
+	namespace
+	{
+		void VaultShares(float RiseShare, float DropStart, float& OutRise, float& OutDrop)
+		{
+			OutRise = FMath::Clamp(RiseShare, 0.05f, 0.9f);
+			OutDrop = FMath::Clamp(DropStart, OutRise + 0.05f, 0.95f);
+		}
+	}
+
+	FVector EvaluateVaultPath(const FVector& Start, const FVector& End, float ApexZ, float Alpha, float RiseShare, float DropStart)
+	{
+		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
+		if (A <= 0.f)
+		{
+			return Start;
+		}
+		if (A >= 1.f)
+		{
+			return End;
+		}
+		float Rise = 0.f;
+		float Drop = 0.f;
+		VaultShares(RiseShare, DropStart, Rise, Drop);
+		const float Apex = FMath::Max(ApexZ, FMath::Max(Start.Z, End.Z));
+		float Z = Apex;
+		if (A <= Rise)
+		{
+			const float T = A / Rise;
+			Z = FMath::Lerp(Start.Z, Apex, 1.f - (1.f - T) * (1.f - T));
+		}
+		else if (A >= Drop)
+		{
+			const float T = (A - Drop) / (1.f - Drop);
+			Z = FMath::Lerp(Apex, End.Z, T * T);
+		}
+		const float H = Smooth01(Rise, Drop, A);
+		return FVector(FMath::Lerp(Start.X, End.X, H), FMath::Lerp(Start.Y, End.Y, H), Z);
+	}
+
+	FVaultPose EvaluateVaultPose(float Alpha, float RiseShare, float DropStart)
+	{
+		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
+		float Rise = 0.f;
+		float Drop = 0.f;
+		VaultShares(RiseShare, DropStart, Rise, Drop);
+		const float Mid = 0.5f * (Rise + Drop);
+		FVaultPose Pose;
+		Pose.ItemLower01 = Smooth01(0.f, 0.15f, A) * (1.f - Smooth01(0.8f, 1.f, A));
+		Pose.Grip01 = Smooth01(0.f, 0.2f, A) * (1.f - Smooth01(Mid, Drop + 0.1f, A));
+		Pose.PitchDown01 = Smooth01(0.f, Rise, A) * (1.f - Smooth01(Drop, 1.f, A));
+		Pose.Roll01 = Smooth01(Rise * 0.5f, Mid, A) * (1.f - Smooth01(Mid, Drop + (1.f - Drop) * 0.7f, A));
+		Pose.Dip01 = Smooth01(Rise * 0.5f, Mid, A) * (1.f - Smooth01(Mid, Drop + (1.f - Drop) * 0.5f, A));
+		return Pose;
+	}
+
+	int32 VaultSubsteps(float AlphaDelta, float MaxStep)
+	{
+		if (MaxStep <= KINDA_SMALL_NUMBER)
+		{
+			return 1;
+		}
+		return FMath::Max(1, FMath::CeilToInt(FMath::Abs(AlphaDelta) / MaxStep - 1.e-4f));
+	}
+
 	float TurnFraction(float Alpha, float RiseShare)
 	{
 		const float A = FMath::Clamp(Alpha, 0.f, 1.f);
