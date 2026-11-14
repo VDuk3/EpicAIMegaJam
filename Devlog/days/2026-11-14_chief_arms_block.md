@@ -59,6 +59,8 @@ Prompt `Prompts/chief_arms_review_sol.md`. No quaternion-order or threading defe
 - Full `Smoke-Jam.ps1 -Offscreen`: done, 0 LogGB errors, 0 engine errors, 392 s.
 - **Game target build: failed**, on another chat's unfinished HUD work in the shared tree (`AGBHUD::SetHandOverlay`
   protected, called from `GBDevCommands.cpp`), not on this change. Only this block's hunks are committed.
+  **Update:** once that chat finished its HUD work, `Build-Jam.ps1 -Target Glyphbound` succeeded (44 s, exit 0) on
+  the tree that holds this change.
 - Not checked: the chief walking and turning, the arm rising during a real aim, the bash in a real fight. A person has to
   play it (PIE is never run by an agent).
 
