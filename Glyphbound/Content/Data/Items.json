@@ -126,6 +126,16 @@
 			"Type": "KeyItem",
 			"MaxStack": 1,
 			"Strings": { "Sprite": "quest_future" }
+		},
+		{
+			"Id": "PowerCell",
+			"DisplayName": "Power Cell",
+			"Description": "Still charged. Two sockets in the control room are missing theirs.",
+			"Type": "KeyItem",
+			"MaxStack": 2,
+			"Strings": {
+				"Sprite": "quest_future"
+			}
 		}
 	],
 	"Recipes": [

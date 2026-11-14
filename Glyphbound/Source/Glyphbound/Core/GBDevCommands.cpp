@@ -49,7 +49,9 @@
 #include "AI/GBEncounter.h"
 #include "AI/GBEncounterStarter.h"
 #include "Engine/LevelStreaming.h"
+#include "World/GBBreakable.h"
 #include "World/GBChest.h"
+#include "World/GBEnergyGate.h"
 #include "World/GBFinalPortal.h"
 #include "World/GBPortal.h"
 #include "World/GBCutsceneSubsystem.h"
@@ -870,6 +872,23 @@ namespace GBSmokeRun
 		static bool bShot = false;
 		static bool bCast = false;
 		static int32 Failures = 0;
+		static TWeakObjectPtr<AGBBreakable> BreakTarget;
+		static int32 BreakHits = 0;
+		static bool bBreakFound = false;
+		static bool bBreakStoodThreeHits = false;
+
+		/** The tour leaves no energy gate open behind it: the flags its socket checks set are cleared. */
+		static void ClearGateFlags(UWorld* World)
+		{
+			UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(World);
+			for (TActorIterator<AGBEnergyGate> It(World); Progress && It; ++It)
+			{
+				for (const FName& Flag : It->RequiredFlags)
+				{
+					Progress->SetFlag(Flag, false);
+				}
+			}
+		}
 
 		static bool Tick(float)
 		{
@@ -883,6 +902,7 @@ namespace GBSmokeRun
 			}
 			if (Index >= Spots.Num())
 			{
+				ClearGateFlags(World);
 				UE_LOG(LogGB, Display, TEXT("SMOKE tour block %s: %d spots, %d without floor"), Failures == 0 ? TEXT("passed") : TEXT("FAILED"), Spots.Num(), Failures);
 				SmokeQuitNow(TEXT("tour"));
 				return false;
@@ -911,10 +931,58 @@ namespace GBSmokeRun
 			const double InPhase = Now - PhaseStart;
 			// A spot named "castwall": the ice wall at full strength (every quick-time step right) must stand on this
 			// floor, in sight. At full size it used to rise on the roof of a low corridor (owner, 2026-11-14).
+			// A spot named "breakwall": the nearest breakable takes four hits, one every 0.4 s, and must be gone when
+			// the picture is taken. Its progress flag is taken off first, so the run leaves no broken wall behind.
+			const bool bBreakWall = Names[Index].Contains(TEXT("breakwall"));
+			if (bBreakWall && InPhase > 0.5 + 0.4 * BreakHits && BreakHits < 4)
+			{
+				if (BreakHits == 0)
+				{
+					BreakTarget.Reset();
+					float Best = TNumericLimits<float>::Max();
+					for (TActorIterator<AGBBreakable> It(World); It; ++It)
+					{
+						const float Dist = static_cast<float>(FVector::DistSquared(It->GetActorLocation(), Player->GetActorLocation()));
+						if (Dist < Best)
+						{
+							Best = Dist;
+							BreakTarget = *It;
+						}
+					}
+					bBreakFound = BreakTarget.IsValid();
+					bBreakStoodThreeHits = false;
+					if (BreakTarget.IsValid())
+					{
+						BreakTarget->BrokenFlag = NAME_None;
+					}
+				}
+				if (BreakHits == 3)
+				{
+					bBreakStoodThreeHits = BreakTarget.IsValid() && BreakTarget->GetHits() == 3;     // still whole, and it counted each one
+				}
+				++BreakHits;
+				if (BreakTarget.IsValid())
+				{
+					FGBDamageInfo Hit;
+					Hit.Amount = 20.f;
+					Hit.Instigator = Player;
+					Hit.HitLocation = BreakTarget->GetActorLocation();
+					Hit.SourceId = TEXT("SmokeTour");
+					UGBCombatLibrary::DealDamage(BreakTarget.Get(), Hit);
+				}
+			}
+			// A spot named "gatetest" stands by one socket of an energy gate: the player is handed one power cell there.
+			const bool bGateTest = Names[Index].Contains(TEXT("gatetest"));
+			if (bGateTest && !bCast && InPhase > 0.8)
+			{
+				bCast = true;
+				Player->GetInventory()->AddItem(TEXT("PowerCell"), 1);
+			}
 			const bool bCastWall = Names[Index].Contains(TEXT("castwall"));
 			if (bCastWall && !bCast && InPhase > 1.0)
 			{
 				bCast = true;
+				BreakHits = 0;
 				for (TActorIterator<AGBSpell_Wall> It(World); It; ++It)
 				{
 					It->Destroy();          // a wall left by an earlier spot would be counted with this one
@@ -939,6 +1007,66 @@ namespace GBSmokeRun
 				{
 					++Failures;
 					UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: no floor where the map marks one (hit=%d falling=%d, feet %.0f cm below the mark)"), *Names[Index], bHit ? 1 : 0, bFalling ? 1 : 0, Drop);
+				}
+				if (bBreakWall)
+				{
+					if (bBreakFound && bBreakStoodThreeHits && BreakHits == 4 && !BreakTarget.IsValid())
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the breakable stood three hits and broke at the fourth"), *Names[Index]);
+					}
+					else
+					{
+						++Failures;
+						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the breakable did not break as it should (found: %d, whole after three hits: %d, hits dealt: %d, still there: %d)"),
+							*Names[Index], bBreakFound ? 1 : 0, bBreakStoodThreeHits ? 1 : 0, BreakHits, BreakTarget.IsValid() ? 1 : 0);
+					}
+				}
+				if (bGateTest)
+				{
+					const AGBKeySocket* Nearest = nullptr;
+					float Best = TNumericLimits<float>::Max();
+					for (TActorIterator<AGBKeySocket> It(World); It; ++It)
+					{
+						const float Dist = static_cast<float>(FVector::DistSquared(It->GetActorLocation(), Player->GetActorLocation()));
+						if (Dist < Best)
+						{
+							Best = Dist;
+							Nearest = *It;
+						}
+					}
+					const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(World);
+					const bool bFlagSet = Nearest && Progress && Progress->HasFlag(Nearest->Flag);
+					if (!Player->GetInventory()->HasItem(TEXT("PowerCell")) && Nearest && Nearest->IsFilled() && bFlagSet)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the socket took the power cell and set its flag"), *Names[Index]);
+					}
+					else
+					{
+						++Failures;
+						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the socket did not take the power cell"), *Names[Index]);
+						Player->GetInventory()->RemoveItem(TEXT("PowerCell"), 1);
+					}
+				}
+				if (Names[Index].Contains(TEXT("gatecheck")))
+				{
+					// After both sockets: the gate must be out. Its flags are cleared again, so the run leaves no open gate behind.
+					int32 Gates = 0;
+					int32 Out = 0;
+					for (TActorIterator<AGBEnergyGate> It(World); It; ++It)
+					{
+						++Gates;
+						Out += It->IsOut() ? 1 : 0;
+					}
+					ClearGateFlags(World);
+					if (Gates > 0 && Out == Gates)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the energy gate went out with both sockets filled"), *Names[Index]);
+					}
+					else
+					{
+						++Failures;
+						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the energy gate is still up (%d of %d out)"), *Names[Index], Out, Gates);
+					}
 				}
 				if (bCastWall)
 				{

@@ -2,7 +2,9 @@
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "AI/GBEncounter.h"
+#include "World/GBBreakable.h"
 #include "World/GBDoor.h"
+#include "World/GBEnergyGate.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -74,6 +76,40 @@ bool FGBDoorLeafTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Starts gently: behind a straight line at a quarter"), Quarter > 0.f && Quarter < Slide.Z * 0.25f - 1.f);
 	const float ThreeQuarters = static_cast<float>(AGBDoor::ComputeLeafOffset(Slide, 0.75f).Z);
 	TestTrue(TEXT("Stops gently: ahead of a straight line at three quarters"), ThreeQuarters > Slide.Z * 0.75f + 1.f && ThreeQuarters < Slide.Z);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBBreakableHitsTest, "Glyphbound.World.BreakableHits",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBBreakableHitsTest::RunTest(const FString& Parameters)
+{
+	// A hit counts by being a hit, not by how hard it is; a blast of pellets is one hit.
+	TestTrue(TEXT("A weak hit counts"), AGBBreakable::CountsAsHit(1.f, 1.f, 10.f, 0.25f));
+	TestTrue(TEXT("A strong hit counts the same"), AGBBreakable::CountsAsHit(500.f, 1.f, 10.f, 0.25f));
+	TestFalse(TEXT("A graze under the minimum does not"), AGBBreakable::CountsAsHit(0.5f, 1.f, 10.f, 0.25f));
+	TestFalse(TEXT("A second pellet of the same blast does not"), AGBBreakable::CountsAsHit(20.f, 1.f, 0.02f, 0.25f));
+	TestTrue(TEXT("The next shot does"), AGBBreakable::CountsAsHit(20.f, 1.f, 0.3f, 0.25f));
+	// Cracks spread evenly and stop at full.
+	TestEqual(TEXT("Whole before any hit"), AGBBreakable::ComputeCrackStage(0, 4), 0.f);
+	TestEqual(TEXT("Half way after two of four"), AGBBreakable::ComputeCrackStage(2, 4), 0.5f);
+	TestTrue(TEXT("Each hit shows more"), AGBBreakable::ComputeCrackStage(3, 4) > AGBBreakable::ComputeCrackStage(2, 4));
+	TestEqual(TEXT("Never past full"), AGBBreakable::ComputeCrackStage(9, 4), 1.f);
+	TestEqual(TEXT("A bad setup shows as broken, not as whole"), AGBBreakable::ComputeCrackStage(0, 0), 1.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGBEnergyGateFlagsTest, "Glyphbound.World.EnergyGateFlags",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FGBEnergyGateFlagsTest::RunTest(const FString& Parameters)
+{
+	const TArray<FName> Two = { TEXT("SocketA"), TEXT("SocketB") };
+	TestFalse(TEXT("Shut with no socket filled"), AGBEnergyGate::AllFlagsPresent(Two, {}));
+	TestFalse(TEXT("Shut with one of two"), AGBEnergyGate::AllFlagsPresent(Two, { TEXT("SocketA") }));
+	TestFalse(TEXT("Another flag does not stand in for a missing one"), AGBEnergyGate::AllFlagsPresent(Two, { TEXT("SocketA"), TEXT("Other") }));
+	TestTrue(TEXT("Out with both"), AGBEnergyGate::AllFlagsPresent(Two, { TEXT("SocketB"), TEXT("SocketA"), TEXT("Other") }));
+	TestFalse(TEXT("A gate with no flags never goes out"), AGBEnergyGate::AllFlagsPresent({}, { TEXT("SocketA") }));
 	return true;
 }
 

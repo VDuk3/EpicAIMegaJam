@@ -17,6 +17,9 @@ os.makedirs(out_dir, exist_ok=True)      # the folder is deleted after each impo
 
 BODY = ('Corridor', 'Floor_Grid', 'Roof_Vent', 'Vent_Grid', 'Roof_Pipes')
 DOORS = (('SM_ShipCorridor_DoorA', 'BackDoor_1'), ('SM_ShipCorridor_DoorB', 'BackDoor_2'))
+# Left out. Cube.002 is the upper crate of the pair: the lower crate's mesh scaled up, open, and sunk into the lower
+# one, whose orange lid showed through its bottom (owner, 2026-11-14). One closed crate stays.
+SKIP = ('Cube.002',)
 view_layer = bpy.context.view_layer
 
 
@@ -55,7 +58,7 @@ meshes = [o for o in bpy.data.objects if o.type == 'MESH' and not o.hide_render 
 door_names = [d[1] for d in DOORS]
 print('NEGATIVE SCALE: %s' % [o.name for o in meshes if o.matrix_world.determinant() < 0])
 body = [o for o in meshes if o.name in BODY]
-details = [o for o in meshes if o.name not in BODY and o.name not in door_names]
+details = [o for o in meshes if o.name not in BODY and o.name not in door_names and o.name not in SKIP]
 for mesh_name, object_name in DOORS:
     export(mesh_name, [o for o in meshes if o.name == object_name])
 export('SM_ShipCorridor_Body', body)
