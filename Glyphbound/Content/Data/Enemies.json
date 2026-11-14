@@ -11,7 +11,7 @@
 				"MoveSpeed": 600,
 				"AttackDamage": 6,
 				"AttackRange": 130,
-				"AttackInterval": 1.0,
+				"AttackInterval": 1,
 				"AttackWindup": 0.3,
 				"AggroRange": 2400,
 				"HeadFraction": 0.3,
@@ -27,9 +27,21 @@
 				"Sprite": "orc_past"
 			},
 			"Drops": [
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.04 },
-				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.04 },
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.03 }
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 0.04
+				},
+				{
+					"ItemId": "ManaPotion",
+					"Count": 1,
+					"Chance": 0.04
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.03
+				}
 			]
 		},
 		{
@@ -43,7 +55,7 @@
 				"MoveSpeed": 450,
 				"AttackDamage": 10,
 				"AttackRange": 150,
-				"AttackInterval": 1.0,
+				"AttackInterval": 1,
 				"AttackWindup": 0.45,
 				"AggroRange": 2200,
 				"HeadFraction": 0.25,
@@ -56,9 +68,21 @@
 				"Sprite": "orc_past"
 			},
 			"Drops": [
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.08 },
-				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.08 },
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 }
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 0.08
+				},
+				{
+					"ItemId": "ManaPotion",
+					"Count": 1,
+					"Chance": 0.08
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.06
+				}
 			]
 		},
 		{
@@ -89,9 +113,21 @@
 				"ProjectileColor": "#B060FF"
 			},
 			"Drops": [
-				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.15 },
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.05 },
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 }
+				{
+					"ItemId": "ManaPotion",
+					"Count": 1,
+					"Chance": 0.15
+				},
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 0.05
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.06
+				}
 			]
 		},
 		{
@@ -123,9 +159,21 @@
 				"Sprite": "orc_past"
 			},
 			"Drops": [
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.2 },
-				{ "ItemId": "ManaPotion", "Count": 1, "Chance": 0.2 },
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.15 }
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 0.2
+				},
+				{
+					"ItemId": "ManaPotion",
+					"Count": 1,
+					"Chance": 0.2
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.15
+				}
 			]
 		},
 		{
@@ -162,8 +210,16 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 0.5 },
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.35 }
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 0.5
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.35
+				}
 			]
 		},
 		{
@@ -203,52 +259,102 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "Gem_Lightning", "Count": 1, "Chance": 1.0 },
-				{ "ItemId": "HealthPotion", "Count": 1, "Chance": 1.0 },
-				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+				{
+					"ItemId": "Gem_Lightning",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "HealthPotion",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
 			]
 		},
 		{
 			"Id": "Drone_Future",
 			"DisplayName": "Scrap Drone",
-			"AttackMode": "Melee",
+			"ActorClass": "/Script/Glyphbound.GBDroneEnemy",
+			"AttackMode": "Ranged",
 			"Element": "Physical",
 			"bPixelArt": false,
 			"Stats": {
 				"MaxHealth": 30,
 				"MoveSpeed": 600,
 				"AttackDamage": 6,
-				"AttackRange": 130,
-				"AttackInterval": 1.0,
-				"AttackWindup": 0.3,
+				"AttackRange": 1400,
+				"AttackInterval": 1.2,
+				"AttackWindup": 0.45,
 				"AggroRange": 2600,
 				"HeadFraction": 0.3,
-				"CapsuleRadius": 30,
-				"CapsuleHalfHeight": 65,
+				"CapsuleRadius": 45,
+				"CapsuleHalfHeight": 45,
 				"LightningDamageTaken": 1.25,
 				"LightningBuildUpTaken": 1.5,
 				"FireBuildUpThreshold": 60,
 				"LightningBuildUpThreshold": 60,
-				"IceBuildUpThreshold": 60
+				"IceBuildUpThreshold": 60,
+				"HoverHeight": 250,
+				"PreferredRangeMin": 400,
+				"PreferredRangeMax": 1000,
+				"OrbitStrength": 0.6,
+				"BobAmp": 15,
+				"BobHz": 0.4,
+				"VerticalSpeed": 350,
+				"TurnRate": 360,
+				"BankMax": 18,
+				"RotorSpeed": 1800,
+				"RotorMoveBoost": 0.6,
+				"EyeYawMax": 70,
+				"EyePitchMax": 40,
+				"GlowIdle": 1,
+				"GlowWindup": 6,
+				"SpreadDegrees": 1.5,
+				"MeshScale": 1,
+				"FeelerLength": 300,
+				"ClimbHeight": 260
 			},
 			"Strings": {
-				"Color": "#8A8F99"
+				"Color": "#8A8F99",
+				"Body": "/Game/Glyphbound/Characters/Drone/SM_Drone_Body",
+				"Rotor_0": "/Game/Glyphbound/Characters/Drone/SM_Drone_Rotor_0",
+				"Rotor_1": "/Game/Glyphbound/Characters/Drone/SM_Drone_Rotor_1",
+				"Rotor_2": "/Game/Glyphbound/Characters/Drone/SM_Drone_Rotor_2",
+				"Rotor_3": "/Game/Glyphbound/Characters/Drone/SM_Drone_Rotor_3",
+				"Eye": "/Game/Glyphbound/Characters/Drone/SM_Drone_Eye",
+				"Fx.Tracer": "/Game/SciFi_Impacts/FX/NS_Tracer_Red",
+				"Fx.GlowParam": "EmissiveBoost",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.06 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.04 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.06
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.04
+				}
 			]
 		},
 		{
 			"Id": "Orc_Future",
 			"DisplayName": "Armored Orc",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
 			"AttackMode": "Ranged",
 			"Element": "Physical",
 			"bPixelArt": false,
 			"Stats": {
 				"MaxHealth": 70,
 				"MoveSpeed": 400,
-				"AttackDamage": 8,
+				"AttackDamage": 3,
 				"AttackRange": 1600,
 				"AttackInterval": 1.4,
 				"AttackWindup": 0.5,
@@ -262,29 +368,70 @@
 				"LightningDamageTaken": 1.25,
 				"LightningBuildUpTaken": 1.5,
 				"FireDamageTaken": 0.75,
-				"FireBuildUpTaken": 0.5
+				"FireBuildUpTaken": 0.5,
+				"PreferredRangeMin": 600,
+				"PreferredRangeMax": 1400,
+				"BurstCount": 3,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"TurnRate": 420
 			},
 			"Strings": {
 				"Color": "#4A6A7A",
-				"ProjectileColor": "#FF5A3A"
+				"ProjectileColor": "#FF5A3A",
+				"Mesh": "/Game/Glyphbound/Characters/Orc/SK_Orc",
+				"Armor": "/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Helmet;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Chest;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Pelvis;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Thigh;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Shin;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Hand",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Idle_ADS",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Fire",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Death_Front_01",
+				"Weapon": "/Game/Glyphbound/Weapons/EnemyRifle/SM_EnemyRifle",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "1.5 -12.9 -0.6 13.3 -111.9 43.4 1"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.12 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.08 },
-				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.06 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.12
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.08
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 0.06
+				}
 			]
 		},
 		{
-			"Comment": "Provisional (site code needs): an Orc_Future copy, a bit tougher, that carries the first gun. Its pistol drop sets GotFirstGun when picked up.",
 			"Id": "Orc_Future_GunCarrier",
 			"DisplayName": "Armored Orc",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
+			"Comment": "Provisional (site code needs): an Orc_Future copy, a bit tougher, that carries the first gun. Its pistol drop sets GotFirstGun when picked up.",
 			"AttackMode": "Ranged",
 			"Element": "Physical",
 			"bPixelArt": false,
 			"Stats": {
 				"MaxHealth": 110,
 				"MoveSpeed": 400,
-				"AttackDamage": 10,
+				"AttackDamage": 4,
 				"AttackRange": 1600,
 				"AttackInterval": 1.4,
 				"AttackWindup": 0.5,
@@ -298,26 +445,60 @@
 				"LightningDamageTaken": 1.25,
 				"LightningBuildUpTaken": 1.5,
 				"FireDamageTaken": 0.75,
-				"FireBuildUpTaken": 0.5
+				"FireBuildUpTaken": 0.5,
+				"PreferredRangeMin": 600,
+				"PreferredRangeMax": 1400,
+				"BurstCount": 3,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"TurnRate": 420
 			},
 			"Strings": {
 				"Color": "#7A6A4A",
-				"ProjectileColor": "#FF5A3A"
+				"ProjectileColor": "#FF5A3A",
+				"Mesh": "/Game/Glyphbound/Characters/Orc/SK_Orc",
+				"Armor": "/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Helmet;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Chest;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Pelvis;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Thigh;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Shoulder",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Idle_ADS",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Fire",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Death_Front_01",
+				"Weapon": "/Game/Glyphbound/Weapons/EnemyRifle/SM_EnemyRifle",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "1.5 -12.9 -0.6 13.3 -111.9 43.4 1"
 			},
 			"Drops": [
-				{ "WeaponId": "Pistol", "Count": 1, "Chance": 1.0, "FlagOnPickup": "GotFirstGun" }
+				{
+					"WeaponId": "Pistol",
+					"Count": 1,
+					"Chance": 1,
+					"FlagOnPickup": "GotFirstGun"
+				}
 			]
 		},
 		{
 			"Id": "Orc_Future_Enforcer",
 			"DisplayName": "Orc Enforcer",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
 			"AttackMode": "Ranged",
 			"Element": "Physical",
 			"bPixelArt": false,
 			"Stats": {
 				"MaxHealth": 180,
 				"MoveSpeed": 380,
-				"AttackDamage": 16,
+				"AttackDamage": 4,
 				"AttackRange": 1800,
 				"AttackInterval": 1.6,
 				"AttackWindup": 0.6,
@@ -334,21 +515,62 @@
 				"FireBuildUpTaken": 0.5,
 				"FireBuildUpThreshold": 150,
 				"LightningBuildUpThreshold": 150,
-				"IceBuildUpThreshold": 150
+				"IceBuildUpThreshold": 150,
+				"PreferredRangeMin": 700,
+				"PreferredRangeMax": 1600,
+				"BurstCount": 4,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1.1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"TurnRate": 420
 			},
 			"Strings": {
 				"Color": "#2F4858",
-				"ProjectileColor": "#FF2A2A"
+				"ProjectileColor": "#FF2A2A",
+				"Mesh": "/Game/Glyphbound/Characters/Orc/SK_Orc",
+				"Armor": "/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Helmet;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Chest;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Pelvis;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Thigh;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Shin;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_UpperArm;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Shoulder;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_Hand",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Idle_ADS",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Rifle_Fire",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Death_Front_01",
+				"Weapon": "/Game/Glyphbound/Weapons/EnemyRifle/SM_EnemyRifle",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "1.5 -12.9 -0.6 13.3 -111.9 43.4 1"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.3 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.2 },
-				{ "ItemId": "ElectricGrenade", "Count": 1, "Chance": 0.15 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.3
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.2
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 0.15
+				}
 			]
 		},
 		{
 			"Id": "Orc_Future_Siege",
 			"DisplayName": "Siege Orc",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
 			"AttackMode": "Melee",
 			"Element": "Physical",
 			"bPixelArt": false,
@@ -372,21 +594,47 @@
 				"IceBuildUpThreshold": 200,
 				"FrostSlow": 0.4,
 				"SlowTaken": 0.6,
-				"IgniteDamageMult": 2
+				"IgniteDamageMult": 2,
+				"MeshScale": 1.25,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"LungeRange": 0
 			},
 			"Strings": {
 				"Color": "#5A5F4A",
 				"LightningStatusReaction": "Interrupt",
-				"IceStatusReaction": "Slow"
+				"IceStatusReaction": "Slow",
+				"Mesh": "/Game/Glyphbound/Characters/Orc/SK_Orc",
+				"Armor": "/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Helmet;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Chest;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Pelvis;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Thigh;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Shin;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_UpperArm;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Shoulder;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Hand",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Idle",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Attack_01",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Death_Front_01"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 1, "Chance": 0.7 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 0.5 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.7
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.5
+				}
 			]
 		},
 		{
 			"Id": "Orc_Future_Warlord",
 			"DisplayName": "Orc Warlord",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
 			"AttackMode": "Melee",
 			"Element": "Physical",
 			"bPixelArt": false,
@@ -413,16 +661,256 @@
 				"IceStatusImmunity": 8,
 				"FrostSlow": 0.4,
 				"SlowTaken": 0.6,
-				"IgniteDamageMult": 4
+				"IgniteDamageMult": 4,
+				"MeshScale": 1.4,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"LungeRange": 0
 			},
 			"Strings": {
 				"Color": "#7A2F2F",
 				"LightningStatusReaction": "Interrupt",
-				"IceStatusReaction": "Slow"
+				"IceStatusReaction": "Slow",
+				"Mesh": "/Game/Glyphbound/Characters/Orc/SK_Orc",
+				"Armor": "/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Helmet;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Chest;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Shoulder;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_C_UpperArm;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Pelvis;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_D_Thigh;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_A_Shin;/Game/Glyphbound/Characters/Orc/Armor/SK_OrcArmor_B_Hand",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Idle",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Unarmed_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_ChargedAttack",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Orc/Anims/A_Orc_Death_Front_01"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 3,
+					"Chance": 1
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 1
+				}
+			]
+		},
+		{
+			"Comment": "Soldier template (60 HP, ranged rifle): a skeletal robot with a hitscan rifle. Robots show sparks, not blood.",
+			"Id": "Robot_Future",
+			"DisplayName": "Security Robot",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 60,
+				"MoveSpeed": 400,
+				"AttackDamage": 3,
+				"AttackRange": 1600,
+				"AttackInterval": 1.4,
+				"AttackWindup": 0.5,
+				"AggroRange": 2600,
+				"ProjectileSpeed": 2600,
+				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.22,
+				"CapsuleRadius": 42,
+				"CapsuleHalfHeight": 96,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"PreferredRangeMin": 600,
+				"PreferredRangeMax": 1400,
+				"BurstCount": 3,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"TurnRate": 420
+			},
+			"Strings": {
+				"Color": "#6A7A8A",
+				"Mesh": "/Game/Glyphbound/Characters/Robot/SK_Robot",
+				"Armor": "",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Idle_ADS",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Fire",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Death_Front_01",
+				"Weapon": "/Game/Glyphbound/Weapons/EnemyRifle/SM_EnemyRifle",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "0.8 -5.2 -0.4 6.4 -93.6 70.3 1",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
+			},
+			"Drops": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.12
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.08
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 0.06
+				}
+			]
+		},
+		{
+			"Comment": "Elite template (180 HP): a floating sphere turret. Charges a heavy beam with a lagging aiming line; the core is the weak point.",
+			"Id": "Sentinel_Future",
+			"DisplayName": "Sentinel",
+			"ActorClass": "/Script/Glyphbound.GBSentinelEnemy",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 180,
+				"MoveSpeed": 140,
+				"AttackDamage": 17,
+				"AttackRange": 2400,
+				"AttackInterval": 2,
+				"AttackWindup": 1.4,
+				"AggroRange": 3200,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 80,
+				"CapsuleHalfHeight": 80,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 150,
+				"LightningBuildUpThreshold": 150,
+				"IceBuildUpThreshold": 150,
+				"PreferredRangeMin": 700,
+				"PreferredRangeMax": 1800,
+				"BurstCount": 4,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"MeshYaw": -90,
+				"TurnRate": 40,
+				"HoverHeight": 220,
+				"BobAmp": 12,
+				"BobHz": 0.25,
+				"CoreRadius": 45,
+				"CoreTrackAngle": 25,
+				"AimLag": 2.5,
+				"AimLockTime": 0.3,
+				"PulseIdle": 1,
+				"PulseCharge": 3,
+				"GlowIdle": 1,
+				"VerticalSpeed": 200,
+				"FeelerLength": 250,
+				"ClimbHeight": 220
+			},
+			"Strings": {
+				"Color": "#2A4A7A",
+				"Shell": "/Game/Glyphbound/Characters/Sentinel/SM_Sentinel_Shell",
+				"Core": "/Game/Glyphbound/Characters/Sentinel/SM_Sentinel_Core",
+				"Fx.Tracer": "/Game/SciFi_Impacts/FX/NS_Tracer_Blue",
+				"Fx.Impact": "/Game/SciFi_Impacts/FX/NS_Energy_Impact_1",
+				"Fx.GlowParam": "EmissiveBoost",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
+			},
+			"Drops": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.3
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.2
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 0.15
+				}
+			]
+		},
+		{
+			"Comment": "Swarm template (30 HP, 600 speed, hit 6): a spider with its own skeleton that bites and lunges.",
+			"Id": "Spider_Future",
+			"DisplayName": "Scrap Spider",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
+			"AttackMode": "Melee",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 30,
+				"MoveSpeed": 600,
+				"AttackDamage": 6,
+				"AttackRange": 150,
+				"AttackInterval": 1,
+				"AttackWindup": 0.3,
+				"AggroRange": 2600,
+				"HeadFraction": 0.3,
+				"CapsuleRadius": 40,
+				"CapsuleHalfHeight": 35,
+				"LungeRange": 500,
+				"LungeSpeed": 1500,
+				"LungeUpSpeed": 300,
+				"LungeCooldown": 2,
+				"LungeMaxTime": 1.2,
+				"MeshScale": 1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"WalkAnimSpeed": 300,
+				"RunAnimSpeed": 600,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireBuildUpThreshold": 60,
+				"LightningBuildUpThreshold": 60,
+				"IceBuildUpThreshold": 60
+			},
+			"Strings": {
+				"Color": "#6A5A4A",
+				"Mesh": "/Game/Glyphbound/Characters/Spider/SK_Spider",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Spider/Anims/A_Spider_Idle",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Spider/Anims/A_Spider_Walk",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Spider/Anims/A_Spider_Attack",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Spider/Anims/A_Spider_Hit",
+				"Anim.Death": "/Game/Glyphbound/Characters/Spider/Anims/A_Spider_Death",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
+			},
+			"Drops": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.06
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.04
+				}
 			]
 		},
 		{
@@ -462,9 +950,21 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "QuestItem_Past", "Count": 1, "Chance": 1.0 },
-				{ "ItemId": "Gem_Fire", "Count": 1, "Chance": 1.0 },
-				{ "ItemId": "Gem_Ice", "Count": 1, "Chance": 1.0 }
+				{
+					"ItemId": "QuestItem_Past",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "Gem_Fire",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "Gem_Ice",
+					"Count": 1,
+					"Chance": 1
+				}
 			]
 		},
 		{
@@ -476,9 +976,9 @@
 			"Stats": {
 				"MaxHealth": 7600,
 				"MoveSpeed": 480,
-				"AttackDamage": 18,
+				"AttackDamage": 7,
 				"AttackRange": 2200,
-				"AttackInterval": 1.0,
+				"AttackInterval": 1,
 				"AttackWindup": 0.45,
 				"AggroRange": 6000,
 				"ProjectileSpeed": 3200,
@@ -499,18 +999,58 @@
 				"IceStatusImmunity": 12,
 				"FrostSlow": 0.25,
 				"SlowTaken": 0.4,
-				"IgniteDamageMult": 8
+				"IgniteDamageMult": 8,
+				"BurstCount": 3,
+				"BurstShotInterval": 0.15,
+				"SpreadDegrees": 2.5,
+				"MoveSpreadDegrees": 3,
+				"PreferredRangeMin": 500,
+				"PreferredRangeMax": 1500,
+				"SightAngle": 180,
+				"AlertRadius": 3000,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"MeshYaw": -90,
+				"TurnRate": 480,
+				"CorpseTime": 6
 			},
 			"Strings": {
 				"Color": "#9FD8FF",
 				"ProjectileColor": "#7FE0FF",
 				"LightningStatusReaction": "Interrupt",
-				"IceStatusReaction": "Slow"
+				"IceStatusReaction": "Slow",
+				"Mesh": "/Game/Glyphbound/Characters/Valkyrie/SK_Valkyrie",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Idle",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Unarmed_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Unarmed_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Unarmed_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Unarmed_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Unarmed_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Attack_02",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Valkyrie/Anims/A_Valkyrie_Death_Front_01",
+				"Weapon": "/Game/Glyphbound/Weapons/ValkyrieSword/SM_ValkyrieSword",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "-0.9 -10.2 0.1 -36.0 163.0 96.7 1",
+				"Fx.Tracer": "/Game/SciFi_Impacts/FX/NS_Tracer_Blue",
+				"Fx.Impact": "/Game/SciFi_Impacts/FX/NS_Energy_Impact_1",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Energy_Impact_2"
 			},
 			"Drops": [
-				{ "ItemId": "QuestItem_Future", "Count": 1, "Chance": 1.0 },
-				{ "ItemId": "SwordHilt", "Count": 1, "Chance": 1.0 }
-			]
+				{
+					"ItemId": "QuestItem_Future",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "SwordHilt",
+					"Count": 1,
+					"Chance": 1
+				}
+			],
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
+			"Comment": "Provisional (enemies block, 2026-11-14): the 3D Valkyrie on the generic skeletal enemy until her own fight exists: she fires bursts of light from her sword (three bolts, about one template hit)."
 		},
 		{
 			"Id": "Entity_Phase1",
@@ -524,7 +1064,7 @@
 				"MoveSpeed": 420,
 				"AttackDamage": 20,
 				"AttackRange": 2600,
-				"AttackInterval": 1.0,
+				"AttackInterval": 1,
 				"AttackWindup": 0.45,
 				"AggroRange": 8000,
 				"ProjectileSpeed": 3400,
@@ -554,8 +1094,16 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 3,
+					"Chance": 1
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 1
+				}
 			]
 		},
 		{
@@ -571,7 +1119,7 @@
 				"MoveSpeed": 420,
 				"AttackDamage": 16,
 				"AttackRange": 2600,
-				"AttackInterval": 1.0,
+				"AttackInterval": 1,
 				"AttackWindup": 0.45,
 				"AggroRange": 8000,
 				"ProjectileSpeed": 3400,
@@ -601,8 +1149,16 @@
 				"IceStatusReaction": "Slow"
 			},
 			"Drops": [
-				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
-				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 3,
+					"Chance": 1
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 1
+				}
 			]
 		},
 		{

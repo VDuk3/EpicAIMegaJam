@@ -6,24 +6,48 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 3 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Imp_Past", "Count": 3 },
-						{ "EnemyId": "Orc_Past", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2
+						}
 					]
 				}
 			],
@@ -36,29 +60,54 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Drone_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
-						{ "EnemyId": "Drone_Future", "Count": 3 },
-						{ "EnemyId": "Orc_Future", "Count": 2 }
+						{
+							"EnemyId": "Orc_Future_Siege",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 2
+						}
 					]
 				}
 			],
 			"SkillPoints": 1,
 			"Rewards": [
-				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
 			]
 		},
 		{
@@ -67,14 +116,23 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 3 },
-						{ "EnemyId": "Orc_Past", "Count": 2 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				}
 			],
@@ -87,21 +145,37 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_GunCarrier", "Count": 1 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future_GunCarrier",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Drone_Future", "Count": 2 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				}
 			],
 			"SkillPoints": 1,
 			"Rewards": [
-				{ "ItemId": "Ammo_Magazine", "Count": 2, "Chance": 1.0 }
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
 			]
 		},
 		{
@@ -110,39 +184,78 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 5 },
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 5
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
-						{ "EnemyId": "Orc_Past", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
 					]
 				}
 			],
@@ -155,40 +268,82 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Imp_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Orc_Past", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Orc_Past", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				}
 			],
@@ -201,40 +356,82 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
-						{ "EnemyId": "Orc_Past", "Count": 3 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 5 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 5
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 5 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 5
+						}
 					]
 				}
 			],
@@ -247,38 +444,74 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Drone_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 5 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 5
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
-						{ "EnemyId": "Drone_Future", "Count": 3 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
-						{ "EnemyId": "Drone_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
-						{ "EnemyId": "Drone_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 3
+						}
 					]
 				}
 			],
@@ -291,39 +524,78 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Drone_Future", "Count": 6 },
-						{ "EnemyId": "Orc_Future", "Count": 2 }
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
-						{ "EnemyId": "Drone_Future", "Count": 4 },
-						{ "EnemyId": "Orc_Future", "Count": 2 }
+						{
+							"EnemyId": "Orc_Future_Siege",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
-						{ "EnemyId": "Orc_Future", "Count": 3 },
-						{ "EnemyId": "Drone_Future", "Count": 4 }
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
-						{ "EnemyId": "Orc_Future", "Count": 3 },
-						{ "EnemyId": "Drone_Future", "Count": 4 }
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						}
 					]
 				}
 			],
@@ -336,40 +608,82 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Drone_Future", "Count": 4 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
-						{ "EnemyId": "Orc_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 },
-						{ "EnemyId": "Orc_Future", "Count": 3 },
-						{ "EnemyId": "Drone_Future", "Count": 3 }
+						{
+							"EnemyId": "Orc_Future_Siege",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
-						{ "EnemyId": "Drone_Future", "Count": 5 }
+						{
+							"EnemyId": "Orc_Future_Siege",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 5
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Siege", "Count": 1 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 2 },
-						{ "EnemyId": "Drone_Future", "Count": 5 }
+						{
+							"EnemyId": "Orc_Future_Siege",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 5
+						}
 					]
 				}
 			],
@@ -382,8 +696,14 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Brute", "Count": 1 },
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past_Brute",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				}
 			],
@@ -396,14 +716,36 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future_Warlord", "Count": 1 },
-						{ "EnemyId": "Orc_Future", "Count": 2 },
-						{ "EnemyId": "Drone_Future", "Count": 2 }
+						{
+							"EnemyId": "Orc_Future_Warlord",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						}
 					]
 				}
 			],
 			"SkillPoints": 2,
-			"Rewards": []
+			"Rewards": [
+				{
+					"ItemId": "PowerCell",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
+			],
+			"Comment": "Provisional (enemies block, 2026-11-14): the sub-boss hall. Clearing it opens the hall's freight door (FutureSubBossDefeated) and gives the first Power Cell of the lab gate.",
+			"ClearedFlag": "FutureSubBossDefeated"
 		},
 		{
 			"Id": "Zone_Fire",
@@ -411,40 +753,82 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 },
-						{ "EnemyId": "Orc_Past", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				}
 			],
@@ -457,38 +841,74 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Orc_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				}
 			],
@@ -501,39 +921,78 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past", "Count": 5 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 5
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 8 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 8
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 2 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 2 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Imp_Past", "Count": 6 },
-						{ "EnemyId": "Orc_Past", "Count": 3 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 6
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 3
+						}
 					]
 				}
 			],
@@ -546,41 +1005,86 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Imp_Past", "Count": 8 }
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 8
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 4 },
-						{ "EnemyId": "Imp_Past", "Count": 4 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 }
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Champion", "Count": 3 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				},
 				{
-					"DelayBefore": 2.0,
+					"DelayBefore": 2,
 					"Spawns": [
-						{ "EnemyId": "Orc_Past_Juggernaut", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Champion", "Count": 1 },
-						{ "EnemyId": "Orc_Past_Shaman", "Count": 3 },
-						{ "EnemyId": "Imp_Past", "Count": 4 }
+						{
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 4
+						}
 					]
 				}
 			],
@@ -593,7 +1097,10 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Valkyrie_Past", "Count": 1 }
+						{
+							"EnemyId": "Valkyrie_Past",
+							"Count": 1
+						}
 					]
 				}
 			],
@@ -606,7 +1113,10 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Valkyrie_Future", "Count": 1 }
+						{
+							"EnemyId": "Valkyrie_Future",
+							"Count": 1
+						}
 					]
 				}
 			],
@@ -620,8 +1130,14 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 4 },
-						{ "EnemyId": "Drone_Future", "Count": 2 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 4
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						}
 					]
 				}
 			],
@@ -635,8 +1151,14 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Orc_Future", "Count": 3 },
-						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						}
 					]
 				}
 			],
@@ -650,13 +1172,20 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Herald", "Count": 1 }
+						{
+							"EnemyId": "Herald",
+							"Count": 1
+						}
 					]
 				}
 			],
 			"SkillPoints": 3,
 			"Rewards": [
-				{ "WeaponId": "Rifle", "Count": 1, "Chance": 1.0 }
+				{
+					"WeaponId": "Rifle",
+					"Count": 1,
+					"Chance": 1
+				}
 			]
 		},
 		{
@@ -665,18 +1194,138 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
-						{ "EnemyId": "Entity_Phase1", "Count": 1 }
+						{
+							"EnemyId": "Entity_Phase1",
+							"Count": 1
+						}
 					]
 				},
 				{
-					"DelayBefore": 3.0,
+					"DelayBefore": 3,
 					"Spawns": [
-						{ "EnemyId": "Entity_Phase2", "Count": 1 }
+						{
+							"EnemyId": "Entity_Phase2",
+							"Count": 1
+						}
 					]
 				}
 			],
 			"SkillPoints": 0,
 			"Rewards": []
+		},
+		{
+			"Comment": "Provisional (enemies block, 2026-11-14): the transfer bay, the base's combat hall. Robots and drones first, then armed orcs with spiders, then a sentinel and an enforcer.",
+			"Id": "Future_Bay",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Robot_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Future_GunCarrier",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 3
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Sentinel_Future",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
+			]
+		},
+		{
+			"Comment": "Provisional (enemies block): a spider ambush in a corridor.",
+			"Id": "Future_Spiders",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 4
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Comment": "Provisional (enemies block): the deep wing. Its sentinel guards the second Power Cell of the lab gate.",
+			"Id": "Future_DeepWing",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Robot_Future",
+							"Count": 2
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Sentinel_Future",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{
+					"ItemId": "PowerCell",
+					"Count": 1,
+					"Chance": 1
+				}
+			]
 		}
 	]
 }

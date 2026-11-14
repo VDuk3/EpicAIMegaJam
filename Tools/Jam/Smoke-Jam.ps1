@@ -17,7 +17,7 @@ param(
     [switch]$Offscreen,        # adds -RenderOffscreen: no window pops up
     [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
-    [int]$TimeoutSeconds = 180,
+    [int]$TimeoutSeconds = 300,   # the full run takes about 200 s since the 3D enemies block (2026-11-14)
     [int]$ResX = 1280,        # screenshot size (for example 1920 x 1080 to judge the HUD)
     [int]$ResY = 720,
     # The map to start on. The smoke steps run in the code-built test arena, which the game builds on the engine's

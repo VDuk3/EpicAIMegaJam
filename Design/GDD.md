@@ -1,11 +1,12 @@
 # Game Design Document (working draft)
 
 > Epic AI MegaJam 2026 · Theme: **DIRECTOR'S CUT** · Unreal Engine 5.9.0
-> Status: **v0.55, 2026-11-14** — owner's vision plus twenty rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
+> Status: **v0.56, 2026-11-14** — owner's vision plus twenty rounds of answers. Anything marked **TBD** is not decided yet; see "Open questions" at the end.
 > Audience: **the architect** = whichever Claude Code chat is currently implementing the game. There is normally only one at a time, and it is replaced when its context fills up or its tasks are done. This document is the source of truth that every new architect chat reads first. Implementation is delegated as `CLAUDE.md` says ("Implementador").
 > Project code name: **Glyphbound** (provisional; the game title is still TBD). Written in English because it is part of the public dev log (Glass Box) and the jam requires English.
 
 ## Changelog
+- v0.56 (2026-11-14): **the future's enemies in 3D** from the ASSETS deliveries: modular armored orcs, robot soldier, drone, sentinel, robot spider, the 3D Valkyrie with her sword; a basic first-person-shooter behaviour (notice, alert, keep distance, strafe, bursts); encounters in the future base and the two Power Cells' sources. §10, §19.
 - v0.55 (2026-11-14): owner's sixth walk of the future base, four corrections: **the Valkyrie's room keeps only the holograms** of the figures (the solid ones are out, their tubes stay empty); the glass wall is in panes, clouded; the fallen deck tiles stay tilted and can be stood on; the ladder's walkway is entered from its open end. §4 "The site".
 - v0.54 (2026-11-14): owner's fifth walk of the future base. **Hand ladders**: a new way to move, used with the Interact key from either end, with a simple climb (hands on the rungs); the deep wing's stairwell goes down by one instead of a stair. The breakable wall is **frosted glass**. The tentacle boss's hall is darker. Corners, collisions and platforms fixed. §4 "The site", §11.
 - v0.53 (2026-11-14): owner's fourth walk of the future base. **A wall that breaks in four hits** in the transfer bay leads down to **a wing under water**: stairs, a worn corridor with failing light, a small room to be infested, a corridor in complete darkness (smoke later) and **the tentacle boss's hall, a dead end**. In the medium room, **an energy gate** that goes out when **two Power Cells dropped by enemies** are set in its two devices; behind it **the Valkyrie's room**, after a battle, with her tube in sight through the gate from the start. Crates stand flush; the lab's steps are walkable; the hall's corners are closed. §4 "The site", §11.
@@ -357,6 +358,14 @@ Menus (inventory, skill trees, pause) work with keyboard, gamepad **and mouse**:
 - **The true final boss.**
 - **Enemies must get around obstacles** to reach the player (owner, 2026-11-12): never stand stuck against a wall.
 - Known enemies: **orcs** (past) and **armed orcs** (future). Other types and behavior: **TBD**. Their art follows §3 (medieval = pixel art, cyberpunk = 3D).
+- **The future's 3D enemies (v0.56, 2026-11-14, from the ASSETS deliveries; provisional).** All data-driven from `Enemies.json` (meshes, clips, weapon, VFX and tuning by key).
+  - **Armed orcs** (`Orc_Future`, `_GunCarrier`, `_Enforcer`; melee `_Siege`, sub-boss `_Warlord`): one orc body, 2.10 m, with **modular armor**: four sets (A plain, B riveted, C bone and gold, D green scales) of up to nine slots (helmet, chest, belt, thigh plates, greaves, upper-arm plates, shoulder pads, gauntlets, boots) worn over the body; each enemy id lists its pieces, so a new orc type is a line of data. Boots are left out for now (they do not fit the orc's feet).
+  - **Robot soldier** (`Robot_Future`, 1.70 m) with the robots' rifle, like the gun orcs.
+  - **Scrap Drone** (`Drone_Future`): flies 2.5 m up, circles the player, its red eye tracks him; short laser bursts.
+  - **Sentinel** (`Sentinel_Future`, elite): a floating sphere whose blue core is an eye that follows the player; it charges a beam with a visible aiming line that lags behind a moving player, then fires. The core is its weak point.
+  - **Robot spider** (`Spider_Future`, swarm): fast, leaps at the player.
+  - **Shooter behaviour (owner: "basic first-person-shooter AI")**: an enemy notices the player in a sight cone or when hit, alerts the others nearby, keeps a preferred distance band (closes in, backs off, strafes sideways between bursts, always facing the player), fires **bursts of hitscan shots** with spread (more spread against a moving player) and needs line of sight. Tracers, muzzle flashes and impacts come from the project's weapon VFX packs. Corpses of humanoids fall as ragdolls.
+  - Encounters in the future base (provisional, v0.56): the transfer bay, a spider ambush in the long corridor, the sub-boss hall (Warlord; opens its freight door and gives the first **Power Cell**), the deep wing (spiders as the infestation, a sentinel guarding the second Power Cell). Which enemies infest the deep wing is the owner's call.
 - Enemies **drop ammo** on the floor.
 - **Enemies do not respawn.** A cleared zone stays cleared, also after era travel.
 
@@ -606,15 +615,15 @@ Rules behind them: a direct spell gives about 3 damage per mana; a spell that ne
 ### Enemy templates
 | Template | Past (pixel art) | Future (3D) | Health | Speed | Hit | Lasts (base gun -> 16-point build) |
 |---|---|---|---|---|---|---|
-| Swarm | Castle Imp | Scrap Drone | 30 | 600 | 6 | 2 pistol shots |
-| Soldier | Castle Orc (melee), Orc Shaman (ranged) | Armored Orc (ranged) | 50-70 | 380-450 | 8-10 | 3-4 pistol shots, 1 shell |
-| Elite | Orc Champion | Orc Enforcer (ranged) | 180 | 380-400 | 16-18 | 4 s -> 1.7 s |
+| Swarm | Castle Imp | Scrap Drone, Robot Spider | 30 | 600 | 6 | 2 pistol shots |
+| Soldier | Castle Orc (melee), Orc Shaman (ranged) | Armored Orc, Robot Soldier (ranged) | 50-70 | 380-450 | 8-10 | 3-4 pistol shots, 1 shell |
+| Elite | Orc Champion | Orc Enforcer, Sentinel (ranged) | 180 | 380-400 | 16-18 | 4 s -> 1.7 s |
 | Slow tank (the one sponge) | Orc Juggernaut | Siege Orc | 480 | 260 | 20 every 3.1 s | 12 s -> 4.5 s |
 | Sub-boss | Orc Brute | Orc Warlord | 2,700 / 3,000 | 340-360 | 32 | 40-45 s |
 | Boss | Valkyrie (medieval) | Valkyrie (cyberpunk) | 7,200 / 7,600 | 480 | 18-22 | about 2 min |
 | Final boss | The Entity, two phases of 7,300 (8,000 before v0.40) | | 14,600 | 420-520 | 20-26 | about 3 min |
 
-An enemy attacks once every `AttackWindup + AttackInterval`. The player (750) is faster than everything, so melee enemies only hit a player who stops; the pressure comes from numbers, ranged enemies and the swarm. The tank is the only sponge and it is the slowest and softest hitter for its size. Bosses and sub-bosses are stat blocks for the generic enemy until their own behavior exists; their heavy attacks, when written, should stay at 40 or less.
+**Bursts (v0.56):** the future's gun enemies fire bursts of `BurstCount` hitscan shots; `AttackDamage` is per shot and a burst that all lands is about one hit of the table (3 x 3 for a soldier, 4 x 4 for an enforcer). An enemy attacks once every `AttackWindup + AttackInterval`. The player (750) is faster than everything, so melee enemies only hit a player who stops; the pressure comes from numbers, ranged enemies and the swarm. The tank is the only sponge and it is the slowest and softest hitter for its size. Bosses and sub-bosses are stat blocks for the generic enemy until their own behavior exists; their heavy attacks, when written, should stay at 40 or less.
 
 **Boss health follows the ammo.** A build of that point of the game empties its gun in about 40 seconds (about 4,000 damage, a bit more than half a Valkyrie); the spells give another quarter and the staff or the sword the rest. That is the "combine both eras" pillar in numbers, and it is why a Valkyrie has 7,200 and not 10,000: with more health the second half of the fight is a staff-only chore. By build, against the medieval Valkyrie: the reference build 120 s, a gun specialist 57 s, a pure mage 146 s. A player who lands half of the shots on the weak point is about 1.5 times faster. Boss arenas can still offer a magazine now and then.
 

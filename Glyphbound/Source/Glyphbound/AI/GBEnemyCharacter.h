@@ -104,6 +104,8 @@ public:
 	float GetControlLockTime() const { return ControlLockTime; }
 	void InterruptAttack();
 	void ApplyControlLock(float Seconds);
+	/** Another enemy noticed the player: this one is provoked too (chases or engages even outside its aggro range). */
+	void Alert() { if (State != EGBEnemyState::Dead) { bProvoked = true; } }
 
 	FGBOnEnemyDied OnDied;
 
@@ -120,9 +122,14 @@ protected:
 	/** Applies the definition: stats, capsule size, look. Called by SpawnEnemy before BeginPlay finishes. */
 	virtual void InitFromDefinition(const FGBEnemyDefinition& Definition);
 	virtual void PerformAttack();
+	/**
+	 * Called once per tick, after the control lock and the "no target" checks, before the Idle / Chase / Windup / Recover
+	 * flow. A subclass with its own behaviour (skeletal shooters, flyers) returns true to replace that flow for this tick.
+	 */
+	virtual bool TickCustomBehavior(AActor* Goal, float DeltaSeconds) { (void)Goal; (void)DeltaSeconds; return false; }
 	virtual void HandleDeath(const FGBDamageInfo& KillingBlow);
 	void SetState(EGBEnemyState NewState);
-	void ApplyMovementStats();
+	virtual void ApplyMovementStats();
 	AActor* FindTarget() const;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -149,7 +156,7 @@ protected:
 	virtual FVector GetChestLocation() const;
 	bool IsRanged() const;
 	/** Windup telegraph: brighter tint (3D) or a slightly bigger sprite (pixel art). */
-	void SetTelegraph(bool bOn);
+	virtual void SetTelegraph(bool bOn);
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBStatsComponent> Stats;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGBAttributeComponent> Attributes;

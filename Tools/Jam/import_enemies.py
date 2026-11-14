@@ -241,11 +241,13 @@ def add_sockets(sm, sockets):
     for name, loc in sockets.items():
         s = sm.find_socket(name)
         if s is None:
-            s = unreal.StaticMeshSocket()
+            # the socket must be created with the mesh as its outer, or it is not saved with the asset
+            s = unreal.new_object(unreal.StaticMeshSocket, outer=sm)
             s.set_editor_property("socket_name", name)
             sm.add_socket(s)
         s.set_editor_property("relative_location", unreal.Vector(loc[0], loc[1], loc[2]))
-    EAL.save_loaded_asset(sm)
+    sm.modify()
+    EAL.save_loaded_asset(sm, only_if_is_dirty=False)
 
 
 def set_slot(mesh, mi):

@@ -664,6 +664,11 @@ def fit_piece(piece, body, arm, dom, slot, side, mirror):
     bones_pat, axis, margin, cover, along_c = SLOT_DEF[slot]
     sd = SIDES[side] if side else ""
     pats = [p.replace("_{s}", sd) for p in bones_pat]
+    pv0 = [v.co for v in piece.data.vertices]
+    if slot == "Pelvis" and (max(v.z for v in pv0) - min(v.z for v in pv0)) > 0.6 * (max(v.x for v in pv0) - min(v.x for v in pv0)):
+        # set B's belt and thigh plates are one island: fit it to the hips and both thighs
+        pats = pats + ["thigh_"]
+        cover = 0.75
     wm = body.matrix_world
     pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
            if any(b == p or (not side and b.startswith(p)) or (side and b.startswith(p) and b.endswith(sd)) for p in pats)]
@@ -695,6 +700,10 @@ def fit_piece(piece, body, arm, dom, slot, side, mirror):
     if mirror:
         piece.data.transform(Matrix.Scale(-1, 4, (1, 0, 0)))
         piece.data.flip_normals()
+    if slot == "Foot":
+        # the line-up shows the boots from the side, toe towards -X: turn the toe to the front (-Y)
+        piece.data.transform(Matrix.Rotation(math.pi / 2, 4, "Z"))
+        pv = [v.co for v in piece.data.vertices]
     pmin = Vector((min(v.x for v in pv), min(v.y for v in pv), min(v.z for v in pv)))
     pmax = Vector((max(v.x for v in pv), max(v.y for v in pv), max(v.z for v in pv)))
     psize = pmax - pmin

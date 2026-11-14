@@ -20,6 +20,13 @@
 #include "NavigationSystem.h"
 #include "AI/GBEnemyCharacter.h"
 #include "AI/GBEntity.h"
+#include "AI/GBSkeletalEnemy.h"
+#include "AI/GBDroneEnemy.h"
+#include "AI/GBSentinelEnemy.h"
+#include "AI/GBEnemy3D.h"
+#include "AI/GBEncounter.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 #include "AI/GBTentacleRigComponent.h"
 #include "Combat/GBProjectile.h"
 #include "Combat/GBCombatLibrary.h"
@@ -1199,6 +1206,562 @@ namespace GBSmokeRun
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE tour: %d spots"), Spots.Num());
 			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
+		}
+	}
+
+	// ---- Enemies3D block (gb.Smoke Enemies3D): the 3D enemies of the future, three groups (shooters, flyers, melee).
+	struct FE3DEntry
+	{
+		TWeakObjectPtr<AGBEnemyCharacter> Enemy;
+		FName Id;
+		FVector Start = FVector::ZeroVector;
+		float StartDistance = 0.f;
+		float CorpseTime = 1.5f;
+	};
+	static TArray<FE3DEntry> E3DGroup;
+	static TMap<FName, int32> E3DHits;
+	static FDelegateHandle E3DHitHandle;
+	static int32 E3DShotsBefore = 0;
+	static bool bFilteredRun = false;
+
+	static void E3DBindHits()
+	{
+		E3DHits.Reset();
+		UGBCombatLibrary::OnDamageDealt().Remove(E3DHitHandle);
+		E3DHitHandle = UGBCombatLibrary::OnDamageDealt().AddLambda([](AActor* Target, const FGBDamageInfo& Info, float Dealt)
+		{
+			if (Dealt > 0.f && Cast<AGBPlayerCharacter>(Target))
+			{
+				E3DHits.FindOrAdd(Info.SourceId) += 1;
+			}
+		});
+	}
+
+	/** Spawns the listed enemies (id, wanted distance) around the player where the player has a clear view of the spot. */
+	static void E3DSpawnGroup(UWorld* World, AGBPlayerCharacter* Player, const TArray<TPair<FName, float>>& Items)
+	{
+		E3DGroup.Reset();
+		E3DBindHits();
+		GBEnemy3D::ResetShotCounters();
+		Player->GetAttributes()->SetInvulnerable(false);
+		Player->GetAttributes()->RestoreAll();
+		EGBEraPresence Presence = EGBEraPresence::Both;
+		if (UGBEraSubsystem* Era = UGBEraSubsystem::Get(World))
+		{
+			Presence = Era->GetCurrentEra() == EGBEra::Past ? EGBEraPresence::PastOnly : EGBEraPresence::FutureOnly;
+		}
+		const FVector PlayerLoc = Player->GetActorLocation();
+		const FVector EyeLoc = Player->GetAimOrigin();
+		TArray<FVector> Used;
+		int32 ItemIndex = 0;
+		for (const TPair<FName, float>& Item : Items)
+		{
+			AGBEnemyCharacter* Enemy = nullptr;
+			float PickedDistance = 0.f;
+			for (const float Scale : { 1.f, 0.7f, 0.5f })
+			{
+				for (int32 K = 0; K < 12 && !Enemy; ++K)
+				{
+					const float Yaw = (K + ItemIndex * 3) * 30.f;
+					const FVector At = PlayerLoc + FVector(FMath::Cos(FMath::DegreesToRadians(Yaw)), FMath::Sin(FMath::DegreesToRadians(Yaw)), 0.f) * Item.Value * Scale;
+					bool bTaken = false;
+					for (const FVector& Other : Used)
+					{
+						bTaken |= FVector::Dist2D(Other, At) < 300.f;
+					}
+					FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSmokeE3DLOS), false, Player);
+					FHitResult Hit;
+					if (bTaken || World->LineTraceSingleByChannel(Hit, EyeLoc, At + FVector(0.f, 0.f, 100.f), ECC_Visibility, Params))
+					{
+						continue;
+					}
+					Enemy = AGBEnemyCharacter::SpawnEnemy(World, Item.Key, At, FRotator(0.f, (PlayerLoc - At).Rotation().Yaw, 0.f), Presence);
+					if (Enemy)
+					{
+						Used.Add(At);
+						PickedDistance = Item.Value * Scale;
+					}
+				}
+				if (Enemy)
+				{
+					break;
+				}
+			}
+			if (Enemy)
+			{
+				FE3DEntry Entry;
+				Entry.Enemy = Enemy;
+				Entry.Id = Item.Key;
+				Entry.Start = Enemy->GetActorLocation();
+				Entry.StartDistance = FVector::Dist2D(Entry.Start, PlayerLoc);
+				Entry.CorpseTime = GBEnemy3D::Stat(Enemy, TEXT("CorpseTime"), 1.5f);
+				E3DGroup.Add(Entry);
+			}
+			else
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D: could not spawn %s with a clear view"), *Item.Key.ToString());
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D spawned %s=%d at %.0f cm"), *Item.Key.ToString(), Enemy ? 1 : 0, PickedDistance);
+			++ItemIndex;
+		}
+		E3DShotsBefore = GBEnemy3D::GetShotsFired();
+	}
+
+	/** Turns the player's view to the middle of the living group (so the screenshots show the enemies). */
+	static void E3DLookAtGroup(AGBPlayerCharacter* Player)
+	{
+		FVector Sum = FVector::ZeroVector;
+		int32 Count = 0;
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			if (const AGBEnemyCharacter* Enemy = Entry.Enemy.Get())
+			{
+				Sum += Enemy->GetActorLocation();
+				++Count;
+			}
+		}
+		if (Count == 0)
+		{
+			return;
+		}
+		const FVector Centre = Sum / Count;
+		if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+		{
+			PC->SetControlRotation((Centre - Player->GetAimOrigin()).Rotation());
+		}
+	}
+
+	/** Puts the player 4 m from the enemy with this id (on the side he is already on), looking at its chest. */
+	static void E3DCloseup(AGBPlayerCharacter* Player, FName Id)
+	{
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			const AGBEnemyCharacter* Enemy = Entry.Enemy.Get();
+			if (!Enemy || Entry.Id != Id)
+			{
+				continue;
+			}
+			const FVector EnemyLoc = Enemy->GetActorLocation();
+			const FVector Side = (Player->GetActorLocation() - EnemyLoc).GetSafeNormal2D();
+			FVector At = EnemyLoc + Side * 400.f;
+			At.Z = Player->GetActorLocation().Z;
+			Player->SetActorLocation(At, false, nullptr, ETeleportType::TeleportPhysics);
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation((EnemyLoc + FVector(0.f, 0.f, 40.f) - Player->GetAimOrigin()).Rotation());
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D closeup of %s at %.0f cm"), *Id.ToString(), FVector::Dist(At, EnemyLoc));
+			return;
+		}
+		UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: no %s for the closeup"), *Id.ToString());
+	}
+
+	/** The drone's rotors and eye must sit on distinct sockets, the sentinel's core in front of its shell (not all at the origin). */
+	static void E3DCheckParts(const TCHAR* GroupName, FName Id, const AGBFlyerEnemy* Flyer)
+	{
+		if (!Flyer->HasArtLook())
+		{
+			return;
+		}
+		const FVector Forward = Flyer->GetActorForwardVector();
+		if (const AGBDroneEnemy* Drone = Cast<AGBDroneEnemy>(Flyer))
+		{
+			float MinApart = 1e9f;
+			for (int32 A = 0; A < 4; ++A)
+			{
+				for (int32 B = A + 1; B < 4; ++B)
+				{
+					MinApart = FMath::Min(MinApart, FVector::Dist(Drone->GetRotorLocation(A), Drone->GetRotorLocation(B)));
+				}
+			}
+			const float EyeForward = FVector::DotProduct(Drone->GetAimOrigin() - Drone->GetBodyLocation(), Forward);
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: %s rotors at least %.0f cm apart, eye %.0f cm in front of the body"), GroupName, *Id.ToString(), MinApart, EyeForward);
+			if (MinApart < 30.f || EyeForward < 5.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s rotors %.0f cm apart (need > 30), eye %.0f cm in front (need > 5): sockets missing?"), GroupName, *Id.ToString(), MinApart, EyeForward);
+			}
+		}
+		else if (const AGBSentinelEnemy* Sentinel = Cast<AGBSentinelEnemy>(Flyer))
+		{
+			const float CoreForward = FVector::DotProduct(Sentinel->GetCoreWorldLocation() - Sentinel->GetShellLocation(), Forward);
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: %s core %.0f cm in front of the shell centre"), GroupName, *Id.ToString(), CoreForward);
+			if (CoreForward < 15.f || CoreForward > 60.f)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s core %.0f cm in front of the shell (expected about 30): socket missing?"), GroupName, *Id.ToString(), CoreForward);
+			}
+		}
+	}
+
+	/** (a) it moved, (b) it attacked (a shot, a lunge or a hit on the player), (c) flyers keep their hover height, plus the clips in use. */
+	static void E3DCheckGroup(UWorld* World, AGBPlayerCharacter* Player, const TCHAR* GroupName)
+	{
+		(void)World;
+		int32 TotalHits = 0;
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			AGBEnemyCharacter* Enemy = Entry.Enemy.Get();
+			if (!Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s is gone before the check"), GroupName, *Entry.Id.ToString());
+				continue;
+			}
+			// Horizontal distance: a flyer that only rises has not moved (its height is checked on its own).
+			const float Moved = FVector::Dist2D(Enemy->GetActorLocation(), Entry.Start);
+			const FGBEnemyDefinition* Def = Enemy->GetDefinition();
+			const bool bMelee = Def && Def->AttackMode.Equals(TEXT("Melee"), ESearchCase::IgnoreCase);
+			const float DistanceToPlayer = FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation());
+			const int32 Hits = E3DHits.FindRef(Entry.Id);
+			TotalHits += Hits;
+			int32 Attacks = 0;
+			FString Look;
+			if (AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
+			{
+				// A weapon must leave its shots from a socket (Muzzle or Tip), not from the bounds fallback.
+				if (Skeletal->HasSkeletalLook() && Skeletal->HasWeapon() && !Skeletal->HasMuzzleSocket())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s has a weapon without a Muzzle / Tip socket"), GroupName, *Entry.Id.ToString());
+				}
+				Attacks = Skeletal->GetShotCount() + Skeletal->GetLungeCount();
+				Look = Skeletal->DescribeLook();
+				if (const UGBEnemyAnimInstance* Anim = Skeletal->GetEnemyAnim())
+				{
+					if (Anim->GetClipCount() > 0 && Anim->GetEvaluateCount() == 0)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s has clips but its animation proxy never evaluated"), GroupName, *Entry.Id.ToString());
+					}
+				}
+			}
+			else if (AGBFlyerEnemy* Flyer = Cast<AGBFlyerEnemy>(Enemy))
+			{
+				Attacks = Flyer->GetShotCount();
+				Look = Flyer->DescribeFlyer();
+				E3DCheckParts(GroupName, Entry.Id, Flyer);
+				const float HeightError = FMath::Abs(Flyer->GetHeightAboveGround() - Flyer->GetWantedHeight());
+				if (HeightError > 90.f)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s is %.0f cm above the ground, wanted %.0f"), GroupName, *Entry.Id.ToString(), Flyer->GetHeightAboveGround(), Flyer->GetWantedHeight());
+				}
+			}
+			else
+			{
+				Look = Enemy->DescribeMovement();
+				Attacks = Hits;   // a plain enemy has no shot counter: a hit on the player is its proof
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: %s moved=%.0f distance=%.0f attacks=%d hitsOnPlayer=%d | %s"), GroupName, *Entry.Id.ToString(), Moved, DistanceToPlayer, Attacks, Hits, *Look);
+			// The sentinel starting inside its band holds its place by design (it only drifts to regain a line of sight).
+			const bool bHoldsByDesign = Cast<AGBSentinelEnemy>(Enemy) && Entry.StartDistance <= GBEnemy3D::Stat(Enemy, TEXT("PreferredRangeMax"), 0.f);
+			if (Moved < 50.f && !bHoldsByDesign)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s did not move (%.0f cm)"), GroupName, *Entry.Id.ToString(), Moved);
+			}
+			// A melee enemy must have landed a hit on the player (a lunge that missed is not an attack); a ranged one needs a shot logged.
+			if (bMelee ? Hits == 0 : Attacks == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s %s"), GroupName, *Entry.Id.ToString(), bMelee ? TEXT("never hit the player") : TEXT("never fired a shot"));
+			}
+		}
+		const float Health = Player->GetAttributes()->GetHealth();
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: hitscan shots=%d on target=%d, hits on the player=%d, player health %.0f / %.0f"), GroupName,
+			GBEnemy3D::GetShotsFired() - E3DShotsBefore, GBEnemy3D::GetShotsOnTarget(), TotalHits, Health, Player->GetAttributes()->GetMaxHealth());
+		if (TotalHits == 0 && Health >= Player->GetAttributes()->GetMaxHealth())
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: the player's health never dropped"), GroupName);
+		}
+		Player->GetAttributes()->SetInvulnerable(true);
+		E3DLookAtGroup(Player);
+	}
+
+	static void E3DKillGroup(AGBPlayerCharacter* Player)
+	{
+		Player->GetAttributes()->SetInvulnerable(true);
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			if (AGBEnemyCharacter* Enemy = Entry.Enemy.Get())
+			{
+				FGBDamageInfo Info;
+				Info.Amount = 1000000.f;
+				Info.Instigator = Player;
+				Info.HitLocation = Enemy->GetActorLocation();
+				Info.HitDirection = (Enemy->GetActorLocation() - Player->GetActorLocation()).GetSafeNormal();
+				Info.SourceId = TEXT("SmokeEnemies3D");
+				UGBCombatLibrary::DealDamage(Enemy, Info);
+				UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D killed %s: dead=%d"), *Entry.Id.ToString(), Enemy->IsDead() ? 1 : 0);
+				if (const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
+				{
+					// Ragdoll: needs a physics asset on the mesh; without one the death clip plays instead.
+					const bool bPhysicsAsset = Skeletal->GetMesh() && Skeletal->GetMesh()->GetPhysicsAsset();
+					UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s death: physicsAsset=%d ragdoll=%d"), *Entry.Id.ToString(), bPhysicsAsset ? 1 : 0, Skeletal->IsRagdolling() ? 1 : 0);
+					if (bPhysicsAsset && Skeletal->HasSkeletalLook() && !Skeletal->IsRagdolling())
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s has a physics asset but did not ragdoll"), *Entry.Id.ToString());
+					}
+				}
+				if (!Enemy->IsDead())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s did not die to 1,000,000 damage"), *Entry.Id.ToString());
+				}
+			}
+		}
+		Player->GetAttributes()->RestoreAll();
+	}
+
+	static void E3DCheckCorpses(const TCHAR* GroupName)
+	{
+		int32 Left = 0;
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			// An enemy with a CorpseTime longer than the check waits (a boss) is allowed to still lie there.
+			Left += (Entry.Enemy.IsValid() && Entry.CorpseTime <= 4.5f) ? 1 : 0;
+		}
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: corpses left after the corpse time: %d of %d"), GroupName, Left, E3DGroup.Num());
+		if (Left > 0)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %d corpse(s) not removed"), GroupName, Left);
+		}
+		UGBCombatLibrary::OnDamageDealt().Remove(E3DHitHandle);
+	}
+
+	// ---- Enemies3DBase block (gb.Smoke Enemies3DBase on the real map): the encounters the builder placed in FutureBase.
+	struct FE3BSpawn
+	{
+		TWeakObjectPtr<AGBEnemyCharacter> Enemy;
+		FName Id;
+		FVector Start = FVector::ZeroVector;
+		float StartDistance = 0.f;
+	};
+	static FName E3BId = NAME_None;
+	static TArray<FE3BSpawn> E3BSpawned;
+	static TSet<TWeakObjectPtr<AGBEnemyCharacter>> E3BBefore;
+	static int32 E3BPowerCellsBefore = 0;
+	static int32 E3BShotsBefore = 0;
+	static int32 E3BActedCount = 0;
+	static int32 E3BKilled = 0;
+	static bool bE3BNoted = false;
+
+	/** Only a filtered run on the real map plays this block (the full run's tour removes encounters and must not be disturbed). */
+	static bool E3BActive(UWorld* World)
+	{
+		if (!bFilteredRun || !World)
+		{
+			return false;
+		}
+		const bool bRealMap = World->GetMapName().Contains(TEXT("FutureBase"));
+		if (!bRealMap && !bE3BNoted)
+		{
+			bE3BNoted = true;
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase skipped: it needs -Map /Game/Glyphbound/Maps/FutureBase"));
+		}
+		return bRealMap;
+	}
+
+	static AGBEncounter* E3BFindEncounter(UWorld* World, FName Id)
+	{
+		for (TActorIterator<AGBEncounter> It(World); It; ++It)
+		{
+			if (It->EncounterId == Id)
+			{
+				return *It;
+			}
+		}
+		return nullptr;
+	}
+
+	static int32 E3BCountPowerCells(UWorld* World)
+	{
+		int32 Count = 0;
+		for (TActorIterator<AGBPickup> It(World); It; ++It)
+		{
+			Count += It->GetDrop().ItemId == FName(TEXT("PowerCell")) ? 1 : 0;
+		}
+		return Count;
+	}
+
+	static void E3BBegin(UWorld* World, AGBPlayerCharacter* Player, FName Id, const FVector& Stand)
+	{
+		if (!E3BActive(World))
+		{
+			return;
+		}
+		E3BId = Id;
+		E3BSpawned.Reset();
+		E3BBefore.Reset();
+		E3BActedCount = 0;
+		E3BKilled = 0;
+		for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+		{
+			E3BBefore.Add(*It);
+		}
+		E3BPowerCellsBefore = E3BCountPowerCells(World);
+		GBEnemy3D::ResetShotCounters();
+		E3BShotsBefore = 0;
+		Player->GetAttributes()->SetInvulnerable(true);
+		Player->GetAttributes()->RestoreAll();
+		const float HalfHeight = Player->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		Player->SetActorLocation(Stand + FVector(0.f, 0.f, HalfHeight + 3.f), false, nullptr, ETeleportType::TeleportPhysics);
+		if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+		{
+			Move->Velocity = FVector::ZeroVector;
+		}
+		const AGBEncounter* Encounter = E3BFindEncounter(World, Id);
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s: player at %s, encounter found=%d state=%d flagsMet=%d"), *Id.ToString(), *Stand.ToCompactString(), Encounter ? 1 : 0,
+			Encounter ? static_cast<int32>(Encounter->GetState()) : -1, Encounter && Encounter->AreRequiredFlagsMet() ? 1 : 0);
+		if (!Encounter)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: the encounter is not in the map"), *Id.ToString());
+		}
+	}
+
+	/** Enemies that came with the encounter: alive, not there before the player arrived. */
+	static void E3BCollectNew(UWorld* World, TArray<AGBEnemyCharacter*>& Out)
+	{
+		Out.Reset();
+		for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+		{
+			if (!It->IsDead() && !E3BBefore.Contains(*It))
+			{
+				Out.Add(*It);
+			}
+		}
+	}
+
+	static void E3BRecord(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		if (!E3BActive(World))
+		{
+			return;
+		}
+		const AGBEncounter* Encounter = E3BFindEncounter(World, E3BId);
+		if (!Encounter)
+		{
+			return;
+		}
+		TArray<AGBEnemyCharacter*> Enemies;
+		E3BCollectNew(World, Enemies);
+		for (AGBEnemyCharacter* Enemy : Enemies)
+		{
+			FE3BSpawn Spawn;
+			Spawn.Enemy = Enemy;
+			Spawn.Id = Enemy->GetEnemyId();
+			Spawn.Start = Enemy->GetActorLocation();
+			Spawn.StartDistance = FVector::Dist(Spawn.Start, Player->GetActorLocation());
+			E3BSpawned.Add(Spawn);
+		}
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s: state=%d wave=%d of %d, %d enemies spawned, %d alive"), *E3BId.ToString(), static_cast<int32>(Encounter->GetState()),
+			Encounter->GetCurrentWave() + 1, Encounter->GetNumWaves(), E3BSpawned.Num(), Encounter->GetAliveCount());
+		if (Encounter->GetState() != EGBEncounterState::Active)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: the encounter did not become Active (state %d)"), *E3BId.ToString(), static_cast<int32>(Encounter->GetState()));
+		}
+		if (E3BSpawned.Num() == 0)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: wave 1 spawned nothing"), *E3BId.ToString());
+		}
+	}
+
+	/** At least half of the spawned enemies moved towards the player, strafed, or shot. Then the camera looks at them. */
+	static void E3BBehave(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		if (!E3BActive(World))
+		{
+			return;
+		}
+		E3BActedCount = 0;
+		FVector Sum = FVector::ZeroVector;
+		int32 Alive = 0;
+		for (const FE3BSpawn& Spawn : E3BSpawned)
+		{
+			const AGBEnemyCharacter* Enemy = Spawn.Enemy.Get();
+			if (!Enemy || Enemy->IsDead())
+			{
+				continue;
+			}
+			const float Distance = FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation());
+			const float Moved = FVector::Dist2D(Enemy->GetActorLocation(), Spawn.Start);
+			int32 Attacks = 0;
+			if (const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
+			{
+				Attacks = Skeletal->GetShotCount() + Skeletal->GetLungeCount();
+			}
+			else if (const AGBFlyerEnemy* Flyer = Cast<AGBFlyerEnemy>(Enemy))
+			{
+				Attacks = Flyer->GetShotCount();
+			}
+			const bool bActed = Spawn.StartDistance - Distance >= 100.f || Moved >= 100.f || Attacks > 0;
+			E3BActedCount += bActed ? 1 : 0;
+			Sum += Enemy->GetActorLocation();
+			++Alive;
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s: %s moved=%.0f distance %.0f -> %.0f attacks=%d acted=%d"), *E3BId.ToString(), *Spawn.Id.ToString(), Moved, Spawn.StartDistance, Distance, Attacks, bActed ? 1 : 0);
+		}
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s: %d of %d enemies acted, hitscan shots=%d"), *E3BId.ToString(), E3BActedCount, E3BSpawned.Num(), GBEnemy3D::GetShotsFired());
+		if (E3BSpawned.Num() > 0 && E3BActedCount * 2 < E3BSpawned.Num())
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: only %d of %d enemies moved towards the player or shot"), *E3BId.ToString(), E3BActedCount, E3BSpawned.Num());
+		}
+		if (Alive > 0)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation(((Sum / Alive) - Player->GetAimOrigin()).Rotation());
+			}
+		}
+	}
+
+	/** Kills every enemy the encounter has put in the world so far (the next wave comes after its delay). */
+	static void E3BKill(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		if (!E3BActive(World))
+		{
+			return;
+		}
+		TArray<AGBEnemyCharacter*> Enemies;
+		E3BCollectNew(World, Enemies);
+		for (AGBEnemyCharacter* Enemy : Enemies)
+		{
+			FGBDamageInfo Info;
+			Info.Amount = 1000000.f;
+			Info.Instigator = Player;
+			Info.HitLocation = Enemy->GetActorLocation();
+			Info.HitDirection = (Enemy->GetActorLocation() - Player->GetActorLocation()).GetSafeNormal();
+			Info.SourceId = TEXT("SmokeEnemies3D");
+			UGBCombatLibrary::DealDamage(Enemy, Info);
+			E3BKilled += Enemy->IsDead() ? 1 : 0;
+		}
+		const AGBEncounter* Encounter = E3BFindEncounter(World, E3BId);
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s: killed %d (total %d), state=%d wave=%d of %d"), *E3BId.ToString(), Enemies.Num(), E3BKilled,
+			Encounter ? static_cast<int32>(Encounter->GetState()) : -1, Encounter ? Encounter->GetCurrentWave() + 1 : 0, Encounter ? Encounter->GetNumWaves() : 0);
+	}
+
+	/** Cleared, its flag set, the Power Cell dropped where it should. One summary line per encounter. */
+	static void E3BFinish(UWorld* World)
+	{
+		if (!E3BActive(World))
+		{
+			return;
+		}
+		const AGBEncounter* Encounter = E3BFindEncounter(World, E3BId);
+		const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(World);
+		const bool bCleared = Encounter && Encounter->GetState() == EGBEncounterState::Cleared;
+		const FName Flag = Encounter ? Encounter->GetClearedFlag() : NAME_None;
+		const bool bFlag = Progress && !Flag.IsNone() && Progress->HasFlag(Flag);
+		const int32 Cells = E3BCountPowerCells(World) - E3BPowerCellsBefore;
+		const bool bWantsCell = E3BId == FName(TEXT("SubBoss_Future")) || E3BId == FName(TEXT("Future_DeepWing"));
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase %s summary: spawned=%d acted=%d shots=%d cleared=%d flag=%s(%d) powerCellDrops=%d"), *E3BId.ToString(), E3BSpawned.Num(), E3BActedCount,
+			GBEnemy3D::GetShotsFired(), bCleared ? 1 : 0, *Flag.ToString(), bFlag ? 1 : 0, Cells);
+		if (!bCleared)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: not Cleared after killing the waves"), *E3BId.ToString());
+		}
+		if (!bFlag)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: its cleared flag '%s' is not set"), *E3BId.ToString(), *Flag.ToString());
+		}
+		if (E3BId == FName(TEXT("SubBoss_Future")) && Flag != FName(TEXT("FutureSubBossDefeated")))
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase SubBoss_Future FAILED: it must set FutureSubBossDefeated, not '%s'"), *Flag.ToString());
+		}
+		if (bWantsCell && Cells < 1)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase %s FAILED: no PowerCell pickup dropped"), *E3BId.ToString());
 		}
 	}
 
@@ -4293,11 +4856,114 @@ namespace GBSmokeRun
 				Move->Velocity = FVector::ZeroVector;
 			}
 		});
+		// ---- Enemies3D block (gb.Smoke Enemies3D): three groups, each: spawn, check (moves, attacks, hover), kill, corpses gone.
+		const float E3 = U + 43.2f;
+		const float E3Group = 12.7f;
+		{
+			using FItems = TArray<TPair<FName, float>>;
+			auto Items = [](std::initializer_list<TPair<FName, float>> List) { return FItems(List); };
+			struct FGroup { const TCHAR* Name; FItems Spawn; float Check; };
+			const FGroup Groups[] = {
+				{ TEXT("shooters"), Items({ { FName(TEXT("Robot_Future")), 1700.f }, { FName(TEXT("Orc_Future")), 1700.f }, { FName(TEXT("Orc_Future_Enforcer")), 1700.f }, { FName(TEXT("Orc_Future_GunCarrier")), 1300.f } }), 5.5f },
+				{ TEXT("flyers"), Items({ { FName(TEXT("Drone_Future")), 1500.f }, { FName(TEXT("Sentinel_Future")), 2300.f }, { FName(TEXT("Valkyrie_Future")), 1500.f } }), 5.5f },
+				{ TEXT("melee"), Items({ { FName(TEXT("Spider_Future")), 900.f }, { FName(TEXT("Orc_Future_Siege")), 450.f }, { FName(TEXT("Orc_Future_Warlord")), 500.f } }), 3.2f },
+			};
+			for (int32 G = 0; G < UE_ARRAY_COUNT(Groups); ++G)
+			{
+				const float T = E3 + G * E3Group;
+				const FGroup Group = Groups[G];
+				const FString StepSpawn = FString::Printf(TEXT("Enemies3D: %s spawn"), Group.Name);
+				// The step names must outlive BuildSteps: keep them in a static pool.
+				static TArray<TSharedPtr<FString>> NamePool;
+				auto Keep = [](const FString& Text) -> const TCHAR* { NamePool.Add(MakeShared<FString>(Text)); return **NamePool.Last(); };
+				Add(T, Keep(StepSpawn), [Group](UWorld* World, AGBPlayerCharacter* Player)
+				{
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation(FRotator::ZeroRotator);
+					}
+					FVector EnemySpawn;
+					FVector PlayerSpot;
+					AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+					Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+					E3DSpawnGroup(World, Player, Group.Spawn);
+				});
+				// Half way, a heal: a strong group (the Valkyrie) must not kill the player before the check and the screenshot.
+				Add(T + Group.Check * 0.5f, Keep(FString::Printf(TEXT("Enemies3D: %s heal"), Group.Name)), [](UWorld*, AGBPlayerCharacter* Player) { Player->GetAttributes()->RestoreAll(); });
+				Add(T + Group.Check, Keep(FString::Printf(TEXT("Enemies3D: %s check"), Group.Name)), [Group](UWorld* World, AGBPlayerCharacter* Player)
+				{
+					E3DCheckGroup(World, Player, Group.Name);
+				});
+				Add(T + Group.Check + 0.1f, Keep(FString::Printf(TEXT("Enemies3D: %s screenshot"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter*)
+				{
+					Shot(*FString::Printf(TEXT("enemies3d_%s"), Group.Name));
+				});
+				if (G == 0)
+				{
+					Add(T + Group.Check + 0.3f, TEXT("Enemies3D: closeup of an armored orc"), [](UWorld*, AGBPlayerCharacter* Player) { E3DCloseup(Player, FName(TEXT("Orc_Future_Enforcer"))); });
+					Add(T + Group.Check + 0.9f, TEXT("Enemies3D: closeup screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("enemies3d_enforcer_closeup")); });
+				}
+				Add(T + Group.Check + 1.8f, Keep(FString::Printf(TEXT("Enemies3D: %s kill"), Group.Name)), [](UWorld*, AGBPlayerCharacter* Player) { E3DKillGroup(Player); });
+				Add(T + Group.Check + 6.2f, Keep(FString::Printf(TEXT("Enemies3D: %s corpses removed"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter*) { E3DCheckCorpses(Group.Name); });
+			}
+		}
+		const float E3End = E3 + 3.f * E3Group;
+		// A filtered run (gb.Smoke Enemies3D) has no seal block to end it: it quits here. The full run goes on.
+		Add(E3End, TEXT("Enemies3D: done"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			if (bFilteredRun)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+				FPlatformMisc::RequestExit(false);
+			}
+		});
 		// ---- Seal block (gb.Smoke seal): a state machine, see SealRun.
 		// It quits the run itself when done; the quit step below is only a far safety net.
-		const float Z = U + 43.8f;
+		const float Z = E3End + 0.6f;
 		Add(Z, TEXT("seal: seal, era block with a real doorway, captions, cancel, gun drop"), SealRun::Start);
 		Add(Z + 0.5f, TEXT("tour: a real map's own review spots (skipped on a map without them)"), TourRun::Start);
+		// ---- Enemies3DBase block: the four builder encounters of FutureBase, only in a filtered run on that map.
+		{
+			struct FSpot { const TCHAR* Id; FVector Stand; };
+			const FSpot Spots[] = {
+				{ TEXT("Future_Bay"), FVector(2700.f, -75.f, 0.f) },
+				{ TEXT("Future_Spiders"), FVector(3380.f, 5300.f, 0.f) },
+				{ TEXT("SubBoss_Future"), FVector(3380.f, 8300.f, 0.f) },
+				{ TEXT("Future_DeepWing"), FVector(11300.f, 0.f, -600.f) },
+			};
+			const float BaseGroup = 27.f;
+			static TArray<TSharedPtr<FString>> BasePool;
+			auto BaseName = [](const FString& Text) -> const TCHAR* { BasePool.Add(MakeShared<FString>(Text)); return **BasePool.Last(); };
+			for (int32 Index = 0; Index < UE_ARRAY_COUNT(Spots); ++Index)
+			{
+				const float T = Z + 5.f + Index * BaseGroup;
+				const FSpot Spot = Spots[Index];
+				const FName Id(Spot.Id);
+				Add(T, BaseName(FString::Printf(TEXT("Enemies3DBase: %s teleport"), Spot.Id)), [Id, Spot](UWorld* World, AGBPlayerCharacter* Player) { E3BBegin(World, Player, Id, Spot.Stand); });
+				Add(T + 1.5f, BaseName(FString::Printf(TEXT("Enemies3DBase: %s wave 1"), Spot.Id)), [](UWorld* World, AGBPlayerCharacter* Player) { E3BRecord(World, Player); });
+				Add(T + 8.f, BaseName(FString::Printf(TEXT("Enemies3DBase: %s behaviour"), Spot.Id)), [](UWorld* World, AGBPlayerCharacter* Player) { E3BBehave(World, Player); });
+				Add(T + 8.3f, BaseName(FString::Printf(TEXT("Enemies3DBase: %s screenshot"), Spot.Id)), [Id](UWorld* World, AGBPlayerCharacter*)
+				{
+					if (E3BActive(World))
+					{
+						Shot(*FString::Printf(TEXT("enemies3dbase_%s"), *Id.ToString()));
+					}
+				});
+				for (int32 Round = 0; Round < 6; ++Round)
+				{
+					Add(T + 8.8f + Round * 2.6f, BaseName(FString::Printf(TEXT("Enemies3DBase: %s kill %d"), Spot.Id, Round + 1)), [](UWorld* World, AGBPlayerCharacter* Player) { E3BKill(World, Player); });
+				}
+				Add(T + 24.8f, BaseName(FString::Printf(TEXT("Enemies3DBase: %s cleared"), Spot.Id)), [](UWorld* World, AGBPlayerCharacter*) { E3BFinish(World); });
+			}
+			Add(Z + 5.f + UE_ARRAY_COUNT(Spots) * BaseGroup, TEXT("Enemies3DBase: done"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				if (bFilteredRun)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+					FPlatformMisc::RequestExit(false);
+				}
+			});
+		}
 		Add(Z + 400.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
@@ -4347,6 +5013,7 @@ namespace GBSmokeRun
 		{
 			// Filtered run (gb.Smoke Entity): only the steps whose name starts with the argument, plus the quit step, from 1 s on.
 			const FString Prefix = Args[0];
+			bFilteredRun = true;
 			Steps.RemoveAll([&Prefix](const FStep& Step) { return !FString(Step.Name).StartsWith(Prefix, ESearchCase::IgnoreCase) && FCString::Strcmp(Step.Name, TEXT("quit")) != 0; });
 			if (Steps.Num() <= 1)
 			{

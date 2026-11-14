@@ -335,6 +335,12 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 		return;
 	}
 
+	if (TickCustomBehavior(Goal, DeltaSeconds))
+	{
+		UpdateStuck(DeltaSeconds);
+		return;
+	}
+
 	const float AggroRange = Stats->GetStat(GBStat::AggroRange, 0.f);
 	const float AttackRange = Stats->GetStat(GBStat::AttackRange, 0.f);
 	const bool bCanAttack = AttackRange > 0.f && Stats->GetStat(GBStat::AttackDamage, 0.f) > 0.f;
