@@ -34,6 +34,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Seal")
 	FName CutsceneId = GBSealName::DefaultCutscene;
 
+	/**
+	 * Optional: the map to open instead of the travel in place (a long package name, for example
+	 * /Game/Glyphbound/Maps/FutureBase). For a site whose past and future are two maps: after the cutscene the game
+	 * opens that map, which starts in its own era. Empty, or not a map that exists = the travel in place.
+	 * Only the progress flags cross to the new map (the same hand-over gap as AGBFinalPortal).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Seal")
+	FString TravelMapPath;
+
+	/** True if TravelMapPath names a map package this build can open (loose in the project, or cooked into the package). */
+	bool HasTravelMap() const;
+
 	/** True once the SealUsed flag is set. */
 	bool IsUsed() const;
 

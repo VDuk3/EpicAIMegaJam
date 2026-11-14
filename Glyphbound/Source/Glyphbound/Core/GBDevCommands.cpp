@@ -1189,6 +1189,29 @@ namespace GBSmokeRun
 						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: the energy gate is still up (%d of %d out)"), *Names[Index], Out, Gates);
 					}
 				}
+				if (Names[Index].Contains(TEXT("sealmap")))
+				{
+					// A seal that sends the player to another map: that map must be one this build can open (in a
+					// package it has to be cooked). Without this the seal falls back to the travel in place, silently.
+					int32 Seals = 0;
+					int32 Ready = 0;
+					FString Map;
+					for (TActorIterator<AGBSeal> It(World); It; ++It)
+					{
+						++Seals;
+						Ready += It->HasTravelMap() ? 1 : 0;
+						Map = It->TravelMapPath;
+					}
+					if (Seals > 0 && Ready == Seals)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE tour %s: the seal's map %s can be opened"), *Names[Index], *Map);
+					}
+					else
+					{
+						++Failures;
+						UE_LOG(LogGB, Error, TEXT("SMOKE tour %s: %d of %d seals have a map that can be opened ('%s')"), *Names[Index], Ready, Seals, *Map);
+					}
+				}
 				if (bCastWall)
 				{
 					int32 Walls = 0;

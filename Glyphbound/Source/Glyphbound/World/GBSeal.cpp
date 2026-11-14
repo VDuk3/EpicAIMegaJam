@@ -3,12 +3,15 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
+#include "Kismet/GameplayStatics.h"
 #include "Core/GBPlaceholder.h"
+#include "Core/GBTypes.h"
 #include "Player/GBPlayerCharacter.h"
 #include "World/GBCutsceneSubsystem.h"
 #include "World/GBEraComponent.h"
 #include "World/GBEraSubsystem.h"
 #include "World/GBProgressSubsystem.h"
+#include "Misc/PackageName.h"
 
 namespace GBSealLocal
 {
@@ -160,6 +163,16 @@ void AGBSeal::Tick(float DeltaSeconds)
 		ResetUse();
 		return;
 	}
+	if (HasTravelMap())
+	{
+		// The future of this site is another map: open it. SealUsed stays set in the game instance.
+		bTravelPending = false;
+		PendingPlayer.Reset();
+		SetActorTickEnabled(false);
+		UE_LOG(LogGB, Log, TEXT("%s: the seal opens the map %s."), *GetName(), *TravelMapPath);
+		UGameplayStatics::OpenLevel(this, FName(*TravelMapPath));
+		return;
+	}
 	UGBEraSubsystem* Era = UGBEraSubsystem::Get(this);
 	if (Era && Era->RequestTravel(EGBEra::Future, Player, false))
 	{
@@ -167,6 +180,12 @@ void AGBSeal::Tick(float DeltaSeconds)
 		PendingPlayer.Reset();
 		SetActorTickEnabled(false);
 	}
+}
+
+bool AGBSeal::HasTravelMap() const
+{
+	// Asked of the package store, not of the file system: in a packaged build the map is inside a container file.
+	return !TravelMapPath.IsEmpty() && FPackageName::IsValidLongPackageName(TravelMapPath, false) && FPackageName::DoesPackageExist(TravelMapPath);
 }
 
 void AGBSeal::ResetUse()

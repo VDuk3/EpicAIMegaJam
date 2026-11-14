@@ -1,7 +1,7 @@
 # The castle (past): plan, version 1
 
 > Written by the architect (Claude Fable 5.2) on 2026-11-14, at the owner's request. Version 0 was a proposal on paper; the owner answered "yes, go ahead" and this version is drawn **to scale over the castle as the pack's author assembled it**, now restored and measured.
-> Status: **a plan, nothing built.** The keep's numbers are measured. Everything outside the keep (wards, walls, crypt) is a proposal, waiting for the owner.
+> Status: **slice 1 is built** (owner: "yes, build it"): section 10 says what the map really has and where it differs from this plan. It waits for the owner's first walk.
 > Drawing: `Devlog/media/2026-11-14/castle_plan_v1.png` (plan and section, made by `Design/Levels/make_castle_plan.js`).
 > Nothing of the deleted world plan (2026-11-13) is reused: not its layout, its route or its zone names.
 
@@ -99,7 +99,7 @@ Heights above the lower ward. The keep's zero sits 1.5 m above it, so that its f
 | 0 | gatehouse passage and lower ward | the start |
 | +2.1 m | upper ward and the two side yards | the wide stair, or the rubble at the breach |
 | +2.4 m | the keep's ground floor: Front Hall, Main Hall, King's Hall, Side Hall | the keep's gate arch |
-| +10 m | the wall walk | the wall stair in a side yard |
+| +12 m (the plan first said +10; measured when built) | the wall walk | the wall stair in a side yard |
 | +11.7 m | the galleries of the wings; the Front Hall's upper floor | the grand stair, a spiral stair, or the wall walk through a wall tower |
 | +20.7 m | the roof walk between the entrance towers; the Side Hall's terrace | the spiral stairs; the Side Hall's stair |
 | +26.5 m and up | the Top Level: three floors and four turrets | the grand stair's last flight, then the turrets' spiral stairs |
@@ -163,3 +163,32 @@ The rules of `FUTURE_BASE_SLICE1.md` section 5 and of section 2 above, and:
 1. Is slice 1 right as drawn (gate, two wards, Front Hall, Main Hall, crypt stair, cells, the seal's hall)?
 2. The pixel-art look of the castle's stone: which way to go, from a test on one section.
 3. Where each element lives, and where the medieval Valkyrie is bound.
+
+## 10. What is built (version 1 of the map, 2026-11-14) and what is not
+Map: `/Game/Glyphbound/Maps/PastCastle`, built by `Tools/Jam/Build-PastCastle.py` in nine stages (world, ground, keep, gate, walls, wards, camp, crypt, gameplay). **The game now starts on this map**, and the seal opens the future base.
+
+| Place in the plan | Version 1 | Differs from the plan |
+|---|---|---|
+| 6.1 Gatehouse | The author's gatehouse, whole (316 pieces), its passage on the map's axis. The player starts on the road 13 m outside it | Its passage is an arch about 3 m wide, not 10 |
+| 6.2 The wards | Curtain walls 52 m apart (50 pieces of the pack's wall, crenels outwards) with the author's wall tower at the four corners; the lower ward paved with the pack's cobbles; the upper ward 2.1 m higher on a retaining wall of twelve 4 m modules with its coping, paved in stone; the wide stair in the middle; the breach (one module gone, an unseen slope under rocks) at one end; the camp: a fire with a flickering light, five barricades of kegs, barrels and crates, a cart; the orcs' stores and a weapon stand in the far side yard; the author's wall stair in the other, shut by a portcullis | **The wall walk is 12 m up, not 10** (measured from the author's own stair and towers: it is level with the keep's galleries). No pickups placed yet |
+| 6.3 Front Hall, 6.4 Main Hall | The author's keep, whole: 5,190 pieces from six of his levels, with a warm light at each of his 50 torches | **Nothing in the keep is shut.** The doors to the wings, the grand stair and the spiral stairs are all open, so the owner can walk every hall on his first visit; they are barred on his word |
+| 6.5 The crypt stair and the cells | From the second interior set. The stair's mouth is an open flight in the Main Hall's rear corner on the King's Hall side, beside the grand stair's first flight, with a parapet on its two long sides; it passes under the keep's back wall (a low doorway, about 2 m), then a second flight, a landing, a turn, two more flights; a vaulted corridor of three bays with a cell off each (two barred, the middle one open, with a chest) | Four of the hall's floor tiles are left out for the mouth. The broken floor, the arches between bays and the chest's content are not done |
+| 6.6 The seal's hall | Three by three vaulted bays (24 x 24 m) on four pillars, 12 m below the keep's floor (Z -960). The seal (`AGBSeal`) at the far end between four standing blocks, under a cold light that is seen from the corridor before the hall is | The vault's crown is 7.5 m up, not 11. The standing stones are plain blocks |
+
+**Light.** A low warm sun, a sky light, fog; the eye adapts between the ward and the halls within limits. Inside: one light per torch of the author's. In the crypt: a candle's worth of warm light at each turn and bay, and the seal's cold light. Plain slabs of rock stand around and over the crypt so that no daylight reaches it.
+
+**The seal joins the two maps** (new: `AGBSeal::TravelMapPath`). After its caption the seal opens `/Game/Glyphbound/Maps/FutureBase`, which starts in the future. Only the progress flags cross; at this point of the game the player carries nothing else.
+
+**The fight.** `Opening_Past` is placed: it starts when the player is out of the gate passage; eight points for its enemies, at the fire, behind the barricades and on the terrace. Not yet seen with its enemies.
+
+**Materials.** Every piece keeps the material its author gave it. The second interior set has none: it wears the castle pack's wall and floor stone. The upper ward's tiles are the author's terrace tiles, paved in stone instead of his timber. The pixel-art look of the past is not applied (section 9).
+
+**Collision.** Kit pieces block as they look (complex collision as simple, both sides), set on 108 mesh assets of the pack; small props and what hangs overhead do not block.
+
+**Review.** `gb.Smoke tour` stands the player on 28 spots, from the road to the seal, and checks that the seal's map can be opened. The builder walks seven routes for holes and for anything across them.
+
+**Not built, or left open**
+- The land outside is a flat plain; behind the keep the crypt's rock is plain slabs, not seen from this slice.
+- Pickups (potions, the chest), the cells' broken floor, the arches between the corridor's bays.
+- Closing the keep for the opening (wings, grand stair, spiral stairs), if the owner wants the route enforced.
+- The wall walk, the towers, the upper floors as places of play: later slices.
