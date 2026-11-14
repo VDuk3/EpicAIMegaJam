@@ -1316,9 +1316,50 @@ async def stage_deep():
     log.append('deep: stairwell 16 x 12 m with a landing and a 4 m stair 6 m down, worn corridor 40 m (2 failing lamps), small room 12 x 12 m, dark corridor 25 m, tentacle hall 36 x 28 x 12 m with broken galleries and a rubble heap')
 
 
+# The base's fights (asked for by the enemies chat on the owner's order to it, 2026-11-14: "incorporate the enemies and
+# leave them playable"). Each is an AGBEncounter that exists in the future only: (encounter id in Encounters.json,
+# the middle of its trigger box, the box's half size, the floor height, where its enemies appear).
+# The places are the map's: the trigger is where the player is already inside the room, never in its doorway; the
+# enemies appear on the far side from the way in, on the floor (none of them can use crates, ladders or galleries),
+# with the room's cover between them and the player. The medium room (the lab) has none: the owner's own word.
+# ENCOUNTERS_ON = False builds the map without any of them.
+ENCOUNTERS_ON = True
+ENCOUNTERS = [
+    # the transfer bay: the player comes in from the west; they come from its east end and out of the north branch
+    ('Future_Bay', (3700, -75, 150), (1200, 400, 300), 0,
+     [(4550, -100), (4850, 50), (5000, -250), (4350, 200), (3380, 800), (3380, 1400), (3600, 1100)]),
+    # the long corridor: an ambush from ahead once the player is half way along it
+    ('Future_Spiders', (3380, 5600, 150), (160, 450, 200), 0,
+     [(3320, 6500), (3440, 6650), (3320, 6850), (3440, 7000)]),
+    # the sub-boss hall: starts once the player is out from under the entry bridge; they stand before the exit door
+    ('SubBoss_Future', (3380, 9550, 150), (1350, 1450, 300), 0,
+     [(3380, 10800), (3100, 10850), (3660, 10850), (2600, 10200), (4150, 10200), (3380, 10300)]),
+    # the deep wing: the small room, with more coming up the dark corridor behind it
+    ('Future_DeepWing', (11654, 0, -450), (540, 540, 250), -600,
+     [(12050, -300), (12050, 300), (11900, 0), (12800, 0), (13400, 60), (14000, -60)]),
+]
+
+
+async def stage_encounters():
+    s = 'encounters'
+    if not ENCOUNTERS_ON:
+        log.append('encounters: switched off')
+        return
+    for enc_id, centre, extent, floor, spawns in ENCOUNTERS:
+        a = eas.spawn_actor_from_class(unreal.GBEncounter, unreal.Vector(*centre), rot())
+        a.set_editor_property('encounter_id', unreal.Name(enc_id))
+        a.set_editor_property('presence', unreal.GBEraPresence.FUTURE_ONLY)
+        a.set_editor_property('trigger_extent', unreal.Vector(*extent))
+        # relative to the actor; 100 cm over the floor, where an enemy's middle is
+        a.set_editor_property('spawn_points', [unreal.Vector(x - centre[0], y - centre[1], floor + 100.0 - centre[2]) for x, y in spawns])
+        tag(a, s, 'Gameplay')
+    log.append('encounters: ' + ', '.join('%s at (%d, %d, %d) with %d spawn points' % (e[0], e[1][0], e[1][1], e[1][2], len(e[4])) for e in ENCOUNTERS))
+
+
 # Review spots: (name, x, y, floor z, yaw). The game's smoke block "tour" puts the player on each one and takes a
 # screenshot through the real game camera (gb.Smoke tour). On a spot whose name has "castwall" it also casts the ice
-# wall at full strength and checks that it stands on that floor; on "breakwall" it hits the nearest breakable four
+# wall at full strength and checks that it stands on that floor (the tour removes every encounter before it starts,
+# so no fight begins while the map is being looked at); on "breakwall" it hits the nearest breakable four
 # times and checks that it broke; on "gatetest" it hands the player a power cell by a socket and checks the socket took
 # it, and on "gatecheck" that the energy gate went out.
 TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('03_corridor', 300, -50, 0, 0),
@@ -1430,7 +1471,7 @@ def enable_collision():
 
 ALL = [('world', stage_world), ('corridor', stage_corridor), ('hall', stage_hall), ('control', stage_control),
        ('north', stage_north), ('hall_design', stage_hall_design), ('arrival', stage_arrival), ('rooms', stage_rooms),
-       ('lab', stage_lab), ('valk', stage_valk), ('long', stage_long), ('boss', stage_boss), ('deep', stage_deep), ('tour', stage_tour)]
+       ('lab', stage_lab), ('valk', stage_valk), ('long', stage_long), ('boss', stage_boss), ('deep', stage_deep), ('encounters', stage_encounters), ('tour', stage_tour)]
 
 # ---- run ----
 if not eal.does_asset_exist(MAP):

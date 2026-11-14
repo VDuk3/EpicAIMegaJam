@@ -1164,6 +1164,12 @@ namespace GBSmokeRun
 			Failures = 0;
 			bPlaced = false;
 			bShot = false;
+			// The tour looks at the map; it does not fight in it. A spot inside an encounter's trigger would start the
+			// fight, and a dead player fails every check after it. The encounters are taken out for this run only.
+			for (TActorIterator<AGBEncounter> It(World); It; ++It)
+			{
+				It->Destroy();
+			}
 			TArray<TPair<FString, FTransform>> Found;
 			for (TActorIterator<AActor> It(World); It; ++It)
 			{
