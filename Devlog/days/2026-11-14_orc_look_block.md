@@ -97,3 +97,13 @@ Translation: (1, on the gauntlets of sets B and D) the wrist is bent towards the
 - **Boot shafts.** The last row of Armor 2, which the first fit called greaves, are tall boot shafts; cutting the boots at the ankle and bringing those shafts down to them (the first reading of "take the upper part of the boots off") left the upper part of a boot in place. They are no longer fitted or exported (`SKIP_SLOTS`); the lower leg is the suit from knee to boot, with its orange ring at the knee. Eight slots per set now. This is the architect's reading of the owner's picture, said to him as such.
 
 Media, replaced: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_legs`, `orc_refit_B_gauntlet.png`; new: `orc_refit_gauntlets_front.png`.
+
+## The owner's third look: the knee line and set B
+
+> 1. Quita la linea naranja 2. Sigue mal la mano, solo elimina este modelo
+
+Translation: (1, over a picture of the four pairs of knees) take the orange line off; (2, over a picture of the set B orc) the hand is still wrong, just delete this model.
+
+- **Knee rings** removed from the suit's light lines. The collar ring, the elbow rings and the spine line stay; this is the architect's reading (the picture shows knees only), said to the owner.
+- **Set B** (riveted iron with spikes) is no longer fitted or exported (`SKIP_SETS`). Three attempts at its glove (a left one, a mitten that is nearly its own mirror image) did not give a hand the owner accepted, and he chose to drop the set instead of spending a fourth. Its pieces stay in the delivered file. Three sets remain: A (plain military), C (bone and gold), D (green scales). Set B was the horde chief's; who wears what is decided again at import.
+- All sheets now show three sets: `orc_refit_front.png`, `_side`, `_back`, `_walk`, `_aim`, `_gauntlets`, `_gauntlets_front`, `_heads`, `_legs`. `orc_refit_B_gauntlet.png` is kept as the record of the dropped set.

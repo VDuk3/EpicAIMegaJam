@@ -22,6 +22,9 @@ BOOT_TOP = 0.185     # m above the floor: the boots are cut here (ankle)
 # are tall boot shafts (the first fit called them greaves); with the boots cut at the ankle they were still the upper
 # part of a boot. They are not fitted and not exported: the lower leg is the suit, from the knee to the boot.
 SKIP_SLOTS = ("Shin",)
+# Owner, 2026-11-14, third look, on set B: "the hand is still wrong, just delete this model". Set B (riveted iron,
+# spikes) is not fitted and not exported. Its pieces stay in the delivered file and its numbers stay in TUNE.
+SKIP_SETS = ("B",)
 TUNE = {
     ("A", "Helmet"): {"s": 2.75}, ("B", "Helmet"): {"s": 2.85, "dy": -0.025}, ("C", "Helmet"): {"s": 3.15, "dz": 0.07, "dy": 0.015}, ("D", "Helmet"): {"s": 2.75},
     ("D", "Chest"): {"top": 1.87},
@@ -897,11 +900,11 @@ def paint_suit(body, arm, dom):
     trim = np.zeros((Hd, Wd), dtype=np.float32)
     glow = np.zeros((Hd, Wd), dtype=np.float32)
     zc = np.zeros((Hd, Wd), dtype=np.float32)
-    # light lines, 7 mm wide: a ring inside the collar band, a ring round each elbow and each knee, and one line down
-    # the spine. They sit where no set covers the suit (neck, elbows, knees, the small of the back).
+    # light lines, 7 mm wide: a ring inside the collar band, a ring round each elbow, and one line down
+    # the spine. They sit where no set covers the suit (neck, elbows, the small of the back).
     rings = []
     for sd in ("_r", "_l"):
-        for a_, b_, lim in (("upperarm", "lowerarm", 0.16), ("thigh", "calf", 0.20)):
+        for a_, b_, lim in (("upperarm", "lowerarm", 0.16),):       # the knee rings went: owner, "take the orange line off"
             J = _bh(arm, b_ + sd)
             rings.append((np.array(J), np.array((J - _bh(arm, a_ + sd)).normalized()), lim))
     spine_top, spine_bot = _bh(arm, "neck_01").z, _bh(arm, "spine_01").z
@@ -1046,7 +1049,7 @@ def do_armor():
         src_ob.data.materials[0].name = "M_OrcArmor%d" % fn
         groups = piece_groups(src_ob, fn)
         for (st, slot, side), verts in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2] != "r")):
-            if slot in SKIP_SLOTS:
+            if slot in SKIP_SLOTS or st in SKIP_SETS:
                 continue
             sides = [side] if side else (["r", "l"] if slot in ("Hand", "Foot") else [None])
             for sd in sides:
