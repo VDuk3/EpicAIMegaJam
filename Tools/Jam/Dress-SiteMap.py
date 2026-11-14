@@ -224,14 +224,19 @@ def gen_actor(key, label):
 
 def hide_box(actor):
     if actor:
+        actor.modify()
         comp = actor.get_component_by_class(unreal.StaticMeshComponent)
+        comp.modify()
         comp.set_visibility(False, True)
         comp.set_editor_property('cast_shadow', False)
 
 
 def skin_box(actor, material_name):
     if actor:
-        actor.get_component_by_class(unreal.StaticMeshComponent).set_material(0, wa_material(material_name))
+        actor.modify()
+        comp = actor.get_component_by_class(unreal.StaticMeshComponent)
+        comp.modify()
+        comp.set_material(0, wa_material(material_name))
 
 
 def reset():
@@ -258,7 +263,9 @@ def spawn_mesh(key, folder, label, mesh, location, yaw=0.0, scale=(1.0, 1.0, 1.0
     actor = eas.spawn_actor_from_class(unreal.StaticMeshActor, location, unreal.Rotator(roll=0.0, pitch=0.0, yaw=yaw))
     comp = actor.static_mesh_component
     comp.set_static_mesh(mesh)
-    comp.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    # The profile, not set_collision_enabled: a named profile (BlockAll) re-applies its own settings when the map is
+    # loaded, which silently gave every kit mesh its collision back (the door piece's hull closed the doorway, 2026-11-14).
+    comp.set_collision_profile_name('NoCollision')
     comp.set_editor_property('can_character_step_up_on', unreal.CanBeCharacterBase.ECB_NO)
     comp.set_editor_property('can_ever_affect_navigation', False)
     if material:

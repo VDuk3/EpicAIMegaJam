@@ -238,6 +238,27 @@ Its source files moved to `Glyphbound/SourceArt/Environment/SpaceshipCorridor/`.
   - The game now starts on the site.
 - **Next for size:** cap the kits' textures (the plan suggests 1024) before the corridor model adds more.
 
+## The owner's first play: stuck at the start
+The owner: *"No puedo pasar del inicio"* ("I can't get past the start"), with a screenshot of the open gothic doorway D1.
+
+**The cause, measured in the Editor:** all 374 dressing meshes still had the `BlockAll` profile with full collision.
+- `Dress-SiteMap.py` turned their collision off with `set_collision_enabled`, but a named collision profile re-applies its own settings when the map is loaded.
+- So the kit door piece's single hull, which the planner had warned about, closed the doorway again.
+- The navmesh smoke passed anyway, because the dressing meshes do not affect navigation.
+
+**The fix:**
+- The script now sets the `NoCollision` profile, and marks actors and components modified, so the change is saved.
+- The 374 meshes were fixed in place, and a reload confirms `NoCollision` on all of them.
+
+**A check that would have caught it:** the `sitemap` smoke now sweeps the player's own capsule (pawn channel) from the start through D1 into the courtyard, and fails naming the blocking actor.
+- **Seen failing:** in the Editor with the door piece's collision put back, the same capsule trace stops at `Wall_04_D1`.
+- **Seen passing** with the fix.
+
+**Repackaged:** `TeamTBD_Glyphbound.zip`, 819.6 MB, BuildCookRun 63 s.
+- The packaged `sitemap` smoke is clean, including the walk.
+- The full arena smoke is clean (147 s).
+- Sent to the owner again.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.

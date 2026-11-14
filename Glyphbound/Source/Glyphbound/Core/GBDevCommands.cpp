@@ -1025,6 +1025,23 @@ namespace GBSmokeRun
 				if (PathIsDirect(Probe, Straight) || (Probe.bValid && !Probe.bPartial && InPhase > 0.0 && Probe.Length < Straight * 3.0))
 				{
 					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap nav (past): start spot -> courtyard exists: length=%.0f (straight %.0f) after %.1f s"), Probe.Length, Straight, InPhase);
+					// The navmesh ignores dressing meshes, the player does not: sweep the player's own capsule along the
+					// walk through door D1 (owner, 2026-11-14: a kit door piece kept its collision and closed the doorway).
+					const UCapsuleComponent* WalkCapsule = Player->GetCapsuleComponent();
+					const FVector WalkFrom = Player->GetActorLocation();
+					const FVector WalkTo(Courtyard.X, Courtyard.Y, WalkFrom.Z);
+					FCollisionQueryParams WalkParams(SCENE_QUERY_STAT(GBSmokeSiteWalk), false, Player);
+					FHitResult WalkHit;
+					const bool bWalkBlocked = World->SweepSingleByChannel(WalkHit, WalkFrom, WalkTo, FQuat::Identity, ECC_Pawn,
+						FCollisionShape::MakeCapsule(WalkCapsule->GetScaledCapsuleRadius(), WalkCapsule->GetScaledCapsuleHalfHeight() - 5.f), WalkParams);
+					if (bWalkBlocked)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE sitemap walk (past): the player's capsule is blocked by %s at %s"),
+							WalkHit.GetActor() ? *WalkHit.GetActor()->GetName() : TEXT("?"), *WalkHit.ImpactPoint.ToCompactString());
+						Fail(TEXT("the player cannot walk from the start through door D1 into the courtyard"));
+						break;
+					}
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap walk (past): the player's capsule passes from the start through D1 into the courtyard"));
 					Next(ShotPast);
 				}
 				else if (InPhase > 60.0)
