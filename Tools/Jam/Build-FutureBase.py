@@ -803,7 +803,8 @@ async def stage_valk():
     all the lab assets, with its materials somewhat corroded or destroyed, more as if there had been a battle than as
     if it were abandoned; the Valkyrie will be there and she has to be seen even though the player has not opened
     the door, to wake the player's curiosity at the start").
-    It is the lab kit's room once more, this time whole: the figures, their holograms and their tubes. It starts at
+    It is the lab kit's room once more, with the holograms of its figures and their tubes; the solid figures that
+    stood in the tubes are out (owner, sixth walk: "take out the figures that are not holograms"). It starts at
     the kit's inner doorway (its entry hall is left out) 1.2 m behind the gate, on the same axis, so the big tube
     against its far wall is straight ahead of anyone who looks through the gate: that tube is the Valkyrie's.
     After a battle: four fifths of the room's own glow is gone, scorch marks and grime on floor and walls, chairs
@@ -816,8 +817,10 @@ async def stage_valk():
     for i, src in enumerate(room):
         cx = (src['bmin'][0] + src['bmax'][0]) / 2.0 if src.get('bmin') else src['loc'][0]
         name = src.get('mesh', src.get('class', ''))
-        if cx > 705 or 'CreatureAlien06-Pose2' in name:
-            continue                                   # the entry hall, and the alien in the Valkyrie's tube
+        if cx > 705:
+            continue                                   # the entry hall
+        if 'CreatureAlien' in name and not any('Hologram' in (m or '') for m in src.get('mats', [])):
+            continue                                   # owner, 2026-11-14: "take out the figures that are not holograms"; the tubes stay, empty
         it = dict(src)
         if it['kind'] == 'mesh':
             it['mats'] = [battle_instance(m) for m in it.get('mats', [])]
@@ -1121,23 +1124,27 @@ async def stage_deep():
     # An AGBLadder at the ladder's foot and one at its head: the Interact key carries the player along it.
     edge = x0 + 400
     dock_z = -LADDER_DROP
-    dock_x = edge + 450
+    dock_x = edge + 600
     box(s, 'Backing', (edge - 12, edge), (y0, y1), (dock_z, -22))   # under the landing is shut
     floor_fit(s, edge, dock_x, y0, y1, dock_z)
     box(s, 'Dock', (edge, dock_x), (y0, y1), (Z, dock_z - 2))       # the dock is a solid block; its face is the drop
-    for cy in (-380.0, 420.0):
+    for cy in (40.0, 485.0):
         boss_crate(s, dock_x + BIG_W / 2.0 + 1.0, cy, 0, 0, Z)      # 1.38 m, then 0.57 m more onto the dock
-    # The platform: its deck is 85 cm below its own origin and spans its own Y -264..203; its ladder is at its +X edge,
-    # 170 cm towards +Y. Placed with the deck centred on the landing's middle.
-    mesh(s, 'Ladder', DWS + 'SM_PropsA09', (edge - 90, LADDER_Y - 170.0, 85.0), collide=True)
-    foot = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(edge + 215, LADDER_Y, dock_z), rot(yaw=180))
-    head = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(edge + 80, LADDER_Y, 0), rot(yaw=0))
+    # The piece is a walkway: 4.7 m long along its own Y and 1.5 m wide, railed on both long sides, open at its -Y
+    # end, with the ladder on its +X side near the far end; its deck is 85 cm below its own origin. It runs straight
+    # out from the landing, its open end on the landing's edge (owner, sixth walk: "take away the first yellow tube
+    # that is in the way": the first placement had it sideways, and its own side rail ran across the way in).
+    walk_y = LADDER_Y - 100.0                                       # the middle of the walkway's deck
+    mesh(s, 'Ladder', DWS + 'SM_PropsA09', (edge + 264, walk_y + 173.5, 85.0), rot(yaw=-90), collide=True)
+    ladder_x, ladder_y = edge + 434.0, walk_y - 76.5                # where its ladder hangs
+    foot = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(ladder_x, ladder_y - 55.0, dock_z), rot(yaw=90))
+    head = eas.spawn_actor_from_class(unreal.GBLadder, unreal.Vector(ladder_x, ladder_y + 80.0, 0), rot(yaw=-90))
     for end, rise in ((foot, LADDER_DROP), (head, -LADDER_DROP)):
         end.set_editor_property('rise', rise)
         end.set_editor_property('step_off', 135.0)
         tag(end, s, 'Ladder')
-    rail(s, edge, y0, edge, LADDER_Y - 434.0, 0.0)                  # the landing's railing, open where the platform stands out
-    rail(s, edge, LADDER_Y + 33.0, edge, y1, 0.0)
+    rail(s, edge, y0, edge, walk_y - 100.0, 0.0)                    # the landing's railing, open at the walkway's end
+    rail(s, edge, walk_y + 100.0, edge, y1, 0.0)
     box(s, 'Frame', (x1 - 4, x1 + 54), (-215, -200), (Z, 0))        # the worn corridor's mouth in the east wall
     box(s, 'Frame', (x1 - 4, x1 + 54), (200, 215), (Z, 0))
     box(s, 'Frame', (x1 - 4, x1 + 54), (-215, 215), (Z + 318, 0))
@@ -1170,7 +1177,7 @@ async def stage_deep():
     half = BIG_W / 2.0 + 2.0
     boss_crate(s, x1 - 425 - half, y0 + 210, 0, 0, Z)
     boss_crate(s, x1 - 425 - half, y0 + 210, 0, 1, Z)
-    boss_crate(s, x1 - 425 - half - BIG_W, y0 + 210, 0, 0, Z)
+    boss_crate(s, x1 - 425 - half, y0 + 210 + BIG_W, 0, 0, Z)     # the first step, beside the stack along the wall (the dock is in front of it)
     boss_crate(s, x1 - 408 - half, y1 - 260, 0, 0, Z)
     # Shellfish and stones, with collision (owner: "give those white objects collision"): on the dock and on the floor.
     for k, (mx, my, mz, size) in enumerate(((edge + 90, y0 + 110, dock_z, 1.5), (edge + 180, y0 + 80, dock_z, 1.0), (edge + 70, y0 + 230, dock_z, 1.2),
@@ -1253,11 +1260,25 @@ async def stage_deep():
     rail(s, x1 - 400, y0 + 1200, x1 - 400, y1 - 400, G)             # east: its south end is open
     # What fell: deck tiles and railing from the torn ends, on the floor under them.
     tile, railing = MSS + 'Floor/SM_floor_200x200_02', MSS + 'Railing/SM_railing_200_02'
-    # Two of the tiles came down flat on crates and serve as platforms (owner: "it should work as a platform"; the
-    # first version left them tilted in the air). A deck tile's walking face is 20 cm above its own origin.
-    for cx, cy in ((x0 + 2150, y0 + 300), (x1 - 600, y0 + 760)):
-        boss_crate(s, cx, cy, 0, 0, Z)
-        mesh(s, 'Wreck', tile, (cx - 100, cy + 100, Z + BIG_H), collide=True)
+    # Two tiles hang tilted where they fell. The player can get onto them (owner: "it should work as a platform",
+    # and, when the architect answered by laying them flat on crates: "you had to leave this as it was; the change
+    # was that the player could get on it"). So they are where and how they were, each with an unseen plate on its
+    # upper face: a deck tile's own collision is a grating's, full of holes, and feet caught in it.
+    for k, (loc, r) in enumerate((((x0 + 2050, y0 + 260, Z + 95), rot(pitch=-38, yaw=12)), ((x1 - 560, y0 + 700, Z + 60), rot(pitch=24, roll=18, yaw=-40)))):
+        mesh(s, 'Wreck', tile, loc, r, collide=True)
+        face = unreal.MathLibrary.greater_greater_vector_rotator(unreal.Vector(100.0, -100.0, 23.0), r)     # the tile's middle, just over its face
+        plate_actor = eas.spawn_actor_from_object(asset('/Engine/BasicShapes/Cube'), unreal.Vector(loc[0] + face.x, loc[1] + face.y, loc[2] + face.z), r)
+        plate_actor.set_actor_scale3d(unreal.Vector(2.0, 2.0, 0.05))
+        pc = plate_actor.static_mesh_component
+        pc.set_mobility(unreal.ComponentMobility.STATIC)
+        pc.set_collision_profile_name('BlockAll')
+        plate_actor.set_actor_hidden_in_game(True)
+        tag(plate_actor, s, 'Collision')
+        # A review spot on the tile's middle: the tour fails if the player does not stay standing there.
+        top = unreal.MathLibrary.greater_greater_vector_rotator(unreal.Vector(100.0, -100.0, 26.0), r)
+        spot = eas.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(loc[0] + top.x, loc[1] + top.y, loc[2] + top.z), rot(yaw=180.0 * k))
+        spot.tags = [unreal.Name(TAG), unreal.Name('stage_' + s), unreal.Name('GBTour'), unreal.Name('tour_68%s_pit_on_tile' % 'ab'[k])]
+        spot.set_folder_path(unreal.Name('Base/tour'))
     mesh(s, 'Wreck', tile, (x0 + 2260, y0 + 520, Z + 4), rot(yaw=31), collide=True)
     mesh(s, 'Wreck', railing, (x0 + 1750, y0 + 640, Z + 8), rot(roll=86, yaw=-24), collide=True)
     mesh(s, 'Wreck', railing, (x1 - 620, y0 + 900, Z + 8), rot(roll=84, yaw=70), collide=True)
@@ -1317,11 +1338,11 @@ TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('
         ('33_boss_corner_pile', 3500, 10400, 0, 50), ('34_boss_corner_sw', 2700, 8300, 0, -135), ('34b_boss_corner_se', 4000, 8300, 0, -45),
         ('34c_boss_corner_ne', 4000, 10500, 0, 45), ('34d_boss_corner_nw', 2700, 10500, 0, 135),
         ('26_east_stair', 5200, -100, 0, 150), ('27_alcove_pit', 1250, 700, -290, 20),
-        ('49_bay_shutter', 4800, 0, 0, 0), ('50_bay_breakwall', 4800, 0, 0, 0), ('51_well_top', 5450, 0, 0, 0), ('51b_laddertest_down', 5780, 200, 0, 0), ('51c_well_platform', 5550, -150, 0, 25), ('52_well_bottom', 6600, -20, -600, 180), ('52b_well_ladder', 6080, -150, -405, 140),
-        ('52c_laddertest_up', 5915, 200, -405, 180), ('52d_well_tanks', 6250, 0, -600, -25), ('53_worn_start', 7150, 0, -600, 0),
+        ('49_bay_shutter', 4800, 0, 0, 0), ('50_bay_breakwall', 4800, 0, 0, 0), ('51_well_top', 5450, 0, 0, 0), ('51b_laddertest_down', 6134, 104, 0, -90), ('51c_well_walkway', 5520, 100, 0, 0), ('52_well_bottom', 6600, -20, -600, 180), ('52b_well_ladder', 6134, -380, -405, 90),
+        ('52c_laddertest_up', 6134, -32, -405, 90), ('52d_well_tanks', 6400, 250, -600, -60), ('53_worn_start', 7150, 0, -600, 0),
         ('54_worn_mid', 8900, 0, -600, 0), ('55_worn_end', 10700, 0, -600, 0), ('56_nest', 11250, 0, -600, 0), ('57_nest_back', 12100, -350, -600, 150),
         ('58_dark', 12500, 0, -600, 0), ('59_dark_end', 14450, 0, -600, 0), ('60_pit_entry', 14950, 0, -600, 0), ('61_pit_middle', 16300, -300, -600, 30),
-        ('62_pit_back', 18000, 0, -600, 180), ('63_pit_north_gallery', 17000, 1200, -200, -120), ('64_pit_south_end', 16500, -1000, -600, 200), ('65_pit_corner_ne', 17600, 700, -600, 45), ('66_pit_platform', 16700, -800, -600, -70)]
+        ('62_pit_back', 18000, 0, -600, 180), ('63_pit_north_gallery', 17000, 1200, -200, -120), ('64_pit_south_end', 16500, -1000, -600, 200), ('65_pit_corner_ne', 17600, 700, -600, 45), ('66_pit_platform', 16500, -850, -600, -110), ('67_pit_tile_east', 17500, -900, -600, 0)]
 
 
 TOUR_ONLY = ()        # while reviewing one part: beginnings of spot names; empty = every spot (always, before a commit)
@@ -1349,8 +1370,8 @@ WALKS = [('arrival to corridor', [(-500, 60, 0), (300, 0, 0)]), ('corridor to st
          ('lab floor up the steps onto the dais and to the energy gate', [(1550, 3700, 410), (1550, 3797, 410), (1550, 3904, 460), (1550, 4900, 460)]),
          ('long corridor through its far door into the sub-boss hall', [(3380, 7300, 0), (3380, 8300, 0)]),
          ('bay through the glass wall onto the landing', [(5000, -100, 0), (5600, -100, 0)]),
-         ('from the ladder\'s foot across the dock', [(5915, 200, -405), (6120, 200, -405)]),
-         ('from the dock\'s foot to the worn corridor', [(6300, 0, -600), (6890, 0, -600)]),
+         ('from the ladder\'s foot across the dock', [(6134, -40, -405), (6134, -350, -405)]),
+         ('from the dock\'s foot to the worn corridor', [(6500, 0, -600), (6890, 0, -600)]),
          ('deep wing: worn corridor, small room, dark corridor, the last hall', [(6890, 0, -600), (11100, 0, -600), (12300, 0, -600), (14800, 0, -600), (16000, 0, -600)]),
          ('second freight door into the long corridor', [(3380, 3350, 0), (3380, 7450, 0)]), ('bay floor to west stair', [(2250, 200, 0), (2360, 200, 0)])]
 

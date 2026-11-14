@@ -128,15 +128,88 @@ mel.connect_material_property(opacity, '', MP.MP_OPACITY)
 mel.connect_material_property(vector(m, 'Color', (0.55, 0.6, 0.64), 50, -150), '', MP.MP_EMISSIVE_COLOR)
 finish(m, OUR, 'M_GB_Cracks')
 
-# ---- M_GB_FrostedGlass (owner, 2026-11-14: "change it for a wall of opaque glass")
+# ---- M_GB_FrostedGlass (owner, 2026-11-14: "change it for a wall of opaque glass", then "more of a glass look, not
+# so uniform"). Opaque. Panes 2 m wide in dark seams, with one seam across at half height; each pane clouded by two
+# noise textures laid over the wall (large patches of lighter and darker glass, fine streaks in how glossy it is);
+# a faint uneven glow, as of light behind it. Laid over the world's Y and Z: a wall across the X axis.
 m = master(OUR, 'M_GB_FrostedGlass')
-mel.connect_material_property(vector(m, 'Color', (0.07, 0.1, 0.115), -400, -150), '', MP.MP_BASE_COLOR)      # the bay's lamps turned a paler glass white
-mel.connect_material_property(scalar(m, 'Roughness', 0.32, -400, 50), '', MP.MP_ROUGHNESS)
-mel.connect_material_property(scalar(m, 'Metallic', 0.0, -400, 150), '', MP.MP_METALLIC)
-inner = node(m, 'Multiply', -200, 300)
-link(vector(m, 'Glow', (0.35, 0.6, 0.65), -450, 250), inner, 'A')
-link(scalar(m, 'GlowStrength', 0.004, -450, 420), inner, 'B')
-mel.connect_material_property(inner, '', MP.MP_EMISSIVE_COLOR)
+wp = node(m, 'WorldPosition', -2300, 0)
+gy = node(m, 'ComponentMask', -2100, -100, r=False, g=True, b=False, a=False)
+gz = node(m, 'ComponentMask', -2100, 100, r=False, g=False, b=True, a=False)
+yz = node(m, 'ComponentMask', -2100, 300, r=False, g=True, b=True, a=False)
+for p in (gy, gz, yz):
+    link(wp, p)
+
+
+def seam(coord, size, x, y):
+    """1 on a thin line every `size` cm of `coord`, 0 elsewhere."""
+    dv = node(m, 'Divide', x, y, const_b=size)
+    link(coord, dv, 'A')
+    fr = node(m, 'Frac', x + 130, y)
+    link(dv, fr)
+    off = node(m, 'Subtract', x + 260, y, const_b=0.5)
+    link(fr, off, 'A')
+    ab = node(m, 'Abs', x + 390, y)
+    link(off, ab)
+    edge = node(m, 'Subtract', x + 520, y, const_b=0.4875)
+    link(ab, edge, 'A')
+    gain = node(m, 'Multiply', x + 650, y, const_b=240.0)
+    link(edge, gain, 'A')
+    sat = node(m, 'Saturate', x + 780, y)
+    link(gain, sat)
+    return sat
+
+
+frame = node(m, 'Max', -950, 0)
+link(seam(gy, 200.0, -1900, -100), frame, 'A')
+link(seam(gz, 281.0, -1900, 100), frame, 'B')
+
+
+def cloud(size, tex, x, y):
+    dv = node(m, 'Divide', x, y, const_b=size)
+    link(yz, dv, 'A')
+    ts = node(m, 'TextureSample', x + 150, y, texture=unreal.load_asset(tex))
+    link(dv, ts, 'UVs')
+    return ts
+
+
+patches = cloud(430.0, NOISE_A, -1900, 350)
+streaks = cloud(55.0, NOISE_B, -1900, 600)
+pane = node(m, 'LinearInterpolate', -1300, 350)
+link(vector(m, 'Dark', (0.04, 0.062, 0.072), -1600, 250), pane, 'A')
+link(vector(m, 'Light', (0.095, 0.14, 0.16), -1600, 420), pane, 'B')
+link(patches, pane, 'Alpha', 'R')
+grain = node(m, 'LinearInterpolate', -1300, 600, const_a=0.75, const_b=1.25)
+link(streaks, grain, 'Alpha', 'R')
+clouded = node(m, 'Multiply', -1100, 450)
+link(pane, clouded, 'A')
+link(grain, clouded, 'B')
+colour = node(m, 'LinearInterpolate', -700, 300)
+link(clouded, colour, 'A')
+link(node(m, 'Constant3Vector', -950, 200, constant=unreal.LinearColor(0.008, 0.009, 0.01, 1.0)), colour, 'B')
+link(frame, colour, 'Alpha')
+mel.connect_material_property(colour, '', MP.MP_BASE_COLOR)
+gloss = node(m, 'LinearInterpolate', -1100, 750, const_a=0.1, const_b=0.5)
+link(streaks, gloss, 'Alpha', 'R')
+rough = node(m, 'LinearInterpolate', -700, 650, const_b=0.75)
+link(gloss, rough, 'A')
+link(frame, rough, 'Alpha')
+mel.connect_material_property(rough, '', MP.MP_ROUGHNESS)
+behind = node(m, 'Multiply', -1100, 950)
+link(patches, behind, 'A', 'R')
+link(patches, behind, 'B', 'R')
+lit = node(m, 'Multiply', -900, 950)
+link(behind, lit, 'A')
+link(scalar(m, 'GlowStrength', 0.02, -1100, 1100), lit, 'B')
+glow = node(m, 'Multiply', -700, 950)
+link(vector(m, 'Glow', (0.35, 0.6, 0.65), -900, 1100), glow, 'A')
+link(lit, glow, 'B')
+clear = node(m, 'OneMinus', -700, 1150)
+link(frame, clear)
+shown = node(m, 'Multiply', -500, 1000)
+link(glow, shown, 'A')
+link(clear, shown, 'B')
+mel.connect_material_property(shown, '', MP.MP_EMISSIVE_COLOR)
 finish(m, OUR, 'M_GB_FrostedGlass')
 
 # ---- M_GB_EnergyGate: what is behind it must stay in sight (owner: the Valkyrie has to be seen through the shut door)
