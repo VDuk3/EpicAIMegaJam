@@ -217,6 +217,27 @@ Its source files moved to `Glyphbound/SourceArt/Environment/SpaceshipCorridor/`.
 
 **The game's map:** `GameDefaultMap` is now `/Game/Glyphbound/Maps/Site`, and it is cooked. `Smoke-Jam.ps1` got `-Map`, whose default is the engine's Entry map, so the arena smoke is unchanged.
 
+## The fixes, the real-map smoke and the package
+- **Sol's 11 findings are fixed** (Sonnet subagent, second pass):
+  - **Final portal:** it opens only an existing map package, with no stale checkpoint; the snapshot handover is a TODO until the Entity map exists.
+  - **Seal:** it retries a refused travel.
+  - **The cutscene's locks:** separate cutscene locks for control, invulnerability and weapon switching, instead of saving and restoring a shared flag. A caption ends a running QTE and closes open menus.
+  - **The cutscene's flow:** caption time is real time, a queued caption waits for the travel, death cancels without running the completion and frees the seal, and a trigger caption plays once.
+  - **The smoke:** the arena block (`seal`) is a state machine with real navmesh path queries through a doorway the era block closes: 3,372 cm detour shut, 1,001 cm open.
+  - **The test:** `RequiredFlags` tests each missing flag.
+- **`sitemap` smoke on the real map:**
+  - The sub-levels load, and the past shows at the start.
+  - The player stands on the floor (2 cm gap).
+  - The counts: 6 portals, 14 encounters, 1 seal, 2 starters, 1 final portal, 23 era blocks, 6 chests.
+  - A nav path runs from the start into the courtyard, 3,300 cm.
+  - After a no-teleport travel the future shows, the player is still on the floor, and there is no whole path from the yard to the checkpoint room while D1f is shut.
+  - The architect fixed its screenshots, which faced east: north is +X in the site's frame. Screenshots: `media/2026-11-13/site_smoke_start_past.png` (the gothic doorway into the courtyard) and `_future.png` (the closed leaf of D1f).
+- **Checks:** 49 tests green, Editor and game builds, full arena smoke clean.
+- **Package:** `TeamTBD_Glyphbound.zip` from commit `b0102db`, **819.6 MB** (299.7 MB before: the kits' textures), BuildCookRun 105 s.
+  - On the packaged game, the `sitemap` smoke is clean (11 s, the same counts and paths), and the full arena smoke is clean (147 s, 67 screenshots, no LogGB errors).
+  - The game now starts on the site.
+- **Next for size:** cap the kits' textures (the plan suggests 1024) before the corridor model adds more.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.
