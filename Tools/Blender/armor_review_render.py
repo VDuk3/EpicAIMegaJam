@@ -15,13 +15,15 @@ os.makedirs(OUT, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=os.path.join(STAGE, "OrcArmor", "armor_fit_debug.blend"))
 sc = bpy.context.scene
 arm = bpy.data.objects["Armature"]
-body = [o for o in bpy.data.objects if o.name.startswith("SK_Orc") and not o.name.startswith("SK_OrcArmor")][0]
-body.hide_set(False)
-body.hide_viewport = False
-body.hide_render = bool(opts.get("nobody"))
+bodies = [o for o in bpy.data.objects if o.name.startswith("SK_Orc") and not o.name.startswith("SK_OrcArmor")]
+# under gauntlets the game wears the body without hands; hands=1 shows the whole body instead
+body = next((o for o in bodies if o.name.endswith("_NoHands") and not opts.get("hands")), bodies[0])
 for o in bpy.data.objects:
     if o.type == "MESH":
         o.hide_set(False)
+for o in bodies:
+    o.hide_viewport = o is not body
+    o.hide_render = o is not body or bool(opts.get("nobody"))
 armor = [o for o in bpy.data.objects if o.name.startswith("SK_OrcArmor_")]
 
 sc.render.engine = "BLENDER_WORKBENCH"
@@ -101,6 +103,19 @@ def pose_aim():
     rot("calf_r", "X", 20)
 
 
+def pose_grip():
+    reset_pose()
+    rot("upperarm_r", "X", -40)
+    rot("lowerarm_r", "X", -70)
+    for side in ("_r", "_l"):
+        for f in ("index", "middle", "ring", "pinky"):
+            for j in (1, 2, 3):
+                pb = arm.pose.bones["%s_0%d%s" % (f, j, side)]
+                pb.rotation_mode = "XYZ"
+                pb.rotation_euler = (0, 0, math.radians(-50 if side == "_r" else 50))
+    bpy.context.view_layer.update()
+
+
 def want(n):
     return not only or n in only.split(",")
 
@@ -128,6 +143,14 @@ for st in SETS:
         shot("%s_close_head_side" % st, (0, 0, 185), (1, 0, 0), 55)
         shot("%s_close_arm_r" % st, (-55, 0, 135), (-0.3, -1, 0.5), 100)
         shot("%s_close_leg_r" % st, (-22, 0, 50), (-1, -0.3, 0.1), 110)
+    if want("hands"):
+        shot("%s_hand_r_out" % st, (-70, -5, 115), (-1, -0.2, 0.1), 75)
+        shot("%s_hand_r_front" % st, (-70, -5, 115), (0, -1, 0.1), 75)
+        shot("%s_hand_r_in" % st, (-70, -5, 115), (1, -0.3, 0.1), 75)
+        shot("%s_hand_l_front" % st, (70, -5, 115), (0, -1, 0.1), 75)
+        pose_grip()
+        shot("%s_hand_grip" % st, (-55, -40, 130), (-0.6, -0.8, 0.2), 110)
+        reset_pose()
     if want("posed_walk"):
         pose_walk()
         shot("%s_posed_walk_side" % st, FULL, (1, 0, 0), 235)

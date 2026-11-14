@@ -45,3 +45,13 @@ Translation: The orcs need fixing, both how they work and how they look. Looks f
 ## Open
 
 - The owner decides the direction of the adjustments; nothing is rebuilt or imported before he sees renders of it.
+
+## Refit, work in progress (owner: "yes, start, and the gauntlets are on wrong: put them on right")
+
+Architect's own work in Blender (exception to the Muse rule: the job is a loop of fit, render, look, correct). Nothing imported into the game yet.
+
+- **Why the first fit looked wrong**, read off contact sheets of every delivered piece (`Tools/Blender/orc_armor_pieces.py`): thigh, upper-arm and shin pieces are closed tubes, not open plates, and the old code turned every limb piece 180 degrees (top down, left for right). The gauntlets went on backwards for the same reason: fingers up the forearm, the cuff's mouth round the hand. The "greaves" are tall boots with a foot; the cuirasses reach the belt but had been squashed onto the upper chest.
+- **New fit** (`Tools/Blender/orc_armor_fit.py`): each piece keeps its shape, is turned by the shortest rotation onto its bone, scaled as a whole and bound to one bone (cuirass: spine bones by height). Helmets stand upright on the skull. The gauntlet's hand is registered onto the orc's own hand (closest points, best rigid motion), its cuff laid along the forearm and shortened to 80 % of it; under a gauntlet the body is worn without hands (`SK_Orc_NoHands`).
+- **Undersuit** painted per texel into the body's texture: dark ribbed fabric below a collar line, gloves included; only the head stays skin.
+- **State after three passes:** set A reads as an armored soldier, its gauntlets are right. Still wrong: set B's gauntlet (the registration picks a wrong turn), thigh and upper-arm tubes too wide, set C's helmet too low, set C's knee skulls float, set B's greaves. Emissive accents not started.
+- Media: `media/2026-11-14/orc_refit_wip_A.png`, `orc_refit_wip_C.png`, `orc_refit_wip_A_gauntlet.png`.

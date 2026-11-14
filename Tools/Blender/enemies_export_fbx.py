@@ -596,29 +596,12 @@ def make_spider_clips(arm, joints, bc):
 
 # ------------------------------------------------------------------------------------------------- orc armor
 # Orc_Armor_1.glb and Orc_Armor_2.glb are line-ups of loose pieces, four sets in four columns (A plain dark, B riveted
-# and spiked, C bone and gold, D green scales), all facing -Y, standing up. Armor 1 rows: helmet, chest, one gauntlet,
-# one boot. Armor 2 rows: belt + two thigh plates (+ knee pieces), two upper-arm plates + two round shoulder pads, two
-# greaves. Each piece is fitted to the orc's body region of its slot (frame of the slot's bone: long axis along the
-# bone, front -Y), scaled per axis to the region's size times a margin, then skinned by copying the weights of the
-# nearest body vertex. A single gauntlet or boot is mirrored for the other side. One skeletal mesh per set and slot
-# (left and right merged), all on the orc's skeleton: SK_OrcArmor_<Set>_<Slot>.
+# and spiked, C bone and gold, D green scales), all facing -Y, standing in the pose of the body's right side. Armor 1
+# rows: helmet, cuirass, one gauntlet, one boot. Armor 2 rows: belt + two thigh tubes (+ knee pieces in A and C), two
+# upper-arm tubes, two round pads, two greaves. One skeletal mesh per set and slot (left and right merged), all on the
+# orc's skeleton: SK_OrcArmor_<Set>_<Slot>. How each one is fitted: orc_armor_fit.py.
 ARMOR_COLS = {"A": -0.39, "B": -0.13, "C": 0.125, "D": 0.385}
 SIDES = {"r": "_r", "l": "_l"}
-FRONT_GAP = 0.012
-SLOT_DEF = {
-    # slot: (region bones (prefix match, {s} = side), axis (from bone head, to bone head), margin (side, depth, along),
-    #        coverage along the axis (0..1 of the region length, centred at `along_centre` of it))
-    "Helmet": (["head"], ("neck_02", "head"), (1.18, 1.15, 1.05), 1.0, 0.55),
-    "Chest": (["spine_03", "spine_04", "spine_05", "clavicle"], ("spine_02", "neck_01"), (1.08, 1.15, 1.0), 1.0, 0.5),
-    "Pelvis": (["pelvis", "spine_01"], ("pelvis", "spine_02"), (1.1, 1.15, 1.0), 1.0, 0.45),
-    "Thigh": (["thigh_{s}", "thigh_twist_01_{s}", "thigh_twist_02_{s}"], ("thigh_{s}", "calf_{s}"), (1.2, 1.2, 1.0), 0.8, 0.55),
-    "Shin": (["calf_{s}", "calf_twist_01_{s}", "calf_twist_02_{s}"], ("calf_{s}", "foot_{s}"), (1.22, 1.22, 1.0), 0.85, 0.45),
-    "UpperArm": (["upperarm_{s}", "upperarm_twist_01_{s}", "upperarm_twist_02_{s}"], ("upperarm_{s}", "lowerarm_{s}"), (1.25, 1.25, 1.0), 0.7, 0.55),
-    "Shoulder": (["upperarm_{s}", "upperarm_twist_01_{s}"], ("upperarm_{s}", "lowerarm_{s}"), (1.6, 1.6, 1.0), 0.35, 0.12),
-    "Hand": (["lowerarm_{s}", "lowerarm_twist_01_{s}", "lowerarm_twist_02_{s}", "hand_{s}", "index", "middle",
-              "ring", "pinky", "thumb"], ("lowerarm_{s}", "hand_{s}"), (1.15, 1.2, 1.02), 1.0, 0.5),
-    "Foot": (["foot_{s}", "ball_{s}", "calf_twist_02_{s}"], None, (1.15, 1.12, 1.05), 1.0, 0.5),
-}
 
 
 def armor_slot(fn, c, size):
@@ -630,7 +613,9 @@ def armor_slot(fn, c, size):
         slot = "Helmet" if c.z > 0.8 else "Chest" if c.z > 0.5 else "Hand" if c.z > 0.25 else "Foot"
         return st, slot, None
     if c.z > 0.55:
-        return (st, "Pelvis", None) if c.z > 0.75 else (st, "Thigh", side)
+        if c.z > 0.75:
+            return st, "Pelvis", None
+        return (st, "Knee", side) if c.z < 0.615 else (st, "Thigh", side)
     if c.z > 0.34:
         return st, "UpperArm", side
     if c.z > 0.25:
@@ -980,209 +965,8 @@ def wrap_outside(piece, body, pts, axis=None, margin=0.008, max_depth=0.05, smoo
     return hit
 
 
-BELT_TOP = 1.20     # m: top edge of the belt (the orc's waist; its pelvis joint is at 1.12)
-
-
-def fit_belt(piece, body, dom):
-    """Belt + codpiece: the ring is sized to the orc's waist (a slab of the torso bones, arms excluded) and hung from
-    BELT_TOP; the codpiece follows the same transform and hangs down the front over the groin."""
-    wm = body.matrix_world
-    pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
-           if b.split("_")[0] in ("pelvis", "spine", "thigh") and BELT_TOP - 0.20 < (wm @ body.data.vertices[i].co).z < BELT_TOP
-           and abs((wm @ body.data.vertices[i].co).x) < 0.40]
-    xs = [p.x for p in pts]
-    ys = [p.y for p in pts]
-    bx0, bx1, by0, by1 = _pct(xs, 0.02), _pct(xs, 0.98), min(ys), max(ys)
-    pv = [v.co for v in piece.data.vertices]
-    pmin = Vector((min(v.x for v in pv), min(v.y for v in pv), min(v.z for v in pv)))
-    pmax = Vector((max(v.x for v in pv), max(v.y for v in pv), max(v.z for v in pv)))
-    sx = (bx1 - bx0) * 1.12 / (pmax.x - pmin.x)
-    sy = (by1 - by0) * 1.14 / (pmax.y - pmin.y)
-    sz = (sx * sy) ** 0.5
-    for v in piece.data.vertices:
-        c = v.co
-        v.co = Vector(((c.x - (pmin.x + pmax.x) / 2) * sx + (bx0 + bx1) / 2,
-                       (c.y - (pmin.y + pmax.y) / 2) * sy + (by0 + by1) / 2,
-                       (c.z - pmax.z) * sz + BELT_TOP))
-    piece.data.update()
-    left = wrap_outside(piece, body, pts)
-    return {"scale": [round(sx, 3), round(sy, 3), round(sz, 3)], "verts_pushed_out": left, "waist_cm": [round(bx0 * 100, 1), round(bx1 * 100, 1),
-            round(by0 * 100, 1), round(by1 * 100, 1)]}
-
-
-def fit_piece(piece, body, arm, dom, slot, side, mirror):
-    if slot == "Pelvis":
-        return fit_belt(piece, body, dom)
-    bones_pat, axis, margin, cover, along_c = SLOT_DEF[slot]
-    sd = SIDES[side] if side else ""
-    pats = [p.replace("_{s}", sd) for p in bones_pat]
-    pv0 = [v.co for v in piece.data.vertices]
-    wm = body.matrix_world
-    pts = [wm @ body.data.vertices[i].co for i, b in dom.items()
-           if any(b == p or (not side and b.startswith(p)) or (side and b.startswith(p) and b.endswith(sd)) for p in pats)]
-    if slot == "Foot":   # the boot also covers the ankle: add the lower part of the calf
-        calf = [wm @ body.data.vertices[i].co for i, b in dom.items() if b in ("calf" + sd, "calf_twist_01" + sd)]
-        if calf:
-            zc = sorted(p.z for p in calf)
-            pts += [p for p in calf if p.z < zc[len(zc) // 3]]
-    if not pts:
-        raise RuntimeError("no body region for %s %s" % (slot, side))
-    if axis:
-        h = arm.data.bones[axis[0].replace("_{s}", sd)].head_local
-        t = arm.data.bones[axis[1].replace("_{s}", sd)].head_local
-        a = (arm.matrix_world.to_3x3() @ (t - h)).normalized()
-    else:
-        a = Vector((0, 0, 1))
-    f = Vector((0, -1, 0))
-    f = (f - a * f.dot(a)).normalized()
-    s = (-f).cross(a).normalized()
-    R = Matrix((s, -f, a)).transposed()           # columns: piece X, Y, Z -> s, -f, a
-    loc = [Vector((p.dot(s), p.dot(-f), p.dot(a))) for p in pts]
-    rmin = Vector((min(v.x for v in loc), min(v.y for v in loc), min(v.z for v in loc)))
-    rmax = Vector((max(v.x for v in loc), max(v.y for v in loc), max(v.z for v in loc)))
-    rsize = rmax - rmin
-    rc = (rmin + rmax) / 2
-    rc.z = rmin.z + rsize.z * along_c
-    # piece in its own frame (already centred by the caller)
-    pv = [v.co for v in piece.data.vertices]
-    if mirror:
-        piece.data.transform(Matrix.Scale(-1, 4, (1, 0, 0)))
-        piece.data.flip_normals()
-    if slot == "Foot":
-        return fit_boot(piece, body, arm, dom, sd)
-    pmin = Vector((min(v.x for v in pv), min(v.y for v in pv), min(v.z for v in pv)))
-    pmax = Vector((max(v.x for v in pv), max(v.y for v in pv), max(v.z for v in pv)))
-    psize = pmax - pmin
-    sc = Vector((rsize.x * margin[0] / psize.x, rsize.y * margin[1] / psize.y, rsize.z * cover * margin[2] / psize.z))
-    g = (sc.x * sc.y * sc.z) ** (1 / 3)
-    sc = Vector([max(g * 0.6, min(g * 1.6, x)) for x in sc])   # no wild stretching
-    S = Matrix.Diagonal((sc.x, sc.y, sc.z, 1.0))
-    # Plates are shells open at the back: centring them in the region buries them in the body. Every piece is
-    # put with its front FRONT_GAP in front of the region's front instead (a tube still ends up around the limb).
-    if slot in ("Thigh", "Shin", "UpperArm"):
-        rc.y = rmin.y - FRONT_GAP - pmin.y * sc.y
-    world_c = s * rc.x + (-f) * rc.y + a * rc.z
-    M = Matrix.Translation(world_c) @ R.to_4x4() @ S
-    piece.data.transform(M)
-    piece.data.update()
-    left = wrap_outside(piece, body, pts, axis=(h, t) if axis else None,
-                        max_depth=0.09 if slot in ("Chest", "Helmet", "UpperArm", "Shoulder") else 0.05)
-    return {"scale": [round(x, 3) for x in sc], "centre_cm": v3(world_c), "verts_pushed_out": left}
-
-
-def transfer_weights(piece, body):
-    from mathutils.kdtree import KDTree
-    wm = body.matrix_world
-    kd = KDTree(len(body.data.vertices))
-    for v in body.data.vertices:
-        kd.insert(wm @ v.co, v.index)
-    kd.balance()
-    names = {g.index: g.name for g in body.vertex_groups}
-    for g in body.vertex_groups:
-        piece.vertex_groups.new(name=g.name)
-    for v in piece.data.vertices:
-        near = kd.find_n(v.co, 4)
-        acc = {}
-        wsum = 0.0
-        for co, idx, dist in near:
-            w = 1.0 / max(dist, 1e-4)
-            wsum += w
-            for ge in body.data.vertices[idx].groups:
-                acc[names[ge.group]] = acc.get(names[ge.group], 0.0) + ge.weight * w
-        for n, w in acc.items():
-            if w / wsum > 0.02:
-                piece.vertex_groups[n].add([v.index], w / wsum, "REPLACE")
-
-
-def clusters(isl, gap):
-    """Islands whose boxes are closer than `gap` form one piece (a helmet is 18 islands: shell, visor, teeth, halo)."""
-    n = len(isl)
-    par = list(range(n))
-
-    def find(a):
-        while par[a] != a:
-            par[a] = par[par[a]]
-            a = par[a]
-        return a
-
-    for a in range(n):
-        for b in range(a + 1, n):
-            A, B = isl[a], isl[b]
-            if max(max(A["min"][k] - B["max"][k], B["min"][k] - A["max"][k], 0.0) for k in range(3)) < gap:
-                par[find(a)] = find(b)
-    out = {}
-    for i in range(n):
-        out.setdefault(find(i), []).append(i)
-    return list(out.values())
-
-
-def piece_groups(src_ob, fn):
-    """{(set, slot, side): vertex indices}. Classifying whole pieces, not single islands: classifying by island
-    centre sent a helmet's jaw to the chest and a breastplate's lower plate to the forearm. Armor 2's belt, codpiece
-    and thigh plates touch each other in the line-up; that cluster is split island by island."""
-    isl = islands(src_ob)
-    groups = {}
-    for m in clusters(isl, 0.012 if fn == 1 else 0.003):
-        mn = Vector([min(isl[i]["min"][a] for i in m) for a in range(3)])
-        mx = Vector([max(isl[i]["max"][a] for i in m) for a in range(3)])
-        c, size = (mn + mx) / 2, mx - mn
-        if fn == 2 and c.z > 0.6 and size.z > 0.2:
-            for i in m:
-                groups.setdefault(armor_slot(fn, isl[i]["c"], isl[i]["s"]), set()).update(isl[i]["verts"])
-        else:
-            groups.setdefault(armor_slot(fn, c, size), set()).update(v for i in m for v in isl[i]["verts"])
-    return groups
-
-
-def do_armor():
-    d = out_dir("OrcArmor")
-    arm, body, tex, s, bones = humanoid(src("Enemies", "Orc", "Base_Rigged_Orc.glb"), "Orc", 2.10, d)
-    dom = body_regions(body, arm)
-    report = {"pieces": {}, "textures": {}}
-    for fn in (1, 2):
-        meshes = append_glb(src("Enemies", "Orc", "Orc_Armor_%d.glb" % fn))
-        src_ob = meshes[0]
-        flatten([src_ob])
-        report["textures"]["Armor%d" % fn] = save_textures(src_ob.data.materials[0], "OrcArmor%d" % fn, d)
-        src_ob.data.materials[0].name = "M_OrcArmor%d" % fn
-        groups = piece_groups(src_ob, fn)
-        for (st, slot, side), verts in sorted(groups.items(), key=lambda kv: str(kv[0])):
-            sides = [side] if side else (["r", "l"] if slot in ("Hand", "Foot") else [None])
-            for sd in sides:
-                p = split_by_verts(src_ob, verts, "SK_OrcArmor_%s_%s_%s" % (st, slot, sd or "c"))
-                vs = [v.co for v in p.data.vertices]
-                c = Vector(((min(v.x for v in vs) + max(v.x for v in vs)) / 2, (min(v.y for v in vs) + max(v.y for v in vs)) / 2,
-                            (min(v.z for v in vs) + max(v.z for v in vs)) / 2))
-                p.data.transform(Matrix.Translation(-c))
-                # a single gauntlet / boot in Armor 1: assume it is the right one, mirror it for the left
-                info = fit_piece(p, body, arm, dom, slot, sd, mirror=(fn == 1 and sd == "l"))
-                transfer_weights(p, body)
-                report["pieces"]["%s_%s_%s" % (st, slot, sd or "c")] = info
-                print("FIT", st, slot, sd, info)
-        bpy.data.objects.remove(src_ob)
-    to_cm(arm, [o for o in bpy.context.scene.objects if o.type == "MESH"])
-    # merge sides: one mesh per set and slot, then export each with the orc's armature
-    by_slot = {}
-    for o in [o for o in bpy.context.scene.objects if o.type == "MESH" and o.name.startswith("SK_OrcArmor_")]:
-        _, _, st, slot, _ = o.name.split("_")[:5]
-        by_slot.setdefault((st, slot), []).append(o)
-    for (st, slot), obs in sorted(by_slot.items()):
-        bpy.ops.object.select_all(action="DESELECT")
-        for o in obs:
-            o.select_set(True)
-        bpy.context.view_layer.objects.active = obs[0]
-        if len(obs) > 1:
-            bpy.ops.object.join()
-        m = bpy.context.view_layer.objects.active
-        m.name = "SK_OrcArmor_%s_%s" % (st, slot)
-        m.parent = arm
-        mod = m.modifiers.new("Armature", "ARMATURE")
-        mod.object = arm
-        export_skeletal(arm, [m], os.path.join(d, m.name + ".fbx"))
-    body.hide_set(True)
-    write_report(d, report)
-    if "--blend" in ARGS:
-        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(d, "armor_fit_debug.blend"))
+# The fit itself (tubes, cuirass, helmet, gauntlets, belt, the painted undersuit, do_armor) is in orc_armor_fit.py.
+exec(compile(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "orc_armor_fit.py")).read(), "orc_armor_fit.py", "exec"))
 
 
 # ------------------------------------------------------------------------------------------------- Valkyrie's sword
