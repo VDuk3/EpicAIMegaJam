@@ -45,7 +45,17 @@
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBGun.h"
 #include "Weapons/GBHeldItem.h"
+#include "AI/GBEncounter.h"
+#include "AI/GBEncounterStarter.h"
+#include "Engine/LevelStreaming.h"
+#include "World/GBChest.h"
+#include "World/GBFinalPortal.h"
+#include "World/GBPortal.h"
+#include "World/GBCutsceneSubsystem.h"
+#include "World/GBEraBlock.h"
 #include "World/GBEraSubsystem.h"
+#include "World/GBSeal.h"
+#include "World/GBPickup.h"
 #include "World/GBProgressSubsystem.h"
 #include "World/GBTestArena.h"
 #include "UI/GBHUD.h"
@@ -97,6 +107,7 @@ namespace GBSmokeRun
 	static TArray<FVector> SmokeEntityTipsA;
 	static FVector SmokeEntityReachTarget = FVector::ZeroVector;
 	static float SmokeEntityTurnStartError = 0.f;
+
 
 	/** Angle in degrees between the Entity facing and the direction from it to the player, on the ground plane. */
 	static float TurnErrorDegrees(const AGBEntity* Entity, const AGBPlayerCharacter* Player)
@@ -398,6 +409,768 @@ namespace GBSmokeRun
 			UE_LOG(LogGB, Display, TEXT("SMOKE path check passed"));
 		}
 		Orc->Destroy();
+	}
+
+	// =====================================================================================================================
+	// Seal / era block / caption / navigation checks (gb.Smoke seal) and the real site map checks (gb.Smoke sitemap).
+	// Both are state machines driven by their own ticker, one phase per frame: each phase waits for a state (a caption
+	// ended, a travel finished, a navmesh rebuilt) with a bounded timeout, so a frame hitch cannot fail correct code
+	// and a real failure always ends the run with an error line.
+	// =====================================================================================================================
+	struct FPathProbe
+	{
+		bool bValid = false;
+		bool bPartial = false;
+		double Length = 0.0;
+	};
+
+	static FPathProbe ProbePath(UWorld* World, const FVector& From, const FVector& To)
+	{
+		FPathProbe Result;
+		if (const UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(World, From, To, nullptr))
+		{
+			Result.bValid = Path->IsValid();
+			Result.bPartial = Path->IsPartial();
+			Result.Length = Path->GetPathLength();
+		}
+		return Result;
+	}
+
+	/** A whole path that is about as long as the straight line. */
+	static bool PathIsDirect(const FPathProbe& Probe, double Straight) { return Probe.bValid && !Probe.bPartial && Probe.Length <= Straight * 1.3; }
+	/** No whole path, or one that has to go a long way round. */
+	static bool PathIsBlocked(const FPathProbe& Probe, double Straight) { return !Probe.bValid || Probe.bPartial || Probe.Length > Straight * 1.6; }
+
+	static void SmokeQuitNow(const TCHAR* Who)
+	{
+		UE_LOG(LogGB, Display, TEXT("SMOKE %s finished, quitting"), Who);
+		UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+		FPlatformMisc::RequestExit(false);
+	}
+
+	// ---- Seal block ----
+	namespace SealRun
+	{
+		enum EPhase : int32
+		{
+			Setup, WaitClosed, UseSeal, WaitSkippable, WaitFuture, WaitFuturePath, WaitPast, WaitPastBlocked, WaitRemoved, CancelTest, DropTest, Finish
+		};
+		static FTSTicker::FDelegateHandle Ticker;
+		static int32 Phase = Setup;
+		static bool bEntered = false;
+		static double PhaseStart = 0.0;
+		static bool bFailed = false;
+		static TWeakObjectPtr<AGBSeal> Seal;
+		static TArray<TWeakObjectPtr<AGBEraBlock>> Walls;
+		static TWeakObjectPtr<AGBEraBlock> Door;
+		static FVector PointA = FVector::ZeroVector;
+		static FVector PointB = FVector::ZeroVector;
+		static double Straight = 0.0;
+		static bool bPlainInvulnerableBefore = false;
+		static const FName DoorFlag(TEXT("Smoke.SiteBlockOff"));
+		static const FName GunFlag(TEXT("GotFirstGun"));
+
+		static void Fail(const TCHAR* Message)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE seal FAILED in phase %d: %s"), Phase, Message);
+			bFailed = true;
+			Phase = Finish;
+			bEntered = false;
+		}
+
+		static void Next(int32 To)
+		{
+			Phase = To;
+			bEntered = false;
+		}
+
+		static bool DoorGone(const AGBEraBlock* Block)
+		{
+			return Block && !Block->IsPresent() && !Block->GetActorEnableCollision() && Block->IsHidden();
+		}
+
+		static bool DoorSolid(const AGBEraBlock* Block)
+		{
+			return Block && Block->IsPresent() && Block->GetActorEnableCollision() && !Block->IsHidden();
+		}
+
+		static bool Tick(float)
+		{
+			UWorld* World = SmokeWorld.Get();
+			AGBPlayerCharacter* Player = World ? AGBPlayerCharacter::Get(World) : nullptr;
+			UGBEraSubsystem* Era = World ? UGBEraSubsystem::Get(World) : nullptr;
+			UGBProgressSubsystem* Progress = World ? UGBProgressSubsystem::Get(World) : nullptr;
+			UGBCutsceneSubsystem* Cutscenes = World ? UGBCutsceneSubsystem::Get(World) : nullptr;
+			if (!World || !Player || !Era || !Progress || !Cutscenes)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE seal FAILED: world, player or a subsystem is missing"));
+				SmokeQuitNow(TEXT("seal"));
+				return false;
+			}
+			const double Now = FPlatformTime::Seconds();
+			if (!bEntered)
+			{
+				bEntered = true;
+				PhaseStart = Now;
+			}
+			const double InPhase = Now - PhaseStart;
+			const bool bTimedOut = [&](double Limit) { return InPhase > Limit; }(20.0);
+
+			switch (Phase)
+			{
+			case Setup:
+			{
+				Era->SetEraImmediate(EGBEra::Past);
+				Progress->SetFlag(GBSealName::SealUsedFlag, false);
+				Progress->SetFlag(DoorFlag, false);
+				bPlainInvulnerableBefore = Player->GetAttributes()->IsPlainInvulnerable();
+
+				// Find a spot of the arena floor where a straight walk A -> B (1000 cm along X) is free, then build two walls
+				// along Y with a 200 cm doorway in the middle, and put the era block in the doorway.
+				const FVector Candidates[] = { FVector(800.f, -1200.f, 0.f), FVector(-400.f, -1700.f, 0.f), FVector(1000.f, 1000.f, 0.f),
+					FVector(-800.f, 1500.f, 0.f), FVector(1800.f, -300.f, 0.f), FVector(300.f, -2000.f, 0.f) };
+				bool bFound = false;
+				FVector Center = FVector::ZeroVector;
+				for (const FVector& Candidate : Candidates)
+				{
+					const FVector A = Candidate + FVector(-500.f, 0.f, 0.f);
+					const FVector B = Candidate + FVector(500.f, 0.f, 0.f);
+					const FPathProbe Probe = ProbePath(World, A, B);
+					if (PathIsDirect(Probe, 1000.0))
+					{
+						Center = Candidate;
+						PointA = A;
+						PointB = B;
+						bFound = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					Fail(TEXT("no free spot of the arena floor with a direct navmesh path to build the doorway on"));
+					break;
+				}
+				Straight = 1000.0;
+
+				auto MakeBlock = [World](const FVector& At, const FVector& Scale, EGBEraPresence Presence, FName RemovedBy) -> AGBEraBlock*
+				{
+					AGBEraBlock* Block = World->SpawnActor<AGBEraBlock>(AGBEraBlock::StaticClass(), FTransform(FRotator::ZeroRotator, At, Scale));
+					if (Block)
+					{
+						Block->Configure(Presence, NAME_None, RemovedBy);
+					}
+					return Block;
+				};
+				// Cube = 100 cm. Walls: 100 thick, 400 high, 1400 long each side of a 200 cm doorway.
+				Walls.Reset();
+				Walls.Add(MakeBlock(Center + FVector(0.f, -800.f, 200.f), FVector(1.f, 14.f, 4.f), EGBEraPresence::Both, NAME_None));
+				Walls.Add(MakeBlock(Center + FVector(0.f, 800.f, 200.f), FVector(1.f, 14.f, 4.f), EGBEraPresence::Both, NAME_None));
+				Door = MakeBlock(Center + FVector(0.f, 0.f, 200.f), FVector(1.f, 2.f, 4.f), EGBEraPresence::PastOnly, DoorFlag);
+				if (!Door.IsValid() || !Walls[0].IsValid() || !Walls[1].IsValid())
+				{
+					Fail(TEXT("could not spawn the walls or the door block"));
+					break;
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE seal setup: doorway at %s, walk %s -> %s, door present=%d solid=%d"),
+					*Center.ToCompactString(), *PointA.ToCompactString(), *PointB.ToCompactString(), Door->IsPresent() ? 1 : 0, DoorSolid(Door.Get()) ? 1 : 0);
+				Next(WaitClosed);
+				break;
+			}
+			case WaitClosed:
+			{
+				const FPathProbe Probe = ProbePath(World, PointA, PointB);
+				if (PathIsBlocked(Probe, Straight))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal nav: doorway closed by the block: valid=%d partial=%d length=%.0f (straight %.0f) after %.1f s"), Probe.bValid ? 1 : 0, Probe.bPartial ? 1 : 0, Probe.Length, Straight, InPhase);
+					Next(UseSeal);
+				}
+				else if (bTimedOut)
+				{
+					Fail(TEXT("the navmesh never closed the doorway while the block is present (is the navmesh dynamic?)"));
+				}
+				break;
+			}
+			case UseSeal:
+			{
+				Seal = World->SpawnActor<AGBSeal>(AGBSeal::StaticClass(), Player->GetActorLocation() + FVector(0.f, 0.f, -60.f), FRotator::ZeroRotator);
+				if (!Seal.IsValid())
+				{
+					Fail(TEXT("could not spawn the seal"));
+					break;
+				}
+				const bool bCanBefore = Seal->CanInteract(Player);
+				Seal->Interact(Player);
+				const bool bUsed = Progress->HasFlag(GBSealName::SealUsedFlag);
+				const bool bCanAfter = Seal->CanInteract(Player);
+				const bool bLocked = Cutscenes->IsPlaying() && !Player->IsControlEnabled() && Player->GetAttributes()->IsInvulnerable() && Player->GetEquipment()->IsSwitchLocked();
+				UE_LOG(LogGB, Display, TEXT("SMOKE seal used: could_before=%d flag=%d can_after=%d cutscene=%d locked=%d travelling=%d line=\"%s\""),
+					bCanBefore ? 1 : 0, bUsed ? 1 : 0, bCanAfter ? 1 : 0, Cutscenes->IsPlaying() ? 1 : 0, bLocked ? 1 : 0, Era->IsTravelling() ? 1 : 0, *Cutscenes->GetLineText());
+				if (!bCanBefore || !bUsed || bCanAfter || !bLocked || Era->IsTravelling())
+				{
+					Fail(TEXT("expected the seal usable once, SealUsed set, the caption playing with the player locked, and no travel before the caption ends"));
+					break;
+				}
+				Cutscenes->RequestSkip();
+				if (!Cutscenes->IsPlaying())
+				{
+					Fail(TEXT("the caption could be skipped before the skip delay"));
+					break;
+				}
+				Next(WaitSkippable);
+				break;
+			}
+			case WaitSkippable:
+			{
+				if (Cutscenes->CanSkip())
+				{
+					Cutscenes->RequestSkip();
+					const bool bOk = !Cutscenes->IsPlaying() && (Era->IsTravelling() || Era->GetCurrentEra() == EGBEra::Future);
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal skipped after %.1f s: caption over=%d travel started=%d"), InPhase, !Cutscenes->IsPlaying() ? 1 : 0, Era->IsTravelling() ? 1 : 0);
+					if (!bOk)
+					{
+						Fail(TEXT("after the skip the caption must be over and the travel to the future started"));
+						break;
+					}
+					Next(WaitFuture);
+				}
+				else if (InPhase > 10.0)
+				{
+					Fail(TEXT("the caption never became skippable"));
+				}
+				break;
+			}
+			case WaitFuture:
+			{
+				if (Era->GetCurrentEra() == EGBEra::Future && !Era->IsTravelling())
+				{
+					const bool bControl = Player->IsControlEnabled() && !Cutscenes->IsPlaying();
+					const bool bLocksBack = Player->GetAttributes()->IsInvulnerable() == bPlainInvulnerableBefore && !Player->GetEquipment()->IsSwitchLocked();
+					const bool bGone = DoorGone(Door.Get());
+					const bool bSealDone = Progress->HasFlag(GBSealName::SealUsedFlag) && Seal.IsValid() && !Seal->CanInteract(Player);
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal future after %.1f s: control restored=%d locks back=%d door gone=%d seal done=%d"), InPhase, bControl ? 1 : 0, bLocksBack ? 1 : 0, bGone ? 1 : 0, bSealDone ? 1 : 0);
+					if (!bControl || !bLocksBack || !bGone || !bSealDone)
+					{
+						Fail(TEXT("in the future: control must be back after the caption and the travel, invulnerability and weapon lock as before, the past-only door gone, the seal unusable"));
+						break;
+					}
+					Next(WaitFuturePath);
+				}
+				else if (bTimedOut)
+				{
+					Fail(TEXT("the travel to the future never finished"));
+				}
+				break;
+			}
+			case WaitFuturePath:
+			{
+				const FPathProbe Probe = ProbePath(World, PointA, PointB);
+				if (PathIsDirect(Probe, Straight))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal nav: doorway open in the future: length=%.0f (straight %.0f) after %.1f s"), Probe.Length, Straight, InPhase);
+					Era->RequestTravel(EGBEra::Past, Player, false);
+					Next(WaitPast);
+				}
+				else if (InPhase > 30.0)
+				{
+					Fail(TEXT("the navmesh never opened the doorway in the future"));
+				}
+				break;
+			}
+			case WaitPast:
+			{
+				if (Era->GetCurrentEra() == EGBEra::Past && !Era->IsTravelling())
+				{
+					const bool bBack = DoorSolid(Door.Get());
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal past again after %.1f s: door back and solid=%d"), InPhase, bBack ? 1 : 0);
+					if (!bBack)
+					{
+						Fail(TEXT("back in the past the door block must be present and solid again"));
+						break;
+					}
+					Next(WaitPastBlocked);
+				}
+				else if (bTimedOut)
+				{
+					Fail(TEXT("the travel back to the past never finished"));
+				}
+				break;
+			}
+			case WaitPastBlocked:
+			{
+				const FPathProbe Probe = ProbePath(World, PointA, PointB);
+				if (PathIsBlocked(Probe, Straight))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal nav: doorway closed again in the past after %.1f s"), InPhase);
+					Progress->SetFlag(DoorFlag, true);
+					const bool bRemoved = DoorGone(Door.Get());
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal door removed by its flag=%d"), bRemoved ? 1 : 0);
+					if (!bRemoved)
+					{
+						Fail(TEXT("the door block must be gone once its RemovedByFlag is set"));
+						break;
+					}
+					Next(WaitRemoved);
+				}
+				else if (InPhase > 30.0)
+				{
+					Fail(TEXT("the navmesh never closed the doorway again in the past"));
+				}
+				break;
+			}
+			case WaitRemoved:
+			{
+				const FPathProbe Probe = ProbePath(World, PointA, PointB);
+				if (PathIsDirect(Probe, Straight))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE seal nav: doorway open after the flag: length=%.0f after %.1f s"), Probe.Length, InPhase);
+					Next(CancelTest);
+				}
+				else if (InPhase > 30.0)
+				{
+					Fail(TEXT("the navmesh never opened the doorway after the removing flag"));
+				}
+				break;
+			}
+			case CancelTest:
+			{
+				// A caption cancelled (what the player's death does) gives the seal back, runs no travel, and leaves a lock someone else owns alone.
+				Progress->SetFlag(GBSealName::SealUsedFlag, false);
+				Player->GetEquipment()->SetSwitchLocked(true);
+				AGBSeal* TheSeal = Seal.Get();
+				if (!TheSeal || !TheSeal->CanInteract(Player))
+				{
+					Fail(TEXT("the seal should be usable again after SealUsed was cleared"));
+					break;
+				}
+				TheSeal->Interact(Player);
+				const bool bPlaying = Cutscenes->IsPlaying();
+				Cutscenes->Cancel();
+				const bool bReset = !Progress->HasFlag(GBSealName::SealUsedFlag) && TheSeal->CanInteract(Player);
+				const bool bNoTravel = !Era->IsTravelling() && Era->GetCurrentEra() == EGBEra::Past;
+				const bool bFree = !Cutscenes->IsPlaying() && Player->IsControlEnabled() && !Player->GetAttributes()->IsInvulnerable() == !bPlainInvulnerableBefore;
+				const bool bOtherLockKept = Player->GetEquipment()->IsSwitchLocked();
+				Player->GetEquipment()->SetSwitchLocked(false);
+				const bool bLockClean = !Player->GetEquipment()->IsSwitchLocked();
+				UE_LOG(LogGB, Display, TEXT("SMOKE seal cancelled: was playing=%d seal reset=%d no travel=%d player free=%d other lock kept=%d lock clean after=%d"),
+					bPlaying ? 1 : 0, bReset ? 1 : 0, bNoTravel ? 1 : 0, bFree ? 1 : 0, bOtherLockKept ? 1 : 0, bLockClean ? 1 : 0);
+				if (!bPlaying || !bReset || !bNoTravel || !bFree || !bOtherLockKept || !bLockClean)
+				{
+					Fail(TEXT("a cancelled caption must reset the seal, not travel, free the player, and leave another system's weapon lock alone"));
+					break;
+				}
+				Next(DropTest);
+				break;
+			}
+			case DropTest:
+			{
+				const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
+				const FGBEnemyDefinition* Carrier = Data ? Data->FindEnemy(FName(TEXT("Orc_Future_GunCarrier"))) : nullptr;
+				if (!Carrier)
+				{
+					Fail(TEXT("no Orc_Future_GunCarrier data"));
+					break;
+				}
+				Progress->SetFlag(GunFlag, false);
+				TArray<AGBPickup*> Before;
+				for (TActorIterator<AGBPickup> It(World); It; ++It)
+				{
+					Before.Add(*It);
+				}
+				const TArray<FGBDropDefinition> Drops = Carrier->Drops;
+				const int32 Spawned = AGBPickup::SpawnDrops(World, Drops, Player->GetActorLocation() + FVector(400.f, 0.f, 0.f));
+				AGBPickup* Drop = nullptr;
+				for (TActorIterator<AGBPickup> It(World); It; ++It)
+				{
+					if (!Before.Contains(*It))
+					{
+						Drop = *It;
+					}
+				}
+				const bool bFlagged = Drop && Drop->FlagOnPickup == GunFlag;
+				if (Drop)
+				{
+					Drop->Interact(Player);
+				}
+				const bool bFlagSet = Progress->HasFlag(GunFlag);
+				const bool bCutscene = Cutscenes->IsPlaying() && Cutscenes->GetPlayingId() == FName(TEXT("FirstGun"));
+				Cutscenes->Stop();
+				// The flag cleared and set again must not replay the caption (once per run).
+				Progress->SetFlag(GunFlag, false);
+				Progress->SetFlag(GunFlag, true);
+				const bool bReplayed = Cutscenes->IsPlaying();
+				UE_LOG(LogGB, Display, TEXT("SMOKE seal drop: spawned=%d flagged=%d flag set=%d first gun caption=%d replayed after clear+set=%d"), Spawned, bFlagged ? 1 : 0, bFlagSet ? 1 : 0, bCutscene ? 1 : 0, bReplayed ? 1 : 0);
+				Cutscenes->Cancel();
+				Progress->SetFlag(GunFlag, false);
+				if (Drop && IsValid(Drop))
+				{
+					Drop->Destroy();
+				}
+				if (Spawned != 1 || !bFlagged || !bFlagSet || !bCutscene || bReplayed)
+				{
+					Fail(TEXT("expected one pistol pickup carrying GotFirstGun, the flag set on pickup, the FirstGun caption once, and no replay"));
+					break;
+				}
+				Next(Finish);
+				break;
+			}
+			case Finish:
+			default:
+			{
+				if (AGBSeal* TheSeal = Seal.Get())
+				{
+					TheSeal->Destroy();
+				}
+				for (TWeakObjectPtr<AGBEraBlock>& Wall : Walls)
+				{
+					if (Wall.IsValid())
+					{
+						Wall->Destroy();
+					}
+				}
+				if (Door.IsValid())
+				{
+					Door->Destroy();
+				}
+				Progress->SetFlag(DoorFlag, false);
+				Progress->SetFlag(GBSealName::SealUsedFlag, false);
+				Progress->SetFlag(GunFlag, false);
+				Cutscenes->Cancel();
+				UE_LOG(LogGB, Display, TEXT("SMOKE seal block %s"), bFailed ? TEXT("FAILED") : TEXT("passed"));
+				SmokeQuitNow(TEXT("seal"));
+				return false;
+			}
+			}
+			return true;
+		}
+
+		static void Start(UWorld*, AGBPlayerCharacter*)
+		{
+			Phase = Setup;
+			bEntered = false;
+			bFailed = false;
+			FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
+		}
+	}
+
+	// ---- Real site map block ----
+	namespace SiteMapRun
+	{
+		enum EPhase : int32
+		{
+			Detect, WaitLevels, Floor, Counts, PastPath, ShotPast, WaitTravel, WaitSwap, FloorFuture, FuturePath, ShotFuture, Finish
+		};
+		static FTSTicker::FDelegateHandle Ticker;
+		static int32 Phase = Detect;
+		static bool bEntered = false;
+		static double PhaseStart = 0.0;
+		static bool bFailed = false;
+		static bool bSkipped = false;
+		static bool bTravelRequested = false;
+		static const FVector StartSpot(-3300.f, 0.f, 0.f);
+		static const FVector Courtyard(0.f, 0.f, 0.f);
+
+		static void Fail(const TCHAR* Message)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE sitemap FAILED in phase %d: %s"), Phase, Message);
+			bFailed = true;
+			Phase = Finish;
+			bEntered = false;
+		}
+
+		static void Next(int32 To)
+		{
+			Phase = To;
+			bEntered = false;
+		}
+
+		static ULevelStreaming* FindLevel(UWorld* World, const TCHAR* Suffix)
+		{
+			for (ULevelStreaming* Level : World->GetStreamingLevels())
+			{
+				if (Level && Level->GetWorldAssetPackageName().EndsWith(Suffix))
+				{
+					return Level;
+				}
+			}
+			return nullptr;
+		}
+
+		/** Player standing on something: a trace from the feet down hits within 200 cm and the movement is not falling. */
+		static bool PlayerOnFloor(UWorld* World, AGBPlayerCharacter* Player, float* OutGap = nullptr)
+		{
+			const float HalfHeight = Player->GetSimpleCollisionHalfHeight();
+			const FVector Feet = Player->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
+			FHitResult Hit;
+			FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSmokeSiteFloor), false, Player);
+			const bool bHit = World->LineTraceSingleByChannel(Hit, Feet + FVector(0.f, 0.f, 20.f), Feet - FVector(0.f, 0.f, 200.f), ECC_Visibility, Params);
+			const UCharacterMovementComponent* Move = Player->GetCharacterMovement();
+			if (OutGap)
+			{
+				*OutGap = bHit ? Hit.Distance - 20.f : -1.f;
+			}
+			return bHit && Move && !Move->IsFalling();
+		}
+
+		template <typename T>
+		static int32 CountActors(UWorld* World)
+		{
+			int32 Count = 0;
+			for (TActorIterator<T> It(World); It; ++It)
+			{
+				++Count;
+			}
+			return Count;
+		}
+
+		static bool Tick(float)
+		{
+			UWorld* World = SmokeWorld.Get();
+			AGBPlayerCharacter* Player = World ? AGBPlayerCharacter::Get(World) : nullptr;
+			UGBEraSubsystem* Era = World ? UGBEraSubsystem::Get(World) : nullptr;
+			UGBProgressSubsystem* Progress = World ? UGBProgressSubsystem::Get(World) : nullptr;
+			if (!World || !Player || !Era || !Progress)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE sitemap FAILED: world, player or a subsystem is missing"));
+				SmokeQuitNow(TEXT("sitemap"));
+				return false;
+			}
+			const double Now = FPlatformTime::Seconds();
+			if (!bEntered)
+			{
+				bEntered = true;
+				PhaseStart = Now;
+			}
+			const double InPhase = Now - PhaseStart;
+
+			switch (Phase)
+			{
+			case Detect:
+			{
+				const FString MapName = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
+				if (!MapName.EndsWith(TEXT("/Maps/Site")))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap skipped: the current map is %s, not the site map"), *MapName);
+					bSkipped = true;
+					Next(Finish);
+					break;
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE sitemap: map %s, player at %s, era past=%d"), *MapName, *Player->GetActorLocation().ToCompactString(), Era->GetCurrentEra() == EGBEra::Past ? 1 : 0);
+				if (Era->GetCurrentEra() != EGBEra::Past)
+				{
+					Fail(TEXT("the start era must be the past"));
+					break;
+				}
+				Next(WaitLevels);
+				break;
+			}
+			case WaitLevels:
+			{
+				ULevelStreaming* PastLevel = FindLevel(World, TEXT("_Past"));
+				ULevelStreaming* FutureLevel = FindLevel(World, TEXT("_Future"));
+				const bool bBothLoaded = PastLevel && FutureLevel && PastLevel->IsLevelLoaded() && FutureLevel->IsLevelLoaded();
+				if (bBothLoaded && PastLevel->IsLevelVisible() && !FutureLevel->IsLevelVisible())
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap levels after %.1f s: %s loaded+visible, %s loaded+hidden"), InPhase, *PastLevel->GetWorldAssetPackageName(), *FutureLevel->GetWorldAssetPackageName());
+					Next(Floor);
+				}
+				else if (InPhase > 90.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap levels: past found=%d loaded=%d visible=%d, future found=%d loaded=%d visible=%d"),
+						PastLevel ? 1 : 0, PastLevel && PastLevel->IsLevelLoaded() ? 1 : 0, PastLevel && PastLevel->IsLevelVisible() ? 1 : 0,
+						FutureLevel ? 1 : 0, FutureLevel && FutureLevel->IsLevelLoaded() ? 1 : 0, FutureLevel && FutureLevel->IsLevelVisible() ? 1 : 0);
+					Fail(TEXT("both sub-levels must load, Site_Past visible and Site_Future hidden at the start"));
+				}
+				break;
+			}
+			case Floor:
+			{
+				float Gap = 0.f;
+				const bool bOn = PlayerOnFloor(World, Player, &Gap);
+				if (InPhase >= 1.0 && bOn)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap floor: gap under the feet %.0f cm, not falling, at %s"), Gap, *Player->GetActorLocation().ToCompactString());
+					Next(Counts);
+				}
+				else if (InPhase > 8.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap floor: gap=%.0f falling=%d at %s"), Gap, Player->GetCharacterMovement() && Player->GetCharacterMovement()->IsFalling() ? 1 : 0, *Player->GetActorLocation().ToCompactString());
+					Fail(TEXT("the player must stand on the floor (trace from the feet hits within 200 cm, not falling) 1 s after the start"));
+				}
+				break;
+			}
+			case Counts:
+			{
+				const int32 Portals = CountActors<AGBPortal>(World);
+				const int32 Encounters = CountActors<AGBEncounter>(World);
+				const int32 Seals = CountActors<AGBSeal>(World);
+				const int32 Starters = CountActors<AGBEncounterStarter>(World);
+				const int32 FinalPortals = CountActors<AGBFinalPortal>(World);
+				const int32 Blocks = CountActors<AGBEraBlock>(World);
+				const int32 Chests = CountActors<AGBChest>(World);
+				UE_LOG(LogGB, Display, TEXT("SMOKE sitemap counts: portals=%d (6) encounters=%d (14) seals=%d (1) starters=%d (2) final portals=%d (1) era blocks=%d (>=20) chests=%d (6)"),
+					Portals, Encounters, Seals, Starters, FinalPortals, Blocks, Chests);
+				if (Portals != 6 || Encounters != 14 || Seals != 1 || Starters != 2 || FinalPortals != 1 || Blocks < 20 || Chests != 6)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap FAILED: an actor count does not match the plan"));
+					bFailed = true;
+				}
+				Next(PastPath);
+				break;
+			}
+			case PastPath:
+			{
+				const double Straight = FVector::Dist(StartSpot, Courtyard);
+				const FPathProbe Probe = ProbePath(World, StartSpot, Courtyard);
+				if (PathIsDirect(Probe, Straight) || (Probe.bValid && !Probe.bPartial && InPhase > 0.0 && Probe.Length < Straight * 3.0))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap nav (past): start spot -> courtyard exists: length=%.0f (straight %.0f) after %.1f s"), Probe.Length, Straight, InPhase);
+					Next(ShotPast);
+				}
+				else if (InPhase > 60.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap nav (past): valid=%d partial=%d length=%.0f"), Probe.bValid ? 1 : 0, Probe.bPartial ? 1 : 0, Probe.Length);
+					Fail(TEXT("no navmesh path from the player start into the courtyard (door D1 should be open in the past)"));
+				}
+				break;
+			}
+			case ShotPast:
+			{
+				if (InPhase < 0.1)
+				{
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation(FRotator(0.f, 0.f, 0.f)); // north is +X in the site's frame (WORLD_PLAN.md section 2)
+					}
+				}
+				else if (InPhase > 0.8)
+				{
+					Shot(TEXT("sitemap_past"));
+					Next(WaitTravel);
+				}
+				break;
+			}
+			case WaitTravel:
+			{
+				if (!bTravelRequested)
+				{
+					bTravelRequested = true;
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap: travel to the future from the start spot (no teleport), D1f flag set=%d"), Progress->HasFlag(FName(TEXT("Encounter.Wave_Future_1.Cleared"))) ? 1 : 0);
+					if (!Era->RequestTravel(EGBEra::Future, Player, false))
+					{
+						Fail(TEXT("the travel to the future was refused"));
+					}
+				}
+				else if (Era->GetCurrentEra() == EGBEra::Future && !Era->IsTravelling())
+				{
+					Next(WaitSwap);
+				}
+				else if (InPhase > 15.0)
+				{
+					Fail(TEXT("the travel to the future never finished"));
+				}
+				break;
+			}
+			case WaitSwap:
+			{
+				ULevelStreaming* PastLevel = FindLevel(World, TEXT("_Past"));
+				ULevelStreaming* FutureLevel = FindLevel(World, TEXT("_Future"));
+				if (PastLevel && FutureLevel && FutureLevel->IsLevelVisible() && !PastLevel->IsLevelVisible())
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap swap after %.1f s: Site_Future visible, Site_Past hidden"), InPhase);
+					Next(FloorFuture);
+				}
+				else if (InPhase > 30.0)
+				{
+					Fail(TEXT("after the travel Site_Future must be visible and Site_Past hidden"));
+				}
+				break;
+			}
+			case FloorFuture:
+			{
+				float Gap = 0.f;
+				const bool bOn = PlayerOnFloor(World, Player, &Gap);
+				if (InPhase >= 1.0 && bOn)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap floor (future): gap %.0f cm, not falling, at %s"), Gap, *Player->GetActorLocation().ToCompactString());
+					Next(FuturePath);
+				}
+				else if (InPhase > 8.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap floor (future): gap=%.0f at %s"), Gap, *Player->GetActorLocation().ToCompactString());
+					Fail(TEXT("after the swap the player must still be on the floor"));
+				}
+				break;
+			}
+			case FuturePath:
+			{
+				// D1f is closed until Encounter.Wave_Future_1.Cleared: no whole path from the yard to the checkpoint room. A short walk
+				// inside the yard proves the navmesh itself exists (otherwise "no path" would prove nothing).
+				if (Progress->HasFlag(FName(TEXT("Encounter.Wave_Future_1.Cleared"))))
+				{
+					Fail(TEXT("Encounter.Wave_Future_1.Cleared is set: the closed-door check cannot run"));
+					break;
+				}
+				const FPathProbe Control = ProbePath(World, Courtyard, Courtyard + FVector(300.f, 0.f, 0.f));
+				const FPathProbe Probe = ProbePath(World, Courtyard, StartSpot);
+				const bool bClosed = !Probe.bValid || Probe.bPartial;
+				if (Control.bValid && !Control.bPartial && bClosed)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE sitemap nav (future): yard -> checkpoint room has no whole path with D1f closed (valid=%d partial=%d), control walk length=%.0f, after %.1f s"),
+						Probe.bValid ? 1 : 0, Probe.bPartial ? 1 : 0, Control.Length, InPhase);
+					Next(ShotFuture);
+				}
+				else if (InPhase > 60.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE sitemap nav (future): path valid=%d partial=%d length=%.0f; control valid=%d partial=%d"), Probe.bValid ? 1 : 0, Probe.bPartial ? 1 : 0, Probe.Length, Control.bValid ? 1 : 0, Control.bPartial ? 1 : 0);
+					Fail(TEXT("with D1f closed there must be no whole navmesh path from the yard to the checkpoint room (and the control walk inside the yard must exist)"));
+				}
+				break;
+			}
+			case ShotFuture:
+			{
+				if (InPhase < 0.1)
+				{
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation(FRotator(0.f, 0.f, 0.f)); // north
+					}
+				}
+				else if (InPhase > 0.8)
+				{
+					Shot(TEXT("sitemap_future"));
+					Next(Finish);
+				}
+				break;
+			}
+			case Finish:
+			default:
+			{
+				if (InPhase < 1.0 && Phase == Finish && !bSkipped)
+				{
+					break; // let the last screenshot be written
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE sitemap block %s"), bSkipped ? TEXT("skipped") : (bFailed ? TEXT("FAILED") : TEXT("passed")));
+				if (!bSkipped)
+				{
+					SmokeQuitNow(TEXT("sitemap"));
+				}
+				return false;
+			}
+			}
+			return true;
+		}
+
+		static void Start(UWorld*, AGBPlayerCharacter*)
+		{
+			Phase = Detect;
+			bEntered = false;
+			bFailed = false;
+			bSkipped = false;
+			bTravelRequested = false;
+			FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
+		}
 	}
 
 	static void BuildSteps()
@@ -3491,7 +4264,12 @@ namespace GBSmokeRun
 				Move->Velocity = FVector::ZeroVector;
 			}
 		});
-		Add(U + 43.5f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// ---- Seal block (gb.Smoke seal) and real site map block (gb.Smoke sitemap): state machines, see SealRun / SiteMapRun.
+		// They quit the run themselves when done; the quit step below is only a far safety net.
+		const float Z = U + 43.8f;
+		Add(Z, TEXT("seal: seal, era block with a real doorway, captions, cancel, gun drop"), SealRun::Start);
+		Add(Z + 0.5f, TEXT("sitemap: the real site map (skipped on any other map)"), SiteMapRun::Start);
+		Add(Z + 150.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

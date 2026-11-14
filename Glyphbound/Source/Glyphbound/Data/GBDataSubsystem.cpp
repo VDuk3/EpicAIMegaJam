@@ -171,6 +171,7 @@ void UGBDataSubsystem::LoadAll()
 	LoadArray(TEXT("Encounters.json"), TEXT("Encounters"), Encounters);
 	LoadArray(TEXT("Skills.json"), TEXT("Skills"), SkillNodes);
 	LoadArray(TEXT("Sprites.json"), TEXT("Sprites"), Sprites);
+	LoadArray(TEXT("Cutscenes.json"), TEXT("Cutscenes"), Cutscenes);
 
 	BuildIndex(Spells, SpellIndex, TEXT("Spells.json"));
 	BuildIndex(Weapons, WeaponIndex, TEXT("Weapons.json"));
@@ -180,6 +181,7 @@ void UGBDataSubsystem::LoadAll()
 	BuildIndex(Encounters, EncounterIndex, TEXT("Encounters.json"));
 	BuildIndex(SkillNodes, SkillNodeIndex, TEXT("Skills.json"));
 	BuildIndex(Sprites, SpriteIndex, TEXT("Sprites.json"));
+	BuildIndex(Cutscenes, CutsceneIndex, TEXT("Cutscenes.json"));
 
 	// Recipes are never looked up by id, but a duplicate is still a data mistake worth a warning.
 	TMap<FName, int32> RecipeIndex;
@@ -198,6 +200,7 @@ const FGBEnemyDefinition* UGBDataSubsystem::FindEnemy(FName Id) const { return G
 const FGBEncounterDefinition* UGBDataSubsystem::FindEncounter(FName Id) const { return GBDataPrivate::FindIn(Encounters, EncounterIndex, Id); }
 const FGBSkillNodeDefinition* UGBDataSubsystem::FindSkillNode(FName Id) const { return GBDataPrivate::FindIn(SkillNodes, SkillNodeIndex, Id); }
 const FGBSpriteDefinition* UGBDataSubsystem::FindSprite(FName Id) const { return GBDataPrivate::FindIn(Sprites, SpriteIndex, Id); }
+const FGBCutsceneDefinition* UGBDataSubsystem::FindCutscene(FName Id) const { return GBDataPrivate::FindIn(Cutscenes, CutsceneIndex, Id); }
 
 void UGBDataSubsystem::ValidateModifierKeys() const
 {

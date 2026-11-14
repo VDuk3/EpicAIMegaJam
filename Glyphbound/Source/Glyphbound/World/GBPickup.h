@@ -80,6 +80,12 @@ protected:
 	/** Gives, sets the flag, shows the message, destroys when empty. */
 	void TryPickUp(AGBPlayerCharacter* Player);
 
-	UPROPERTY() FGBDropDefinition Drop;
-	UPROPERTY() FName FlagOnPickup = NAME_None;
+public:
+	/** What this pickup holds. Set per instance in the Editor for a pickup placed by hand; spawned ones get it from InitPickup. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Glyphbound|Pickup")
+	FGBDropDefinition Drop;
+
+	/** Progress flag set when this pickup is taken (empty = the Drop's own FlagOnPickup, if any). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Glyphbound|Pickup")
+	FName FlagOnPickup = NAME_None;
 };

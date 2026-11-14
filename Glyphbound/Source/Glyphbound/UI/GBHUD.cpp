@@ -17,6 +17,7 @@
 #include "Stats/GBStatsComponent.h"
 #include "Stats/GBAttributeComponent.h"
 #include "World/GBEraSubsystem.h"
+#include "World/GBCutsceneSubsystem.h"
 #include "World/GBInteractable.h"
 #include "Data/GBDataSubsystem.h"
 #include "Core/GBStatNames.h"
@@ -486,6 +487,7 @@ void AGBHUD::DrawHUD()
 		DrawQTE(Player, Skin);
 	}
 	DrawDamageFlash(Skin);
+	DrawCutscene(Skin);
 	DrawEraFade();
 	if (bMenuOpen)
 	{
@@ -1335,6 +1337,62 @@ void AGBHUD::DrawDamageFlash(EGBHudSkin Skin)
 		FillRect(Inset, H - Inset - T, W - 2.f * Inset, T, Color);
 		FillRect(Inset, Inset + T, T, H - 2.f * (Inset + T), Color);
 		FillRect(W - Inset - T, Inset + T, T, H - 2.f * (Inset + T), Color);
+	}
+}
+
+void AGBHUD::DrawCutscene(EGBHudSkin Skin)
+{
+	const UGBCutsceneSubsystem* Cutscene = UGBCutsceneSubsystem::Get(this);
+	if (!Cutscene || !Cutscene->IsPlaying())
+	{
+		return;
+	}
+	const float W = Canvas->ClipX;
+	const float H = Canvas->ClipY;
+
+	// Dim the world; the dimming comes in over the first moments.
+	const float DimIn = FMath::Clamp(Cutscene->GetTotalElapsed() / 0.4f, 0.f, 1.f);
+	FillRect(0.f, 0.f, W, H, FLinearColor(0.f, 0.f, 0.02f, 0.72f * DimIn));
+
+	// The line fades in and out around its own time.
+	const float LineSeconds = Cutscene->GetLineSeconds();
+	const float LineT = Cutscene->GetLineElapsed();
+	const float EdgeFade = FMath::Min(0.3f, LineSeconds * 0.4f);
+	const float Alpha = EdgeFade > 0.f ? FMath::Clamp(FMath::Min(LineT, LineSeconds - LineT) / EdgeFade, 0.f, 1.f) : 1.f;
+	const FString& Text = Cutscene->GetLineText();
+
+	const EGBTextSize Size = EGBTextSize::Body;
+	const float LineH = UiLineHeight(Skin, Size);
+	const float PanelW = FMath::Min(W * 0.7f, 1100.f * FMath::Max(1.f, H / 1080.f));
+	const float Pad = Skin == EGBHudSkin::Cyberpunk ? 28.f * UIScale() : 8.f * ArtPixel();
+	// Room for three wrapped lines: the longest caption of the data fits in two at 720p.
+	const float PanelH = LineH * 3.f + Pad * 2.f;
+	const float PanelX = FMath::RoundToFloat((W - PanelW) * 0.5f);
+	const float PanelY = FMath::RoundToFloat(H * 0.66f);
+
+	if (Skin == EGBHudSkin::Cyberpunk)
+	{
+		const float S = UIScale();
+		CyBox(PanelX, PanelY, PanelW, PanelH, 14.f * S, GBAlpha(GBCy::Ink, 0.85f * DimIn), GBAlpha(GBCy::RedDim, DimIn), 0x5);
+		FillRect(PanelX, PanelY, 4.f * S, PanelH, GBAlpha(GBCy::Red, DimIn));
+	}
+	else
+	{
+		const float P = ArtPixel();
+		FillRect(PanelX, PanelY, PanelW, PanelH, GBAlpha(GBRpg::StoneDeep, 0.94f * DimIn));
+		RpgStone(PanelX + P, PanelY + P, PanelW - 2.f * P, PanelH - 2.f * P, FLinearColor(1.f, 1.f, 1.f, DimIn));
+		RpgFrame(PanelX, PanelY, PanelW, PanelH, ERpgFrame::Gold);
+	}
+	FLinearColor TextColor = ToneColor(Skin, EGBTextTone::Normal);
+	TextColor.A *= Alpha;
+	UiWrapped(Skin, Size, EGBTextTone::Normal, Text, PanelX + Pad, PanelY + Pad, PanelW - Pad * 2.f, &TextColor);
+
+	if (Cutscene->CanSkip())
+	{
+		FLinearColor HintColor = ToneColor(Skin, EGBTextTone::Muted);
+		HintColor.A *= 0.9f;
+		const float Margin = Canvas->ClipY * 0.04f;
+		UiText(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("G / Esc: skip"), W - Margin, H - Margin - UiLineHeight(Skin, EGBTextSize::Small), 1.f, &HintColor);
 	}
 }
 

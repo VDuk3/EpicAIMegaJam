@@ -100,7 +100,7 @@ void UGBAttributeComponent::InitializeFromStats()
 
 float UGBAttributeComponent::ApplyDamage(const FGBDamageInfo& Info)
 {
-	if (bDead || bInvulnerable || Info.Amount <= 0.f)
+	if (bDead || IsInvulnerable() || Info.Amount <= 0.f)
 	{
 		return 0.f;
 	}

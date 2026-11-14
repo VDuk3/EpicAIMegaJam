@@ -1,4 +1,5 @@
 #include "Player/GBPlayerController.h"
+#include "World/GBCutsceneSubsystem.h"
 
 #include "Player/GBInputSet.h"
 #include "Player/GBPlayerCharacter.h"
@@ -141,6 +142,15 @@ void AGBPlayerController::SetMenu(EGBMenu Menu)
 	{
 		return;
 	}
+	// A cutscene owns the screen: no menu opens over it (the death screen still can).
+	if (Menu != EGBMenu::None && Menu != EGBMenu::Death)
+	{
+		const UGBCutsceneSubsystem* Cutscene = UGBCutsceneSubsystem::Get(this);
+		if (Cutscene && Cutscene->IsPlaying())
+		{
+			return;
+		}
+	}
 	const EGBMenu OldMenu = OpenMenu;
 	AGBHUD* HUD = Cast<AGBHUD>(GetHUD());
 
@@ -221,6 +231,14 @@ void AGBPlayerController::InputPause()
 	if (OpenMenu == EGBMenu::Death)
 	{
 		return;
+	}
+	// Esc during a cutscene skips it (once it can be skipped) instead of opening the pause menu.
+	if (UGBCutsceneSubsystem* Cutscene = UGBCutsceneSubsystem::Get(this))
+	{
+		if (Cutscene->RequestSkip())
+		{
+			return;
+		}
 	}
 	SetMenu(OpenMenu == EGBMenu::None ? EGBMenu::Pause : EGBMenu::None);
 }

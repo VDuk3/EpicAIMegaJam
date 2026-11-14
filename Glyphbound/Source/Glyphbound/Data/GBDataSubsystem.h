@@ -20,6 +20,7 @@
  *   Encounters.json     -> { "Encounters": [ FGBEncounterDefinition ] }
  *   Skills.json         -> { "Skills": [ FGBSkillNodeDefinition ] }
  *   Sprites.json        -> { "Sprites": [ FGBSpriteDefinition ] }
+ *   Cutscenes.json      -> { "Cutscenes": [ FGBCutsceneDefinition ] }
  * A missing or broken file logs an error (and an on-screen message in non-shipping builds) and leaves that table empty;
  * it never crashes. Console command "gb.ReloadData" calls ReloadAll() while the game runs.
  */
@@ -50,6 +51,7 @@ public:
 	const FGBEncounterDefinition* FindEncounter(FName Id) const;
 	const FGBSkillNodeDefinition* FindSkillNode(FName Id) const;
 	const FGBSpriteDefinition* FindSprite(FName Id) const;
+	const FGBCutsceneDefinition* FindCutscene(FName Id) const;
 
 	// In file order.
 	const TArray<FGBSpellDefinition>& GetSpells() const { return Spells; }
@@ -61,6 +63,7 @@ public:
 	const TArray<FGBEncounterDefinition>& GetEncounters() const { return Encounters; }
 	const TArray<FGBSkillNodeDefinition>& GetSkillNodes() const { return SkillNodes; }
 	const TArray<FGBSpriteDefinition>& GetSprites() const { return Sprites; }
+	const TArray<FGBCutsceneDefinition>& GetCutscenes() const { return Cutscenes; }
 
 	const FGBPlayerDefinition& GetPlayer() const { return Player; }
 	const FGBQTEDefinition& GetQTE() const { return QTE; }
@@ -85,6 +88,7 @@ protected:
 	UPROPERTY() TArray<FGBEncounterDefinition> Encounters;
 	UPROPERTY() TArray<FGBSkillNodeDefinition> SkillNodes;
 	UPROPERTY() TArray<FGBSpriteDefinition> Sprites;
+	UPROPERTY() TArray<FGBCutsceneDefinition> Cutscenes;
 	UPROPERTY() FGBPlayerDefinition Player;
 	UPROPERTY() FGBQTEDefinition QTE;
 	UPROPERTY() FGBGameDefinition Game;
@@ -105,6 +109,7 @@ private:
 	TMap<FName, int32> EncounterIndex;
 	TMap<FName, int32> SkillNodeIndex;
 	TMap<FName, int32> SpriteIndex;
+	TMap<FName, int32> CutsceneIndex;
 
 	/** Game.json keys already reported as missing, so a per-frame read warns only once. */
 	mutable TSet<FName> WarnedGameKeys;

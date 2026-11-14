@@ -137,7 +137,10 @@ public:
 	void RestoreAll(float HealthFraction = 1.f, float ManaFraction = 1.f, bool bRefillAmmo = true, bool bOnlyRaise = false);
 	/** Stops input-driven actions and hides the held item (death, cutscene). */
 	void SetControlEnabled(bool bEnabled);
-	bool IsControlEnabled() const { return bControlEnabled; }
+	/** False while SetControlEnabled(false) (death, era travel) OR a cutscene holds the player. */
+	bool IsControlEnabled() const { return bControlEnabled && !bCutsceneLocked; }
+	/** The cutscene's own hold on control, separate from SetControlEnabled so a travel finishing mid-caption cannot give control back. */
+	void SetCutsceneLocked(bool bLocked);
 	/** Releases everything held down (fire, aim, held movement). Called when a menu opens or control is lost. */
 	void ReleaseHeldInputs();
 
@@ -263,6 +266,7 @@ protected:
 	TWeakObjectPtr<AActor> FocusedInteractable;
 
 	bool bControlEnabled = true;
+	bool bCutsceneLocked = false;
 	/** Movement turned off by a KillZ death, until RespawnAt / LoadFromSnapshot. */
 	bool bMovementFrozen = false;
 	bool bDashing = false;

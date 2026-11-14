@@ -275,6 +275,40 @@
 			]
 		},
 		{
+			"Comment": "Provisional (site code needs): an Orc_Future copy, a bit tougher, that carries the first gun. Its pistol drop sets GotFirstGun when picked up.",
+			"Id": "Orc_Future_GunCarrier",
+			"DisplayName": "Armored Orc",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+				"MaxHealth": 110,
+				"MoveSpeed": 400,
+				"AttackDamage": 10,
+				"AttackRange": 1600,
+				"AttackInterval": 1.4,
+				"AttackWindup": 0.5,
+				"AggroRange": 2600,
+				"ProjectileSpeed": 2600,
+				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.22,
+				"CapsuleRadius": 42,
+				"CapsuleHalfHeight": 96,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5
+			},
+			"Strings": {
+				"Color": "#7A6A4A",
+				"ProjectileColor": "#FF5A3A"
+			},
+			"Drops": [
+				{ "WeaponId": "Pistol", "Count": 1, "Chance": 1.0, "FlagOnPickup": "GotFirstGun" }
+			]
+		},
+		{
 			"Id": "Orc_Future_Enforcer",
 			"DisplayName": "Orc Enforcer",
 			"AttackMode": "Ranged",
@@ -489,6 +523,53 @@
 				"MaxHealth": 7300,
 				"MoveSpeed": 420,
 				"AttackDamage": 20,
+				"AttackRange": 2600,
+				"AttackInterval": 1.0,
+				"AttackWindup": 0.45,
+				"AggroRange": 8000,
+				"ProjectileSpeed": 3400,
+				"ProjectileRadius": 16,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.2,
+				"CapsuleRadius": 120,
+				"CapsuleHalfHeight": 135,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"FireBuildUpThreshold": 400,
+				"LightningBuildUpThreshold": 400,
+				"IceBuildUpThreshold": 400,
+				"FireStatusImmunity": 8,
+				"LightningStatusImmunity": 10,
+				"IceStatusImmunity": 12,
+				"FrostSlow": 0.25,
+				"SlowTaken": 0.4,
+				"IgniteDamageMult": 8
+			},
+			"Strings": {
+				"Color": "#3AFFB0",
+				"ProjectileColor": "#3AFFB0",
+				"LightningStatusReaction": "Interrupt",
+				"IceStatusReaction": "Slow"
+			},
+			"Drops": [
+				{ "ItemId": "Ammo_Magazine", "Count": 3, "Chance": 1.0 },
+				{ "ItemId": "HealthInjection", "Count": 1, "Chance": 1.0 }
+			]
+		},
+		{
+			"Comment": "Provisional (site code needs): the Herald, the tentacle machine as a mini-boss. Same actor class and look as Entity_Phase1; health 55% (7300 -> 4015) and damage 80% (20 -> 16) of it.",
+			"Id": "Herald",
+			"DisplayName": "The Herald",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"ActorClass": "/Script/Glyphbound.GBEntity",
+			"Stats": {
+				"MaxHealth": 4015,
+				"MoveSpeed": 420,
+				"AttackDamage": 16,
 				"AttackRange": 2600,
 				"AttackInterval": 1.0,
 				"AttackWindup": 0.45,

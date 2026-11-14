@@ -76,8 +76,16 @@ bool UGBProgressSubsystem::RestoreCheckpoint(AGBPlayerCharacter* Player)
 	return true;
 }
 
+bool UGBProgressSubsystem::MarkCutsceneConsumed(FName CutsceneId)
+{
+	bool bAlready = false;
+	ConsumedCutscenes.Add(CutsceneId, &bAlready);
+	return !bAlready;
+}
+
 void UGBProgressSubsystem::ResetProgress()
 {
+	ConsumedCutscenes.Reset();
 	const TSet<FName> Cleared = MoveTemp(Flags);
 	Flags.Reset();
 	Checkpoint = FGBPlayerSnapshot();

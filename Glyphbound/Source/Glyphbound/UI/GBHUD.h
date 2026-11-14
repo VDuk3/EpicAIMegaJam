@@ -420,6 +420,8 @@ protected:
 	void DrawGestureHint(uint8 Gesture, float CenterX, float CenterY, float Radius, const FLinearColor& Color, float Thick);
 	void DrawDamageFlash(EGBHudSkin Skin);
 	void DrawEraFade();
+	/** The caption cutscene (UGBCutsceneSubsystem): a dimmed screen with the current line in a panel of the skin's style. */
+	void DrawCutscene(EGBHudSkin Skin);
 
 	// ======================================================================== menus (GBHUD_Menus.cpp)
 	AGBPlayerController* GetGBController() const;

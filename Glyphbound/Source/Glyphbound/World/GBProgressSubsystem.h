@@ -75,6 +75,9 @@ public:
 	void SetFlag(FName Flag, bool bValue = true);
 	const TSet<FName>& GetFlags() const { return Flags; }
 
+	/** Caption cutscenes started by a trigger flag play once per run: true the first time Id is marked, false after. Cleared by ResetProgress. */
+	bool MarkCutsceneConsumed(FName CutsceneId);
+
 	// ---- Checkpoints ----
 	/** Takes a snapshot of the player (all components + transform + era). */
 	void SaveCheckpoint(AGBPlayerCharacter* Player);
@@ -96,4 +99,5 @@ public:
 protected:
 	UPROPERTY() TSet<FName> Flags;
 	UPROPERTY() FGBPlayerSnapshot Checkpoint;
+	TSet<FName> ConsumedCutscenes;
 };

@@ -1,0 +1,21 @@
+{
+	"Comment": "Provisional caption text (GDD 4, opening sequence). Each line: Text and Seconds. TriggerFlag = plays by itself the first time that progress flag is set.",
+	"Cutscenes": [
+		{
+			"Id": "Seal",
+			"Lines": [
+				{ "Text": "The seal flares under your hand.", "Seconds": 3.0 },
+				{ "Text": "The castle tears away.", "Seconds": 3.0 },
+				{ "Text": "Somewhere far ahead in time, a voice: 'Help me... please.'", "Seconds": 4.0 }
+			]
+		},
+		{
+			"Id": "FirstGun",
+			"TriggerFlag": "GotFirstGun",
+			"Lines": [
+				{ "Text": "A strange weapon. Cold metal, no magic in it.", "Seconds": 3.5 },
+				{ "Text": "The woman's voice again: 'You found it. Now come back for me.'", "Seconds": 4.0 }
+			]
+		}
+	]
+}

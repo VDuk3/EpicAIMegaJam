@@ -75,6 +75,10 @@ public:
 
 	/** While locked (QTE running, cutscene), SwitchTo and CycleSlot do nothing. */
 	void SetSwitchLocked(bool bLocked) { bSwitchLocked = bLocked; }
+	/** Locked by anyone: the spell QTE / sustained spells (SetSwitchLocked) or a cutscene (SetCutsceneLocked). */
+	bool IsSwitchLocked() const { return bSwitchLocked || bCutsceneLocked; }
+	/** The cutscene's own lock: separate from SetSwitchLocked, so the two never overwrite each other. */
+	void SetCutsceneLocked(bool bLocked) { bCutsceneLocked = bLocked; }
 
 	/** Refills every gun (era travel). */
 	void RefillAllAmmo();
@@ -119,4 +123,5 @@ protected:
 	UPROPERTY() TMap<FName, EGBElement> StoredElements;
 	EGBHeldSlot ActiveSlot = EGBHeldSlot::Staff;
 	bool bSwitchLocked = false;
+	bool bCutsceneLocked = false;
 };

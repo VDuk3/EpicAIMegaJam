@@ -60,7 +60,12 @@ public:
 
 	/** While true, ApplyDamage does nothing (dash i-frames, cutscenes, respawn). */
 	void SetInvulnerable(bool bInInvulnerable) { bInvulnerable = bInInvulnerable; }
-	bool IsInvulnerable() const { return bInvulnerable; }
+	bool IsInvulnerable() const { return bInvulnerable || bCutsceneInvulnerable; }
+	/** The cutscene's own invulnerability: separate from SetInvulnerable (smoke runs, i-frames), so neither restores the other's value. */
+	void SetCutsceneInvulnerable(bool bInInvulnerable) { bCutsceneInvulnerable = bInInvulnerable; }
+	bool IsCutsceneInvulnerable() const { return bCutsceneInvulnerable; }
+	/** Only the plain flag (not the cutscene one), for code that saves and restores it. */
+	bool IsPlainInvulnerable() const { return bInvulnerable; }
 
 	/** Pure regen step, also used by the tests: the new value after DeltaTime, given the time since the last damage/spend. */
 	static float StepRegen(float Current, float Max, float RegenPerSecond, float RegenDelay, float TimeSinceLastLoss, float DeltaTime);
@@ -84,4 +89,5 @@ protected:
 	float TimeSinceManaSpend = 1000.f;
 	bool bDead = false;
 	bool bInvulnerable = false;
+	bool bCutsceneInvulnerable = false;
 };

@@ -78,6 +78,7 @@
 		"EnemySteerSweepRadiusScale": 0.9,
 		"DuplicateGunMagazines": 1,
 		"DropScatterRadius": 90,
+		"CutsceneSkipDelay": 1.0,
 		"TestSkillPointAmount": 1,
 		"RespawnHealthFraction": 1,
 		"RespawnManaFraction": 1,
@@ -178,6 +179,7 @@
 	"Strings": {
 		"ElementalDefault.FireStatusReaction": "Ignite",
 		"ElementalDefault.LightningStatusReaction": "Stun",
-		"ElementalDefault.IceStatusReaction": "Freeze"
+		"ElementalDefault.IceStatusReaction": "Freeze",
+		"EntityMapPath": ""
 	}
 }

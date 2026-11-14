@@ -87,6 +87,7 @@
 				{
 					"DelayBefore": 0,
 					"Spawns": [
+						{ "EnemyId": "Orc_Future_GunCarrier", "Count": 1 },
 						{ "EnemyId": "Orc_Future", "Count": 3 }
 					]
 				},
@@ -611,6 +612,52 @@
 			],
 			"SkillPoints": 5,
 			"Rewards": []
+		},
+		{
+			"Comment": "Provisional (site code needs): the future breach corridor fight.",
+			"Id": "Skirmish_Breach",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 4 },
+						{ "EnemyId": "Drone_Future", "Count": 2 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Comment": "Provisional (site code needs): the signal corridor fight.",
+			"Id": "Skirmish_Signal",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Orc_Future", "Count": 3 },
+						{ "EnemyId": "Orc_Future_Enforcer", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Comment": "Provisional (site code needs): mini-boss, the Herald. 3 skill points, the rifle as a crate reward.",
+			"Id": "MiniBoss_Herald",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{ "EnemyId": "Herald", "Count": 1 }
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": [
+				{ "WeaponId": "Rifle", "Count": 1, "Chance": 1.0 }
+			]
 		},
 		{
 			"Id": "Entity",

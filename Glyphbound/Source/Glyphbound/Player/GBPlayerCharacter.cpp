@@ -16,6 +16,7 @@
 #include "QTE/GBQTEComponent.h"
 #include "Items/GBInventoryComponent.h"
 #include "Progression/GBSkillTreeComponent.h"
+#include "World/GBCutsceneSubsystem.h"
 #include "World/GBInteractable.h"
 #include "World/GBProgressSubsystem.h"
 #include "World/GBEraSubsystem.h"
@@ -425,7 +426,7 @@ GBMantle::FMantleParams AGBPlayerCharacter::GetMantleParams() const
 
 bool AGBPlayerCharacter::CanMantleNow() const
 {
-	return bControlEnabled && !IsDead() && !IsQTEActive() && !bDashing && !bMovementFrozen && !bMantling;
+	return IsControlEnabled() && !IsDead() && !IsQTEActive() && !bDashing && !bMovementFrozen && !bMantling;
 }
 
 bool AGBPlayerCharacter::FindMantleLedge(FGBMantleLedge& Out, bool bFromGround, const FVector2D& ProbeDir) const
@@ -975,7 +976,7 @@ bool AGBPlayerCharacter::IsDead() const
 
 bool AGBPlayerCharacter::CanUseGameplayInput() const
 {
-	return bControlEnabled && !IsDead();
+	return IsControlEnabled() && !IsDead();
 }
 
 bool AGBPlayerCharacter::IsQTEActive() const
@@ -1019,7 +1020,22 @@ void AGBPlayerCharacter::SetControlEnabled(bool bEnabled)
 	}
 	if (AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr)
 	{
-		Item->SetActorHiddenInGame(!bEnabled);
+		Item->SetActorHiddenInGame(!IsControlEnabled());
+	}
+}
+
+void AGBPlayerCharacter::SetCutsceneLocked(bool bLocked)
+{
+	bCutsceneLocked = bLocked;
+	if (bLocked)
+	{
+		CancelMantle();
+		ReleaseHeldInputs();
+		EndDash();
+	}
+	if (AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr)
+	{
+		Item->SetActorHiddenInGame(!IsControlEnabled());
 	}
 }
 
@@ -1103,14 +1119,17 @@ void AGBPlayerCharacter::FellOutOfWorld(const UDamageType& /*DmgType*/)
 	FreezeMovement();
 
 	// Friendly fire and invulnerability do not matter here: the hit goes straight to the attributes.
-	const bool bWasInvulnerable = Attributes->IsInvulnerable();
+	const bool bWasInvulnerable = Attributes->IsPlainInvulnerable();
+	const bool bWasCutsceneInvulnerable = Attributes->IsCutsceneInvulnerable();
 	Attributes->SetInvulnerable(false);
+	Attributes->SetCutsceneInvulnerable(false);
 	FGBDamageInfo Fall;
 	Fall.Amount = FallOutOfWorldDamage;
 	Fall.Element = EGBElement::Physical;
 	Fall.SourceId = FellOutOfWorldSourceId;
 	Attributes->ApplyDamage(Fall); // HitDirection is zero, so a raised shield cannot block it
 	Attributes->SetInvulnerable(bWasInvulnerable);
+	Attributes->SetCutsceneInvulnerable(bWasCutsceneInvulnerable);
 
 	if (!IsDead())
 	{
@@ -1730,6 +1749,14 @@ void AGBPlayerCharacter::InputBlockReleased()
 
 void AGBPlayerCharacter::InputInteract()
 {
+	// Interact during a cutscene skips it (once it can be skipped); control is locked then, so nothing else would read it.
+	if (UGBCutsceneSubsystem* Cutscene = UGBCutsceneSubsystem::Get(this))
+	{
+		if (Cutscene->RequestSkip())
+		{
+			return;
+		}
+	}
 	if (!CanUseGameplayInput() || IsQTEActive() || bMantling)
 	{
 		return;

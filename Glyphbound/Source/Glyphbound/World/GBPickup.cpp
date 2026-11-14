@@ -93,7 +93,7 @@ int32 AGBPickup::SpawnDrops(UWorld* World, TConstArrayView<FGBDropDefinition> Dr
 			continue;
 		}
 		const FVector2D Offset = FMath::RandPointInCircle(ScatterRadius);
-		if (SpawnPickup(World, Drop, Location + FVector(Offset.X, Offset.Y, 0.f)))
+		if (SpawnPickup(World, Drop, Location + FVector(Offset.X, Offset.Y, 0.f), Drop.FlagOnPickup))
 		{
 			++Spawned;
 		}
@@ -229,7 +229,7 @@ bool AGBPickup::GiveDrop(AGBPlayerCharacter* Player, FGBDropDefinition& InOutDro
 void AGBPickup::InitPickup(const FGBDropDefinition& InDrop, FName InFlagOnPickup)
 {
 	Drop = InDrop;
-	FlagOnPickup = InFlagOnPickup;
+	FlagOnPickup = InFlagOnPickup.IsNone() ? InDrop.FlagOnPickup : InFlagOnPickup;
 	if (HasActorBegunPlay())
 	{
 		ApplyLook();
@@ -240,6 +240,16 @@ void AGBPickup::BeginPlay()
 {
 	Super::BeginPlay();
 	InteractVolume->OnComponentBeginOverlap.AddDynamic(this, &AGBPickup::HandleOverlap);
+	// A pickup placed in a level has its Drop and flag from the Editor (a spawned one got them from InitPickup before this).
+	if (FlagOnPickup.IsNone())
+	{
+		FlagOnPickup = Drop.FlagOnPickup;
+	}
+	if (!IsDropValid(this, Drop))
+	{
+		UE_LOG(LogGB, Warning, TEXT("%s: placed pickup has an empty or unknown Drop (item %s, weapon %s, spell group %s); it will do nothing."),
+			*GetName(), *Drop.ItemId.ToString(), *Drop.WeaponId.ToString(), *Drop.SpellGroup.ToString());
+	}
 	ApplyLook();
 }
 

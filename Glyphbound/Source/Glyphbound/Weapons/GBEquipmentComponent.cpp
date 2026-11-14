@@ -325,7 +325,7 @@ AGBHeldItem* UGBEquipmentComponent::GiveWeapon(FName WeaponId, bool bAutoSwitch,
 
 bool UGBEquipmentComponent::EquipOwnedWeapon(FName WeaponId)
 {
-	if (bSwitchLocked || !OwnsWeapon(WeaponId) || IsWeaponEquipped(WeaponId))
+	if (IsSwitchLocked() || !OwnsWeapon(WeaponId) || IsWeaponEquipped(WeaponId))
 	{
 		return false;
 	}
@@ -429,7 +429,7 @@ void UGBEquipmentComponent::EquipSlot(EGBHeldSlot Slot)
 
 bool UGBEquipmentComponent::SwitchTo(EGBHeldSlot Slot)
 {
-	if (bSwitchLocked || !HasWeaponInSlot(Slot))
+	if (IsSwitchLocked() || !HasWeaponInSlot(Slot))
 	{
 		return false;
 	}
@@ -443,7 +443,7 @@ bool UGBEquipmentComponent::SwitchTo(EGBHeldSlot Slot)
 
 void UGBEquipmentComponent::CycleSlot(int32 Direction)
 {
-	if (bSwitchLocked)
+	if (IsSwitchLocked())
 	{
 		return;
 	}

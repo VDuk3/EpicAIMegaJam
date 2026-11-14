@@ -74,6 +74,28 @@ void AGBEncounter::Configure(FName InEncounterId, EGBEraPresence InPresence, con
 	}
 }
 
+bool AGBEncounter::AreRequiredFlagsMet(TConstArrayView<FName> Required, const TSet<FName>& SetFlags)
+{
+	for (const FName Flag : Required)
+	{
+		if (!Flag.IsNone() && !SetFlags.Contains(Flag))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool AGBEncounter::AreRequiredFlagsMet() const
+{
+	if (RequiredFlags.Num() == 0)
+	{
+		return true;
+	}
+	const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this);
+	return Progress && AreRequiredFlagsMet(RequiredFlags, Progress->GetFlags());
+}
+
 const FGBEncounterDefinition* AGBEncounter::FindDefinition() const
 {
 	const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
@@ -140,7 +162,7 @@ void AGBEncounter::HandleEraChanged(EGBEra NewEra)
 
 void AGBEncounter::TryStartFromTrigger(bool bPlayerKnownInside)
 {
-	if (State != EGBEncounterState::Waiting || EncounterId.IsNone())
+	if (State != EGBEncounterState::Waiting || EncounterId.IsNone() || !AreRequiredFlagsMet())
 	{
 		return;
 	}
@@ -168,7 +190,7 @@ void AGBEncounter::TryStartFromTrigger(bool bPlayerKnownInside)
 
 void AGBEncounter::StartEncounter()
 {
-	if (State != EGBEncounterState::Waiting)
+	if (State != EGBEncounterState::Waiting || !AreRequiredFlagsMet())
 	{
 		return;
 	}

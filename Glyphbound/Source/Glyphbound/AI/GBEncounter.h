@@ -55,6 +55,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Encounter")
 	TArray<FVector> SpawnPoints;
 
+	/** Progress flags that must ALL be set before it can start (trigger or StartEncounter). Empty = no condition. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Encounter")
+	TArray<FName> RequiredFlags;
+
+	/** Pure rule (tested): true if every flag in Required is in SetFlags. An empty list is always met. */
+	static bool AreRequiredFlagsMet(TConstArrayView<FName> Required, const TSet<FName>& SetFlags);
+	/** Same, against the current progress flags. */
+	bool AreRequiredFlagsMet() const;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Encounter")
 	FVector TriggerExtent = FVector(600.f, 600.f, 300.f);
 

@@ -305,6 +305,10 @@ struct GLYPHBOUND_API FGBDropDefinition
 	/** 0..1 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	float Chance = 1.f;
+
+	/** Progress flag set when the dropped pickup is taken (the gun carrier's pistol sets "GotFirstGun"). Empty = none. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName FlagOnPickup = NAME_None;
 };
 
 /** Enemies.json. */
@@ -515,6 +519,36 @@ struct GLYPHBOUND_API FGBQTEDefinition
 	/** Gesture names that may be asked for (see EGBGesture). Empty = all. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TArray<FString> Gestures;
+};
+
+/** One caption line of a cutscene: English text and how long it stays (seconds). */
+USTRUCT(BlueprintType)
+struct GLYPHBOUND_API FGBCutsceneLine
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FString Text;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	float Seconds = 3.f;
+};
+
+/** Cutscenes.json: caption cutscenes (lines over a dimmed screen, player locked and invulnerable). */
+USTRUCT(BlueprintType)
+struct GLYPHBOUND_API FGBCutsceneDefinition
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName Id = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TArray<FGBCutsceneLine> Lines;
+
+	/** Plays by itself the first time this progress flag is set ("GotFirstGun"). Empty = only played from code. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	FName TriggerFlag = NAME_None;
 };
 
 /** Game.json: global values that belong to no single system (fade times, respawn delay, test arena switches...). */
