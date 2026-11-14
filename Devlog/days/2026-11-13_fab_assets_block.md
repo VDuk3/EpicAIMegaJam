@@ -177,6 +177,46 @@ Its source files moved to `Glyphbound/SourceArt/Environment/SpaceshipCorridor/`.
 - **Lighting:** sun, sky light, atmosphere and fog per era.
 - **Idempotent:** every generated actor is tagged `GBGen`, and a run replaces only those.
 
+## The code needs: Muse stalled, Sonnet built them, Sol reviewed
+- **Muse Spark 1.3 Contributor** (OpenCode, logged) read the code for a while and exited without writing anything.
+- **Exception to the default implementer:** the team rule after a Muse stall sends the work to a **Claude Sonnet 5.5 subagent**. It used the same brief, plus one addition: placed pickups configurable in the Editor.
+- **What it built:**
+  - `AGBEraBlock`.
+  - `AGBSeal`, with a small caption-cutscene subsystem (`Cutscenes.json`: `Seal`, and `FirstGun` triggered by the flag `GotFirstGun`).
+  - `RequiredFlags` on encounters and `AGBEncounterStarter`.
+  - `AGBFinalPortal`.
+  - Pickups whose `Drop` and `FlagOnPickup` are editable, and a `FlagOnPickup` that drops carry.
+  - The data: `Orc_Future_GunCarrier` (its pistol sets `GotFirstGun`), the `Herald`, `Skirmish_Breach`, `Skirmish_Signal` and `MiniBoss_Herald`.
+  - The test `Glyphbound.World.RequiredFlags` and a smoke block `site`.
+- **Checks:** 49 tests green, Editor and game builds, full smoke clean.
+- **GPT Sol 6.1 review** (Codex CLI, medium, read-only, logged; prompt `Prompts/site_code_needs_review_sol.md`): 11 findings, all sent back to the Sonnet subagent.
+  - **P1, final portal:** travelling to the Entity map would lose the inventory. The map does not exist yet, so the portal will only travel to a real package.
+  - **P1, seal:** a refused travel spends the seal.
+  - **P1, cutscene during a QTE:** it can lock weapon switching for good.
+  - **P2, the cutscene:** captions queued behind a travel, death during a caption, a trigger caption replaying, a caption under an open menu.
+  - **P2, the map path:** an invalid Entity map path.
+  - **P2, the smoke:** it checks a navmesh flag instead of a real path, and uses fixed wall-clock timing.
+  - **P3, the test:** a required-flags test that misses one wrong implementation.
+- **Also asked of it:** a `sitemap` smoke block that runs on the real map.
+
+## The dressing pass
+`Tools/Jam/Dress-SiteMap.py` fits each kit mesh into the rectangle the plan gives its structure. It turns the mesh to the long side, tiles low walls and bookshelves, stacks the base's columns, and turns the castle stairs by their climbing direction. The greybox boxes underneath keep the collision and are hidden.
+
+**What it places:**
+- **The castle:** the 47 wall pieces at the planner's origins and turns, pillars with capitals, podiums, low walls, bookshelves, crenels and props.
+- **The base:** HTB machine blocks, consoles, docks, the hangar gantry, stacked columns and lab capsules.
+- **Boxes that stay as the look:** a new world-aligned master material, `M_GB_WorldAligned`, with eight instances, so a 48 m wall does not stretch one texture.
+  - **The castle:** stone walls, wooden ceilings, stone floors.
+  - **The base:** panel walls (`Scifi_Panels_10`), dark metal floor (`_09`), grate ceilings (`_07`), containers (`_12`) and emissive accents (`_11`).
+
+**Self-review before showing the owner** (renders `media/2026-11-13/site_dressed_*.png`):
+- **The castle's floor:** the 12 m floor tile the plan chose (`SM_CastleTower_Floor_A_05`) has round holes, because it is a tower floor. The castle floor is now a stone skin per room.
+- **The shared boxes:** the galleries showed castle stone in the future too. Each era now gets its own skinned copy.
+- **The base's floor:** the first panel was covered in "WARNING" signs, so three were compared on the yard and the darkest, calmest one won.
+- **Not a bug:** the pylons of the past appear in the future's Editor renders because the Editor does not apply the eras; the game hides them.
+
+**The game's map:** `GameDefaultMap` is now `/Game/Glyphbound/Maps/Site`, and it is cooked. `Smoke-Jam.ps1` got `-Map`, whose default is the engine's Entry map, so the arena smoke is unchanged.
+
 ## Not done in this block
 - Nothing from the packs is placed in a game level yet.
 - High Tech Base is not migrated and the corridor is not imported. Per the team rule, renders go to the owner first.
