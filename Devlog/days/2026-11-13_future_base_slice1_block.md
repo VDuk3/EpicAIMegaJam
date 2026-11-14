@@ -142,3 +142,32 @@ Translation: (1) there is a hole at the first room on the left of the corridor; 
 - Package: `BUILD SUCCESSFUL`; `TeamTBD_Glyphbound.zip` is **1,445.4 MB** (the lab kit's room is now in the cook; still over the jam's 1 GB, which the owner has set aside for now).
 - On the package: tour `passed: 21 spots, 0 without floor` (80 s); full arena smoke `LogGB errors=0` (148 s).
 - **Not checked by a person yet:** climbing out of the pits on the crate steps, walking through the doorways, the fight in the lab, the freight door seen from both sides.
+
+## The owner's second walk: four notes
+Original (Spanish), with five screenshots:
+
+> *"1. La sala esta bien, pero no uses esos assets porque son los que se usaran para la pelea con la Valkiria. 2. A esta escalera haz lo mismo que la otra. 3. Sigue un pasillo largo, con cables en los suelos y tuberias en el techo. Ya hay un asset asi. 4. Hay un glitch antes de eso, ya no deja salir."* and, with a fifth screenshot, *"Ahi es el glitch"*.
+
+Translation: (1) the room is fine, but do not use those assets: they are the ones for the Valkyrie's fight. (2) Do to this stair what you did to the other. (3) A long corridor follows, with cables on the floors and pipes on the ceiling; there is already an asset like that. (4) There is a glitch before that; it no longer lets you out. "There is the glitch."
+
+| Note | What was wrong | What was done |
+|---|---|---|
+| 1 | The combat room was the lab kit's own room | **Muster hall** in the same place and size, from the base's kit: the High Tech Base hangar branch placed again as its author built it, plus our end wall around the gallery's door, a loading dock 1 m up with its stair, nine crates and a machine block. Same encounter (`Opening_Future`). No lab-kit piece is left on the map: the store's cabinets, desk and barrels and the projector at the seal went too (the seal now sits in the station kit's geodesic sphere) |
+| 2 | The east stair's foot was 1 m from the end wall, in the dark, with a machine block in front | The stair ends 2.5 m short of the wall, the block moved to the corner by the trench, a wall lamp over the stair's foot |
+| 3 | The way stopped at the second freight door | That door works too, and behind it runs the **long service corridor**: 36 m, 4 m wide and high, from the station kit: a covered cable tray and two loose cables on the floor, an air hose along the wall, a bundle of pipes and a truss under the ceiling, two grated bays, staggered wall lamps, a personnel door at the far end, shut for now |
+| 4 | **The architect's mistake.** The corridor bay behind the first freight door was taken from the demo by a range of positions, and the control room's big pieces (its wall mesh, floor, roof, decals) have their pivots just inside that range. They came along, cut across the branch and the door line, invisible from one side and solid from both | Those pieces are filtered out by their bounds. The door line then had no floor (the control room's floor had been covering it), which the builder's walk check reported; a threshold strip lies under each freight door now |
+
+**On note 3, "there is already an asset like that".** Two candidates: the station kit's own interiors (cable trays, pipe bundles, hoses), and the Spaceship Corridor Damaged model in `SourceArt` (Blender 4.3 only, no UVs, procedural textures). The second cannot be brought in on this machine: Blender is not installed on CENTRAL. The corridor is built from the station kit, which was looked at from inside first. If the owner meant the Blender model, it has to be converted on a machine with Blender.
+
+**Self-review in the game** (`gb.Smoke tour`, 27 spots, passed):
+- The long corridor's plain wall panels were large flat white sheets that glared under the lamps: only the riveted panels are used now, and the lamps are dimmer.
+- A machine block right inside the muster hall's door read as a black wall: moved deeper into the hall.
+- The player died in the muster hall during the tour (the encounter works; a teleported player does not fight back), which put the death screen in one screenshot. The hall's spots are last in the tour now.
+- Screenshots of this round: `media/2026-11-13/futurebase_v4_round2.png`.
+
+**Checks for the second round:**
+- No code changed since the first round's checks (50 tests, both builds, full arena smoke): only the map and its builder.
+- Builder walk check: no holes on nine walks through every connection (one sample on the 1 cm seam between two floor pieces of the bay).
+- Package: `BUILD SUCCESSFUL`; `TeamTBD_Glyphbound.zip` is **1,206.2 MB** (the lab kit is out of the cook).
+- On the package: tour `passed: 27 spots, 0 without floor` (102 s); full arena smoke `LogGB errors=0` (149 s). Screenshots taken on the package: `media/2026-11-13/futurebase_v4_packaged.png`.
+- **Not checked by a person yet:** this round's changes on foot.
