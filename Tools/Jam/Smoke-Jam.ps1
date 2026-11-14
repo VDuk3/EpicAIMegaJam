@@ -21,7 +21,7 @@ param(
     [int]$ResX = 1280,        # screenshot size (for example 1920 x 1080 to judge the HUD)
     [int]$ResY = 720,
     # The map to start on. The smoke steps run in the code-built test arena, which the game builds on the engine's
-    # empty Entry map; the game's own default map is the site (/Game/Glyphbound/Maps/Site) since 2026-11-13.
+    # empty Entry map, which is also the game's default map. -Map is for a real map, when one exists.
     [string]$Map = '/Engine/Maps/Entry'
 )
 $Project = (Resolve-Path $Project).Path

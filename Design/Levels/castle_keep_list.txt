@@ -1,4 +1,4 @@
-# CastleTown packages to KEEP (101): the 31 castle meshes of WORLD_PLAN.md and everything they depend on.
+# CastleTown packages to KEEP (101): the 31 castle meshes of the first world plan (deleted 2026-11-13; in git history at ac54fbc) and everything they depend on.
 # Measured on 2026-11-13 with the Editor's asset registry (hard and soft package references, recursive).
 # Paths are relative to /Game/CastleTown/. Everything else under /Game/CastleTown can be deleted.
 Candle/StaticMeshes/Architecture/SM_PillarStem_01
