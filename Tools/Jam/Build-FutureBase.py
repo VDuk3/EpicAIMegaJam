@@ -1406,14 +1406,15 @@ async def stage_encounters():
 # wall at full strength and checks that it stands on that floor (the tour removes every encounter before it starts,
 # so no fight begins while the map is being looked at); on "breakwall" it hits the nearest breakable four
 # times and checks that it broke; on "gatetest" it hands the player a power cell by a socket and checks the socket took
-# it, and on "gatecheck" that the energy gate went out.
+# it, and on "gatecheck" that the energy gate went out; on "vaulttest" it pushes the player against what is in front of
+# him (the corridor's railing, 127 cm high under a 300 cm ceiling, which no jump clears) and checks he vaulted over it.
 TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('03_corridor', 300, -50, 0, 0),
-        ('04_corridor_alcove', 1500, 0, 0, 90), ('05_enter_bay', 2050, -200, 0, 12), ('06_west_stair', 2000, -100, 0, 35),
+        ('04_corridor_alcove', 1500, 0, 0, 90), ('04b_vaulttest_rail', 1850, 430, 0, 90), ('05_enter_bay', 2050, -200, 0, 12), ('06_west_stair', 2000, -100, 0, 35),
         ('07_catwalk', 2700, 200, 300, -5), ('08_bridge', 4250, -100, 300, -90), ('09_lookout', 4250, -600, 300, 150),
         ('10_bay_floor_east', 4600, -150, 0, 180), ('11_branch', 3380, 2200, 0, -90), ('12_under_catwalk', 3380, 500, 0, -90),
         ('13_alcove_bridge', 1550, 620, 0, 90), ('14_air_plant', 1350, 1400, 0, 20), ('15_air_plant_gallery', 1550, 1150, 410, 90),
         ('16_store_door', 650, -350, 0, -90), ('17_store', 650, -1000, 0, -90),
-        ('18_lab_gate', 1550, 2350, 410, 90), ('19_lab', 1500, 3000, 410, 90), ('19b_lab_wall', 1750, 3950, 410, 0), ('19c_lab_dais', 1550, 3650, 410, 90),
+        ('18_lab_gate', 1550, 2350, 410, 90), ('19_lab', 1500, 3000, 410, 90), ('19b_lab_wall', 1650, 3950, 460, 0), ('19c_lab_dais', 1550, 3650, 410, 90),
         ('19d_lab_back', 1550, 4300, 460, -90), ('19e_lab_steps', 1380, 3700, 410, 60), ('19f_lab_gate', 1550, 4550, 460, 90), ('19g_lab_gate_near', 1550, 4850, 460, 90),
         ('19h_gatetest_a', 1725, 4320, 460, 90), ('19i_gatetest_b', 1375, 4320, 460, 90), ('19j_gatecheck', 1550, 4600, 460, 90),
         ('40_valk_door', 1550, 5150, 460, 90), ('41_valk_room', 1300, 5800, 460, 70), ('42_valk_tube', 1550, 6500, 510, 90), ('43_valk_back', 1550, 6900, 510, -90),
