@@ -188,3 +188,12 @@ Editor target after the fixes: `Result: Succeeded` (65 s). Builder after the fix
   - **Cause**, from the cook's log: the pack's `MI_Stab_Algae` fails to compile in this project ("Error on property Normal" in two of its layer functions), and the cook says the default material will be used. Two gatehouse meshes use it on two trim slots each: `SM_Middle_Arch` and `SM_Front_Top`.
   - **First fix, not enough:** the builder replaced it on the placed pieces. The mesh assets still named it, so the cook would still have taken it.
   - **Fix:** `Tools/Jam/fix_castle_materials.py` replaces it in the two mesh assets themselves with the pack's plain slab stone (`MI_Slabs_03`): 2 meshes, 4 slots. The builder keeps its own replacement for any piece that names a material of that list.
+- **Third package, the one on disk:** `BUILD SUCCESSFUL` (89 s), `TeamTBD_Glyphbound.zip` **2,621.6 MB**. On it: `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 28 spots, 0 without floor`, `the seal's map /Game/Glyphbound/Maps/FutureBase can be opened`, no LogGB errors, **0 engine errors**, 110 s. The cook's log no longer names the material. The 28 screenshots taken on the package: `media/2026-11-14/castle_v1_packaged_0.png` to `_3.png` (the side yard's stores are in the picture now).
+
+### Not checked, and left open
+- **Nobody has walked it by hand.** The tour teleports: it does not prove that the breach, the stairs or the low doorway under the keep's back wall feel right on foot.
+- **The seal's travel itself was not run.** The check proves the future base's map can be opened from the package; using the seal, the caption and the arrival in the base are for the owner's walk.
+- **The opening fight was not seen with its enemies** (the tour removes encounters before it starts).
+- **The full arena smoke was not run** in this block: the game's code changed only in the seal's new, opt-in path and in one tour check.
+- **The package is 2.6 GB.** The jam's limit is 1 GB.
+- The keep's other doors are open; pickups and the pixel-art look are not done (plan, section 10).
