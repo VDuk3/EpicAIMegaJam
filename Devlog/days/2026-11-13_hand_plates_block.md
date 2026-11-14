@@ -26,3 +26,10 @@ In first person the hands are 2D sprites that `AGBHUD::DrawHands` draws over the
 
 ## Found on the way
 The first 1080p smoke run reported two timing errors: the pistol's energy bar did not blink with 2 s left, and the shotgun's shell count was off by one after one shell. The second run, on the same build, was clean. They look like timing flakes at the higher resolution; to watch.
+
+## The LAPTOP's answer and the scale (Nov 14, 04:20 UTC)
+The LAPTOP agent prepared the material (35 files checked by SHA-256) and changed `spritelab.py check` so `hands_*` may touch the bottom edge (tested with synthetic one-pixel frames). It raised one point: the first-person staff hand already approved there, `fp_hand_staff`, is drawn on a 480 x 270 screen (4 screen pixels per art pixel), so gun hands at 9 px would be 2.25 times coarser. The person on the LAPTOP left the choice to the team.
+
+**Decision (architect): every first-person hand at 4 px, a 480 x 270 canvas.** It keeps the approved staff hand as it is: 6 px would mean scaling it by 1.5, which bends pixel art. `Make-HandPlates.ps1` got a `-Scale` parameter (default 4); new 480 x 270 plates and the style guide went to the mailbox (`_para_LAPTOP/20261114-0420_manos-escala.md`), with a scope cut for the time left: idle for the three guns first, then fire, pump and enchant, reloads last. The game's hand scale (`HandPixelDivisor`) changes when the first hands arrive.
+
+Noted for the owner: the LAPTOP transcript shows `fp_hand_staff` partly built by a generator script, while the pipeline agreed on Nov 13 says the AI there writes only tooling and never makes pixels. The LAPTOP was asked to say in its `NOTES.md` which parts were drawn by hand and which came from a script.
