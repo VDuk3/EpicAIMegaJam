@@ -188,3 +188,32 @@ The owner: *"Verifica de nuevo lo de Blender si lo necesitas. Instala el MCP. Y 
   - as its author made it: `media/2026-11-13/corridor_model_author.png`. The screens are magenta because the file remembers their picture in another folder. It is a ship's corridor: large windows onto a planet;
   - as the game would show it: `media/2026-11-13/corridor_model_game_look.png`. Procedural materials do not exist in Unreal, so the walls become plain painted metal (the wear is lost); the screens get their picture back; nothing is outside the windows, since the base is under a castle.
 - **Waiting for the owner** before importing (his standing rule for reworked art: renders first, import after his yes).
+
+## The Spaceship Corridor model: imported, and it is the long corridor now
+The owner, after seeing the two sets of renders: *"Sí, impórtalo"* (Yes, import it.)
+
+**Third-party asset:** Spaceship Corridor Damaged, by ArmTm, from Fab ([listing](https://www.fab.com/listings/dcdef266-660e-477d-9f5a-03dc9579f3c6)), free, Personal license held by the owner. Used: its meshes. Not used: its procedural materials (they do not exist outside Blender), its screen picture and video, its planet backdrop. **Tool:** Blender 5.3.0 (the owner's Steam copy), driven without a window.
+
+**How it came in** (three scripts, all re-runnable):
+- `Tools/Jam/corridor_blender_export.py` joins the model's 65 objects into two meshes and writes them as FBX: `SM_ShipCorridor_Body` (shell, floor grid, far doors, roof vents, pipes; 214,770 polygons, 8 material slots), which the player touches, and `SM_ShipCorridor_Details` (cables, wires, crates, extinguishers, axes, screens; 221,593 polygons, 26 slots), which only dresses it. The `.blend` is not changed.
+- `Tools/Jam/import_corridor.py` imports them with Unreal's older FBX importer (the newer one does not take a script's import options, such as "combine meshes"), makes one plain master material with 16 instances (colour, metal, roughness, glow: the table the owner saw in the "game look" renders) and one for the screens, and assigns them by the model's material names. The body collides with its own triangles; the details do not collide.
+- `Tools/Jam/Build-FutureBase.py`, stage `long`: the model replaces the corridor built from the station kit. 5.3 m wide, 3.3 m high, 40.5 m long, open end behind the second freight door, its own double door shut at the far end. A black bulkhead narrows the 8.5 m freight door to it.
+
+**What the walk in the game showed, and what was changed** (the architect's own review, four tours of about two minutes each):
+
+| Seen in the game | Cause | Change |
+|---|---|---|
+| The whole corridor white and glaring, nothing like the approved render | Too much light for plain grey walls: six lamps of 2.2 cd on top of the model's own glowing strip | Walls from 0.20 to 0.105 grey, lamps to 0.5 cd, the strip's glow from 25 to 14 |
+| The screens were plain white rectangles | The file names its UV layers `UVMap` on some objects and `UVКарта` on others; joined, they become two channels and the screens' picture sat in the second | The export gives every layer one name before joining: one channel |
+| The player stood 16 cm above the marked floor | The model's walking grid is 14 cm above its own base | The model sits 13 cm low; an unseen plate just over the grid keeps walking smooth over its holes and cables |
+| The screens' picture had a third party's watermark ("designed by" a stock-image site) | It is a stock infographic the model's author used | Not used. The screens show our own picture, drawn by `Tools/Jam/Make-ScreenTexture.ps1`: the containment seal's status board ("SEAL FIELD ... HOLDING", "LAST INSPECTION ... OVERDUE") |
+
+The jam allows no foreign brands in the game, and a stock picture inside a free model has a license of its own that nobody here checked: drawing the picture ourselves closes both questions.
+
+**Exception to the implementer rule:** the architect did this directly (no Muse). It is Blender and Editor scripting judged on renders, one small change per look, not a coding task to hand over.
+
+The FBX files were intermediates and are deleted; the `.blend` stays in `SourceArt` (one copy per asset).
+
+**Checked in the game:** the tour passes on 31 spots on the Editor build and on the package (`media/2026-11-13/futurebase_ship_corridor_ingame.png`, six shots from the package: the freight door, the start, the middle, a screen, the far door, the way back). The packaged full arena smoke is clean. No C++ changed in this step. `TeamTBD_Glyphbound.zip` is 1,226.2 MB, still over the jam's 1 GB (the owner set the limit aside for now; the kits' texture cap is half done). Nobody has walked it by hand yet: that is the owner's next step.
+
+**Known and left:** the corridor is 436,000 polygons in two meshes without Nanite (fine on the team's machines, not measured elsewhere); the model's flickering light does not flicker; the screens all show the same picture.

@@ -331,88 +331,39 @@ async def stage_north():
     log.append('north: %d pieces (one corridor bay beyond the freight door), second working freight door' % n)
 
 
-def wall_run(s, x, y0, y1, face):
-    """Inner wall skins of the station kit along Y from y0 to y1 at the plane x, facing +X ('e') or -X ('w'):
-    a 4 m panel, then a 0.5 m pillar, as the kit's author spaces them. Panels alternate between three plain looks."""
-    # Only the riveted panels: the kit's plain ones are large flat white sheets and glared under the lamps (self-review).
-    panels = ('Walls/A/SM_wall_400_a_02', 'Walls/A/SM_wall_400_a_01', 'Walls/A/SM_wall_400_a_02', 'Walls/A/SM_wall_400_a_01')
-    y = y0
-    i = 0
-    while y < y1 - 1:
-        if face == 'e':     # skin from x to x + 50, front towards +X
-            mesh(s, 'Walls', MSS + panels[i % 4], (x, y + 400, 0), rot(yaw=0), collide=True)
-            mesh(s, 'Walls', MSS + 'Walls/SM_wall_pillar_50_01', (x, y + 450, 0), rot(yaw=0), collide=True)
-        else:               # skin from x - 50 to x, front towards -X
-            mesh(s, 'Walls', MSS + panels[(i + 2) % 4], (x, y, 0), rot(yaw=180), collide=True)
-            mesh(s, 'Walls', MSS + 'Walls/SM_wall_pillar_50_01', (x, y + 400, 0), rot(yaw=180), collide=True)
-        y += 450
-        i += 1
-
-
-def snake(s, path, x, y0, y1, step, sway, period, z, phase=0.0):
-    """A line of straight pieces (a hose, a loose cable) laid on the floor along Y, swaying gently from side to side.
-    Each piece starts where the last one ended."""
-    y = y0
-    px = x + sway * math.sin(phase)
-    while y < y1:
-        ny = y + step
-        nx = x + sway * math.sin(phase + (ny - y0) / period)
-        yaw = math.degrees(math.atan2(ny - y, nx - px))
-        length = math.hypot(nx - px, ny - y)
-        mesh(s, 'Cables', MSS + path, (px, y, z), rot(pitch=-90, yaw=yaw), scale=(1, 1, length / step))
-        px, y = nx, ny
+SHIP = '/Game/Glyphbound/Environment/ShipCorridor/'
 
 
 async def stage_long():
-    """The long service corridor behind the second freight door (owner: "a long corridor, with cables on the floors
-    and pipes on the ceiling"). Built from the station kit the way its author builds his own interiors: floor
-    tiles with a covered cable tray, a bundle of pipes and a truss under the ceiling, loose hoses along the wall.
-    4 m wide, 4 m high, 36 m long (X 3180..3580, Y 3500..7100). It ends in a personnel door that is shut for now."""
+    """The long corridor behind the second freight door (owner: "a long corridor, with cables on the floors and pipes
+    on the ceiling; there is already an asset like that"). It is that asset: the Spaceship Corridor model, exported
+    from Blender (Tools/Jam/corridor_blender_export.py) and imported with the plain materials the owner approved
+    (Tools/Jam/import_corridor.py). 5.3 m wide, 3.3 m high, 40.5 m long, from Y 3500 to Y 7546; its near end is open
+    and its far end has the model's own double door, shut: the next slice goes on from there.
+    The model's Y axis is mirrored by the import, so it is turned half a circle to put its open end at the start.
+    Its walking grid is 14 cm above its own base, so the model sits 13 cm low and the grid meets the base's floor."""
     s = 'long'
-    y0, y1 = 3500.0, 7100.0
-    xw, xe = 3180.0, 3580.0
-    y = y0
-    k = 0
-    while y < y1 - 1:
-        mesh(s, 'Floor', MSS + 'Floor/SM_floor_400x400_0%d' % (2 if k in (3, 6) else 1), (xw, y + 400, -DECK), collide=True)   # two grated bays over the junction boxes
-        mesh(s, 'Ceiling', MSS + 'Floor/SM_floor_400x400_01', (xw, y + 400, 400), collide=True)
-        mesh(s, 'Ceiling', MSS + 'Props/Ceiling/SM_ceiling_pipes_400_01', (xe - 110, y, 400), rot(yaw=90))
-        if k % 2 == 0:
-            mesh(s, 'Ceiling', MSS + 'Props/Ceiling/SM_ceiling_scaffold_400_01', (xw + 170, y, 400), rot(yaw=90))
-        mesh(s, 'Cables', MSS + 'Props/CableCover/SM_cable_cover_400_01', (xw + 90, y, 0), rot(yaw=90))
-        y += 400
-        k += 1
-    wall_run(s, xw - 50, y0, y1, 'e')
-    wall_run(s, xe + 50, y0, y1, 'w')
-    # Loose services on the floor: one thick air hose along the east wall, two thin cables that cross the lane.
-    snake(s, 'Pipes/Meshes/SM_air_pipe', xe - 45, y0 + 150, y1 - 300, 110.0, 22.0, 260.0, 17.0)
-    snake(s, 'Pipes/Meshes/SM_cable', xw + 200, y0 + 400, y0 + 1700, 100.0, 60.0, 310.0, 3.0)
-    snake(s, 'Pipes/Meshes/SM_cable', xw + 230, y0 + 2100, y1 - 500, 100.0, 70.0, 280.0, 3.0, phase=1.5)
-    # Bulkhead behind the freight door: the 8.5 m door narrows to this 4 m passage.
-    mesh(s, 'Walls', MSS + 'Walls/C/SM_wall_200_c_01', (xw, y0 + 50, 0), rot(yaw=-90), collide=True)
-    mesh(s, 'Walls', MSS + 'Walls/C/SM_wall_200_c_01', (xe + 200, y0 + 50, 0), rot(yaw=-90), collide=True)
-    box(s, 'Backing', (2940, 3820), (3482, 3500), (400, 620))
-    box(s, 'Backing', (2940, xw - 200), (3482, 3540), (0, 620))
-    box(s, 'Backing', (xe + 200, 3820), (3482, 3540), (0, 620))
-    # The far end: a personnel door, shut. The next slice goes on from here.
-    mesh(s, 'Walls', MSS + 'Walls/A/SM_wall_door_400_a_01', (xe, y1 + 50, 0), rot(yaw=-90), collide=True)
-    mesh(s, 'Walls', HTB + 'SM_Door_01', (3445, y1 + 62, 20), rot(yaw=-90), mats=['/Game/High_Tech_Base/Materials/MI_Door_01', '/Game/High_Tech_Base/Materials/MI_NonSquare_Tile_01'], collide=True)
-    box(s, 'Backing', (xw - 60, xe + 60), (y1 + 60, y1 + 80), (0, 420))
-    # Lamps: cool white along both walls, staggered; a red one over the far door.
-    for i, yy in enumerate(range(int(y0) + 500, int(y1) - 200, 900)):
-        if i % 2 == 0:
-            room_lamp(s, 'SM_lamp_120_01', (xw + 6, yy, 300), 0, (186, 228, 255), 0.9, 650.0)
-        else:
-            room_lamp(s, 'SM_lamp_120_01', (xe - 6, yy + 450, 300), 180, (186, 228, 255), 0.9, 650.0)
-    room_lamp(s, 'SM_lamp_80_01', (3380, y1 - 8, 330), -90, (255, 85, 64), 1.2, 500.0)
-    log.append('long: service corridor of %d bays (36 m), cable tray, ceiling pipes, hoses, shut door at its end' % k)
-
-
-def room_lamp(s, lamp, loc, yaw, color, cd, radius):
-    mesh(s, 'Lamps', MSS + 'Lamps/Meshes/' + lamp, loc, rot(yaw=yaw))
-    rad = math.radians(yaw)
-    light(s, 'Lamps', 'PointLight', (loc[0] + math.cos(rad) * 30, loc[1] + math.sin(rad) * 30, loc[2] - 10), rot(),
-          {'intensity': cd, 'color': color, 'attenuation_radius': radius, 'shadow': False})
+    y0 = 3500.0
+    origin = (3380.0, y0 + 2256.0, -13.0)
+    mesh(s, 'Ship', SHIP + 'SM_ShipCorridor_Body', origin, rot(yaw=180), collide=True)
+    mesh(s, 'Ship', SHIP + 'SM_ShipCorridor_Details', origin, rot(yaw=180))
+    # The floor is a real grid with holes and loose cables lie on it: an unseen plate just above it keeps walking
+    # smooth. The two crates (in the details mesh, which does not collide) get a box each.
+    box(s, 'Collision', (3380 - 160, 3380 + 160), (y0, y0 + 4046), (-10, 2), visible=False)
+    box(s, 'Collision', (3215, 3315), (6025, 6110), (0, 140), visible=False)
+    # Bulkhead: the 8.5 m freight door narrows to the corridor's 5.3 m.
+    box(s, 'Backing', (2940, 3118), (3482, 3504), (0, 620))
+    box(s, 'Backing', (3642, 3820), (3482, 3504), (0, 620))
+    box(s, 'Backing', (3118, 3642), (3482, 3504), (314, 620))
+    # Light: the model's own strip and screens glow; these lamps sit on that strip, and the red ones behind the roof
+    # vents are where the model has its red lights.
+    for i in range(6):
+        y = y0 + 350 + i * 680
+        light(s, 'Lamps', 'RectLight', (3380, y, 288), rot(pitch=-90), {'intensity': 0.5, 'color': (255, 240, 220), 'attenuation_radius': 550.0,
+                                                                    'source_width': 20.0, 'source_height': 400.0, 'shadow': False})
+        for side in (-115, 115) if i < 5 else ():      # the sixth pair would land behind the far door
+            light(s, 'Lamps', 'PointLight', (3380 + side, y + 340, 305), rot(), {'intensity': 0.7, 'color': (255, 60, 40), 'attenuation_radius': 300.0, 'shadow': False})
+    log.append('long: the Spaceship Corridor model (body and details), 40.5 m, bulkhead, floor plate, 6 lamps')
 
 
 async def stage_control():
@@ -707,7 +658,7 @@ TOUR = [('01_arrival', -500, 60, 0, 0), ('02_arrival_back', -150, 0, 0, 180), ('
         ('16_store_door', 650, -350, 0, -90), ('17_store', 650, -1000, 0, -90),
         ('90_hall_door', 1550, 2250, 410, 90), ('91_hall', 1550, 2600, 410, 80), ('92_hall_dock', 1550, 4000, 510, -90),   # last: the fight starts here
         ('21_north_corridor', 3380, 2750, 0, 90), ('22_from_north_back', 3380, 3000, 0, -90),
-        ('23_long_start', 3380, 3700, 0, 90), ('24_long_mid', 3380, 5300, 0, 90), ('25_long_end', 3380, 6700, 0, 90),
+        ('22b_long_door', 3380, 3150, 0, 90), ('23_long_start', 3380, 3600, 0, 90), ('23b_long_exit', 3380, 3950, 0, -90), ('24_long_mid', 3380, 5300, 0, 90), ('24b_long_screen', 3380, 5600, 0, 0), ('25_long_end', 3380, 7000, 0, 90), ('25b_long_back', 3380, 7300, 0, -90),
         ('26_east_stair', 5200, -100, 0, 150), ('27_alcove_pit', 1250, 700, -290, 20)]
 
 
@@ -728,7 +679,7 @@ WALKS = [('arrival to corridor', [(-500, 60, 0), (300, 0, 0)]), ('corridor to st
          ('corridor over the bridge into the air plant', [(1550, 300, 0), (1550, 1180, 0)]),
          ('corridor to bay', [(1800, 0, 0), (2500, -150, 0)]), ('bay to branch to freight door and on', [(3380, 100, 0), (3380, 3350, 0)]),
          ('gallery to muster hall', [(1550, 1960, 410), (1550, 3600, 410)]),
-         ('second freight door into the long corridor', [(3380, 3350, 0), (3380, 7000, 0)]), ('bay floor to west stair', [(2250, 200, 0), (2360, 200, 0)])]
+         ('second freight door into the long corridor', [(3380, 3350, 0), (3380, 7450, 0)]), ('bay floor to west stair', [(2250, 200, 0), (2360, 200, 0)])]
 
 
 def check_walks():
@@ -762,7 +713,7 @@ def enable_collision():
         if not sm or sm.get_path_name().startswith('/Engine/'):
             continue
         name = sm.get_name()
-        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Chair', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_')):
+        if any(k in name for k in ('Decal', 'Top_Cables', 'Pipe_02', 'Chair', 'Top_Chain', 'Volume', 'cable_cover', 'lamp_', 'ShipCorridor_Details')):
             c.set_collision_profile_name('NoCollision')
             continue
         bs = sm.get_editor_property('body_setup')
