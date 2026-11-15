@@ -320,11 +320,11 @@
 				"LightningBuildUp": 20,
 				"IceBuildUp": 20,
 				"SwingTime": 0.5,
-				"ViewScale": 0.08,
+				"ViewScale": 0.096,
 				"ViewGripX": -170,
 				"ViewOffsetX": 15,
 				"ViewOffsetY": 6,
-				"ViewOffsetZ": -5,
+				"ViewOffsetZ": -8,
 				"ViewPitch": -35,
 				"ViewYaw": 0,
 				"ViewRoll": 15
