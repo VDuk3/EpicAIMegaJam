@@ -9,7 +9,7 @@ DIR = '/Game/Glyphbound/Castle/Pixel'
 MAP = '/Game/Glyphbound/Maps/PastCastle'
 GROUPS = (('StaticMeshActor_21287', 'StaticMeshActor_21283', 'StaticMeshActor_21290'),
           ('StaticMeshActor_21269', 'StaticMeshActor_21265', 'StaticMeshActor_21272'))
-HAZE_HEIGHT = 35.0
+HAZE_HEIGHT = 70.0
 eal = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 MP = unreal.MaterialProperty
@@ -132,7 +132,7 @@ def haze_master():
     link(mx, '', dot, 'A')
     link(one, '', dot, 'B')
     time = node(unreal.MaterialExpressionTime, -1400, 300)
-    rise = node(unreal.MaterialExpressionScalarParameter, -1400, 400, parameter_name='Rise', default_value=25.0)
+    rise = node(unreal.MaterialExpressionScalarParameter, -1400, 400, parameter_name='Rise', default_value=35.0)
     tr = node(unreal.MaterialExpressionMultiply, -1200, 350)
     link(time, '', tr, 'A')
     link(rise, '', tr, 'B')
@@ -142,7 +142,7 @@ def haze_master():
     uv = node(unreal.MaterialExpressionAppendVector, -800, 0)
     link(dot, '', uv, 'A')
     link(v, '', uv, 'B')
-    size = node(unreal.MaterialExpressionScalarParameter, -1000, 400, parameter_name='WaveSize', default_value=18.0)
+    size = node(unreal.MaterialExpressionScalarParameter, -1000, 400, parameter_name='WaveSize', default_value=22.0)
     uvs = node(unreal.MaterialExpressionDivide, -650, 0)
     link(uv, '', uvs, 'A')
     link(size, '', uvs, 'B')
@@ -151,7 +151,7 @@ def haze_master():
     vv = node(unreal.MaterialExpressionComponentMask, -500, 50, r=False, g=True, b=False, a=False)
     link(uvs, '', uu, '')
     link(uvs, '', vv, '')
-    amp = node(unreal.MaterialExpressionScalarParameter, -350, 500, parameter_name='Amount', default_value=0.06)
+    amp = node(unreal.MaterialExpressionScalarParameter, -350, 500, parameter_name='Amount', default_value=0.2)
 
     def ripple(y, vmul, umul):
         v1 = node(unreal.MaterialExpressionMultiply, -350, y, const_b=vmul)
@@ -176,7 +176,7 @@ def haze_master():
     ts = node(unreal.MaterialExpressionAppendVector, 300, 0)
     link(nxy, '', ts, 'A')
     link(up, '', ts, 'B')
-    ior = node(unreal.MaterialExpressionScalarParameter, -450, 300, parameter_name='IOR', default_value=1.02)
+    ior = node(unreal.MaterialExpressionScalarParameter, -450, 300, parameter_name='IOR', default_value=1.05)
     op = node(unreal.MaterialExpressionConstant, -450, 400, r=0.0)
     MEL.connect_material_property(ts, '', MP.MP_NORMAL)
     MEL.connect_material_property(ior, '', MP.MP_REFRACTION)
