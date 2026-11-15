@@ -24,6 +24,7 @@
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "EngineUtils.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
@@ -715,6 +716,23 @@ void AGBValkyrieEnemy::SetEmpowered(bool bOn)
 		}
 	}
 	EmpowerFx.Reset();
+	// the blade's own glow: Strings Fx.EmpowerBladeSlot = the weapon's material slot that is only the blade (the
+	// reaper's crescent); its HitFlash / HitFlashColor (M_GBEnemy) light it while empowered, nothing else on the weapon
+	const FGBEnemyDefinition* GlowDef = GetDefinition();
+	const FString SlotText = GlowDef ? GBEnemy3D::Str(*GlowDef, FName(TEXT("Fx.EmpowerBladeSlot"))) : FString();
+	if (WeaponComp && !SlotText.IsEmpty())
+	{
+		const int32 Slot = FCString::Atoi(*SlotText);
+		if (Slot >= 0 && Slot < WeaponComp->GetNumMaterials())
+		{
+			if (UMaterialInstanceDynamic* Blade = WeaponComp->CreateDynamicMaterialInstance(Slot))
+			{
+				const FLinearColor Glow = UGBDataSubsystem::ParseColor(GBEnemy3D::Str(*GlowDef, FName(TEXT("Fx.EmpowerBladeColor")), TEXT("#7CFF3A")), FLinearColor(0.2f, 1.f, 0.05f));
+				Blade->SetVectorParameterValue(FName(TEXT("HitFlashColor")), Glow * V(TEXT("EmpowerBladeGlow"), 3.f));
+				Blade->SetScalarParameterValue(FName(TEXT("HitFlash")), bOn ? 1.f : 0.f);
+			}
+		}
+	}
 	if (!bOn)
 	{
 		EmpowerTimeLeft = 0.f;

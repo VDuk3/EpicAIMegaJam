@@ -95,6 +95,13 @@ unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([t2])
 sm = unreal.load_asset(DEST + '/SM_ReaperScythe')
 if sm and mi:
     sm.set_material(0, mi)
+    # slot 1 is the crescent blade alone (enemies_export_fbx.py): its own instance, so the empowered glow lights only it
+    if not EAL.does_asset_exist(DEST + '/MI_ReaperBlade'):
+        EAL.duplicate_asset(DEST + '/MI_Reaper', DEST + '/MI_ReaperBlade')
+    blade_mi = unreal.load_asset(DEST + '/MI_ReaperBlade')
+    if len(sm.static_materials) > 1:
+        sm.set_material(1, blade_mi)
+    EAL.save_loaded_asset(blade_mi)
 for s0 in list(sm.get_editor_property('sockets') or []) if False else []:
     pass
 existing = [str(x.get_editor_property('socket_name')) for x in sm.get_sockets_by_tag('')] if hasattr(sm, 'get_sockets_by_tag') else []

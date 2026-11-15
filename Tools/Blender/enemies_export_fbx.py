@@ -332,6 +332,7 @@ def do_reaper():
     seen = [False] * len(bm.verts)
     moved = 0
     blade_pts = []
+    blade_idx = []
     for v in bm.verts:
         if seen[v.index]:
             continue
@@ -363,6 +364,7 @@ def do_reaper():
             body.vertex_groups["hand_r"].add([i], 1.0, "REPLACE")
         moved += len(isl)
         blade_pts += ps
+        blade_idx += isl
     bm.free()
     print("REAPER blade vertices skinned to hand_r:", moved)
     # sockets for the empowered-scythe VFX (metres, model frame, reference pose): the blade's root at the staff's head, the
@@ -377,6 +379,29 @@ def do_reaper():
     band = [p for p in staff if zs[len(zs) * 3 // 10] <= p.z <= zs[len(zs) * 6 // 10]]
     grip = sum(band, Vector()) / max(len(band), 1)
     sockets = {k: v3(p) for k, p in (("BladeBase", base), ("BladeMid", mid), ("BladeTip", tip), ("Grip", grip))}
+    # Blade0..Blade4: the crescent's centre line from its root at the staff's head (top) to its point (bottom), the centroid
+    # of the blade's vertices in five height bands; the empowered trail runs from one to the next, so it follows the curve
+    zlo = min(p.z for p in blade_pts)
+    zhi = max(p.z for p in blade_pts)
+    # Blade0 is the crescent's top point, Blade4 its lowest; between them, the point of the outer (back) edge, the one
+    # farthest from the staff's axis, in three height bands: the trail runs along the blade's curve, not across it
+    sx = sorted(p.x for p in staff)
+    sy = sorted(p.y for p in staff)
+    axis = Vector((sx[len(sx) // 2], sy[len(sy) // 2]))
+    sockets["Blade0"] = v3(max(blade_pts, key=lambda p: p.z))
+    sockets["Blade4"] = v3(min(blade_pts, key=lambda p: p.z))
+    for k in (1, 2, 3):
+        zc = zhi - (zhi - zlo) * (k / 4.0)
+        band_pts = [p for p in blade_pts if abs(p.z - zc) <= (zhi - zlo) * 0.06] or blade_pts
+        sockets["Blade%d" % k] = v3(max(band_pts, key=lambda p: (Vector((p.x, p.y)) - axis).length))
+    # the blade gets its own material slot (index 1, same textures) so the empowered glow lights only the blade
+    blade_mat = body.data.materials[0].copy()
+    blade_mat.name = "M_ReaperBlade"
+    body.data.materials.append(blade_mat)
+    blade_set = set(blade_idx)
+    for poly in me.polygons:
+        if all(vi in blade_set for vi in poly.vertices):
+            poly.material_index = 1
     print("REAPER sockets", sockets)
     # Owner 2026-11-15: body and weapon are separate meshes. The weapon is every island ruled by hand_r (the staff, its
     # green thorns and, after the re-skin above, the crescent blade) that reaches further than 35 cm from the hand bone
