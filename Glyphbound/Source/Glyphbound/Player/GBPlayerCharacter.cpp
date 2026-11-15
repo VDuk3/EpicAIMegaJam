@@ -10,6 +10,7 @@
 #include "Stats/GBAttributeComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "UI/GBHUD.h"
+#include "UI/GBStaffView.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
 #include "Spells/GBSpellbookComponent.h"
@@ -1523,6 +1524,13 @@ FVector AGBPlayerCharacter::GetAimDirection() const
 FVector AGBPlayerCharacter::GetMuzzleLocation() const
 {
 	const FRotator AimRotation = GetAimDirection().Rotation();
+	// With a staff in hand, shots leave from its head where the HUD draws it (owner, 2026-11-15), at the usual depth.
+	const AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
+	FVector HeadDir;
+	if (Item && Item->GetSlot() == EGBHeldSlot::Staff && GBStaffView::GetHeadAimDir(HeadDir))
+	{
+		return GetAimOrigin() + AimRotation.RotateVector(HeadDir * (MuzzleOffset.X / HeadDir.X));
+	}
 	return GetAimOrigin() + AimRotation.RotateVector(MuzzleOffset);
 }
 

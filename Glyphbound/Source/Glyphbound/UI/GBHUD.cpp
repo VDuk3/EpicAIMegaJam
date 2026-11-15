@@ -3,6 +3,7 @@
 #include "UI/GBHUDShared.h"
 #include "UI/GBPixelFont.h"
 #include "UI/GBPixelSpriteLibrary.h"
+#include "UI/GBStaffView.h"
 #include "Player/GBPlayerCharacter.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Weapons/GBHeldItem.h"
@@ -76,6 +77,30 @@ namespace GBHudLayout
 	constexpr float TrailDrainPerSecond = 0.45f;
 	/** ...after holding still for this long. */
 	constexpr float TrailHoldTime = 0.35f;
+	/** Fraction of the staff sprite (from its top) where the middle of its head is: the shots leave from there. */
+	constexpr float StaffHeadFrac = 0.1f;
+}
+
+namespace GBStaffView
+{
+	static FVector HeadAimDir = FVector::ForwardVector;
+	static double HeadAimDirTime = -1.0;
+
+	void SetHeadAimDir(const FVector& AimSpaceDir)
+	{
+		HeadAimDir = AimSpaceDir;
+		HeadAimDirTime = FPlatformTime::Seconds();
+	}
+
+	bool GetHeadAimDir(FVector& OutAimSpaceDir)
+	{
+		if (HeadAimDirTime < 0.0 || FPlatformTime::Seconds() - HeadAimDirTime > 0.25)
+		{
+			return false;
+		}
+		OutAimSpaceDir = HeadAimDir;
+		return true;
+	}
 }
 
 namespace GBHudText
@@ -613,6 +638,16 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 			Tile.PivotPoint = Pivot01;
 			Tile.BlendMode = SE_BLEND_Translucent;
 			Canvas->DrawItem(Tile);
+
+			// Record where the head is, so staff shots and spells leave from it (owner, 2026-11-15).
+			const FVector2D Head = Grip + Along * ((GBHudLayout::StaffGripFrac - GBHudLayout::StaffHeadFrac) * StaffSize.Y);
+			FVector RayOrigin, RayDir;
+			Canvas->Deproject(Head, RayOrigin, RayDir);
+			const FVector AimDir = Player->GetAimDirection().Rotation().UnrotateVector(RayDir);
+			if (AimDir.X > 0.1f)
+			{
+				GBStaffView::SetHeadAimDir(AimDir);
+			}
 		}
 	}
 	else if (Item && Slot == EGBHeldSlot::Gun)
