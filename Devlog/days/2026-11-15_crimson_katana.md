@@ -5,17 +5,20 @@ The owner asked for a second sword so the end-game Elemental Sword is no longer 
 ## Directing: what the owner decided
 - The model: the Fab listing he chose (below), shown to him in close-up renders before any in-game use (his rule). Renders: `Glyphbound/Saved/KatanaReview/` (flat colors and lit).
 - Where it is found: an enemy in the future drops it, kept simple and data-only.
-- How it fights: like the existing sword (`AGBSword`, the `Sword` slot), physical damage, and it can be enchanted.
+- How it fights: like the existing sword (`AGBSword`, the `Sword` slot), physical damage, and it can be enchanted. Then, mid-work: "the sword has to damage every enemy in front of the player, like the katanas of Cyberpunk 2077" (translated). The sword already hit every hostile inside its cone; the katana's cone was widened to 150 degrees and 3.2 m.
 
 ## How it was built (architect's decisions)
-- **Data, not a new class.** `Weapons.json` gets `CrimsonKatana` (slot `Sword`, element `Physical`, damage 40 every 0.45 s, the sword's range and arc). It spawns as an `AGBSword` like the Elemental Sword.
+- **Data, not a new class.** `Weapons.json` gets `CrimsonKatana` (slot `Sword`, element `Physical`, damage 40 every 0.45 s, 3.2 m reach, 150-degree cone). It spawns as an `AGBSword` like the Elemental Sword.
 - **Shown in 3D, like the guns, not as a pixel sprite.** The cyberpunk world's guns are 3D view models without hands (owner's rule, 2026-11-14), so the katana follows them: `Strings.ViewMesh` names its mesh and `AGBSword` builds a first-person view model from it (fixed weapon FOV, self-shadow only). Its own motion: a fast cut down to the left pivoting on the grip and a slower return (`SwingTime`). Pose numbers (`ViewScale`, `ViewOffsetX/Y/Z`, `ViewPitch/Yaw/Roll`, `ViewGripX`) are data, provisional until the owner sees it in PIE. The HUD draws no pixel blade for a sword that has a `ViewMesh`.
 - **Swords take the enchant (both of them).** The enchant spell was gun-only. Now a sword in hand can cast it too (input, spellbook check, HUD hint), the hit takes the enchant's element and on-hit effect while it lasts, and the three `Enchant_*` status effects multiply `Weapon.Sword.Damage` by 1.25 as they already did for `Weapon.Gun.Damage`. Done in `.cpp` files and data only, so no Editor restart. The katana shows a light in the enchant's color on its blade; the Elemental Sword's pixel blade takes the enchant's tint.
-- **Who drops it.** The Armored Orc (`Orc_Future_GunCarrier`), the one enemy that is always in the first fight of the future (`Opening_Future`) and already drops the first pistol. It now also drops the katana (chance 1). No map edit.
+- **Who drops it.** The Armored Orc (`Orc_Future_GunCarrier`), which already drops the first pistol. It is met in the second wave of `Future_Bay`, the transfer bay, the base's first combat hall (`Opening_Future` lists it too, but that encounter is not placed in the map; checked by reading the map's encounter ids). It now also drops the katana (chance 1). No map edit.
 - **On the floor** the dropped katana shows its own model, lying flat, instead of the staff sprite other non-gun weapon pickups use.
 
+## A mistake caught in review
+The first version held the katana by the tip: the code assumed the hilt at +X, the renders showed it at -X (a yaw-90 capture camera has -X on screen-right). The session's built-in advisor (a stronger reviewer model that reads the whole session) caught it from the renders; fixed and checked with offscreen captures of the first-person pose (camera at the eye, mesh at the hand anchor, the view-model FOV), which also set the provisional pose: scale 0.08, grip 5 cm forward, 2 cm in and 8 cm up from the anchor, blade leaning 25 degrees forward. The swing could not be previewed (a human started PIE), so its amplitude is a guess.
+
 ## Checks
-Live Coding compile clean; own review of the code. No smoke or tests (owner's rule for the final stretch). PIE by a human: kill the Armored Orc in the first fight of the future, pick up the katana, switch to the sword slot (or equip it from the inventory if the Elemental Sword is already held), swing, then cast the enchant (T) with it in hand.
+Live Coding compile clean; own review of the code. No smoke or tests (owner's rule for the final stretch). PIE by a human: kill the Armored Orc in the second wave of the transfer bay fight, pick up the katana, switch to the sword slot (or equip it from the inventory if the Elemental Sword is already held), swing, then cast the enchant (T) with it in hand.
 
 ## Third-party assets used here
 - **red scifi katana** by M@xim, Fab (https://www.fab.com/listings/ec6f2549-f8f9-4805-981b-534868d14aee), licence **CC-BY** (free; attribution: "red scifi katana" by M@xim, Fab). Installed through the Editor's Fab toolset (FBX) and moved to `/Game/Glyphbound/Weapons/Katana/` (mesh renamed `SM_Katana`).

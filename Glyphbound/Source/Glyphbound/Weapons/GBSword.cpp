@@ -33,7 +33,7 @@ namespace
 	 * A sword with Strings["ViewMesh"] (the Fab katana, owner 2026-11-15) is shown as a 3D view model like the guns:
 	 * no hands, only the weapon and its own swing. Stats (all optional, cm / degrees, in the anchor's camera space):
 	 * ViewScale, ViewOffsetX/Y/Z (where the grip sits), ViewPitch/ViewYaw/ViewRoll (lean of the blade),
-	 * ViewGripX (grip point along the mesh's X, source units), SwingTime. The mesh's blade runs along -X, edge on -Z.
+	 * ViewGripX (grip point along the mesh's X, source units), SwingTime. The mesh's blade runs along +X from the grip (hilt at -X), edge on -Z.
 	 */
 	namespace GBSwordView
 	{
@@ -103,8 +103,8 @@ void AGBSword::InitFromDefinition(const FGBWeaponDefinition& Definition, AGBPlay
 				GBSwordView::DefStat(Definition, GBSwordView::Roll, 0.f)).Quaternion();
 			const FVector BladeDir = Lean.RotateVector(FVector(0.35f, -0.25f, 0.9f).GetSafeNormal());
 			const FVector EdgeDir = Lean.RotateVector(FVector(1.f, 0.f, -0.3f).GetSafeNormal());
-			const FQuat MeshRot = FRotationMatrix::MakeFromXZ(-BladeDir, -EdgeDir).ToQuat();
-			const FVector GripLocal(GBSwordView::DefStat(Definition, GBSwordView::GripX, 210.f), 0.f, 0.f);
+			const FQuat MeshRot = FRotationMatrix::MakeFromXZ(BladeDir, -EdgeDir).ToQuat();
+			const FVector GripLocal(GBSwordView::DefStat(Definition, GBSwordView::GripX, -170.f), 0.f, 0.f);
 			const FVector GripAt(GBSwordView::DefStat(Definition, GBSwordView::OffsetX, 0.f), GBSwordView::DefStat(Definition, GBSwordView::OffsetY, 0.f),
 				GBSwordView::DefStat(Definition, GBSwordView::OffsetZ, 0.f));
 			Grip->SetRelativeScale3D(FVector(Scale));
@@ -133,7 +133,7 @@ void AGBSword::Tick(float DeltaSeconds)
 		const FGBWeaponDefinition* Def = GetDefinition();
 		const float Duration = Def ? GBSwordView::DefStat(*Def, GBSwordView::SwingTime, 0.4f) : 0.4f;
 		const float A = GBSwordView::SwingAmount(GetTimeSinceLastAttack(), FMath::Min(Duration, FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f))));
-		Root->SetRelativeRotation(FRotator(-55.f * A, -30.f * A, -35.f * A));
+		Root->SetRelativeRotation(FRotator(-40.f * A, -35.f * A, -35.f * A));
 		Root->SetRelativeLocation(FVector(6.f * A, -14.f * A, 2.f * A));
 
 		EGBElement EnchantElement = EGBElement::Physical;
@@ -164,8 +164,8 @@ void AGBSword::Tick(float DeltaSeconds)
 			Light->SetVisibility(bEnchanted);
 			if (bEnchanted)
 			{
-				// Halfway up the blade (mesh space: the blade runs along -X from the guard).
-				Light->SetRelativeLocation(FVector(-40.f, 0.f, 0.f));
+				// Halfway up the blade (mesh space: the blade runs along +X from the guard).
+				Light->SetRelativeLocation(FVector(80.f, 0.f, 0.f));
 				Light->SetLightColor(GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement)));
 				const float Time = GetWorld() ? (float)GetWorld()->GetTimeSeconds() : 0.f;
 				Light->SetIntensity(8.f * (0.85f + 0.15f * FMath::Sin(Time * 9.f)));
