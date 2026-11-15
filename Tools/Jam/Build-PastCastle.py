@@ -45,6 +45,42 @@ CRYPT_Z = FLOOR_Z - 1200.0            # four flights of 3 m
 CRYPT_AREA = (9290.0, 13100.0, -7900.0, -100.0)   # no land over it: the stair and the vaults pass where the land would be
 WALK_Z = 1200.0          # the wall walk: 12 m above the curtain wall's base (measured from the author's own stair and towers)
 
+# The castle's look (owner, 2026-11-14: everything is replaced by real pixel art, which must also be light). "pack": the
+# castle pack's sculpted pieces, as built until now. "pixel": each pack mesh is replaced by its pixel twin (same pivot and
+# size, flat faces with drawn tiles: Tools/Jam/castle_twins.js), and our own boxes wear the drawn tiles. pixel_stages
+# limits the pixel look to some stages (the first zone was shown to the owner on its own).
+LOOK = CFG.get('look', 'pack')
+PIXEL_STAGES = CFG.get('pixel_stages')
+PX = '/Game/Glyphbound/Castle/Pixel/'
+_twins = {}
+
+
+def pixel(stage):
+    return LOOK == 'pixel' and (PIXEL_STAGES is None or stage in PIXEL_STAGES)
+
+
+def twin(path):
+    """The pixel twin of a pack mesh, or None while it has none."""
+    if path not in _twins:
+        name = path.split('/')[-1].split('.')[0]
+        t = PX + 'Meshes/SM_Px_' + (name[3:] if name.startswith('SM_') else name)
+        _twins[path] = t if eal.does_asset_exist(t) else None
+        if not _twins[path]:
+            log.append('NO TWIN for ' + path)
+    return _twins[path]
+
+
+def tile_kind(mat):
+    """The tile a pack material becomes (the same reading as castle_twins.js)."""
+    n = mat.split('/')[-1].lower()
+    for kind, keys in (('wood', ('wood', 'plank', 'varnish', 'herring')), ('iron', ('metal', 'iron')), ('cobble', ('cobble',)),
+                       ('cloth', ('cloth', 'sack')), ('earth', ('ground', 'dirt')), ('dressed', ('brickkit', 'slab', 'stairs', 'floor', 'tile')),
+                       ('dark', ('stonefence', 'rock', 'firepit'))):
+        if any(k in n for k in keys):
+            return kind
+    return 'wall'
+
+
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 ues = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
@@ -90,6 +126,17 @@ def rot(pitch=0.0, yaw=0.0, roll=0.0):
 
 
 def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=True, collide=None):
+    whole = None
+    if pixel(stage) and path.startswith(CT):
+        if 'SeamHider' in path:
+            return None             # it hides the joint between two sculpted modules; the flat twins meet on the same planes
+        tw = twin(path)
+        if tw:
+            # an override that gives the whole piece one material (the terraces paved in stone instead of the author's
+            # timber) gives the twin that tile on every slot; the author's own per-slot choices are left to the twin
+            kinds = set(tile_kind(m) for m in (mats or []) if m)
+            path, mats = tw, None
+            whole = kinds.pop() if len(kinds) == 1 else None
     sm = asset(path)
     if not sm:
         log.append('MISSING mesh ' + path)
@@ -101,18 +148,28 @@ def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=Tr
     for i, m in enumerate(mats or []):
         if m:
             c.set_material(i, asset(m))
-    if path not in _bad_slots:
+    if path.startswith(PX):
+        pass
+    elif path not in _bad_slots:
         # A pack material that does not compile in this project (the cook says so and uses the default material) is
         # replaced, slot by slot, by a plain one of the same pack.
         _bad_slots[path] = [(i, BAD_MATS[sl.material_interface.get_name()]) for i, sl in enumerate(sm.static_materials)
                             if sl.material_interface and sl.material_interface.get_name() in BAD_MATS]
-    for i, m in _bad_slots[path]:
+    for i, m in _bad_slots.get(path, []):
         c.set_material(i, asset(m))
     if collide is None:
         name = path.split('/')[-1]
         collide = not any(k in name for k in NO_BLOCK)
     c.set_collision_profile_name('BlockAll' if collide else 'NoCollision')
     c.set_editor_property('cast_shadow', shadow)
+    if path.startswith(PX) and whole:
+        for i in range(len(sm.static_materials)):
+            c.set_material(i, asset(PX + 'MI_Px_' + whole))
+    if path.startswith(PX) and CFG.get('compare_wall') and loc[1] > 0:
+        # two sizes of the wall tile side by side for the owner: the finer one right of the road
+        i = c.get_material_index('wall')
+        if i >= 0:
+            c.set_material(i, asset(PX + 'MI_Px_wall_fine'))
     tag(a, stage, folder)
     return a
 
@@ -123,6 +180,8 @@ def box(stage, folder, x, y, z, mat=None, visible=True, collide=True):
     a.set_actor_scale3d(unreal.Vector(abs(x[1] - x[0]) / 100.0, abs(y[1] - y[0]) / 100.0, abs(z[1] - z[0]) / 100.0))
     c = a.static_mesh_component
     c.set_mobility(unreal.ComponentMobility.STATIC)
+    if mat and pixel(stage) and mat.startswith(CT):
+        mat = PX + 'MIW_Px_' + tile_kind(mat)          # the drawn tile, laid on the world (a box has no UVs of its own)
     if mat:
         c.set_material(0, asset(mat))
     c.set_collision_profile_name('BlockAll' if collide else 'NoCollision')
@@ -376,7 +435,7 @@ async def stage_walls():
         # A threshold in each of its two doorways: the tower's wall is 1.45 m thick there and has no floor of its own
         # (the walk check found the hole between the wall walk's end and the tower's room).
         for dx in (-350.0, 195.0):
-            stone_block(s, x + dx, y - 70.0, WALK_Z - 17.0, 155.0, 140.0, 20.0)
+            stone_block(s, x + dx - 20.0, y - 70.0, WALK_Z - 17.0, 195.0, 140.0, 20.0)   # 20 cm into the wall each side: no seam
     # The author's wall stair, in the side yard on the King's Hall side, its foot on the upper ward.
     k, _ = place_level(s, 'WallStair', 'LI_CurtainWall_Stairs_01', (STAIR_X, -WARD_Y - 6.0, TERRACE_Z), 0.0)
     # Its landing meets the stair piece's sill (1214), 11 cm above the wall walk: no teeth in the way.
@@ -821,7 +880,7 @@ def enable_collision():
             continue
         c = a.static_mesh_component
         sm = c.static_mesh
-        if not sm or sm.get_path_name().startswith('/Engine/') or sm.get_path_name() in seen:
+        if not sm or not sm.get_path_name().startswith(CT) or sm.get_path_name() in seen:
             continue
         seen.add(sm.get_path_name())
         if any(k in sm.get_name() for k in NO_BLOCK):

@@ -1,0 +1,294 @@
+{
+ "_comment": "Settings per pack mesh for castle_twins.js. grid (cm), snap (cm), minPeak (share of columns a real face holds), close (cells), parts (pieces made in their own frame, cut by vertical planes [nx, ny, d]: keep nx x + ny y >= d).",
+ "_default": {
+  "snap": 19
+ },
+ "SM_CastleTower_Wall_A_03": {
+  "parts": [
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      -0.383,
+      -0.924,
+      342.2
+     ]
+    ],
+    "through": 0
+   },
+   {
+    "yaw": 45,
+    "planes": [
+     [
+      0.383,
+      0.924,
+      -342.2
+     ],
+     [
+      -0.924,
+      -0.383,
+      196.3
+     ]
+    ],
+    "through": 1
+   },
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      0.924,
+      0.383,
+      -196.3
+     ]
+    ],
+    "through": 1
+   }
+  ],
+  "seal": [
+   "y-:x",
+   "x+:y",
+   "z-:x",
+   "z+:x"
+  ],
+  "snap": 31,
+  "specks": 4
+ },
+ "SM_CastleTower_Window_A_07": {
+  "parts": [
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      -0.383,
+      -0.924,
+      342.2
+     ]
+    ],
+    "through": 0
+   },
+   {
+    "yaw": 45,
+    "planes": [
+     [
+      0.383,
+      0.924,
+      -342.2
+     ],
+     [
+      -0.924,
+      -0.383,
+      196.3
+     ]
+    ],
+    "through": 1
+   },
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      0.924,
+      0.383,
+      -196.3
+     ]
+    ],
+    "through": 1
+   }
+  ],
+  "seal": [
+   "y-:x",
+   "x+:y",
+   "z-:x",
+   "z+:x"
+  ],
+  "snap": 31,
+  "specks": 4,
+  "close": 0
+ },
+ "SM_CastleTower_Window_A_12": {
+  "parts": [
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      -0.383,
+      -0.924,
+      301.9
+     ]
+    ],
+    "through": 0
+   },
+   {
+    "yaw": 45,
+    "planes": [
+     [
+      0.383,
+      0.924,
+      -301.9
+     ],
+     [
+      -0.924,
+      -0.383,
+      111.1
+     ]
+    ],
+    "through": 1
+   },
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      0.924,
+      0.383,
+      -111.1
+     ]
+    ],
+    "through": 1
+   }
+  ],
+  "seal": [
+   "y-:x",
+   "x+:y",
+   "z-:x",
+   "z+:x"
+  ],
+  "snap": 31,
+  "specks": 4,
+  "close": 0
+ },
+ "SM_CastleTower_Window_A_04": {
+  "parts": [
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      -0.383,
+      -0.924,
+      301.9
+     ]
+    ],
+    "through": 0
+   },
+   {
+    "yaw": 45,
+    "planes": [
+     [
+      0.383,
+      0.924,
+      -301.9
+     ],
+     [
+      -0.924,
+      -0.383,
+      111.1
+     ]
+    ],
+    "through": 1
+   },
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      0.924,
+      0.383,
+      -111.1
+     ]
+    ],
+    "through": 1
+   }
+  ],
+  "seal": [
+   "y-:x",
+   "x+:y",
+   "z-:x",
+   "z+:x"
+  ],
+  "snap": 31,
+  "specks": 4,
+  "close": 0
+ },
+ "SM_CastleTower_Wall_A_04": {
+  "parts": [
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      -0.383,
+      -0.924,
+      301.9
+     ]
+    ],
+    "through": 0
+   },
+   {
+    "yaw": 45,
+    "planes": [
+     [
+      0.383,
+      0.924,
+      -301.9
+     ],
+     [
+      -0.924,
+      -0.383,
+      111.1
+     ]
+    ],
+    "through": 1
+   },
+   {
+    "yaw": 0,
+    "planes": [
+     [
+      0.924,
+      0.383,
+      -111.1
+     ]
+    ],
+    "through": 1
+   }
+  ],
+  "seal": [
+   "y-:x",
+   "x+:y",
+   "z-:x",
+   "z+:x"
+  ],
+  "snap": 31,
+  "specks": 4
+ },
+ "SM_Curtain_Wall_01": {
+  "seal": [
+   "x-:y",
+   "x+:y",
+   "z-:y"
+  ],
+  "snap": 31,
+  "specks": 4
+ },
+ "SM_Cobbles_8M": {
+  "box": [
+   0,
+   -400,
+   -25,
+   800,
+   400,
+   3
+  ],
+  "tile": "cobble"
+ },
+ "SM_Curtain_Wall_02": {
+  "seal": [
+   "x-:y",
+   "x+:y",
+   "z-:y"
+  ],
+  "snap": 31,
+  "specks": 4
+ },
+ "SM_DoorFrame_A_02": {
+  "tile": "dressed"
+ },
+ "SM_Lantern": {
+  "keep": true
+ }
+}
