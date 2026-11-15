@@ -20,6 +20,11 @@ function Redact([string]$s) {
     $s = $s -replace '(?i)(bearer\s+)[A-Za-z0-9\._\-]{12,}', '$1[TOKEN-REDACTED]'
     $s = $s -replace '(?i)((api[_-]?key|token|secret|password)\s*[:=]\s*)\S+', '$1[REDACTED]'
     $s = $s -replace '[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}', '[EMAIL]'
+    # Windows user folders carry a person's name; invite codes are personal referral codes.
+    $s = $s -replace '(?i)([A-Z]:[\\/]+Users[\\/]+)[^\\/\s"''`)]+', '$1<user>'
+    $s = $s -replace '(?i)(invite_code=)[A-Za-z0-9]+', '$1[REDACTED]'
+    $s = $s -replace '\b(10|192\.168|172\.(1[6-9]|2[0-9]|3[01]))(\.\d{1,3}){1,3}\b', '[LAN-IP]'
+    $s = $s -replace '(?i)\bDESKTOP-[A-Z0-9]+\b', '[HOST]'
     return $s
 }
 

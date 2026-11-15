@@ -1,142 +1,158 @@
 # Handoff between architect chats
 
-> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (v0.22) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
-> Last update: 2026-11-12 (day 1, seventh block: elemental build-up with Ignite, Shock and Frost), by the second architect chat (Claude Opus 5.5), which took over from the first one (Claude Fable 5.2).
+> Kept by whichever Claude Code chat is the architect. Read `CLAUDE.md`, `Design/GDD.md` (**v0.68**) and `Design/ARCHITECTURE.md` first; this file says where things stand and how the work is run.
+> Last update: **2026-11-15** (final day; deadline 20:59 EST). Rewritten from the GDD changelog, `Design/ARCHITECTURE.md`, the block files `Devlog/days/2026-11-13_*_block.md` and `2026-11-14_*_block.md` and the git log up to `f4dc179`. The day-1 version of this file is in git history.
 
-## Standing instructions from the owner (2026-11-12)
+## Standing instructions from the owner
+From day 1 (2026-11-12), still valid:
 - Do not stop to ask for go-aheads or yes/no questions. Decide, do, log. If the architect stops, the project stops.
 - The codebase is the architect's: every code decision is yours, and so is its quality. Nobody on the team is a programmer.
 - Everything modular, scalable and with editable parameters, combat above all. Spells must be modular with every parameter adjustable.
-- Looks do not matter yet; structure and function first. "A first-person RPG shooter that does not want to be too complicated."
-- Work routing: one code batch at a time -> Muse Spark through OpenCode (only one OpenCode session at once). Work that can really run in parallel -> Claude subagents (Opus / Sonnet / Haiku, never above effort High). Second opinions and important reviews -> Codex CLI, Sol 6.1 at Medium.
-- PIE is always run by a human. The content backup task stays off for now.
+- PIE is always run by a human. Agents build, test, run the smoke script and package, then ask a person to play.
 - Always commit (English message) and **push every commit to `origin main` right away, without asking** (owner, 2026-11-12: the agents on the other machines must always see the repo). Never force-push. Answers to the team in Spanish; game content, dev log and commits in English.
+
+Added on later days:
+- **Implementer routing.** Default implementer: Muse Spark 1.3 Contributor at High through OpenCode, launched only with `Tools/Devlog/Invoke-LoggedAgent.ps1` (one OpenCode session at a time). Exceptions are the architect's call and are logged with the reason: small changes made directly by the architect (example: `AGBTorch`, about forty lines, `f4dc179`), or a Claude Sonnet subagent after a Muse stall or for work that needs many build-and-smoke rounds (the site code needs in `b0102db`, the future enemies in `9bcd8a9`, the squad tactics of 2026-11-14). The owner allowed the Sonnet exception and prefers it after any Muse stall; render bugs are diagnosed by the architect.
+- **Code review: Sol 6.1 at medium, read-only, through Codex CLI, launched only through the logged wrapper with `-Shell cmd`** (the command uses `<`). Prompts go in `Prompts/review_*_sol.md` (latest: `Prompts/review_castle_torches_sol.md`). Every block that touches code gets one; record its findings and your decision per finding in the block file.
+- **Second opinion before compiling a plan:** GPT-6-Astra through Codex CLI, same logged wrapper (used for the GBPixelVfx plan, `8304005`).
+- **Iterate cheaply** (owner, 2026-11-13, `bf321f9`; in `CLAUDE.md`): while working on one part, build only the Editor target and run only that part's smoke step, without a window: `Smoke-Jam.ps1 -Only <Step> -Offscreen` (about 20 to 65 s against 350 s for the full run). If the part has no step, add one to `gb.Smoke`. The full `Smoke-Jam.ps1` and `Build-Jam.ps1 -Target Glyphbound` run **once at the end**, before the commit or the package. **Every implementer brief carries this rule.**
+- **Several chats on CENTRAL at once: the shared machine lock.** Before any build, test run, smoke run, package or Editor session, take `Glyphbound/Saved/machine.lock` (one line: who and what), wait if another chat holds it, and delete your line when done. Scripts check the file; chat messages are not enough (`Devlog/days/2026-11-13_pixelvfx_block.md`). Commit only your own hunks: other chats leave uncommitted work in the same checkout (right now: torch light edits in `World/GBTorch.*`, `GBPixelVfxComponent.*`, `Build-PastCastle.py`, `castle_twins.js`).
+- **Art is shown before it is imported.** Close-up renders of every new or changed art asset (and of every zone of a map you changed) go to the owner first; import or place only after his OK ("yes, import"). Before sending them, look at each render yourself, list what is wrong and fix it (examples: the orcs' armor refit, four rounds on renders, `70a803d` to `cf8c3b9`; the castle's pixel twins, `82a0352`).
+- **Pixel art = plain blocks** (owner, 2026-11-14, `04fdf77`): smooth rectangles, no imperfections on faces, corners or joints, "clean the imperfections without mercy". **Pixel art must also be light** on storage, RAM and GPU (GDD v0.67): simple geometry and small pictures; a heavy sculpted mesh with a pixel texture does not count.
+- **No hands with a gun** (owner, 2026-11-14, GDD v0.68, `b377478`): with a gun the screen shows only the 3D gun and its own animations. Staff and sword keep their 2D sprites. Do not restart the first-person hand work.
+- **Maps: the place before the assets** (owner, 2026-11-13, GDD v0.47, `c04f05e`): the first site maps were deleted because kit pieces were placed at random. Each space is first described as a place in its world; an asset goes in only because that description asks for it; maps are planned step by step with the owner. When kit sections do not meet, find the kit's own piece for that joint before improvising (the wall stair, `6db7b8b`).
+- **The lab kit's figures, holograms and tubes belong to the Valkyrie's fight only** (GDD v0.50, v0.52, v0.55); the lab rooms and plain furniture can be used anywhere.
+- **Solve, do not park:** fix what does not fit instead of noting it as "left out"; "we do not want a game that looks cheap".
+- Assets that arrive go to `Glyphbound/SourceArt` (one copy per asset; delete the `Incoming` copy, old versions and intermediates). Every third-party asset is listed in the day entry (name, source, licence).
 
 ## How the owner works (what to expect)
 - He plays the packaged build and sends short notes in Spanish, several in one message, sometimes one more while the work is running. Each note is a design decision: write it into the GDD first (changelog line, the section it belongs to, and section 18 for any detail you had to invent), then implement.
 - When a note leaves a detail open, pick a reasonable value, mark it provisional in the GDD, put it in data, and list it in the final answer. Do not ask.
-- He unzips `Glyphbound/TeamTBD_Glyphbound.zip` next to it to play (`Glyphbound/TeamTBD_Glyphbound/`, git-ignored). After every block: package again and tell him to unzip again.
+- He walks maps and sends numbered notes ("first walk", "second walk", ...). Each walk is a block; the builder script is fixed, not the map by hand.
+- He unzips `Glyphbound/TeamTBD_Glyphbound.zip` next to it (`Glyphbound/TeamTBD_Glyphbound/`, git-ignored). The package starts on the castle; beside the exe: `Play-Castle.bat`, `Play-FutureBase.bat` (skips the castle) and `Play_AllWeapons.bat` (`-AllWeapons`: every weapon from the start). After every block he asks for a package when he wants one.
 - The final answer of each block, in Spanish: what changed per note, the provisional choices, what he should check by playing, what was not verified.
 
-## The loop for a round of tweaks (what worked three times today)
+## The loop for a round of tweaks
 1. GDD: record the notes (bump the version, changelog line). Commit.
 2. Read the code involved yourself before writing the brief (the brief must name files, functions and the exact rule).
-3. Brief in `Prompts/<block>.md`: the rule per item, new data keys with their values, pure functions to add (so they can be tested), the verification list (both builds, tests with `-MinTests`, smoke), "do not commit", the final report format. Model briefs: `Prompts/feedback2_jump_melee.md` (small serial batch), `Prompts/feedback1_integration.md` + `feedback1_notes.md` (integration after parallel implementers), `Prompts/feedback1_review_codex.md` (review), `Prompts/feedback1_fixes_review.md` (fix batch). `Prompts/implementer_rules.md` is shared by all.
-4. Small serial batch -> Muse Spark. Several independent areas -> write the public header declarations yourself, then one Claude subagent per area (each owns its files, none builds), collect their reports into a notes file, then ONE Muse Spark integration pass that builds, tests and runs the smoke script.
-5. Look at the result yourself: the report's verbatim result lines, the diff of the risky parts, the smoke screenshots (`Glyphbound/Saved/Screenshots/Smoke`).
-6. A block that touches several systems gets a Codex read-only review, then a Muse fix batch with your decision per finding. A small block does not need it.
-7. Commit. Package. Run the smoke script on the packaged exe (`-Packaged`). Update the day entry, this file, re-run `New-DevlogDay.ps1`. Commit.
+3. Brief in `Prompts/<block>.md`: the rule per item, new data keys with their values, pure functions to add (so they can be tested), the verification list (Editor-target build, anchored test filter, `Smoke-Jam.ps1 -Only <Step> -Offscreen`), the machine-lock rule, "do not commit", the final report format. `Prompts/implementer_rules.md` is shared by all.
+4. Small serial batch -> Muse Spark. Several independent areas -> write the public header declarations yourself, then one Claude subagent per area (each owns its files, none builds), then ONE integration pass that builds, tests and runs the smoke.
+5. Look at the result yourself: the verbatim result lines, the diff of the risky parts, the smoke screenshots (`Glyphbound/Saved/Screenshots/Smoke`).
+6. Sol 6.1 review (read-only), then a fix batch with your decision per finding.
+7. Once at the end: game-target build, full smoke, commit, push. Package if asked or at the end of the day; run the packaged smoke (`-Packaged`). Write the block file `Devlog/days/<date>_<topic>_block.md`, update this file, re-run `New-DevlogDay.ps1`. Commit.
 
-## Rules learned the hard way (all happened today)
-- One build or run at a time on this machine. Long commands in the background.
-- While an agent is editing, `git add` explicit paths only (a "commit everything" swept half-edited files once). Do not edit a file an agent is working on; data edits wait until it ends.
-- Always build the game target too (`-Target Glyphbound`): Editor-only API compiles in the Editor and breaks packaging.
-- The smoke script (`gb.Smoke`, in `Core/GBDevCommands.cpp`) is the only automated check that the game actually runs: it caught "no floor under the player" and magenta sprites that compiler, tests and reviewers all missed. When a feature changes what the script does or its timing, update the script in the same batch. Screenshots are captured a few frames late: leave a second after each one, and never ask for a screenshot on the frame an animation starts.
-- Unreal string and JSON map keys ignore case: never two keys that differ only by case (sprite palettes use digits for that reason).
-- The Cascade plugin must stay enabled (the cook fails without it). Plugin list is generated by `Tools/Jam/trim_plugins.js`.
-- One-off scripts go in a file (scratchpad), never inline `node -e` with backticks inside bash; literal replacements with `split(a).join(b)`.
+## Rules learned the hard way
+- One build or run at a time on this machine (and now: hold `machine.lock`). Long commands in the background, no wait loops.
+- While an agent is editing, `git add` explicit paths only (a "commit everything" swept half-edited files once). Do not edit a file an agent is working on.
+- Always build the game target too (`-Target Glyphbound`) before packaging: Editor-only API compiles in the Editor and breaks packaging.
+- The smoke script (`gb.Smoke`, `Core/GBDevCommands.cpp`) is the only automated check that the game actually runs. When a feature changes what the script does or its timing, update the script in the same batch. Screenshots are captured a few frames late: leave a second after each one.
+- On real maps, use the tour: `Smoke-Jam.ps1 -Map <map> -Only tour -Offscreen` (every spot must have a floor under the player). Map builders also move a body of the player's size along every walk (`walks: clear on N walks`): a check at chest height let a 1.3 m doorway through once (GDD v0.66).
+- A shooter's animation clips can carry their travel in the pelvis while the root stays still: enemies "teleported" through cover. Clips are played in place (`Devlog/days/2026-11-14_enemy_tactics_block.md`).
+- Kit materials authored for Substrate render flat grey here (Substrate is off): rewire them (`fix_htb_materials.py`, `93d0128`).
+- A `set_collision_enabled` from Python is overridden by the named collision profile on load (`0bb12e1`). Meshes built from Python data can come out with culling and normals opposite: check both sides (castle twins, `c262e4b`).
+- Unreal string and JSON map keys ignore case: never two keys that differ only by case.
+- The Cascade plugin must stay enabled (the cook fails without it). The plugin list is generated by `Tools/Jam/trim_plugins.js`.
+- One-off scripts go in a file, never inline `node -e` with backticks inside bash; literal replacements with `split(a).join(b)`. `.ps1` files in ASCII or with BOM: a PowerShell rewrite once broke the GDD's UTF-8 (`fb20295`).
 - A class member must never be named `Cast`. Files of the module are compiled together (unity build): file-local helper names must be unique across files.
+- Skeletal FBX are exported in cm; `unreal.Rotator` is (roll, pitch, yaw); texture parameters need defaults.
 - Tests: pure logic only, each must be able to fail, names `Glyphbound.<Area>.<Name>` where no name is a prefix of another.
+- The Editor is closed only with `Stop-EditorMcp.ps1`. When the chat's own MCP connection is down, call the Editor with `node Tools/Jam/mcp_call.js`.
 
 ## What exists
-- **Project:** `Glyphbound/Glyphbound.uproject`, UE 5.9.0, one C++ module (`Glyphbound`, prefix `GB`), no Blueprints. Default map = engine `Entry` map; `AGBGameMode` builds `AGBTestArena` in code when the map has none.
-- **Code:** 113 files, about 21,500 lines, a first implementation of every system of GDD 16. Layout, principles and conventions: `Design/ARCHITECTURE.md`.
-- **Data:** `Glyphbound/Content/Data/*.json` (11 files, loose files next to the packaged exe). All gameplay numbers are there. `gb.ReloadData` reloads in game.
-- **Scripts (all in `Tools/Jam/`):** `Build-Jam.ps1`, `Test-Jam.ps1`, `Smoke-Jam.ps1`, `Make-Materials.ps1`, `Measure-EditorBoot.ps1`, `trim_plugins.js`, plus the kit's `Start-EditorMcp.ps1`, `Stop-EditorMcp.ps1`, `Package-Jam.ps1`.
-- **The two binary assets:** `Glyphbound/Content/Glyphbound/Materials/M_PixelSurface.uasset` (world-space pixel tiles for 3D structures) and `M_PixelDecal.uasset` (one sprite stretched flat over a quad, masked: ground spells, `GBPlaceholder::SetupFlatSprite`). NOT in git: both generated by `Tools/Jam/Make-Materials.ps1` from `make_materials.py`. They exist on this machine (CENTRAL). **Run the script after a fresh clone and before packaging on another machine** (Editor closed, Editor target built). Without them structures and ground spells fall back to plain shapes.
-- **Day entry:** `Devlog/days/2026-11-12.md` (three blocks; a person adds the human side). Screenshots: `Devlog/media/2026-11-12/`.
+- **Project:** `Glyphbound/Glyphbound.uproject`, UE 5.9.0. One game module (`Glyphbound`, prefix `GB`), C++ only, no Blueprint graphs. Game default map `/Game/Glyphbound/Maps/PastCastle`; the Editor starts on the engine's `Entry` map, where `AGBGameMode` builds `AGBTestArena` in code (the smoke steps run there).
+- **Maps** (`/Game/Glyphbound/Maps`, binary, not in git, on CENTRAL):
+  - `PastCastle`: the castle of the past, slice 1 (gatehouse, two wards with the orcs' camp and `Opening_Past`, the author's keep whole, wall walk, crypt stair, cells, the seal's hall). Built by `Tools/Jam/Build-PastCastle.py` (`"look": "pixel"`: every castle-pack mesh replaced by a plain-block pixel twin; 1.68 M triangles, no Nanite, 12 materials, 32 px tiles). 33 torches (`AGBTorch`). The seal sends the player to `FutureBase`. Plan: `Design/Levels/PAST_CASTLE_PLAN.md` (section 10 = as built).
+  - `FutureBase`: the military base of the future, slice 1 (control room with the seal, corridor and air plant, transfer bay, long Spaceship Corridor, sub-boss hall with the horde chief, breakable glass bulkhead, flooded deep wing with a hand ladder, the tentacle boss's hall, the medium room's energy gate and Power Cells, the Valkyrie's room). Built by `Tools/Jam/Build-FutureBase.py`. Plan: `Design/Levels/FUTURE_BASE_SLICE1.md`.
+  - `Maps/Dev/Review_Castle`, `Review_Enemies`: review stages for renders.
+- **Code:** 193 `.h`/`.cpp` files, about 58,600 lines (game module 174 files, about 52,900 lines; plugin 19 files). 69 pure-logic tests in `Source/Glyphbound/Tests`. Layout and conventions: `Design/ARCHITECTURE.md`.
+- **Plugin `Glyphbound/Plugins/GBPixelVfx`** (our own, jam-made; `README.md`): bakes a Niagara Fluids simulation into a pixel-art flipbook in the master palette and plays it as a camera-facing sprite with a real light (`UGBPixelVfxComponent`). Clips in `Content/Data/Vfx`: `FluidFire`, `FluidSmoke`, `FluidExplosion`, `FluidArcaneFire`, `TorchFire`. Used by the Fireball in flight and the castle's torches. Bake jobs in `Plugins/GBPixelVfx/Bake/Jobs/*.json`.
+- **Data:** `Glyphbound/Content/Data/*.json`, 12 files (`Player`, `QTE`, `Game`, `Spells`, `Weapons`, `StatusEffects`, `Items`, `Enemies`, `Encounters`, `Skills`, `Sprites`, `Cutscenes`), plus the 5 baked clips (PNG + JSON) in `Data/Vfx`. Loose files next to the packaged exe; `gb.ReloadData` reloads in game.
+- **Content:** everything in `Content/` except `Content/Data` is binary and **not in git** (team decision): kits, imported models, maps. It lives on CENTRAL; `Tools/Jam/Backup-Content.ps1` copies it. `M_PixelSurface` / `M_PixelDecal` are regenerated by `Make-Materials.ps1` after a fresh clone.
+- **Fab / third-party packs in Content** (each listed with source and licence in the block files), among them: Medieval Kingdom (the castle pack; now only two rubble pieces are cooked), Sci-Fi Creatures Research Lab, High Tech Base, Modular SciFi Station, Deep Water Station, Sci-fi Impacts, Muzzle Flash 3D, Scifi Material Pack, Hologram Shader, Smoke Niagara Fluids, Realistic Gun VFX, Kingboars Pistol and Rifle Locomotion Animations (12 clips used), the Spaceship Corridor model. Collect the full list from `Devlog/days/2026-11-13_fab_assets_block.md` and the 2026-11-14 block files before submission.
+- **Enemies** (`Enemies.json`): past pixel-art imps and orcs (`Imp_Past`, `Orc_Past`, `_Shaman`, `_Champion`, `_Juggernaut`, `_Brute`); future 3D armored orcs (`Orc_Future`, `_GunCarrier`, `_Enforcer`, `_Siege`, horde chief `_Warlord` with shield and one-handed heavy pistol), `Robot_Future`, `Drone_Future`, `Sentinel_Future`, `Spider_Future`; `Valkyrie_Past` / `Valkyrie_Future`; the Entity (`Entity_Phase1`, 3D, 9.4 m); `Herald`, `TrainingDummy`.
+- **Weapons:** `Staff_Apprentice`, `Staff_Ember`, `Pistol`, `Rifle`, `Shotgun` (3D models; shell-by-shell reload and pump), `ElementalSword`. **Spells:** Fireball, Fire Wall, Flamethrower, Lightning Bolt, Lightning Rune, Static Orb, Ice Wall, Ice Shield, Ice Floor, three Air passives, Weapon Enchant (element chosen in its QTE).
+- **Day entries:** `Devlog/days/2026-11-12.md` (final). Days 13 and 14 exist only as drafts (`2026-11-13_DRAFT.md`, `2026-11-14_DRAFT.md`, not yet committed) plus their block files; screenshots in `Devlog/media/<date>/`.
 
 ## Where to tweak what (most of the owner's notes are one of these)
 | The owner says | Look here first |
 |---|---|
 | Movement, jumps, dash, health, mana, starting gear | `Player.json`; `Player/GBPlayerCharacter.cpp` (`ApplyMovementStats`, `OnJumped_Implementation`, `InputDash`) |
-| A weapon's numbers (damage, rate, recoil, head bonus, melee range) | `Weapons.json`; `Weapons/GBGun.cpp`, `GBStaff.cpp`, `GBSword.cpp` |
-| A spell's numbers, QTE scaling, look | `Spells.json` (each param has `Base / Min / Max / ScaledBy`); behavior classes `Spells/GBSpell_*.cpp` (the header of each lists its params) |
-| QTE time, keys, gestures | `QTE.json`; `QTE/GBQTELogic.cpp`, `QTE/GBQTEComponent.cpp` |
-| Enemies: health, damage, ranges, speed, drops | `Enemies.json`, `Encounters.json`; movement tuning (`Enemy*` keys) in `Game.json`; `AI/GBEnemyCharacter.cpp` |
-| Perks (and the reset: `ResetAll`) | `Skills.json` (modifier keys: `Weapon.<Id|Gun|Staff|Sword|All>.<Stat>`, `Spell.<Id|All>.<Param>`, player stats by name) |
-| Slows, Ignite's damage ticks, potions, enchant buffs | `StatusEffects.json` |
-| Elemental build-up: per-enemy thresholds, resistances, reactions, durations | `Enemies.json` (per enemy), `Game.json` `ElementalDefault.*` (fallbacks); spell `BuildUp` param; weapon `FireBuildUp` / `LightningBuildUp` / `IceBuildUp`; code `Combat/GBElementalStatusComponent.cpp`, `Combat/GBBuildUpMeter.cpp` |
+| Ledge climb, vault, hand ladders | `Player.json` (`Vault*`, climb keys); `Player/GBMantle.cpp`; `World/GBLadder.cpp`; `AGBPlayerCharacter::StartLadder` |
+| A weapon's numbers (damage, rate, recoil, head bonus, spread, reload) | `Weapons.json`; `Weapons/GBGun.cpp`, `GBStaff.cpp`, `GBSword.cpp` |
+| A gun's first-person pose, weapon FOV, bob | `Weapons.json` (pose keys); `Weapons/GBGun.cpp`; console `gb.ViewPose`, `gb.ViewFreeze` |
+| A spell's numbers, QTE scaling, look | `Spells.json` (each param `Base / Min / Max / ScaledBy`, optional `Cap`); `Spells/GBSpell_*.cpp` |
+| QTE time, keys, gestures, enchant element choice | `QTE.json` (`ChoiceTimeLimit`); `QTE/GBQTELogic.cpp`, `QTE/GBQTEComponent.cpp` |
+| Enemy numbers, meshes, clips, armor pieces, drops | `Enemies.json` (per id); `AI/GBEnemyCharacter.cpp` (base), `AI/GBEnemy3D.cpp`, `AI/GBSkeletalEnemy.cpp`, `AI/GBEnemyAnimInstance.cpp` |
+| Enemy tactics: squads, zones, patrols, cover, flanking, attack tokens, temperament | `Enemies.json` (`Aggression`, `CoverStay*`, `NoticeTime`, `HearingRange`...), `Game.json`; `AI/GBSquad.cpp`, `AI/GBTactics.cpp`, `AI/GBEngage.cpp`, `AI/GBEncounter.cpp`, `AI/GBEncounterStarter.cpp` |
+| Flyers, sentinel, horde chief's shield | `AI/GBFlyerEnemy.cpp`, `AI/GBDroneEnemy.cpp`, `AI/GBSentinelEnemy.cpp`, `AI/GBShieldEnemy.cpp` (arm IK `FGBArmIK` in `GBEnemyAnimInstance`) |
+| Bosses: the Entity (tentacles), the Valkyrie in her tube | `Enemies.json` (`Entity_Phase1`, `Valkyrie_Future`: `DormantWakeRange`, `WakeLeap*`); `AI/GBEntity.cpp`, `AI/GBTentacleRigComponent.cpp`, `AI/GBTentacleMath.cpp`; `gb.SpawnEntity`, `gb.OpenValkyrie` |
+| Encounters: who is where, waves, reinforcements | `Encounters.json` (`Opening_Past`, `Future_Bay`, `Future_Spiders`, `Future_DeepWing`, `SubBoss_Future`, `Boss_Valkyrie_Future`...); placed by the map builders' `encounters` stage |
+| Perks (and the reset `ResetAll`) | `Skills.json` (modifier keys `Weapon.<Id|Slot|All>.<Stat>`, `Spell.<Id|All>.<Param>`, player stats by name); `Progression/GBSkillTreeComponent.cpp`; balance: `Tools/Balance/balance_model.js` |
+| Elemental build-up (thresholds, resistances, reactions) | `Enemies.json` per enemy, `Game.json` `ElementalDefault.*`; `Combat/GBElementalStatusComponent.cpp`, `Combat/GBBuildUpMeter.cpp` |
+| Slows, Ignite, potions, enchant buffs | `StatusEffects.json` |
 | Items, armor, recipes | `Items.json`; `Items/GBInventoryComponent.cpp` |
-| HUD, menus, damage numbers | `UI/GBHUD*.cpp`; damage-number tuning in `Game.json` |
+| HUD (two skins), menus, skill tree pages, menu transitions, damage numbers | `UI/GBHUD.cpp`, `GBHUD_Rpg.cpp`, `GBHUD_Cyber.cpp`, `GBHUD_Menus.cpp`, `GBHUD_Paint.cpp`, `GBHUD_DamageNumbers.cpp`, `GBPixelFont.cpp`; layout values in `Game.json` |
+| Cutscene captions (seal, first gun) | `Cutscenes.json`; `World/GBCutsceneSubsystem.cpp`, `World/GBSeal.cpp` (`TravelMapPath`) |
+| The castle map (layout, twins, torches, lights) | `Tools/Jam/Build-PastCastle.py` (stages; `torches`, `place_torches`), `castle_twins*.js/.py`, `castle_twins_cfg.json`; `World/GBTorch.cpp`; flame clip `Plugins/GBPixelVfx/Bake/Jobs/TorchFire.json` |
+| The future base map | `Tools/Jam/Build-FutureBase.py`; doors, glass, gates, ladders: `World/GBDoor.cpp`, `GBBreakable.cpp`, `GBEnergyGate.cpp` (also `AGBKeySocket`), `GBLadder.cpp` |
+| Baked fluid effects (Fireball fire, torch flame) | `Plugins/GBPixelVfx` (`README.md`), jobs `Bake/Jobs/*.json`, `PixelVfx-Jam.ps1 -Action Bake -Id <Id>`; clip sizes in `Spells.json` |
 | Kill height, corpse time, global values | `Game.json` |
-| Placeholder sprites and tiles | `Sprites.json` (rows of text) |
-| Keys and buttons | `Player/GBInputSet.cpp` (GDD 9 is the list) |
-| The test arena | `World/GBTestArena.cpp` |
-| Damage rules (who can hurt whom, head bonus, explosions through walls) | `Combat/GBCombatLibrary.cpp` (one damage path: `DealDamage`; one weak-point rule: `ApplyWeakPointBonus`) |
+| Placeholder sprites, tiles, spell icons | `Sprites.json` |
+| Keys and buttons | `Player/GBInputSet.cpp` (GDD §9 is the list) |
+| The test arena (smoke steps) | `World/GBTestArena.cpp`; steps in `Core/GBDevCommands.cpp` |
+| Damage rules | `Combat/GBCombatLibrary.cpp` (`DealDamage`, `ApplyWeakPointBonus`) |
 
 ## How to run the usual things
+All from `C:\GameJam`. Take `Glyphbound/Saved/machine.lock` first.
 ```
-powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target; Editor must be closed
-powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: catches Editor-only API before packaging
-powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
-powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 36          # whole suite (36 tests)
-powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'
-powershell -File Tools/Jam/Smoke-Jam.ps1                      # scripted run of the game (add -Packaged for the packaged exe)
+powershell -File Tools/Jam/Build-Jam.ps1                      # Editor target (default); Editor must be closed
+powershell -File Tools/Jam/Build-Jam.ps1 -Target Glyphbound   # game target: once at the end, before packaging
+powershell -File Tools/Jam/Test-Jam.ps1 -Filter '^Glyphbound.QTE.'          # anchored filter while iterating
+powershell -File Tools/Jam/Test-Jam.ps1 -MinTests 69                        # whole suite (default filter '^Glyphbound.')
+powershell -File Tools/Jam/Smoke-Jam.ps1 -Only <Step> -Offscreen            # while iterating (steps: Entity, mantle, shotgun, ui, seal, tour, ...)
+powershell -File Tools/Jam/Smoke-Jam.ps1 -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen   # a real map's tour
+powershell -File Tools/Jam/Smoke-Jam.ps1 -Offscreen                         # full run (about 350 s), once at the end
+powershell -File Tools/Jam/Smoke-Jam.ps1 -Packaged -Offscreen [-ResX 1920 -ResY 1080]                  # on the packaged exe
 powershell -File Tools/Jam/Package-Jam.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -ZipName TeamTBD_Glyphbound
-powershell -File Tools/Devlog/New-DevlogDay.ps1 -Date 2026-11-12
+powershell -File Tools/Jam/Make-Materials.ps1                 # only after a fresh clone or when make_materials.py changes
+powershell -File Tools/Jam/PixelVfx-Jam.ps1 -Action Bake -Id TorchFire      # actions: Build, Test, Materials, Bake, Compare, Showcase
+powershell -File Tools/Jam/Start-EditorMcp.ps1 -Project C:\GameJam\Glyphbound\Glyphbound.uproject -Port 8059
+powershell -File Tools/Jam/Test-UnrealMcp.ps1                 # probe the Editor's MCP
+powershell -File Tools/Jam/Stop-EditorMcp.ps1                 # the only way to close the Editor (collects its log)
+node Tools/Jam/mcp_call.js py Tools/Jam/Build-PastCastle.py   # run a builder in the open Editor (same for Build-FutureBase.py)
+powershell -File Tools/Devlog/New-DevlogDay.ps1 -Date 2026-11-15
 ```
-Muse Spark (from `C:\GameJam`, in the background):
+Muse Spark (in the background):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent opencode -Model 'opencode-go/muse-spark-1.3-contributor#high' -PromptFile Prompts\X.md -Purpose '...' -Command "opencode run --auto -m 'opencode-go/muse-spark-1.3-contributor#high' --title '...' (Get-Content Prompts\X.md -Raw)"`
-Codex (read-only review):
+Sol 6.1 review (read-only):
 `powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Devlog\Invoke-LoggedAgent.ps1 -Agent codex -Model 'gpt-6.1-sol (medium)' -PromptFile Prompts\X.md -Purpose '...' -Shell cmd -Command 'codex exec -m gpt-6.1-sol -c model_reasoning_effort=medium -s read-only -C . - < Prompts\X.md'`
-A data-only change (JSON) needs no build: run the tests and the smoke script, then package.
+A data-only change (JSON) needs no build: run the affected smoke step, then package.
+Console (Development builds only): `gb.ReloadData`, `gb.QTE 0|1`, `gb.God`, `gb.OpenDoors`, `gb.OpenValkyrie`, `gb.SpawnEntity`, `gb.ShowElemental 1`, `gb.BuildUp`, `gb.ViewPose`, `gb.ViewFreeze`, `gb.Smoke`.
 
-## Right now (end of the fifteenth block, 2026-11-12)
-- **Fifteenth block (GDD v0.30, owner's note on the pistol, by the architect directly):** the energy bar shows the enchant time left rounded up to whole cells (`AGBGun::UpdatePistolViewModel`, half a cell added before the material's threshold), so it empties exactly when the enchant ends; the weak-point light is half as long and its times moved to `Game.json`. Not played yet.
-- Three chats worked in parallel today; the day entry numbers the blocks in order. Blocks 9, 11 and 12 (the real 3D pistol, GDD v0.25) and block 14 (the balance pass, GDD v0.28: §19 "Balance", `Tools/Balance/balance_model.js`, run it after any number change) were done by other chats; read their blocks in `Devlog/days/2026-11-12.md`.
-- **Thirteenth block (GDD v0.27, owner's note, data only):** spell tree in four columns (fire, lightning, ice, casting; links only Searing Fireball -> Wide Blast and Frugal Casting -> Quick Recall); Precision Recovery costs 2 per rank. Made by the architect directly. Packaged after the balance pass (f50bf23, Long Shot 84b355f): one zip with the pistol, the balance and both tree changes, 251.1 MB; 36 tests, smoke clean in the Editor and on the packaged exe. Not played yet.
-- **Tenth block (GDD v0.24, owner's perk list):** weapon tree reorganized (Heavy Rounds on top, handling branch left, precision branch right, three weapon specializations on the bottom row) with four new perks: Rapid Reload (`Weapon.All.ReloadTime`), Precision Recovery (player stat `PrecisionRecovery` = rank; `AGBPlayerCharacter::HandlePrecisionRecovery` on `UGBCombatLibrary::OnDamageDealt`, heals 3% of max health on a weak-point killing blow, cooldown 6/5/4 s, `PrecisionRecovery*` in `Game.json`), Arcane Conduit (gun stat `EnchantBuildUpMult`, applied in `AGBHeldItem::MakeDamageInfo` only when the element comes from the enchant), Deadeye (`Weapon.Pistol.HeadshotMult`). Steady Grip now also lowers yaw recoil. Skill links that skip rows are drawn as elbows. 36 tests. Muse Spark batch `Prompts/feedback9_weapon_tree.md`, read by the architect. Not played yet.
-- **Eighth block (GDD v0.23, owner's note):** guns spread more while the player moves (`UGBCombatLibrary::ComputeMovementSpread`, `AGBGun::GetCurrentSpread`, used by the shots and the crosshair; stats `MoveSpread` / `AimMoveSpread` in `Weapons.json`, scaled by horizontal speed over the current walk speed). Small change made by the architect directly. 35 tests. Package 10. Not played yet.
-- **Seventh block (GDD v0.22, owner's spec `Prompts/feedback8_elemental_spec_owner.md`):** elemental build-up on every enemy (three bars, Ignite / Shock / Frost, per-enemy resistances and reactions, spell and weapon build-up, one count per event, weak-point bonus, `MultiplyMin` slows). The old per-hit Burn / Shock slow / Chill were removed (owner's answer). Debug: `gb.ShowElemental 1`, `gb.BuildUp <Element> <Amount>`. 34 tests; smoke fills each bar on a training dummy. Not played yet. Not reviewed by Codex (one Muse batch, read by the architect; one fix: spell projectiles no longer flag head hits as headshots).
-- Everything is committed on `main` (last commits: perks and flamethrower, beam interrupt, then the seventh package's docs), and pushed to GitHub (`VDuk3/EpicAIMegaJam`).
-- Editor build and game build green; 30 pure-logic tests pass; the smoke run (now with a skill reset check and a ground-spell screenshot, `10_ground_spells`) ends with no errors, also on the packaged exe. Package: `Glyphbound/TeamTBD_Glyphbound.zip`, 245.4 MB.
-- Six blocks done today:
-  1. The whole code base (ten parallel implementers, integration, Codex review with 9 findings fixed).
-  2. The owner's first ten play-test notes, GDD v0.14 (pixel-textured 3D structures, fireball shockwave, higher jumps, owned weapons and the Weapons page, held ice shield on Block, enemy pathing, mouse in menus, kill height, damage numbers, QTE 4 s); Codex review with 4 findings fixed.
-  6. GDD v0.20-v0.21: six new spell perks (data only; 18 skill nodes now); optional `Cap` per spell param (`GBSpell` resolve; ice floor slow capped at 80%); every modifier key in the data is validated at load (`UGBDataSubsystem`, warning on a typo); the flamethrower runs while its key is held (`AGBSpell_Beam::ShouldBeamContinue`, `AGBPlayerCharacter::IsSpellInputHeld`, params `HoldToSustain`, `MinDuration`, `ManaPerSecond`, no `Duration`), ticks every 0.3 s, and a single hit of 30%+ of max health interrupts it (`IsInterruptingHit`, param `InterruptHitFraction`) with a view shake (`AGBPlayerCharacter::StartViewShake`, `InterruptShake*` in `Game.json`). Not played yet.
-  5. GDD v0.17-v0.18: the lightning rune and the ice floor draw their sprite flat over the whole area (`SetupFlatSprite`, `M_PixelDecal`, sprites redrawn top-down 32x32; param `FigureGlow`); overlapping figures stack, the last placed on top (`AGBSpellActor::PlaceGroundFigure` / `ComputeGroundFigureZ`, keys `GroundFigure*` in `Game.json`, test `Glyphbound.Spells.GroundFigureLayering`); a "+1 skill point" test button on the skill tree screen (`AGBHUD::AddTestSkillPoint`; **remove or hide it before submission**). Not played yet.
-  4. Perk reset, GDD v0.16 (by the second architect chat): `UGBSkillTreeComponent::ResetAll` refunds the tracked `PointsSpent` (saved in the checkpoint snapshot); a "Reset skills (+N pt)" button next to the skill points on both skill tree screens, plus R / gamepad Y there (`MenuReset` input action, menu context only). The smoke run checks the refund. Not played yet.
-  3. The owner's second round, GDD v0.15: jumps commit to their direction (`AGBPlayerCharacter::ComputeJumpHorizontalVelocity`; stats `AirControl` 0, `JumpTakeoffMinSpeedMult` 0.6, `AirJumpMinSpeedMult` 1.0), the sword hits where the player aims (`UGBCombatLibrary::ClosestBodyPointToAim`), one weak-point rule for gun, staff and sword (`ApplyWeakPointBonus`; `HeadshotMult` pistol 2, everything else 1.5, raised by the Marksman perk through `Weapon.All.HeadshotMult`). **Not reviewed by Codex. Not played yet.**
-- The owner has played builds 1 and 2. Builds 3 and 4 were never played as such; build 7 (the current zip: everything above) is waiting for him; he played builds 5 and 6 and sent notes on both.
-- Provisional choices waiting for the owner's word (GDD 18 and section 6): the skill reset is free, any time, without confirmation; the +1 skill point button is a test option; Block on Q / L2; guns and the sword follow the staff rule (owned, equipped from the inventory); a "big" damage number is a headshot or a hit of at least 25% of the target's health; staff / sword / rifle head bonus numbers; a standing jump with a direction held leaves at 60% of walking speed.
+## State on the final day (2026-11-15)
+### Done (in the last package or committed after it)
+- Combat core: staff + 13 spells with the QTE, the weapon enchant with the element chosen in its QTE, three 3D guns (pistol, rifle, shotgun with pump and shell-by-shell reload), elemental build-up, perks in two skill trees (spell tablet; weapon hub with gun pages), skill-point confirmation, menu transitions, two full HUD skins.
+- Movement: double jump, dash, ledge climb in any direction, vault, hand ladders.
+- `PastCastle` slice 1 in plain-block pixel art (GDD v0.68), with torches whose flame is baked from Niagara Fluids (`f4dc179`, after the last package); the seal's cutscene opens `FutureBase`.
+- `FutureBase` slice 1 with its encounters; enemies with squad tactics (zones, patrols, cover, flanking, attack tokens), the horde chief with shield and one-handed pistol, the Valkyrie sealed in her tube until the glass breaks, glass that shatters pane by pane.
+- The Entity's phase 1 as a 3D floating boss (`gb.SpawnEntity`; not placed on a map).
+- Last package (`58af4a1`): BUILD SUCCESSFUL, packaged castle tour 42 spots, 0 without floor, 0 engine errors.
 
-## What the game does today
-Start in the past with the Apprentice staff, 3 spells in the loadout and double jump. The arena has: a movement course (double jump steps, a dash gap), a central portal (G to travel; past = pixel-textured stone, future = plain 3D with neon), a pistol and consumables near the start, four spell books (all 13 spells), a chest (ember staff, sword hilt, gems), two training dummies, cover (low walls, pillars), a past wave encounter and a future one, an era-gated room (shotgun; closed in the past, open in the future) and a future-only ramp that only exists once the past wave is cleared (rifle and armor chest).
-Controls are GDD 9. Menus: Tab inventory (pages Items / Weapons / Spells / Skills; Q/E or click a tab), K skill trees, Esc pause; the mouse works in every menu. Block (hold Q, or L2 on a gamepad) raises a summoned ice shield. Console: `gb.ReloadData`, `gb.QTE 0` / `gb.QTE 1`, `gb.Smoke`.
-Systems added after the first play-test: owned weapons (a pickup goes to the hands only if its slot is empty), `GBPlaceholder::SetupTexturedShape` for structures, `AGBExplosionEffect` shockwave with knockback, navmesh built at runtime (`AGBTestArena::BuildNavigation`) with local steering as fallback (`AI/GBSteering`), `KillZ`, damage numbers from the global event `UGBCombatLibrary::OnDamageDealt()`.
-
-## Next steps (architect's order; the owner's notes always come first)
-1. The owner's next notes on build 3 (he said he will keep sending tweaks).
-2. Likely tuning after he plays: the jump course of the arena was computed assuming air steering was possible (it only uses jump height, run speed and dash distance, so it should hold, but nobody has tried it); the standing-jump speed.
-3. Gamepad pass (bindings exist, never tried; L2 is both Block and the spell modifier).
-4. DLSS plugin for UE 5.9.0 (NVIDIA award): not installed in the engine; needs a download, so ask the owner first.
-5. GDD day 2 list: QTE second version, enchant polish, both HUD skins with real art, consumables in play.
-6. Real levels: the era system supports sub-levels named `*_Past` / `*_Future` and per-actor `UGBEraComponent`; a placed navmesh works as is (`RuntimeGeneration=Dynamic` is the project default, can be Static per map).
-7. End of day (if not done again after the last block): package, `New-DevlogDay.ps1`, commit. On Nov 13 start a new day entry `Devlog/days/2026-11-13.md` from `Devlog/TEMPLATE_DAY.md`.
-
-## Things a human must check by playing
-- Build after block 15: enchant the pistol and watch the bar against the HUD's enchant timer: the last cell goes dark when the timer ends; a head hit flashes the weak-point light for about 0.2 s in all.
-- Current zip (pistol + balance + trees): the spell tree's four columns read cleanly in both UI styles (names fit the narrower boxes); Frugal Casting can be bought without Overcharge; Precision Recovery asks 2 points per rank.
-- Build 11 (weapon tree): the tree matches the owner's sketch and reads cleanly in both UI styles; Rapid Reload 3 makes the pistol reload in about 0.84 s with the bar following; Precision Recovery: a head-shot kill at half health shows "+N health" (3%), a second one inside the cooldown does not, a body-shot kill or a head hit that does not kill never heals, a shotgun kill heals once; Arcane Conduit 3 with an enchanted gun fills the elemental bars about 30% faster (`gb.ShowElemental 1`); Deadeye raises pistol head damage.
-- Build 10 (spread while moving): the crosshair opens while walking and closes when standing still, hip and aimed; shooting a far target while walking misses more than standing; the shotgun's pattern widens; aimed walking still spreads a little.
-- Build 8 (elemental): with `gb.ShowElemental 1`: fire spells fill the fire bar and Ignite burns 4 s then 3 s immune; a lightning bolt through a line of orcs gives each one build-up; a full lightning bar stuns an orc (stops, attack cancelled) but only interrupts the brute; the ice floor alone fills slowly and decays, an ice-enchanted gun finishes it; frozen orcs stop, the brute only slows; Frost on the ice floor does not slow more than the strongest of the two; a shotgun shot counts once; head shots fill faster; the flamethrower and the ice floor (Deep Freeze) feel the same as before.
-- Build 7: the six new perks (each at rank 3), the flamethrower held / released / out of mana, a strong hit interrupting it (shake, message, aim unchanged), a small hit not interrupting it, with the ice shield raised the blocked part not counting.
-- Build 6: overlapping rune and ice floor in both orders (the last one fully on top, no flicker, also while moving).
-- Build 5: the rune and ice floor figures (full area, flat, sharp, floor visible through them, rune dim until armed), the +1 skill point button.
-- Build 4 (perk reset): the button and R on the K screen and the inventory Skills page, that stats really go back to base after a reset.
-- Build 3: jumps (standing jump with a direction held, running jump, changing direction with the second jump, no steering in the air; is the jump course still doable?), sword hits on head vs legs, staff basic attack on the head (bigger number, x1.5).
-- From build 2, not confirmed by the owner one by one (he played it and only sent the three notes of block 3, so assume it mostly works): clicks in menus while paused, one click on the death screen respawns once, Block only with staff or sword and slower movement, a second staff on the Weapons page, enemies around cover in both eras, falling kills, damage numbers, fireball shockwave.
-- Never tried by anyone: gamepad.
-- Movement feel, mouse look speed, QTE gesture sensitivity (the mouse-to-pixels conversion assumes the legacy 0.07 scale; the constant is in `Player/GBPlayerCharacter.cpp`).
-- Size of the pistol placeholder in view; sizes of sprites that face the camera.
+### Open (GDD §11, §15, §17 and the latest commits)
+- **Zip size.** `58af4a1`: `TeamTBD_Glyphbound.zip` **2,024.9 MB**; the jam page asks for desktop zips under 1 GB and `CLAUDE.md`'s checklist says under 1 GB. GDD §0.1 notes bigger builds are allowed through butler, and the owner said on 2026-11-14 that the limit "does not matter for now", but it must be settled before submission. Known facts: the castle pack now cooks 84 MB, all from two rubble pieces `FutureBase.umap` still uses (`SM_Rubble_02`, `SM_PillarTop_Broken`); "the rest is mostly the future base's kits". Next step: measure the cooked size per content folder, then replace or drop what the maps do not need. Ask the owner once whether to aim for 1 GB or upload the bigger zip with butler.
+- **Torch work in progress** in another chat (uncommitted light offset in `World/GBTorch.*` and the plugin component). Do not commit those hunks as yours.
+- **Day entries:** 2026-11-13 and 2026-11-14 are drafts only; `New-DevlogDay.ps1` and the human side are still to do, plus 2026-11-15. The Glass Box link must be submitted with the game.
+- **Before submission:** remove or hide the "+1 skill point" test button (`AGBHUD::AddTestSkillPoint`, GDD v0.18) and the free skill reset (owner, v0.29: "will not be in the final version"); game title and team name are still TBD (GDD §17); "Tools you used" list kept current.
+- **Not built:** the past Valkyrie's place and fight, the elemental zones of the castle, the sword's hilt + gem crafting in play, the final portal map and the Entity's arena, the Entity's tentacle melee (pending, owner 2026-11-13), which boss the tentacle boss is, which enemies drop the Power Cells, the second castle slice. Audio is not mentioned in any block.
+- **NVIDIA RTX Award:** DLSS is not installed (GDD §17, item 1). Without it the game does not qualify.
+- **Not walked by hand:** the pixel castle and its torches; the shadowed wards read dark.
+- Video (`Design/VideoScript.md`) and the itch.io upload are for a human.
 
 ## Known limits (accepted for now)
 - Enemies do not attack spell walls on purpose.
 - Pixel tiles on a wall placed diagonally stretch up to about 1.4x (world-aligned projection picks one axis).
-- Enemies never drop down a ledge higher than `EnemySteerLedgeDrop` (150 cm) while steering locally; on the navmesh they follow the mesh.
 - Spell projectiles and explosions get no head bonus (a spell can opt in with a `HeadshotMult` param).
 - A dropped gun comes back fully loaded when picked up again. Spell cooldowns persist through death.
 - `gb.*` console commands do not exist in Shipping builds (we package Development).
+- Castle twins: a step where a piece's own origin is off the 2 m tile; some 25 cm crenellations read ragged from below.
 - The warm Editor boot did not get faster with fewer plugins (about 10-11 s either way).
-- The Unreal MCP server is only reachable while the Editor is open (`Start-EditorMcp.ps1`); nothing in the current workflow needs it.

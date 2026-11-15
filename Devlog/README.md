@@ -43,5 +43,5 @@ Devlog/
    `setx JAM_MACHINE CENTRAL`
 7. **Small, frequent commits** with clear messages: the daily draft lists them. Commit `Devlog/raw/` too (the repo is private). Epic may ask for the version control history.
 8. **End of day:** run `powershell -File Tools/Devlog/New-DevlogDay.ps1 -Date <YYYY-MM-DD>`. Then a person writes `days/<date>.md` from `TEMPLATE_DAY.md`, starting from the draft.
-9. **Publish:** only `days/*.md`, `media/`, `PRE_JAM_DECLARATION.md` and `PREJAM_PREP.md`. Raw logs may contain keys or emails: the draft is already redacted, but check it before publishing. The dev log link goes in the submission, **before the deadline**.
+9. **Publish:** only the final entries `days/<date>.md` and the block notes `days/*_block.md` (never the automatic `*_DRAFT.md`: they quote raw prompts in Spanish and LAN details; they stay in the repo as evidence), `media/`, `SUBMISSION.md`, `PRE_JAM_DECLARATION.md` and `PREJAM_PREP.md`. Raw logs may contain keys or emails: the draft is already redacted, but check it before publishing. The dev log link goes in the submission, **before the deadline**.
 10. **Times in UTC.** The jam ends on Nov 15 at 20:59 EST, which is **01:59 UTC on Nov 16**.
