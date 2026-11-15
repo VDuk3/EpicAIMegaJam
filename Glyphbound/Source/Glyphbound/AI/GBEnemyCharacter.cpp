@@ -477,9 +477,11 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 			MoveTowards(Goal, DeltaSeconds);
 			bRepositioning = true;
 		}
-		// Pixel-art melee does not stand out its recovery while the player backs away (owner, 2026-11-15: they were easy
-		// to kite): past its reach it keeps after him, and its next swing comes as soon as the interval ends.
-		else if (!IsRanged() && bPixelArtLook && StateTime >= StatOr(TEXT("RecoverPause"), 0.25f)
+		// Opt-in by data (RecoverPause stat, the castle melee ids): melee does not stand out its recovery while the player
+		// backs away (architect, 2026-11-15: reading the code, they were easy to kite); after the pause, past its reach it
+		// keeps after him and swings as soon as the interval ends. Only on the ground: a lunge flies in Recover.
+		else if (!IsRanged() && bPixelArtLook && StatOr(TEXT("RecoverPause"), -1.f) >= 0.f && StateTime >= StatOr(TEXT("RecoverPause"), -1.f)
+			&& GetCharacterMovement()->IsMovingOnGround()
 			&& Distance > AttackRange * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f) * 1.6f)
 		{
 			MoveTowards(Goal, DeltaSeconds);
@@ -1066,7 +1068,8 @@ void AGBEnemyCharacter::HandleDamaged(const FGBDamageInfo& Info, float ActualDam
 		// for StaggerTime and breaks its windup, at most once per StaggerCooldown, so a stream of small hits cannot stun-lock it.
 		const float StaggerFraction = StatOr(TEXT("StaggerFraction"), 0.f);
 		const float MaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
-		if (StaggerFraction > 0.f && bPixelArtLook && !IsRanged() && MaxHealth > 0.f && ActualDamage >= StaggerFraction * MaxHealth && GetWorld())
+		if (StaggerFraction > 0.f && bPixelArtLook && !IsRanged() && MaxHealth > 0.f && ActualDamage >= StaggerFraction * MaxHealth && GetWorld()
+			&& GetCharacterMovement()->IsMovingOnGround())   // not mid-lunge: the lock's stop would drop it out of the air
 		{
 			static TMap<TWeakObjectPtr<const AGBEnemyCharacter>, double> LastStagger;   // no header change mid-jam (Live Coding)
 			const double Now = GetWorld()->GetTimeSeconds();

@@ -9,6 +9,7 @@
 			"Element": "Physical",
 			"bPixelArt": true,
 			"Stats": {
+				"RecoverPause": 0.25,
 				"StaggerFraction": 0.3,
 				"StaggerTime": 0.25,
 				"StaggerCooldown": 1.2,
@@ -93,6 +94,7 @@
 			"Element": "Physical",
 			"bPixelArt": true,
 			"Stats": {
+				"RecoverPause": 0.3,
 				"StaggerFraction": 0.15,
 				"StaggerTime": 0.3,
 				"StaggerCooldown": 1.5,
@@ -249,6 +251,7 @@
 			"Element": "Physical",
 			"bPixelArt": true,
 			"Stats": {
+				"RecoverPause": 0.4,
 				"StaggerFraction": 0.1,
 				"StaggerTime": 0.3,
 				"StaggerCooldown": 2,
