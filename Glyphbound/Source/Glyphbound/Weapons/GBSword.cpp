@@ -72,7 +72,7 @@ namespace
 			{ { FRotator(10.f, -50.f, -30.f), FVector(0.f, 0.f, 0.f) }, { FRotator(-10.f, 10.f, 90.f), FVector(4.f, 0.f, 8.f) } },
 			// Third cut (owner): the blade lies flat and the cut is level: the end is the wind-up turned only about the
 			// vertical axis (yaw), so the blade stays horizontal, a little above the screen centre, all the way across.
-			{ { FRotator(25.f, 10.f, 120.f), FVector(0.f, 4.f, 12.f) }, { FRotator(25.f, -70.f, 120.f), FVector(4.f, -4.f, 12.f) } },
+			{ { FRotator(25.f, 10.f, 120.f), FVector(0.f, 4.f, 2.f) }, { FRotator(25.f, -70.f, 120.f), FVector(4.f, -4.f, 2.f) } },
 		};
 		return Keys[FMath::Clamp(Cut, 0, 2)][Which != 0 ? 1 : 0];
 		}
