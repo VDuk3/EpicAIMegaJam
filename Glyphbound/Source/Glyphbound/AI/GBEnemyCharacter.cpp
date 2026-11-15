@@ -477,6 +477,14 @@ void AGBEnemyCharacter::Tick(float DeltaSeconds)
 			MoveTowards(Goal, DeltaSeconds);
 			bRepositioning = true;
 		}
+		// Pixel-art melee does not stand out its recovery while the player backs away (owner, 2026-11-15: they were easy
+		// to kite): past its reach it keeps after him, and its next swing comes as soon as the interval ends.
+		else if (!IsRanged() && bPixelArtLook && StateTime >= StatOr(TEXT("RecoverPause"), 0.25f)
+			&& Distance > AttackRange * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f) * 1.6f)
+		{
+			MoveTowards(Goal, DeltaSeconds);
+			bRepositioning = true;
+		}
 		else
 		{
 			if (bRepositioning)
@@ -1053,6 +1061,32 @@ void AGBEnemyCharacter::HandleDamaged(const FGBDamageInfo& Info, float ActualDam
 			StimulusPos = GetActorLocation() - Info.HitDirection.GetSafeNormal() * 500.f;
 		}
 		bStimulusConfirmed = false;
+
+		// Stagger (pixel-art melee, StaggerFraction stat; 0 = never): one hit of at least that share of its max health stops it
+		// for StaggerTime and breaks its windup, at most once per StaggerCooldown, so a stream of small hits cannot stun-lock it.
+		const float StaggerFraction = StatOr(TEXT("StaggerFraction"), 0.f);
+		const float MaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
+		if (StaggerFraction > 0.f && bPixelArtLook && !IsRanged() && MaxHealth > 0.f && ActualDamage >= StaggerFraction * MaxHealth && GetWorld())
+		{
+			static TMap<TWeakObjectPtr<const AGBEnemyCharacter>, double> LastStagger;   // no header change mid-jam (Live Coding)
+			const double Now = GetWorld()->GetTimeSeconds();
+			double& Last = LastStagger.FindOrAdd(this, -1000.0);
+			if (Now < Last || Now - Last >= StatOr(TEXT("StaggerCooldown"), 1.5f))   // Now < Last: a new PIE world
+			{
+				Last = Now;
+				ApplyControlLock(StatOr(TEXT("StaggerTime"), 0.3f));
+			}
+			if (LastStagger.Num() > 256)
+			{
+				for (auto It = LastStagger.CreateIterator(); It; ++It)
+				{
+					if (!It.Key().IsValid())
+					{
+						It.RemoveCurrent();
+					}
+				}
+			}
+		}
 	}
 	OnDamagedVisual(Info, ActualDamage);
 }
