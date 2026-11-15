@@ -304,6 +304,12 @@ def do_orc():
 def do_valkyrie():
     d = out_dir("Valkyrie")
     arm, body, tex, s, bones = humanoid(src("Enemies", "Valkyrie", "Valkiria.glb"), "Valkyrie", 1.95, d, extra_root=True)
+    # overnight point 1: the wings were skinned to the arms by the auto-rig; they now ride the chest bone rigidly
+    sys.path.insert(0, os.path.dirname(__file__))
+    import valkyrie_wings_lib as wings
+    wing, _ = wings.wing_vertices(body, arm, s)
+    wings.rigidify(body, arm, wing)
+    print("WINGS rigid on %s: %d vertices" % (wings.CHEST_BONE, len(wing)))
     to_cm(arm, [body])
     export_skeletal(arm, [body], os.path.join(d, "SK_Valkyrie.fbx"))
     write_report(d, {"textures": tex, "scale": s, "height_cm": 195, "bones": bones})
