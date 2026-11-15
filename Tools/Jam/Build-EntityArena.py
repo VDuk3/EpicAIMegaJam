@@ -65,8 +65,13 @@ for a in eas.get_all_level_actors():
         eas.destroy_actor(a)
 
 mat = black_material()
-# floor: a flat cylinder 40 m across, its top at z 0
-shape('/Engine/BasicShapes/Cylinder', unreal.Vector(0, 0, -20), unreal.Vector(RADIUS * 2.2 / 100.0, RADIUS * 2.2 / 100.0, 0.2), 0, mat, 'Arena_Floor')
+# floor: the walk surface is an invisible slab with its top at z 0; the visible black floor lies 55 cm lower, under the
+# liquid's wave troughs (NS_Arena_Liquid rests about 8 cm over the walk surface and dips below it in the waves)
+walk = shape('/Engine/BasicShapes/Cylinder', unreal.Vector(0, 0, -20), unreal.Vector(RADIUS * 2.2 / 100.0, RADIUS * 2.2 / 100.0, 0.2), 0, mat, 'Arena_WalkFloor')
+walk.set_actor_hidden_in_game(True)
+walk.static_mesh_component.set_visibility(False)
+deep = shape('/Engine/BasicShapes/Cylinder', unreal.Vector(0, 0, -75), unreal.Vector(RADIUS * 2.2 / 100.0, RADIUS * 2.2 / 100.0, 0.2), 0, mat, 'Arena_Floor')
+deep.static_mesh_component.set_collision_profile_name('NoCollision')
 # the rim: a ring of black wall segments (they vanish against the black void; they only stop the player)
 seg_w = 2 * math.pi * RADIUS / WALL_SEGMENTS * 1.1
 for k in range(WALL_SEGMENTS):
@@ -104,7 +109,7 @@ nav.set_actor_label('Arena_Nav')
 nav.tags = [unreal.Name('EntityArena')]
 
 if eal.does_asset_exist(LIQUID):
-    liq = eas.spawn_actor_from_class(unreal.NiagaraActor, unreal.Vector(0, 0, 1), rot())
+    liq = eas.spawn_actor_from_class(unreal.NiagaraActor, unreal.Vector(0, 0, 8), rot())
     liq.niagara_component.set_asset(unreal.load_asset(LIQUID))
     liq.set_actor_label('Arena_Liquid')
     liq.tags = [unreal.Name('EntityArena'), unreal.Name('ArenaLiquid')]
