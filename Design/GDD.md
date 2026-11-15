@@ -337,6 +337,7 @@ Purpose: make magic feel more elaborate than pulling a trigger.
 ### Staffs (medieval, pixel art)
 - With a staff in hand, **primary fire = basic magic attack**. The attack **depends on which staff** the player holds, so there is more than one staff.
 - Staffs are found in **chests** around the map.
+- **The four hand-drawn staffs** (Romelt, Pixelorama; 2026-11-15): the white basic staff is the starting staff (`Staff_Apprentice`); fire (`Staff_Ember`), ice (`Staff_Frost`) and storm (`Staff_Storm`) exist as weapons. Provisional, architect: frost and storm are defined but no chest gives them yet (as with the ember staff before them); where they are found is the owner's call.
 - **A staff that is picked up goes to the inventory** (owner, 2026-11-12). Nothing is dropped on the floor and the staff in hand is not replaced: the player opens the inventory and equips the new one by hand. (Provisional, architect: guns and the sword follow the same rule; the first weapon of each kind goes straight to its empty slot.)
 - Staff list and what each basic attack does: **TBD**.
 

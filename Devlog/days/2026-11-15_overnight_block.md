@@ -265,3 +265,13 @@ smoke runs between attempts); the map notes stayed in this chat and were prepare
 - Sol 6.1 on the HUD and data change: no bugs besides that rounding note.
 - Capture: `Devlog/media/2026-11-15_staff_no_hands.png` (packaged smoke: the basic staff at rest and during a cast, no hands). Verify-Jam green: suite 73, package 934 MB, packaged full smoke 0 errors.
 - Checked in the packaged game (gb.Smoke tour on PastCastle, green, `Devlog/media/2026-11-15_castle_entrance_moon_campfire.png`): the pixel campfire burns in the ward and lights the cobbles; the moon is a small disc with a short glow; the leaded windows show on the keep.
+- **Who did what, this afternoon:** the AI notes went to the Opus subagent (Muse exception: time, and they needed
+  measured smoke runs between attempts). The map scripts (windows, stairs, floors, walls, moon, campfire) and the HUD
+  hand removal were done directly by the orchestrator (Muse exception: each was a small, Editor-bound or one-file
+  change that had to be checked with captures at once). Sol 6.1 reviewed the code changes.
+- **Note 9 is only partly fixed, and reported so:** the raised plank patch in the hall was levelled, but the owner's
+  picture may be another doorway. The scan also lists 28 cm steps (ground floor) and 48 cm steps (Top Level) between
+  the halls' planks and the timber floor beside them. A try at half-height timber steps there was undone the same
+  minute: the scan reads the foot of a wall as a doorway, and the steps came out as grey slabs along the walls. Open
+  until the owner says which doorway he saw.
+- **Decision (provisional, GDD §8):** the frost and storm staffs are defined but no chest gives them yet.
