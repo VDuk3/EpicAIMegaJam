@@ -181,7 +181,7 @@ void AGBMimic::Interact(AGBPlayerCharacter* Player)
 	{
 		return;
 	}
-	const bWasAsleep = !bAwake;
+	const bool bWasAsleep = !bAwake;
 	Wake();          // no loot: the "chest" opens its mouth instead
 	if (bWasAsleep && bAwake && Player)
 	{
