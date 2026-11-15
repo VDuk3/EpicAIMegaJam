@@ -74,7 +74,7 @@
 		"HealthPotion": 2,
 		"ManaPotion": 2
 	},
-	"StartingSkillPoints": 2,
+	"StartingSkillPoints": 3,
 	"EnchantSpell": "WeaponEnchant",
 	"StartingEnchantElement": "Fire"
 }

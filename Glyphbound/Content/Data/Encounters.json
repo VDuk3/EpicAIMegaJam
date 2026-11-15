@@ -160,7 +160,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": [],
 			"Prespawn": true,
 			"Comment": "Provisional (overnight, 2026-11-15): the lower ward, the first fight. A shaman on the terrace's edge, orcs and a barghest pair around the camp fire; then orcs and barghests from the gate side, then a champion."
@@ -761,7 +761,7 @@
 					]
 				}
 			],
-			"SkillPoints": 2,
+			"SkillPoints": 3,
 			"Rewards": [
 				{
 					"ItemId": "PowerCell",
@@ -832,7 +832,7 @@
 					]
 				}
 			],
-			"SkillPoints": 3,
+			"SkillPoints": 4,
 			"Rewards": [],
 			"Prespawn": true,
 			"Comment": "Provisional (overnight): the King's Hall (fire zone, leg C2), a wide hall: ranged at its far wall (a shaman and a centaur), orcs and barghests on the floor; then two champions with barghests; last a juggernaut with two shamans."
@@ -972,7 +972,7 @@
 					]
 				}
 			],
-			"SkillPoints": 3,
+			"SkillPoints": 4,
 			"Rewards": [],
 			"Prespawn": true,
 			"Comment": "Provisional (overnight): the Side Hall (ice zone, leg C3; the GDD puts ice in the undercroft, which is not built: the Side Hall holds it for now). A juggernaut and two shamans hold the far end, orcs and barghests the floor; then a centaur and two champions; last a brute with four barghests."
@@ -1023,7 +1023,7 @@
 					]
 				}
 			],
-			"SkillPoints": 3,
+			"SkillPoints": 4,
 			"Rewards": [],
 			"Prespawn": true,
 			"Comment": "Provisional (overnight): the wall walk (air zone, leg C2), 3 m wide and 80 m long. Long sight lines: a shaman at the corner tower, a centaur archer half way (the tower room has 2.1 m of headroom, the centaur needs 2.6 m: it stood on the tower roof), two orcs coming single file; barghests come in behind the player from the keep-end tower; then a champion and a shaman."
@@ -1042,7 +1042,7 @@
 					]
 				}
 			],
-			"SkillPoints": 5,
+			"SkillPoints": 6,
 			"Rewards": [],
 			"Prespawn": true,
 			"Comment": "Provisional (overnight): the past Valkyrie in the Top Level's highest room (+26 m), alone: the castle's boss (leg C3)."
@@ -1207,7 +1207,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": [
 				{
 					"ItemId": "Ammo_Magazine",
@@ -1232,7 +1232,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": []
 		},
 		{
@@ -1274,7 +1274,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": [
 				{
 					"ItemId": "PowerCell",
@@ -1299,7 +1299,7 @@
 					]
 				}
 			],
-			"SkillPoints": 3,
+			"SkillPoints": 4,
 			"Rewards": [],
 			"ClearedFlag": "FutureValkyrieDefeated",
 			"WakeFlag": "ValkyrieTubeBroken"
@@ -1343,7 +1343,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": []
 		},
 		{
@@ -1385,7 +1385,7 @@
 					]
 				}
 			],
-			"SkillPoints": 1,
+			"SkillPoints": 2,
 			"Rewards": []
 		},
 		{
@@ -1427,7 +1427,7 @@
 					]
 				}
 			],
-			"SkillPoints": 2,
+			"SkillPoints": 3,
 			"Rewards": []
 		}
 	]

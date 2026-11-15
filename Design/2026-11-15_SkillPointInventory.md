@@ -4,7 +4,10 @@ Counted from `Content/Data/Encounters.json`, `Player.json`, `Skills.json`, the c
 (`AGBEncounter::Clear` is the only gameplay call to `UGBSkillTreeComponent::AddPoints`) and the encounter
 ids found in the saved map files (`PastCastle.umap`, `FutureBase.umap`, `EntityArena.umap`; read only).
 
-## Earnable in one full playthrough: 29 points
+## Earnable in one full playthrough: 43 points
+
+Update (owner, same day): every real source now pays 1 point more (starting points 2 -> 3 and each of the
+13 placed encounters +1; Entity stays at 0, unplaced encounters unchanged). The tables below show the new values.
 
 There is no XP, no levels and no skill-point pickup. Points come from the starting value and from clearing
 encounters. Each encounter pays once: clearing sets its cleared flag, and a cleared encounter never
@@ -12,26 +15,26 @@ re-arms (not after death, respawn or era travel), so points cannot be farmed.
 
 | Source | Map | Points |
 |---|---|---|
-| Starting points (`Player.json StartingSkillPoints`) | - | 2 |
-| Opening_Past | PastCastle | 1 |
-| Castle_Yard | PastCastle | 1 |
-| Castle_FrontHall | PastCastle | 1 |
-| Castle_MainHall | PastCastle | 2 |
-| Zone_Fire | PastCastle | 3 |
-| Zone_Ice | PastCastle | 3 |
-| Zone_Air | PastCastle | 3 |
-| Valkyrie_Past (boss) | PastCastle | 5 |
-| **PastCastle total** | | **19** |
-| Future_Bay | FutureBase | 1 |
-| Future_Spiders | FutureBase | 1 |
-| Future_DeepWing | FutureBase | 1 |
-| SubBoss_Future | FutureBase | 2 |
-| Boss_Valkyrie_Future (final boss) | FutureBase | 3 |
-| **FutureBase total** | | **8** |
+| Starting points (`Player.json StartingSkillPoints`) | - | 3 |
+| Opening_Past | PastCastle | 2 |
+| Castle_Yard | PastCastle | 2 |
+| Castle_FrontHall | PastCastle | 2 |
+| Castle_MainHall | PastCastle | 3 |
+| Zone_Fire | PastCastle | 4 |
+| Zone_Ice | PastCastle | 4 |
+| Zone_Air | PastCastle | 4 |
+| Valkyrie_Past (boss) | PastCastle | 6 |
+| **PastCastle total** | | **27** |
+| Future_Bay | FutureBase | 2 |
+| Future_Spiders | FutureBase | 2 |
+| Future_DeepWing | FutureBase | 2 |
+| SubBoss_Future | FutureBase | 3 |
+| Boss_Valkyrie_Future (final boss) | FutureBase | 4 |
+| **FutureBase total** | | **13** |
 | Entity | EntityArena | 0 |
-| **Total** | | **29** |
+| **Total** | | **43** |
 
-By kind: start 2, regular encounters 8, zones 9, sub-boss 2, bosses 8.
+By kind: start 3, regular encounters 15, zones 12, sub-boss 3, bosses 10.
 
 Encounters defined in data but not placed in any shipped map (they pay nothing in a real run):
 Test_PastWave, Test_FutureWave, Opening_Future, Wave_Past_1-3, Wave_Future_1-3, SubBoss_Past,
@@ -41,8 +44,8 @@ Limits of the count:
 - Placement was read from the encounter ids stored in each `.umap`. A map's name table holds each id once,
   so two actors with the same id would show as one; that does not change the total, because both share
   one cleared flag and only the first clear pays.
-- Not every encounter may be mandatory. If a zone (Fire / Ice / Air, 3 points each) can be skipped, a
-  minimal run earns less than 29.
+- Not every encounter may be mandatory. If a zone (Fire / Ice / Air, 4 points each) can be skipped, a
+  minimal run earns less than 43.
 - The skill menu shows a "+1 skill point" test button with no build check, so in the current build the
   player can add unlimited points. It should be hidden in the shipped build.
 
@@ -61,6 +64,6 @@ All 32 skills have 3 ranks.
 
 ## Verdict
 
-Earnable 29 vs spendable 114: the player can buy about a quarter of the tree (85 points short) and must
-choose. Maxing both new perks alone costs 12 of the 29 points. The free reset button lets the player
+Earnable 43 vs spendable 114: the player can buy a bit over a third of the tree (71 points short) and
+must choose. Maxing both new perks alone costs 12 of the 43 points. The free reset button lets the player
 re-spend everything at any time.
