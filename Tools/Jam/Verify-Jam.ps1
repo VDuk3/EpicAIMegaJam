@@ -16,9 +16,10 @@ While iterating, keep using the filtered offscreen smoke on the uncooked game, d
 Usage:
   powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Jam/Verify-Jam.ps1 [-Visits [-Parallel]] [-ZipName TeamTBD_Glyphbound]
   -Parallel (with -Visits): the packaged full smoke runs beside the three visits (two games at once, each with its
-  own log) instead of before them: about 9 min instead of 17. The step clock is the wall clock, so a loaded GPU can
-  turn a timing check red: a red -Parallel run is repeated without -Parallel before believing it, and the delivery
-  build is verified without it.
+  own log) instead of before them. Measured 2026-11-15 on the same game: 647 s against 1,098 s, but the full smoke
+  showed two reds (Valkyrie judgement, Castle) that the sequential run did not: its step clock is the wall clock and
+  the machine was loaded. The three visits passed as before. So -Parallel is a quick look only: a green run can be
+  trusted, a red full smoke is repeated without -Parallel, and the delivery build is always verified without it.
 Prints one line per stage and a final VERIFY GREEN / VERIFY RED. Exit code 0 only when everything is green.
 #>
 param(
