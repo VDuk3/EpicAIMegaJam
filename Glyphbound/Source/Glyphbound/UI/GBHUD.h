@@ -112,6 +112,14 @@ public:
 	/** Smoke run only: moves the menu cursor (page, row, skill node) so screenshots show every screen. */
 	void DebugSetMenuCursor(int32 Page, int32 Cursor, FName SkillNode = NAME_None, bool bChoosingSpell = false);
 
+	// ---- Title screen (GBHUD_MainMenu.cpp) ----
+	/** True once per run (not after a level travel or a map restart), unless -NoMenu is on the command line. Marks it done. */
+	static bool ConsumeMainMenuOpening(const UObject* WorldContextObject);
+	/** The staff picked on the title screen for a fresh start (None = Player.json's starting weapons as they are). */
+	static FName GetChosenStartStaff(const UObject* WorldContextObject);
+	/** Applies the saved options (volume, mouse sensitivity) once at startup. */
+	static void ApplySavedOptions(const UObject* WorldContextObject);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -206,7 +214,12 @@ protected:
 		/** The skill point confirmation: spend, or cancel. */
 		ConfirmYes,
 		ConfirmNo,
-		DeathScreen
+		DeathScreen,
+		/** Title screen: a root entry (Index), the look switch, a staff card (Index), an options row (Index; Id L / R = arrows). */
+		MainEntry,
+		MainStyle,
+		StaffCard,
+		OptionRow
 	};
 	/** One clickable thing drawn this frame, in canvas coordinates. */
 	struct FMenuHit
@@ -482,4 +495,32 @@ protected:
 	void ConfirmWeapon(AGBPlayerCharacter* Player);
 	void ConfirmSpellSlot(AGBPlayerCharacter* Player);
 	void ConfirmSkill(AGBPlayerCharacter* Player);
+
+	// ======================================================================== title screen (GBHUD_MainMenu.cpp)
+	static constexpr int32 MainPageRoot = 0;
+	static constexpr int32 MainPageStaff = 1;
+	static constexpr int32 MainPageOptions = 2;
+	/** The title screen's own look, switched by the player (owner, Nov 15): pixel-art RPG by default, or cyberpunk. */
+	EGBHudSkin MainMenuSkin = EGBHudSkin::Rpg90s;
+	void DrawMainMenu(EGBHudSkin Skin);
+	void DrawMainRoot(EGBHudSkin Skin);
+	void DrawMainStaffSelect(EGBHudSkin Skin);
+	void DrawMainOptions(EGBHudSkin Skin);
+	/** Opaque title backdrop, the game's name and the page title, in the skin. Returns the top of the content area. */
+	float DrawMainTitle(EGBHudSkin Skin, const FString& PageTitle);
+	/** The look switch button (bottom right). */
+	void DrawMainStyleButton(EGBHudSkin Skin);
+	void MainMenuNavigate(FIntPoint Direction);
+	void MainMenuConfirm();
+	bool MainMenuBack();
+	void ToggleMainMenuSkin();
+	/** True when a run is going on (the title was opened from the pause menu): Continue goes back to it. */
+	bool IsRunInProgress() const;
+	/** Starts the game with this staff: in place at boot, or a fresh restart of the start map when a run was going on. */
+	void StartNewGame(FName StaffId);
+	TArray<FName> GetStaffChoices() const;
+	int32 NumOptionRows() const;
+	FString OptionLabel(int32 Row) const;
+	FString OptionValue(int32 Row) const;
+	void AdjustOption(int32 Row, int32 Direction);
 };

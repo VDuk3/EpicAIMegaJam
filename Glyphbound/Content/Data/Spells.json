@@ -202,7 +202,7 @@
 		{
 			"Id": "Flamethrower",
 			"DisplayName": "Flamethrower",
-			"Description": "A stream of fire from your hand. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it. Builds up fire.",
+			"Description": "A stream of fire from your staff. Hold the spell key to keep it going; it drains mana. A strong hit interrupts it. Builds up fire. (Suggested key: right mouse button.)",
 			"Element": "Fire",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Beam",
 			"bSustained": true,

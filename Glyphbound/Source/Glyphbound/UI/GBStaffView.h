@@ -10,4 +10,8 @@ namespace GBStaffView
 	void SetHeadAimDir(const FVector& AimSpaceDir);
 	/** The recorded direction, if the staff was drawn in the last few frames. */
 	bool GetHeadAimDir(FVector& OutAimSpaceDir);
+	/** A hold-to-sustain spell (the flamethrower) calls this every frame it is alive. */
+	void NoteHoldSpell();
+	/** True while a hold-to-sustain spell is alive, and a moment after: the HUD shows "hold to keep casting". */
+	bool ShouldShowHoldHint();
 }

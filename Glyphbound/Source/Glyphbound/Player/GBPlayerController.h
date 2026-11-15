@@ -16,7 +16,9 @@ enum class EGBMenu : uint8
 	Pause,
 	Inventory,
 	SkillTrees,
-	Death
+	Death,
+	/** The title screen at boot (new game with the staff choice, continue, options, quit), in two looks. */
+	MainMenu
 };
 
 UCLASS()
@@ -66,4 +68,6 @@ protected:
 	EGBMenu OpenMenu = EGBMenu::None;
 	/** The cursor is centered again on the next tick: Slate may move it back while releasing the mouse capture. */
 	bool bCenterCursorPending = false;
+	/** The title screen is opened on the first tick that has a HUD (once per run, see AGBHUD::ConsumeMainMenuOpening). */
+	bool bMainMenuChecked = false;
 };

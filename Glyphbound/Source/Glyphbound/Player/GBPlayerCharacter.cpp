@@ -131,7 +131,22 @@ void AGBPlayerCharacter::BeginPlay()
 	if (Data)
 	{
 		// Copy: GiveWeapon reads the data tables, never keep a reference into them across calls.
-		const TArray<FName> StartingWeapons = Data->GetPlayer().StartingWeapons;
+		TArray<FName> StartingWeapons = Data->GetPlayer().StartingWeapons;
+		// The staff picked on the title screen takes the place of the starting staff (owner, Nov 15).
+		const FName ChosenStaff = AGBHUD::GetChosenStartStaff(this);
+		const FGBWeaponDefinition* ChosenDef = ChosenStaff != NAME_None ? Data->FindWeapon(ChosenStaff) : nullptr;
+		if (ChosenDef && ChosenDef->Slot == EGBHeldSlot::Staff)
+		{
+			for (FName& WeaponId : StartingWeapons)
+			{
+				const FGBWeaponDefinition* Def = Data->FindWeapon(WeaponId);
+				if (Def && Def->Slot == EGBHeldSlot::Staff)
+				{
+					WeaponId = ChosenStaff;
+					break;
+				}
+			}
+		}
 		for (int32 Index = 0; Index < StartingWeapons.Num(); ++Index)
 		{
 			if (!Data->FindWeapon(StartingWeapons[Index]))
@@ -2137,7 +2152,10 @@ void AGBPlayerCharacter::InputLook(const FInputActionValue& Value)
 		QTE->HandleGestureInput(FVector2D(Delta.X, -Delta.Y) / MouseUnitsPerPixel);
 		return;
 	}
-	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f), static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f));
+	// The options' mouse sensitivity (gb.MouseSensitivityScale, set by the title screen) scales the stat.
+	static IConsoleVariable* SensitivityScale = IConsoleManager::Get().FindConsoleVariable(TEXT("gb.MouseSensitivityScale"));
+	const float Scale = SensitivityScale ? FMath::Clamp(SensitivityScale->GetFloat(), 0.1f, 4.f) : 1.f;
+	AddLookDelta(static_cast<float>(Delta.X) * ReadStat(GBStat::LookSensitivity, 2.5f) * Scale, static_cast<float>(Delta.Y) * ReadStat(GBStat::LookSensitivity, 2.5f) * Scale);
 }
 
 void AGBPlayerCharacter::InputLookStick(const FInputActionValue& Value)

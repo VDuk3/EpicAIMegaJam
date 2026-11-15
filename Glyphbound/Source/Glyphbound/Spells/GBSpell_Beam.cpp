@@ -14,6 +14,7 @@
 #include "TimerManager.h"
 #include "UI/GBHUD.h"
 #include "UI/GBPixelSpriteLibrary.h"
+#include "UI/GBStaffView.h"
 
 namespace
 {
@@ -347,6 +348,11 @@ void AGBSpell_Beam::CheckSustain()
 	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetCaster()))
 	{
 		bKeyHeld = Player->IsSpellInputHeld(SpellCast.SpellId);
+		if (bHoldToSustain)
+		{
+			// The HUD shows "hold to keep casting" at the lower left while this lasts (owner, 2026-11-15).
+			GBStaffView::NoteHoldSpell();
+		}
 	}
 	if (!ShouldBeamContinue(bHoldToSustain, bKeyHeld, Elapsed, BeamMinDuration, BeamMaxDuration))
 	{

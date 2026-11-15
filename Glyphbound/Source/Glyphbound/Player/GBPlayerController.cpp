@@ -21,7 +21,7 @@ namespace
 
 	bool IsPausingMenu(EGBMenu Menu)
 	{
-		return Menu == EGBMenu::Pause || Menu == EGBMenu::Inventory || Menu == EGBMenu::SkillTrees;
+		return Menu == EGBMenu::Pause || Menu == EGBMenu::Inventory || Menu == EGBMenu::SkillTrees || Menu == EGBMenu::MainMenu;
 	}
 }
 
@@ -43,6 +43,16 @@ void AGBPlayerController::BeginPlay()
 void AGBPlayerController::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
 {
 	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
+	// The title screen opens on the first tick with a HUD (the HUD may not exist yet at BeginPlay), once per run.
+	if (!bMainMenuChecked && IsLocalController() && GetHUD())
+	{
+		bMainMenuChecked = true;
+		AGBHUD::ApplySavedOptions(this);
+		if (OpenMenu == EGBMenu::None && AGBHUD::ConsumeMainMenuOpening(this))
+		{
+			SetMenu(EGBMenu::MainMenu);
+		}
+	}
 	if (bCenterCursorPending)
 	{
 		bCenterCursorPending = false;
@@ -143,7 +153,7 @@ void AGBPlayerController::SetMenu(EGBMenu Menu)
 		return;
 	}
 	// A cutscene owns the screen: no menu opens over it (the death screen still can).
-	if (Menu != EGBMenu::None && Menu != EGBMenu::Death)
+	if (Menu != EGBMenu::None && Menu != EGBMenu::Death && Menu != EGBMenu::MainMenu)
 	{
 		const UGBCutsceneSubsystem* Cutscene = UGBCutsceneSubsystem::Get(this);
 		if (Cutscene && Cutscene->IsPlaying())
@@ -212,7 +222,7 @@ void AGBPlayerController::ToggleMenu(EGBMenu Menu)
 
 void AGBPlayerController::InputInventory()
 {
-	if (OpenMenu != EGBMenu::Death)
+	if (OpenMenu != EGBMenu::Death && OpenMenu != EGBMenu::MainMenu)
 	{
 		ToggleMenu(EGBMenu::Inventory);
 	}
@@ -220,7 +230,7 @@ void AGBPlayerController::InputInventory()
 
 void AGBPlayerController::InputSkillTrees()
 {
-	if (OpenMenu != EGBMenu::Death)
+	if (OpenMenu != EGBMenu::Death && OpenMenu != EGBMenu::MainMenu)
 	{
 		ToggleMenu(EGBMenu::SkillTrees);
 	}
@@ -230,6 +240,15 @@ void AGBPlayerController::InputPause()
 {
 	if (OpenMenu == EGBMenu::Death)
 	{
+		return;
+	}
+	if (OpenMenu == EGBMenu::MainMenu)
+	{
+		// The title screen never closes into the game by itself: Start / Esc go back a page.
+		if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+		{
+			HUD->MenuBack();
+		}
 		return;
 	}
 	// Esc during a cutscene skips it (once it can be skipped) instead of opening the pause menu.
@@ -305,6 +324,15 @@ void AGBPlayerController::InputMenuBack()
 
 void AGBPlayerController::InputMenuTabKey()
 {
+	if (OpenMenu == EGBMenu::MainMenu)
+	{
+		// Tab on the title screen switches its look (like the on-screen button).
+		if (AGBHUD* HUD = Cast<AGBHUD>(GetHUD()))
+		{
+			HUD->MenuReset();
+		}
+		return;
+	}
 	if (OpenMenu == EGBMenu::Inventory)
 	{
 		SetMenu(EGBMenu::None);

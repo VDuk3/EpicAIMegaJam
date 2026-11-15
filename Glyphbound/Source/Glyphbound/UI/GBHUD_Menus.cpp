@@ -152,6 +152,11 @@ void AGBHUD::OnMenuOpened(EGBMenu Menu)
 	bHasMenuSkin = false;
 	MenuSkinChangeTime = -1000.0; // a transition of the menu left behind must not play over this one (Sol 6.1 review)
 	ResetMenuMouse();
+	if (Menu == EGBMenu::MainMenu && IsRunInProgress())
+	{
+		// Opened from the pause menu: the cursor starts on Continue.
+		MenuState.Cursor = 1;
+	}
 	if (Menu == EGBMenu::SkillTrees)
 	{
 		// The trees are two pages: open on the one of the held item (gun = weapons, anything else = spells).
@@ -312,6 +317,11 @@ void AGBHUD::ApplyMenuHover(const FMenuHit& Hit)
 	case EMenuHitKind::SkillNode:
 		MenuState.SkillCursor = Hit.Id;
 		break;
+	case EMenuHitKind::MainEntry:
+	case EMenuHitKind::StaffCard:
+	case EMenuHitKind::OptionRow:
+		MenuState.Cursor = Hit.Index;
+		break;
 	case EMenuHitKind::Tab:
 	case EMenuHitKind::SkillReset:
 	case EMenuHitKind::SkillAddPoint:
@@ -381,6 +391,25 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 	case EMenuHitKind::ConfirmNo:
 		MenuState.PendingUnlock = NAME_None;
 		break;
+	case EMenuHitKind::MainEntry:
+	case EMenuHitKind::StaffCard:
+		MenuState.Cursor = Hit.Index;
+		MainMenuConfirm();
+		break;
+	case EMenuHitKind::OptionRow:
+		MenuState.Cursor = Hit.Index;
+		if (Hit.Id == FName(TEXT("L")) || Hit.Id == FName(TEXT("R")))
+		{
+			AdjustOption(Hit.Index, Hit.Id == FName(TEXT("L")) ? -1 : 1);
+		}
+		else
+		{
+			MainMenuConfirm();
+		}
+		break;
+	case EMenuHitKind::MainStyle:
+		ToggleMainMenuSkin();
+		break;
 	case EMenuHitKind::DeathScreen:
 		// The controller handles the respawn confirm (AGBPlayerController::InputMenuClick): nothing here,
 		// so a click respawns exactly once.
@@ -421,8 +450,11 @@ void AGBHUD::MenuNavigate(FIntPoint Direction)
 	case EGBMenu::Pause:
 		if (Direction.Y != 0)
 		{
-			MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, 2);
+			MenuState.Cursor = Wrap(MenuState.Cursor + Direction.Y, 3);
 		}
+		break;
+	case EGBMenu::MainMenu:
+		MainMenuNavigate(Direction);
 		break;
 	case EGBMenu::SkillTrees:
 		NavigateSkills(Direction);
@@ -477,6 +509,14 @@ void AGBHUD::MenuConfirm()
 				PC->SetMenu(EGBMenu::None);
 			}
 		}
+		else if (MenuState.Cursor == 1)
+		{
+			// Back to the title screen; its Continue returns to this run.
+			if (AGBPlayerController* PC = GetGBController())
+			{
+				PC->SetMenu(EGBMenu::MainMenu);
+			}
+		}
 		else
 		{
 			UKismetSystemLibrary::QuitGame(this, GetOwningPlayerController(), EQuitPreference::Quit, false);
@@ -484,6 +524,9 @@ void AGBHUD::MenuConfirm()
 		break;
 	case EGBMenu::SkillTrees:
 		ConfirmSkill(Player);
+		break;
+	case EGBMenu::MainMenu:
+		MainMenuConfirm();
 		break;
 	case EGBMenu::Inventory:
 		if (MenuState.Page == PageItems)
@@ -540,6 +583,9 @@ bool AGBHUD::MenuBack()
 	case EGBMenu::Death:
 		// The death screen only closes by respawning.
 		return true;
+	case EGBMenu::MainMenu:
+		// The title screen never closes by Back: it goes up a page (or does nothing on the root).
+		return MainMenuBack();
 	default:
 		return false;
 	}
@@ -556,6 +602,10 @@ void AGBHUD::MenuTab(int32 Direction)
 	if (Menu == EGBMenu::Inventory)
 	{
 		SetInventoryPage(MenuState.Page + Direction);
+	}
+	else if (Menu == EGBMenu::MainMenu)
+	{
+		MainMenuNavigate(FIntPoint(Direction, 0));
 	}
 	else if (Menu == EGBMenu::SkillTrees)
 	{
@@ -1049,6 +1099,11 @@ void AGBHUD::AddTestSkillPoint(AGBPlayerCharacter* Player)
 void AGBHUD::MenuReset()
 {
 	const EGBMenu Menu = GetOpenMenu();
+	if (Menu == EGBMenu::MainMenu)
+	{
+		ToggleMainMenuSkin();
+		return;
+	}
 	const bool bShowsSkills = (Menu == EGBMenu::SkillTrees) || (Menu == EGBMenu::Inventory && MenuState.Page == PageSkills);
 	if (!bShowsSkills || MenuState.PendingUnlock != NAME_None)
 	{
@@ -1390,6 +1445,9 @@ void AGBHUD::DrawMenus(AGBPlayerCharacter* Player)
 	case EGBMenu::Death:
 		DrawDeathScreen(Skin);
 		break;
+	case EGBMenu::MainMenu:
+		DrawMainMenu(Skin);
+		break;
 	case EGBMenu::Inventory:
 		DrawInventory(Player, Skin);
 		break;
@@ -1625,7 +1683,8 @@ void AGBHUD::DrawPauseMenu(EGBHudSkin Skin)
 	const float W = Canvas->ClipX;
 	const float H = Canvas->ClipY;
 	MenuBackdrop(Skin);
-	static const TCHAR* Entries[] = { TEXT("Resume"), TEXT("Quit to desktop") };
+	static const TCHAR* Entries[] = { TEXT("Resume"), TEXT("Main menu"), TEXT("Quit to desktop") };
+	constexpr int32 NumEntries = UE_ARRAY_COUNT(Entries);
 
 	if (Skin == EGBHudSkin::Cyberpunk)
 	{
@@ -1645,7 +1704,7 @@ void AGBHUD::DrawPauseMenu(EGBHudSkin Skin)
 		Title.Split = FMath::Max(0.f, 1.f - (float)(GetRealTime() - MenuOpenTime) / 0.3f) * 8.f * S;
 		const FVector2D TS = DrawCyText(TEXT("Paused"), X, H * 0.30f + 18.f * S, Title, 0.f);
 		CyRuler(X, H * 0.30f + 18.f * S + TS.Y + 8.f * S, 520.f * S, GBAlpha(GBCy::RedDim, 0.8f));
-		for (int32 i = 0; i < 2; ++i)
+		for (int32 i = 0; i < NumEntries; ++i)
 		{
 			const float RowY = H * 0.30f + TS.Y + 52.f * S + i * 66.f * S;
 			const float RowW = 460.f * S;
@@ -1679,13 +1738,13 @@ void AGBHUD::DrawPauseMenu(EGBHudSkin Skin)
 
 	// RPG: a small iron-framed window with a plaque, two carved entries and the gold arrow.
 	const float PW = FMath::RoundToFloat(150.f * P / P) * P;
-	const float PH = 84.f * P;
+	const float PH = 104.f * P;
 	const float PX = FMath::RoundToFloat((W - PW) * 0.5f / P) * P;
 	const float PY = FMath::RoundToFloat((H - PH) * 0.5f / P) * P;
 	RpgWindow(PX, PY, PW, PH);
 	const int32 TitleScale = FMath::Max(3, FMath::RoundToInt(6.f * S));
 	RpgPlaque(TEXT("PAUSED"), PX + PW * 0.5f, PY - 7.f * P, TitleScale);
-	for (int32 i = 0; i < 2; ++i)
+	for (int32 i = 0; i < NumEntries; ++i)
 	{
 		const float RowX = PX + 20.f * P;
 		const float RowW = PW - 40.f * P;
