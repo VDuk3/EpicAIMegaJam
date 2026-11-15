@@ -378,8 +378,60 @@ def do_reaper():
     grip = sum(band, Vector()) / max(len(band), 1)
     sockets = {k: v3(p) for k, p in (("BladeBase", base), ("BladeMid", mid), ("BladeTip", tip), ("Grip", grip))}
     print("REAPER sockets", sockets)
-    to_cm(arm, [body])
+    # Owner 2026-11-15: body and weapon are separate meshes. The weapon is every island ruled by hand_r (the staff, its
+    # green thorns and, after the re-skin above, the crescent blade) that reaches further than 35 cm from the hand bone
+    # (the hand itself stays on the body). It is exported as a static mesh in the model's frame (reference pose); the
+    # Editor attaches it to hand_r with the inverse of the bone's reference transform (reimport_reaper.py).
+    hand_head = arm.matrix_world @ arm.data.bones["hand_r"].head_local
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    seen = [False] * len(bm.verts)
+    weapon_verts = set()
+    for v in bm.verts:
+        if seen[v.index]:
+            continue
+        st = [v]
+        seen[v.index] = True
+        isl = []
+        while st:
+            a = st.pop()
+            isl.append(a.index)
+            for e in a.link_edges:
+                b = e.other_vert(a)
+                if not seen[b.index]:
+                    seen[b.index] = True
+                    st.append(b)
+        acc = {}
+        for i in isl:
+            for g in me.vertices[i].groups:
+                acc[names[g.group]] = acc.get(names[g.group], 0.0) + g.weight
+        if not acc or max(acc, key=acc.get) != "hand_r":
+            continue
+        far = max(((body.matrix_world @ me.vertices[i].co) - hand_head).length for i in isl)
+        if far > 0.35:
+            weapon_verts.update(isl)
+    bm.free()
+    weapon = body.copy()
+    weapon.data = body.data.copy()
+    weapon.name = "SM_ReaperScythe"
+    bpy.context.scene.collection.objects.link(weapon)
+    for o, keep_weapon in ((weapon, True), (body, False)):
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bm.verts.ensure_lookup_table()
+        dead = [v for v in bm.verts if (v.index in weapon_verts) != keep_weapon]
+        bmesh.ops.delete(bm, geom=dead, context="VERTS")
+        bm.to_mesh(o.data)
+        bm.free()
+    for m in list(weapon.modifiers):
+        weapon.modifiers.remove(m)
+    weapon.vertex_groups.clear()
+    print("REAPER weapon split: %d vertices to SM_ReaperScythe, body keeps %d" % (len(weapon.data.vertices), len(body.data.vertices)))
+    to_cm(arm, [body, weapon])
+    weapon.parent = None
     export_skeletal(arm, [body], os.path.join(d, "SK_Reaper.fbx"))
+    export_static(weapon, os.path.join(d, "SM_ReaperScythe.fbx"))
     write_report(d, {"textures": tex, "scale": s, "height_cm": 350, "bones": bones, "sockets_m": sockets})
 
 

@@ -63,5 +63,55 @@ for name, p in REP['sockets_m'].items():
     v = inv.transform_location(unreal.Vector(*p))
     rel[name] = [round(v.x, 2), round(v.y, 2), round(v.z, 2)]
 json.dump(rel, open(os.path.join(STAGE, 'sockets_hand_r.json'), 'w'))
+
+# The weapon (owner: body and weapon are separate meshes): SM_ReaperScythe, exported in the model's frame (reference pose).
+# It rides hand_r with the inverse of hand_r's reference transform, written as Enemies.json WeaponOffset
+# ("x y z pitch yaw roll scale"); its sockets (the empowered blade's trails) are in the model frame, so report.json's
+# sockets_m go on it as they are.
+ui = unreal.FbxImportUI()
+ui.set_editor_property('import_mesh', True)
+ui.set_editor_property('import_as_skeletal', False)
+ui.set_editor_property('import_materials', False)
+ui.set_editor_property('import_textures', False)
+ui.set_editor_property('import_animations', False)
+ui.set_editor_property('mesh_type_to_import', unreal.FBXImportType.FBXIT_STATIC_MESH)
+sd = ui.static_mesh_import_data
+sd.set_editor_property('combine_meshes', True)
+sd.set_editor_property('auto_generate_collision', False)
+sd.set_editor_property('generate_lightmap_u_vs', False)
+sd.set_editor_property('convert_scene', True)
+sd.set_editor_property('force_front_x_axis', False)
+sd.set_editor_property('import_uniform_scale', 1.0)
+sd.set_editor_property('normal_import_method', unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+t2 = unreal.AssetImportTask()
+t2.set_editor_property('filename', os.path.join(STAGE, 'SM_ReaperScythe.fbx'))
+t2.set_editor_property('destination_path', DEST)
+t2.set_editor_property('destination_name', 'SM_ReaperScythe')
+t2.set_editor_property('replace_existing', True)
+t2.set_editor_property('automated', True)
+t2.set_editor_property('save', True)
+t2.set_editor_property('options', ui)
+unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([t2])
+sm = unreal.load_asset(DEST + '/SM_ReaperScythe')
+if sm and mi:
+    sm.set_material(0, mi)
+for s0 in list(sm.get_editor_property('sockets') or []) if False else []:
+    pass
+existing = [str(x.get_editor_property('socket_name')) for x in sm.get_sockets_by_tag('')] if hasattr(sm, 'get_sockets_by_tag') else []
+for name, p in REP['sockets_m'].items():
+    old = sm.find_socket(name)
+    if old:
+        sm.remove_socket(old)
+    sock = unreal.StaticMeshSocket(sm)
+    sock.set_editor_property('socket_name', name)
+    sock.set_editor_property('relative_location', unreal.Vector(*p))
+    sm.add_socket(sock)
+EAL.save_loaded_asset(sm)
+off = inv
+r = off.rotation.rotator()
+offset = '%.3f %.3f %.3f %.3f %.3f %.3f 1' % (off.translation.x, off.translation.y, off.translation.z, r.pitch, r.yaw, r.roll)
+json.dump({'WeaponOffset': offset}, open(os.path.join(STAGE, 'weapon_offset.json'), 'w'))
+out.append('weapon imported, sockets %s, WeaponOffset %s' % ([n for n in REP['sockets_m'] if sm.find_socket(n)], offset))
+
 out.append('sockets %s' % rel)
 "; ".join(out)

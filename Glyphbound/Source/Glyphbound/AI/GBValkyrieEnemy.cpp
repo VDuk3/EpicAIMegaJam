@@ -736,7 +736,9 @@ void AGBValkyrieEnemy::SetEmpowered(bool bOn)
 			continue;
 		}
 		const FName Socket(*GBEnemy3D::Str(*Def, FName(*FString::Printf(TEXT("Fx.EmpowerSocket%d"), Index)), TEXT("BladeBase")));
-		UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAttached(System, Body, Socket, FVector::ZeroVector, FRotator::ZeroRotator,
+		// the reaper's scythe is its own mesh (WeaponComp) carrying the blade sockets; otherwise the body's sockets
+		USceneComponent* Parent = (WeaponComp && WeaponComp->DoesSocketExist(Socket)) ? static_cast<USceneComponent*>(WeaponComp) : static_cast<USceneComponent*>(Body);
+		UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAttached(System, Parent, Socket, FVector::ZeroVector, FRotator::ZeroRotator,
 			EAttachLocation::SnapToTarget, false);
 		if (!Fx)
 		{
