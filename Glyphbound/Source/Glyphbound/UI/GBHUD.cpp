@@ -64,12 +64,14 @@ namespace GBHudLayout
 	constexpr float ShieldSlideTime = 0.12f;
 	/** Both hands jump up this many sprite pixels with the seat bump. */
 	constexpr float ReloadSeatPush = 2.f;
-	/** The held staff leans this many degrees from vertical, its head toward the crosshair (owner, 2026-11-15). */
-	constexpr float StaffTiltDeg = 45.f;
+	/** The held staff leans this many degrees from vertical, its head to the left (owner's sketch, 2026-11-15). */
+	constexpr float StaffTiltDeg = 15.f;
 	/** The held staff is drawn this much larger than its sprite pixels (owner, 2026-11-15: 20 to 30% bigger). */
 	constexpr float StaffSizeMult = 1.25f;
 	/** Fraction of the staff (from its head) that shows above the bottom of the view: the grip point it pivots on. */
-	constexpr float StaffGripFrac = 0.8f;
+	constexpr float StaffGripFrac = 0.88f;
+	/** Where the grip sits at the bottom of the view, as a fraction of the screen width (owner's sketch). */
+	constexpr float StaffGripX = 0.79f;
 	/** The pale "health lost" trail behind the health bar drains at this fraction per second. */
 	constexpr float TrailDrainPerSecond = 0.45f;
 	/** ...after holding still for this long. */
@@ -597,16 +599,14 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		const float SP = FMath::Max(1.f, (float)FMath::RoundToInt(P * Item->GetStat(TEXT("SpritePixelScale"), 1.f)));
 		const float StaffPx = SP * GBHudLayout::StaffSizeMult;
 		const FVector2D StaffSize = Staff ? FVector2D(Staff->GetSizeX() * StaffPx, Staff->GetSizeY() * StaffPx) : FVector2D::ZeroVector;
-		// Leaning from the lower right, its head toward the crosshair (owner, 2026-11-15): it pivots on its grip, which
-		// sits at the bottom of the view on the 45-degree line through the screen centre, so the staff points at the aim.
-		// The basic attack thrusts it a little along its own length. No hand on it (owner, 2026-11-15: no hands at all,
+		// Rising from the lower right and leaning a little left (owner's sketch, 2026-11-15): it pivots on its grip at the
+		// bottom of the view. The basic attack thrusts it a little along its own length, in the direction it leans. No hand on it (owner, 2026-11-15: no hands at all,
 		// only the weapons and their own motion).
 		if (Staff)
 		{
 			const float Tilt = FMath::DegreesToRadians(GBHudLayout::StaffTiltDeg);
 			const FVector2D Along(-FMath::Sin(Tilt), -FMath::Cos(Tilt)); // grip -> head, on screen
-			const FVector2D Grip = FVector2D(Canvas->ClipX * 0.5f + (H - Canvas->ClipY * 0.5f) * FMath::Tan(Tilt), H)
-				+ Bob + Along * (Kick01 * 5.f * P);
+			const FVector2D Grip = FVector2D(W * GBHudLayout::StaffGripX, H) + Bob + Along * (Kick01 * 8.f * P);
 			const FVector2D Pivot01(0.5f, GBHudLayout::StaffGripFrac);
 			FCanvasTileItem Tile(Grip - StaffSize * Pivot01, Staff->GetResource(), StaffSize, FLinearColor::White);
 			Tile.Rotation = FRotator(0.f, -GBHudLayout::StaffTiltDeg, 0.f);
