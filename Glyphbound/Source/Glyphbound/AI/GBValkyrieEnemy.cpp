@@ -1512,17 +1512,29 @@ void AGBValkyrieEnemy::FireVolley(AActor* Goal)
 					FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 				if (BallComp)
 				{
-					// on impact the ball is gone, but its smoke is not cut: the system is left in the world, stops emitting
-					// (Deactivate) and its smoke fades on its own before the component auto-destroys
+					// on impact the ball is gone, but its smoke is not cut: the system is left in the world and told Alive = 0
+					// (the core and the smoke source stop), the grid keeps simulating so the smoke fades, and the component is
+					// destroyed after LanceSmokeFade s (Deactivate would kill a grid emitter at once)
 					TWeakObjectPtr<UNiagaraComponent> WeakBall(BallComp);
-					Shot->OnImpact.AddLambda([WeakBall](AGBProjectile*, AActor*, const FVector&)
+					const float Fade = V(TEXT("LanceSmokeFade"), 1.5f);
+					Shot->OnImpact.AddLambda([WeakBall, Fade](AGBProjectile*, AActor*, const FVector&)
 					{
-						if (UNiagaraComponent* Ball = WeakBall.Get())
+						UNiagaraComponent* Ball = WeakBall.Get();
+						UWorld* BallWorld = Ball ? Ball->GetWorld() : nullptr;
+						if (!BallWorld)
 						{
-							Ball->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-							Ball->SetVariableFloat(FName(TEXT("Alive")), 0.f);
-							Ball->Deactivate();
+							return;
 						}
+						Ball->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+						Ball->SetVariableFloat(FName(TEXT("Alive")), 0.f);
+						FTimerHandle Gone;
+						BallWorld->GetTimerManager().SetTimer(Gone, FTimerDelegate::CreateLambda([WeakBall]()
+						{
+							if (UNiagaraComponent* Done = WeakBall.Get())
+							{
+								Done->DestroyComponent();
+							}
+						}), FMath::Max(Fade, 0.05f), false);
 					});
 				}
 			}
