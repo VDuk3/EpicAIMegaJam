@@ -12,8 +12,11 @@
 
 namespace
 {
-	// Visual only: how many sprites draw the cone.
-	constexpr int32 BeamSpriteCount = 4;
+	// Visual only: how many sprites draw the cone. They bunch up near the start (squared spacing) so the stream
+	// visibly leaves the staff's head as a small flame and widens from there (owner, 2026-11-15).
+	constexpr int32 BeamSpriteCount = 7;
+	/** The flame nearest the start is at least this share of the spell's SpriteSize. */
+	constexpr float BeamNearSizeShare = 0.25f;
 }
 
 AGBSpell_Beam::AGBSpell_Beam()
@@ -45,13 +48,14 @@ void AGBSpell_Beam::StartSpell()
 		const float TanHalfAngle = FMath::Tan(FMath::DegreesToRadians(ConeHalfAngleDeg));
 		for (int32 Index = 0; Index < BeamSpriteCount; ++Index)
 		{
-			const float Along = BeamRange * (Index + 1) / (BeamSpriteCount + 1);
+			const float T = float(Index + 1) / float(BeamSpriteCount);
+			const float Along = BeamRange * 0.85f * T * T;
 			UBillboardComponent* Sprite = NewObject<UBillboardComponent>(this);
 			Sprite->SetupAttachment(Root);
 			Sprite->RegisterComponent();
 			AddInstanceComponent(Sprite);
 			Sprite->SetRelativeLocation(FVector(Along, 0.f, 0.f));
-			Library->SetupBillboard(Sprite, SpriteId, FMath::Max(NearHeight, 2.f * Along * TanHalfAngle));
+			Library->SetupBillboard(Sprite, SpriteId, FMath::Max(NearHeight * BeamNearSizeShare, 2.f * Along * TanHalfAngle));
 			Sprites.Add(Sprite);
 		}
 	}
@@ -198,11 +202,19 @@ void AGBSpell_Beam::FollowAim()
 	FVector AimDir;
 	GetCasterAim(AimOrigin, AimDir);
 	FVector Start = AimOrigin;
+	FRotator Facing = AimDir.Rotation();
 	if (const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(GetCaster()))
 	{
+		// From the muzzle (the staff's head when a staff is held) toward the crosshair at full range, so the stream
+		// leaves the staff and meets the aim (owner, 2026-11-15). Damage still uses the camera's cone.
 		Start = Player->GetMuzzleLocation();
+		const FVector ToAim = AimOrigin + AimDir * BeamRange - Start;
+		if (!ToAim.IsNearlyZero())
+		{
+			Facing = ToAim.Rotation();
+		}
 	}
-	SetActorLocationAndRotation(Start, AimDir.Rotation());
+	SetActorLocationAndRotation(Start, Facing);
 }
 
 void AGBSpell_Beam::DamageTick()
