@@ -6,7 +6,7 @@
 import unreal
 
 MAP = '/Game/Glyphbound/Maps/PastCastle'
-SPOT = unreal.Vector(11290.0, -6000.0, -952.0 + 150.0)   # the room between the two lava corridors, ring centre 1.5 m up
+SPOT = unreal.Vector(11290.0, -7000.0, -951.0 + 150.0)   # middle of the slab SM_Px_FloorCorridor13 (owner), ring centre 1.5 m up
 YAW = 0.0
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
