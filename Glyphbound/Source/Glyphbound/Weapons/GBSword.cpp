@@ -63,13 +63,19 @@ namespace
 		 * targets measured on the owner's screenshot (Tools: scratch projection of guard and tip).
 		 */
 		struct FKatanaKey { FRotator Rot; FVector Loc; };
-		const FKatanaKey ComboKeys[3][2] = {
+		// Built on each call, not a global table: Live Coding keeps the old values of globals that already exist, so a
+		// tuned key would not show until an Editor restart.
+		FKatanaKey ComboKey(int32 Cut, int32 Which)
+		{
+		const FKatanaKey Keys[3][2] = {
 			{ { FRotator(40.f, -20.f, 10.f), FVector(0.f, 8.f, -8.f) }, { FRotator(-30.f, -40.f, -40.f), FVector(4.f, 0.f, 8.f) } },
 			{ { FRotator(10.f, -50.f, -30.f), FVector(0.f, 0.f, 0.f) }, { FRotator(-10.f, 10.f, 90.f), FVector(4.f, 0.f, 8.f) } },
 			// Third cut (owner): the blade lies flat and the cut is level: the end is the wind-up turned only about the
 			// vertical axis (yaw), so the blade stays horizontal, a little above the screen centre, all the way across.
 			{ { FRotator(25.f, 10.f, 120.f), FVector(0.f, 4.f, 12.f) }, { FRotator(25.f, -70.f, 120.f), FVector(4.f, -4.f, 12.f) } },
 		};
+		return Keys[FMath::Clamp(Cut, 0, 2)][Which != 0 ? 1 : 0];
+		}
 		// Phase lengths in seconds at SwingTime 0.5 (scaled by SwingTime / 0.5).
 		constexpr float WindupTime = 0.10f;
 		constexpr float StrikeTime = 0.05f;
@@ -136,8 +142,8 @@ namespace
 			{
 				return;
 			}
-			const FKatanaKey& KeyW = ComboKeys[S.Index][0];
-			const FKatanaKey& KeyE = ComboKeys[S.Index][1];
+			const FKatanaKey KeyW = ComboKey(S.Index, 0);
+			const FKatanaKey KeyE = ComboKey(S.Index, 1);
 			const FQuat QW = KeyW.Rot.Quaternion();
 			const FQuat QE = KeyE.Rot.Quaternion();
 			const FQuat QO = FQuat::Slerp(FQuat::Identity, QE * QW.Inverse(), Overshoot) * QE;
