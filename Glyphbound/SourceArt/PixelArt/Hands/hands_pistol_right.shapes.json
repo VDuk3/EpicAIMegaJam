@@ -1,0 +1,12 @@
+{
+  "note": "Right hand on the pistol grip, seen from behind the gun (3x art pixels, 1080p template viewpose_template_pistol). Painted in order: forearm, back of hand, three curled fingertips on the grip's left panel (lowest first, each overlapping the one below), thumb along the frame's left side, wizard sleeve.",
+  "shapes": [
+    { "type": "capsule", "a": [124, 83], "b": [134, 95], "r": 4.4, "mat": "skin", "group": "hand", "lift": 0.15 },
+    { "type": "ellipse", "c": [123.5, 79.5], "rx": 4.8, "ry": 5.4, "mat": "skin", "group": "hand", "lift": 0.3 },
+    { "type": "capsule", "a": [106.2, 86.4], "b": [109.6, 86.9], "r": 2.0, "mat": "skin", "group": "f3", "lift": 0.2 },
+    { "type": "capsule", "a": [105.4, 83.2], "b": [109.6, 83.7], "r": 2.1, "mat": "skin", "group": "f2", "lift": 0.2 },
+    { "type": "capsule", "a": [104.8, 80.0], "b": [109.4, 80.4], "r": 2.1, "mat": "skin", "group": "f1", "lift": 0.2 },
+    { "type": "capsule", "a": [119.5, 77.0], "b": [108.2, 75.0], "r": 2.3, "mat": "skin", "group": "thumb", "lift": 0.25 },
+    { "type": "ellipse", "c": [139, 93], "rx": 11.5, "ry": 6.0, "mat": "sleeve", "group": "sleeve", "lift": 0.2 }
+  ]
+}

@@ -6,15 +6,16 @@
                     "L":  "#FBD6AA",
                     "M":  "#F9C990",
                     "S":  "#C88A6A",
-                    "D":  "#1D1D25",
-                    "C":  "#32343C",
-                    "E":  "#655478"
+                    "A":  "#441974",
+                    "B":  "#8548C0",
+                    "V":  "#B83ECC",
+                    "W":  "#C0A2E1"
                 },
     "sprites":  [
                     {
-                        "x":  101,
-                        "y":  71,
-                        "rowsFile":  "hands_pistol_right.txt"
+                        "y":  0,
+                        "rowsFile":  "hands_pistol_right.txt",
+                        "x":  0
                     }
                 ]
 }
