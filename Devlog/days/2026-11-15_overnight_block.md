@@ -159,3 +159,12 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
 - **Tools used tonight** (for the submission's "Tools you used"): Unreal Engine 5.9 (Niagara, Niagara Fluids, IK
   Retargeter, Editor MCP), Blender (the sprite baker), Fab (the packs above), Claude Code (Opus 5.5, Sonnet, Fable 5.2 as
   advisor), Codex CLI (GPT-6.1 Sol for reviews).
+
+## End of the block: verification and the package
+- Test suite: 73 tests, 0 failed (1.2 s). Full `Smoke-Jam.ps1` (uncooked, offscreen, 559 steps): 0 errors, 472 s.
+- Game target build; package `TeamTBD_Glyphbound.zip` 933.7 MB, no `.pdb`.
+- Packaged smokes, all green: Fog, Valkyrie, Castle (arena), Enemies3D (no two squad members within 200 cm at any
+  time), FogVisit on FutureBase (the gas simulates in the cooked build; 0.77 and 1.53 ms), CastleVisit on PastCastle
+  (8 of 8 fights cleared).
+- For the owner's eyes (no PIE tonight): the tunnel smoke in motion, the castle fights' feel and difficulty, the pixel
+  Valkyrie's wings (clean but blocky), the Judgement rings (3D, not pixel art), the dark corridor's emergency lights.
