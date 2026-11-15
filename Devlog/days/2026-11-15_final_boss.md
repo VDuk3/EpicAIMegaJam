@@ -46,6 +46,6 @@ Implemented by the architect chat itself (Claude Opus 5.5), not by Muse. The orc
 
 ## Third-party assets used here
 - ARPG Pack, halberd set (Fab; already in the project, already listed).
-- Slash Trail FX Elemental, SoftTofuVFX (Fab, Professional licence in the owner's library), Nature systems only.
+- Slash Trail FX Elemental, SoftTofuVFX, https://www.fab.com/listings/a4b04697-30c1-4745-ae2f-a706278300bd (Fab, Professional licence, acquired in the owner's library 2026-07-01), installed with the Editor's FabToolset into /Game/SlashTrail_SoftTofu; only the Nature systems are cooked.
 - NiagaraFluids (engine plugin, Epic) for the floor liquid and the plague smoke.
 - Tripo (the model, from Angélica Leon's drawings).
