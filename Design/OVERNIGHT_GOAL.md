@@ -80,6 +80,15 @@ Fuera el ragdoll en **todos** los enemigos 3D. Cada uno tiene su animación de m
 | 6 | IA de grupo en el castillo | hecho | commit 9b49578: la IA de escuadra del cyberpunk reutilizada para los sprites (distancia por estilo, coberturas, turnos), más pinza desde lados opuestos y acorralar hacia los lados abiertos del jugador; smoke Castle en la arena 3 de 3 en verde y CastleVisit en el mapa real (líneas TACTICS por escuadra) |
 | 7 | Plan de portales | hecho | GDD v0.70 §4 "Portals and the route between the eras": P0-P4, seis tramos alternos, zonas del castillo solo desde el futuro (commit 945e6c6) |
 
+**Reverificación final (2026-11-15, 18:44 UTC, commit 77b4d40, después de las notas del castillo y de quitar las manos):** `Verify-Jam.ps1 -Visits` en verde (1.083 s): suite 73 sin fallos; paquete TeamTBD_Glyphbound.zip de 934 MB; smoke completo empaquetado, 561 pasos, 0 errores. Además, FogVisit, CastleVisit y Enemies3DBase en verde. Líneas del log por punto:
+- **(1)** Valkyrie_Future: attacks=3, hitsOnPlayer=4, weapon=1. En FutureBase, Boss_Valkyrie_Future: cleared=1, flag FutureValkyrieDefeated.
+- **(2)** Sentinel_Future wreck: cae 0,65 s, 5 rebotes, 2 piezas, 2 ráfagas de chispas. Drone_Future wreck: cae 0,74 s, 12 rebotes, 6 piezas, 2 ráfagas de chispas.
+- **(3)** Muertes con clip propio: robot 1,82 s; orco 0,95 s; Enforcer 1,57 s; GunCarrier 1,23 s; Valquiria 1,25 s. Pelvis a 12-25 cm del suelo.
+- **(4)** FogVisit: el gas simula, los disparos lo rasgan (shotEntriesTotal=264), coste de unos 1 ms.
+- **(5)** CastleVisit: 8 encuentros en 175 s, todos despejados. La Valquiria pixel está despierta al llegar y lanza Juicio (judgements=1). Muere con su clip de muerte.
+- **(6)** Tácticas de escuadra: coberturas, ráfagas al asomarse y cambios de posición, en verde.
+- **(7)** Sin cambios desde el commit 945e6c6.
+
 ## Al terminar todo
 1. Suite completa y `Smoke-Jam.ps1` completo, una sola vez, en verde.
 2. `Build-Jam.ps1 -Target Glyphbound` y el paquete (< 1 GB), con el tour del juego empaquetado.
