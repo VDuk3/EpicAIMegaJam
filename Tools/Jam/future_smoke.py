@@ -41,20 +41,22 @@ AREAS = {
                 color=(0.50, 0.55, 0.55, 0.11)),
 }
 
-# The floor fog (owner, later the same day: "dense fog on the floor, strong, with Niagara Fluids"): along the whole
-# path a low, heavy layer from the floor to knee-waist height. Per area: a flat AGBFluidFog box (wide, shallow: a few
-# cells high, so it stays cheap) with a strong fill, and close-set low mist planes under it so the floor is hidden even
-# where the gas thins. x: the fluid box's X range (None = the area's; the worn corridor's last 15 m and the dark
-# corridor keep the boxes Build-FutureBase.py placed, made denser with a FogDensity tag below).
-# h: height of the layer, cm. The ramp still holds: the pit's is the densest and highest.
+# The smoke carpet (owner, later the same day: "dense fog on the floor, strong, with Niagara Fluids", then "strong on
+# the floor, NOT up high like mist: corridor floor smoke"): along the whole path a thick, opaque layer 20-60 cm deep
+# with a defined top, like stage smoke rolling on the floor, kept out of eye level. Per area: a flat AGBFluidFog box
+# (about 90 cm high, sitting on the floor: a few cells high, so it stays cheap) with a very strong fill, and close-set
+# low planes, nearly opaque up to most of their height and gone at their top (the carpet's surface).
+# x: the fluid box's X range (None = the area's; the worn corridor's last 15 m and the dark corridor keep the boxes
+# Build-FutureBase.py placed, made denser with a FogDensity tag below). h: carpet depth, cm. Densest in the pit.
 FLOOR = {
-    'Worn': dict(h=110, x=(6954, 9500), fill=3.0, cells=96, along=110, across=0, opacity=0.40, fade=0.4, color=(0.45, 0.62, 0.60, 0.26)),
-    'Nest': dict(h=130, x=None, fill=4.0, cells=96, along=110, across=150, opacity=0.34, fade=0.4, color=(0.62, 0.50, 0.46, 0.16)),
-    'Dark': dict(h=140, x=None, fill=0, cells=0, along=110, across=0, opacity=0.38, fade=0.45, color=(0.42, 0.52, 0.66, 0.16)),
-    'Pit': dict(h=170, x=None, fill=5.0, cells=128, along=110, across=140, opacity=0.42, fade=0.5, color=(0.52, 0.57, 0.57, 0.17)),
+    'Worn': dict(h=45, x=(6954, 9500), fill=8.0, cells=96, opacity=0.55, cut=0.8, color=(0.50, 0.55, 0.56, 0.14), inset=60),
+    'Nest': dict(h=50, x=None, fill=10.0, cells=96, opacity=0.6, cut=0.75, color=(0.62, 0.57, 0.54, 0.32)),
+    'Dark': dict(h=55, x=None, fill=0, cells=0, opacity=0.62, cut=0.7, color=(0.45, 0.52, 0.62, 0.14), inset=8),
+    'Pit': dict(h=65, x=None, fill=12.0, cells=128, opacity=0.7, cut=0.65, color=(0.60, 0.62, 0.62, 0.36)),
 }
+FLUID_H = 90.0   # the carpet's fluid boxes: floor to 90 cm
 # Build-FutureBase.py's own fog boxes (not removed by this script): their fill, multiplied, by the box's centre X range.
-BASE_FOG = [((9500, 11000), 3.0), ((12254, 14762), 4.0)]
+BASE_FOG = [((9500, 11000), 6.0), ((12254, 14762), 8.0)]
 
 # Lamps inside this box (x0, x1, y0, y1, z0, z1) get the failing-lamp light function: the worn corridor's.
 FLICKER_BOX = (6954, 11000, -300, 300, Z - 50, Z + 400)
@@ -103,6 +105,127 @@ def planes(eas, plane, mi, name, box, along_x, spacing, first):
     return n
 
 
+CARPET_MAT = SMOKE_DIR + '/M_GB_SmokeCarpet'
+NOISE = '/Engine/EngineMaterials/Good64x64TilingNoiseHighFreq'
+LAYERS = 12   # horizontal slices of the carpet, floor to top
+
+
+def carpet_material():
+    """M_GB_SmokeCarpet: unlit, translucent, for horizontal slices stacked over the floor. One drifting world-space
+    noise N (big billows mixed with finer detail) is read as a height map: a slice at relative height t (0 at Base, 1
+    at Base + Height) shows only where N > t * CutMax, so the stacked slices draw the same rolling humps in 3D, solid
+    below and torn at the top, like stage smoke. Soft where a slice meets a wall or a prop (depth fade)."""
+    eal = unreal.EditorAssetLibrary
+    MEL = unreal.MaterialEditingLibrary
+    if eal.does_asset_exist(CARPET_MAT):
+        mat = unreal.load_asset(CARPET_MAT)
+        MEL.delete_all_material_expressions(mat)
+    else:
+        mat = unreal.AssetToolsHelpers.get_asset_tools().create_asset('M_GB_SmokeCarpet', SMOKE_DIR, unreal.Material, unreal.MaterialFactoryNew())
+    mat.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+    mat.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
+    mat.set_editor_property('two_sided', True)
+
+    def node(cls, x, y, **props):
+        e = MEL.create_material_expression(mat, cls, x, y)
+        for k, v in props.items():
+            e.set_editor_property(k, v)
+        return e
+
+    def link(a, b, inp, out=''):
+        MEL.connect_material_expressions(a, out, b, inp)
+
+    def op(cls, a, b, x, y):
+        e = node(cls, x, y)
+        link(a, e, 'A')
+        link(b, e, 'B')
+        return e
+
+    def const(v, x, y):
+        return node(unreal.MaterialExpressionConstant, x, y, r=v)
+
+    def scalar(name, v, x, y):
+        return node(unreal.MaterialExpressionScalarParameter, x, y, parameter_name=name, default_value=v)
+
+    tex = unreal.load_asset(NOISE)
+    wp = node(unreal.MaterialExpressionWorldPosition, -1800, 0)
+    xy = node(unreal.MaterialExpressionComponentMask, -1600, 0, r=True, g=True, b=False, a=False)
+    link(wp, xy, '')
+    wz = node(unreal.MaterialExpressionComponentMask, -1600, 300, r=False, g=False, b=True, a=False)
+    link(wp, wz, '')
+
+    def layer(scale_cm, sx, sy, y):
+        d = op(unreal.MaterialExpressionDivide, xy, const(scale_cm, -1400, y + 60), -1300, y)
+        p = node(unreal.MaterialExpressionPanner, -1150, y, speed_x=sx, speed_y=sy)
+        link(d, p, 'Coordinate')
+        t = node(unreal.MaterialExpressionTextureSample, -950, y, texture=tex)
+        link(p, t, 'UVs')
+        m = node(unreal.MaterialExpressionComponentMask, -750, y, r=True, g=False, b=False, a=False)
+        link(t, m, '')
+        return m
+
+    big = layer(9000.0, 0.010, 0.004, -300)       # billows of about 1.5 m
+    fine = layer(2600.0, -0.022, 0.012, -100)     # wisps of about 40 cm drifting the other way
+    n = op(unreal.MaterialExpressionLinearInterpolate, big, fine, -550, -200)
+    link(const(0.3, -700, -150), n, 'Alpha')
+    base = scalar('Base', -600.0, -1400, 300)
+    height = scalar('Height', 60.0, -1400, 380)
+    t = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, wz, base, -1200, 300), height, -1050, 320)
+    ts = node(unreal.MaterialExpressionSaturate, -900, 320)
+    link(t, ts, '')
+    cut = op(unreal.MaterialExpressionMultiply, ts, scalar('CutMax', 0.85, -900, 420), -750, 360)
+    soft = scalar('Soft', 0.12, -750, 460)
+    a = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, n, cut, -550, 300), soft, -400, 340)
+    asat = node(unreal.MaterialExpressionSaturate, -250, 340)
+    link(a, asat, '')
+    o = op(unreal.MaterialExpressionMultiply, asat, scalar('Opacity', 0.5, -250, 440), -100, 380)
+    df = node(unreal.MaterialExpressionDepthFade, 50, 380, fade_distance_default=30.0)
+    link(o, df, 'Opacity')
+    MEL.connect_material_property(df, '', unreal.MaterialProperty.MP_OPACITY)
+    col = node(unreal.MaterialExpressionVectorParameter, -550, -500, parameter_name='SmokeColor', default_value=unreal.LinearColor(0.55, 0.57, 0.58, 1.0))
+    shade = op(unreal.MaterialExpressionAdd, const(0.45, -550, -380), op(unreal.MaterialExpressionMultiply, n, const(0.55, -700, -330), -550, -330), -400, -360)
+    lit = op(unreal.MaterialExpressionMultiply, shade, op(unreal.MaterialExpressionAdd, const(0.6, -400, -280), ts, -300, -280), -250, -330)
+    e = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, col, scalar('Brightness', 0.3, -400, -460), -250, -480), lit, -100, -400)
+    MEL.connect_material_property(e, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    MEL.recompile_material(mat)
+    eal.save_asset(CARPET_MAT, only_if_is_dirty=False)
+    return mat
+
+
+def carpet_instance(name, z0, h, opacity, color, cut):
+    eal = unreal.EditorAssetLibrary
+    mel = unreal.MaterialEditingLibrary
+    path = SMOKE_DIR + '/MI_GB_Carpet_' + name
+    if eal.does_asset_exist(path):
+        mi = unreal.load_asset(path)
+    else:
+        mi = unreal.AssetToolsHelpers.get_asset_tools().create_asset('MI_GB_Carpet_' + name, SMOKE_DIR, unreal.MaterialInstanceConstant,
+                                                                    unreal.MaterialInstanceConstantFactoryNew())
+    mi.set_editor_property('parent', unreal.load_asset(CARPET_MAT))
+    for k, v in (('Base', z0), ('Height', h), ('Opacity', opacity), ('CutMax', cut), ('Brightness', color[3])):
+        mel.set_material_instance_scalar_parameter_value(mi, k, v)
+    mel.set_material_instance_vector_parameter_value(mi, 'SmokeColor', unreal.LinearColor(color[0], color[1], color[2], 1.0))
+    mel.update_material_instance(mi)
+    eal.save_asset(path, only_if_is_dirty=False)
+    return mi
+
+
+def carpet(eas, plane, mi, name, box):
+    """LAYERS horizontal slices over the floor of the box (x0, x1, y0, y1, z0, z1), the lowest 3 cm up."""
+    x0, x1, y0, y1, z0, z1 = box
+    for i in range(LAYERS):
+        z = z0 + 3.0 + (z1 - z0 - 3.0) * i / float(LAYERS - 1)
+        m = eas.spawn_actor_from_object(plane, unreal.Vector((x0 + x1) / 2.0, (y0 + y1) / 2.0, z), unreal.Rotator(0, 0, 0))
+        m.set_actor_scale3d(unreal.Vector((x1 - x0) / 100.0, (y1 - y0) / 100.0, 1.0))
+        sm = m.static_mesh_component
+        sm.set_material(0, mi)
+        sm.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+        sm.set_editor_property('cast_shadow', False)
+        tagged(m, name)
+        m.set_actor_label('Smoke_%s_Carpet%02d' % (name, i))
+    return LAYERS
+
+
 def tagged(a, folder):
     a.tags = list(a.tags) + [unreal.Name(TAG)]
     a.set_folder_path(unreal.Name('Smoke/' + folder))
@@ -114,11 +237,12 @@ def build():
     assert world.get_name() == 'FutureBase', 'open FutureBase first, not ' + world.get_name()
     gone = 0
     for a in eas.get_all_level_actors():
-        if unreal.Name(TAG) in a.tags:
+        if unreal.Name(TAG) in a.tags or unreal.Name('SmokeTest') in a.tags:
             eas.destroy_actor(a)
             gone += 1
     log = ['removed %d' % gone]
     plane = unreal.load_asset(PLANE)
+    carpet_material()
     for name, d in AREAS.items():
         x0, x1, y0, y1, z0, z1 = d['box']
         c = unreal.Vector((x0 + x1) / 2.0, (y0 + y1) / 2.0, (z0 + z1) / 2.0)
@@ -141,19 +265,14 @@ def build():
             fbox = (fx0, fx1, y0, y1, z0, z0 + fl['h'])
             if fl['fill'] > 0:
                 # The fluid box is a bit higher than the layer, so the gas has room to roll over itself.
-                fz1 = z0 + fl['h'] * 1.6
+                fz1 = z0 + FLUID_H
                 f = eas.spawn_actor_from_class(unreal.GBFluidFog, unreal.Vector((fx0 + fx1) / 2.0, c.y, (z0 + fz1) / 2.0), unreal.Rotator(0, 0, 0))
                 f.set_editor_property('box_extent', unreal.Vector((fx1 - fx0) / 2.0, (y1 - y0) / 2.0, (fz1 - z0) / 2.0))
                 f.tags = [unreal.Name('FogDensity=%g' % fl['fill']), unreal.Name('FogResolution=%d' % fl['cells'])]
                 tagged(f, name)
                 f.set_actor_label('Smoke_%s_FloorFluid' % name)
-            fmi = mist_instance(name + '_Floor', fbox[4], fbox[5], fl['opacity'], fl['fade'], fl['color'], top_pad=-5.0)   # gone at the planes' top: no hard edge
-            k = 0
-            if fl['along']:
-                k += planes(eas, plane, fmi, name + '_Floor', fbox, True, fl['along'], k)
-            if fl['across']:
-                k += planes(eas, plane, fmi, name + '_Floor', fbox, False, fl['across'], k)
-            log.append('%s floor: fluid x%g, %d low planes' % (name, fl['fill'], k))
+            k = carpet(eas, plane, carpet_instance(name, z0, fl['h'], fl['opacity'], fl['color'], fl['cut']), name + '_Floor', (x0, x1, y0 + fl.get('inset', 0), y1 - fl.get('inset', 0), z0, z0 + fl['h']))
+            log.append('%s floor: fluid x%g, %d carpet slices' % (name, fl['fill'], k))
     for a in eas.get_all_level_actors():
         if isinstance(a, unreal.GBFluidFog) and unreal.Name(TAG) not in a.tags:
             x = a.get_actor_location().x
