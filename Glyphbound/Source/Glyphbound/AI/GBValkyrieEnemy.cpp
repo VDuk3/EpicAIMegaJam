@@ -392,6 +392,31 @@ void AGBValkyrieEnemy::EnterPhaseTwo()
 		ResetFightState();
 		StopMoving();
 		GBReaperStagger::Left.Add(this, Stagger);
+		// while it reels, hits from the weapons listed in StaggerBonusSources (shotgun, swords) deal xStaggerDamageMult
+		if (Attributes)
+		{
+			TArray<FString> Sources;
+			if (const FGBEnemyDefinition* Def = GetDefinition())
+			{
+				GBEnemy3D::Str(*Def, FName(TEXT("StaggerBonusSources"))).ParseIntoArray(Sources, TEXT(","), true);
+			}
+			TSet<FName> Bonus;
+			for (const FString& Source : Sources)
+			{
+				Bonus.Add(FName(*Source.TrimStartAndEnd()));
+			}
+			const float Mult = S(TEXT("StaggerDamageMult"), 1.f);
+			if (Bonus.Num() > 0 && !FMath::IsNearlyEqual(Mult, 1.f))
+			{
+				Attributes->OnModifyIncomingDamage.AddWeakLambda(this, [this, Bonus, Mult](FGBDamageInfo& Info)
+				{
+					if (GBReaperStagger::Left.Contains(this) && Bonus.Contains(Info.SourceId))
+					{
+						Info.Amount *= Mult;
+					}
+				});
+			}
+		}
 		float Length = 0.f;
 		if (PlayActionClip(5, Length) && AnimInst && Length > 0.f)
 		{
