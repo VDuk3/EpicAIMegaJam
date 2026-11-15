@@ -1,0 +1,35 @@
+{
+	"Id": "FireWallC",
+	"Atlas": "FireWallC.png",
+	"FrameWidth": 24,
+	"FrameHeight": 40,
+	"Columns": 4,
+	"FrameCount": 16,
+	"Fps": 12,
+	"Loop": true,
+	"WorldWidthCm": 120,
+	"WorldHeightCm": 200,
+	"PivotU": 0.5,
+	"PivotV": 1,
+	"Facing": "Upright",
+	"Glow": 1.5,
+	"Lit": false,
+	"Light": {
+		"Enabled": false,
+		"Color": "#F3610B",
+		"Intensity": 0,
+		"RadiusCm": 0,
+		"CastShadows": false,
+		"AnchorU": 0.5,
+		"AnchorV": 0.6,
+		"TrackMode": "Constant",
+		"Track": []
+	},
+	"Source": {
+		"System": "Tools/Jam/make_fire_wall.js (hand-made pixel frames, no Niagara source)",
+		"DurationSeconds": 1.3333333333333333,
+		"SimFps": 12,
+		"EngineVersion": "",
+		"BakedUtc": ""
+	}
+}
