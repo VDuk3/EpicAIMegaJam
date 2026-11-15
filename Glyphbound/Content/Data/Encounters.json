@@ -984,12 +984,12 @@
 					"DelayBefore": 0,
 					"Spawns": [
 						{
-							"EnemyId": "Centaur_Past",
+							"EnemyId": "Orc_Past_Shaman",
 							"Count": 1,
 							"Behavior": "Guard"
 						},
 						{
-							"EnemyId": "Orc_Past_Shaman",
+							"EnemyId": "Centaur_Past",
 							"Count": 1,
 							"Behavior": "Guard"
 						},
@@ -1026,7 +1026,7 @@
 			"SkillPoints": 3,
 			"Rewards": [],
 			"Prespawn": true,
-			"Comment": "Provisional (overnight): the wall walk (air zone, leg C2), 3 m wide and 80 m long. Long sight lines: a centaur archer at the corner tower, a shaman half way, two orcs coming single file; barghests come in behind the player from the keep-end tower; then a champion and a shaman."
+			"Comment": "Provisional (overnight): the wall walk (air zone, leg C2), 3 m wide and 80 m long. Long sight lines: a shaman at the corner tower, a centaur archer half way (the tower room has 2.1 m of headroom, the centaur needs 2.6 m: it stood on the tower roof), two orcs coming single file; barghests come in behind the player from the keep-end tower; then a champion and a shaman."
 		},
 		{
 			"Id": "Valkyrie_Past",

@@ -877,16 +877,16 @@ ENCOUNTERS = [
     # the upper ward 225, the wall walk 1203, the Top Level's highest room 2612.
     # the side yard and its stores: the centaur at the stores' end, the rest between
     ('Castle_Yard', (6300.0, 1950.0, 450.0), (1300.0, 700.0, 300.0),
-     [(7200, 2200, 225), (6400, 1800, 225), (5600, 1800, 225), (6400, 2400, 225), (5400, 2400, 225), (6000, 1400, 225)]),
+     [(7200, 2200, 225), (6400, 1800, 225), (5600, 1800, 225), (6400, 2400, 225), (5400, 2400, 225), (6800, 2000, 225)]),
     # the Front Hall: orcs and barghests spread down the aisle
     ('Castle_FrontHall', (6500.0, 0.0, 450.0), (1100.0, 1700.0, 300.0),
      [(7300, -1100, 250), (7300, 1100, 250), (6500, -100, 250), (6100, 1100, 250), (6100, -1100, 250), (6900, 500, 250), (7500, 100, 250), (5500, 100, 250)]),
     # the Main Hall: the brute in the middle, the shaman at the back by the crypt's stair
     ('Castle_MainHall', (8500.0, 0.0, 450.0), (1000.0, 1700.0, 300.0),
-     [(8500, -100, 250), (9300, 500, 250), (8300, -1100, 250), (8300, 1500, 250), (7700, 700, 250), (7700, -500, 250), (9300, -1500, 250), (9300, 1500, 250)]),
-    # the wall walk on the King's side: the centaur at the corner tower, the shaman half way, the orcs nearer the keep
+     [(8500, -100, 250), (9300, 500, 250), (8300, -1100, 250), (8300, 1500, 250), (7700, 700, 250), (7700, -500, 250), (8800, -1300, 250), (9300, 1500, 250)]),
+    # the wall walk on the King's side: the first point just outside the corner tower (its room has 2.1 m of headroom), the others along the walk
     ('Zone_Air', (3300.0, -2816.0, 1400.0), (4000.0, 250.0, 300.0),
-     [(-300, -2816, 1203), (1500, -2816, 1203), (3000, -2816, 1203), (4200, -2816, 1203), (5400, -2816, 1203), (6600, -2816, 1203)]),
+     [(500, -2816, 1203), (1500, -2816, 1203), (3000, -2816, 1203), (4200, -2816, 1203), (5400, -2816, 1203), (6600, -2816, 1203)]),
     # the King's Hall: the ranged at its far (south) wall, the rest on the floor
     ('Zone_Fire', (9000.0, -4000.0, 450.0), (1500.0, 900.0, 300.0),
      [(10200, -4400, 250), (8000, -4400, 250), (9000, -4000, 250), (9800, -3800, 250), (8400, -3800, 250), (9600, -4400, 250), (10200, -3200, 250), (8000, -3200, 250), (9200, -3200, 250)]),
@@ -1002,6 +1002,22 @@ def body_walk(world, pts):
     return None
 
 
+def check_spawns(world):
+    """Every fight's spawn point must have room for the tallest castle body (the brute, 270 cm): two points stood inside
+    wall meshes and the enemy was put on top of them (castle visit smoke, overnight)."""
+    bad = []
+    for enc_id, centre, extent, spawns in ENCOUNTERS:
+        for x, y, z in spawns:
+            for dx, dy in ((0, 0), (45, 0), (-45, 0), (0, 45), (0, -45)):
+                hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x + dx, y + dy, z + 50), unreal.Vector(x + dx, y + dy, z + 270),
+                                                             unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
+                if hit:
+                    t = hit.to_tuple()
+                    bad.append('%s (%d, %d): blocked at %d cm by %s' % (enc_id, x, y, t[4].z - z, t[9].get_actor_label() if t[9] else '?'))
+                    break
+    return bad
+
+
 def check_walks():
     world = ues.get_editor_world()
     bad = []
@@ -1096,6 +1112,9 @@ if not STAGES or 'windows' in STAGES:
     await stage_windows()
 if not CFG.get('no_walks'):
     check_walks()
+if ENCOUNTERS_ON:
+    _sb = check_spawns(ues.get_editor_world())
+    log.append('spawns: ' + ('room for the brute over all %d points' % sum(len(e[3]) for e in ENCOUNTERS) if not _sb else 'PROBLEMS -> ' + ' | '.join(_sb)))
 les.save_current_level()
 open(os.path.join(unreal.Paths.project_saved_dir(), 'castle_build_result.txt'), 'w').write('\n'.join(log))
 '\n'.join(log)

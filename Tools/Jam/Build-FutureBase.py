@@ -1284,6 +1284,10 @@ async def stage_deep():
     box(s, 'Ceiling', (DARK[0], DARK[1]), (DARK[2] - 60, DARK[3] + 60), (Z + 350, Z + 372))
     fluid_fog(s, (DARK[0], DARK[1]), (DARK[2], DARK[3]), (Z, Z + 350))                                    # smoke the whole 25 m, it parts around the player and shots
     fluid_fog(s, (WORN_X[1] - 1500.0, WORN_X[1]), (-160, 160), (Z, Z + 300))                              # and the last 15 m of the worn corridor
+    # Smoke is only seen where light falls on it (overnight block, provisional: the owner asked for this corridor fully dark):
+    # three dim emergency lights low on the walls, one failing, so the smoke glows at knee height and the corridor stays dark.
+    for i, (lx, ly) in enumerate(((DARK[0] + 600, DARK[2] + 25), (DARK[0] + 1300, DARK[3] - 25), (DARK[0] + 2000, DARK[2] + 25))):
+        light(s, 'Lamps', 'PointLight', (lx, ly, Z + 30), rot(), {'intensity': 6.0, 'color': (90, 170, 255), 'attenuation_radius': 700.0, 'shadow': False, 'flicker': i == 1})
     # ---- the hall of the tentacle boss
     x0, x1, y0, y1 = PIT
     G = Z + 400.0                                                    # its galleries, 4 m up

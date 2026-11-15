@@ -66,6 +66,13 @@ public:
 	/** Feeds one hitscan shot as if the event had fired (the event handler calls it; the smoke test too). */
 	void AddShot(const FVector& Start, const FVector& End);
 
+	/** Debug probes (smoke test only). Queues one source that is written WITH its density for Frames frames (normal sources carry none). */
+	void DebugInject(const FVector& Where, float Radius, float Density, const FVector& Velocity, int32 Frames);
+	/** Debug probe: the same ring of sources a vanished projectile's explosion queues. */
+	void DebugBlast(const FVector& Where) { AddBlast(Where); }
+	/** Debug probe: keeps the simulation off whatever the player's distance (for a frame-time comparison). */
+	void DebugForceOff(bool bOff) { bForceOff = bOff; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -76,6 +83,8 @@ private:
 		FVector Position = FVector::ZeroVector;
 		FVector Velocity = FVector::ZeroVector;
 		float Radius = 10.f;
+		/** Density written with the source (0 for every normal entry; only DebugInject sets it). */
+		float Density = 0.f;
 		/** Frames the entry is still written (pending entries only). */
 		int32 FramesLeft = 1;
 	};
@@ -115,6 +124,7 @@ private:
 	bool bHasSystem = false;
 	bool bSimulating = false;
 	bool bWarned = false;
+	bool bForceOff = false;
 	int32 LastCollisionEntries = 0;
 	int32 LastPlayerEntries = 0;
 	int32 LastShotEntries = 0;

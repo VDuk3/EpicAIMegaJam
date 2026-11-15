@@ -16,6 +16,8 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GBPixelVfxActor.h"
 #include "GBPixelVfxComponent.h"
@@ -307,6 +309,18 @@ void AGBProjectile::Tick(float DeltaSeconds)
 
 	const FVector Location = GetActorLocation();
 	const float Age = GetGameTimeSinceCreation();
+
+	// A baked flight clip right in front of the camera fills the screen with big pixel blocks (an enemy shaman's fire
+	// reaching the player's face, castle visit smoke): hide it within 1.5 m of the viewer; the impact still plays.
+	if (FlightVfx)
+	{
+		const APlayerController* Viewer = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+		if (Viewer && Viewer->PlayerCameraManager)
+		{
+			const bool bTooClose = FVector::DistSquared(Viewer->PlayerCameraManager->GetCameraLocation(), Location) < FMath::Square(150.f);
+			FlightVfx->SetVisibility(!bTooClose, true);
+		}
+	}
 	const bool bOutOfRange = Config.MaxRange > 0.f && FVector::Dist(StartLocation, Location) >= Config.MaxRange;
 	const bool bTooOld = Config.MaxLifetime > 0.f && Age > Config.MaxLifetime;
 	const bool bFuseDone = Config.FuseTime > 0.f && Age >= Config.FuseTime;

@@ -302,6 +302,17 @@ void AGBFluidFog::AddShot(const FVector& Start, const FVector& End)
 	}
 }
 
+void AGBFluidFog::DebugInject(const FVector& Where, float Radius, float Density, const FVector& Velocity, int32 Frames)
+{
+	FEntry Entry;
+	Entry.Position = Where;
+	Entry.Velocity = Velocity;
+	Entry.Radius = Radius;
+	Entry.Density = Density;
+	Entry.FramesLeft = FMath::Max(1, Frames);
+	PendingSources.Add(Entry);
+}
+
 void AGBFluidFog::OnShotTraced(const FVector& Start, const FVector& End, float Speed)
 {
 	if (bSimulating)
@@ -430,7 +441,7 @@ int32 AGBFluidFog::WriteChannels(const TArray<FEntry>& Collision, const TArray<F
 				const bool bPushed = Writer.WriteVelocity(Index, Entry.Velocity);
 				Writer.WriteRadius(Index, Entry.Radius);
 				Writer.WritePreviousRadius(Index, Entry.Radius);
-				Writer.WriteDensity(Index, 0.f);
+				Writer.WriteDensity(Index, Entry.Density);
 				Writer.WriteTemperature(Index, 0.f);
 				Writer.WriteColor(Index, FLinearColor::Black);
 				// A moving body pushes the gas out of its sphere in proportion to its speed (one standing still displaces nothing:
@@ -458,7 +469,7 @@ void AGBFluidFog::Tick(float DeltaSeconds)
 	const FVector PlayerLocation = Player ? Player->GetActorLocation() : FVector::ZeroVector;
 	const float Distance = Player ? FMath::Sqrt(Inside.ComputeSquaredDistanceToPoint(PlayerLocation)) : TNumericLimits<float>::Max();
 	// A little hysteresis, so standing on the range does not switch the simulation on and off.
-	SetSimulating(Distance <= (bSimulating ? ActiveRange * 1.1f : ActiveRange));
+	SetSimulating(!bForceOff && Distance <= (bSimulating ? ActiveRange * 1.1f : ActiveRange));
 	if (!bSimulating)
 	{
 		return;

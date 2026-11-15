@@ -923,8 +923,13 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		const bool bSameSpot = FVector::Dist2D(CoverPoint, FiringPoint) < 30.f;
 		// Stat FiringSpotByRadius (the castle ids): a wide body (the centaur) cannot get its centre as close to a spot by the box as
 		// a man can, so its capsule radius counts as arrived. Without the stat: 45 cm, as before.
-		const float FireTolerance = S(TEXT("FiringSpotByRadius"), 0.f) > 0.5f ? FMath::Max(45.f, GetCapsuleComponent()->GetScaledCapsuleRadius()) : 45.f;
-		const bool bAtFire = DistFire < FireTolerance || (bSameSpot && bAtCover);
+		const bool bWideBody = S(TEXT("FiringSpotByRadius"), 0.f) > 0.5f;
+		const float FireTolerance = bWideBody ? FMath::Max(45.f, GetCapsuleComponent()->GetScaledCapsuleRadius()) : 45.f;
+		// With the same stat: a body that stalls short of its spot (a pillar, a wall corner, a squad mate in the way) but sees him
+		// shoots from where it stands after a moment, instead of peeking at nothing until the timeout (the King's Hall centaur
+		// stood 68 cm off its spot for a whole fight). The shot's own sweep still holds an arrow the world would stop.
+		const bool bStalled = bWideBody && bSight && PeekTimer > 0.8f && DistFire < 200.f && GetVelocity().Size2D() < 40.f;
+		const bool bAtFire = DistFire < FireTolerance || (bSameSpot && bAtCover) || bStalled;
 		SetGait(EGBGait::Combat);
 		if (BurstPhase == EBurstPhase::Cooldown && !bAtFire)
 		{

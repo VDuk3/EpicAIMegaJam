@@ -36,6 +36,8 @@
 #include "Weapons/GBEquipmentComponent.h"
 #include "AI/GBSquad.h"
 #include "Engine/StaticMeshActor.h"
+#include "Engine/PointLight.h"
+#include "Components/PointLightComponent.h"
 #include "AI/GBDroneEnemy.h"
 #include "AI/GBSentinelEnemy.h"
 #include "AI/GBEnemy3D.h"
@@ -103,6 +105,9 @@ namespace GBSmokeRun
 	static TArray<FStep> Steps;
 	static int32 NextStep = 0;
 	static double StartSeconds = 0.0;
+	/** A block that runs as its own state machine (CastleVisit) holds the step clock at HoldElapsed until it is done. */
+	static bool bHoldClock = false;
+	static double HoldElapsed = 0.0;
 	static TWeakObjectPtr<UWorld> SmokeWorld;
 	static double SimMark = 0.0;
 	// A gated step waits at most this long (wall seconds past its time) before it runs anyway and reports.
@@ -1315,6 +1320,247 @@ namespace GBSmokeRun
 				Spots.Add(Pair.Value);
 			}
 			UE_LOG(LogGB, Display, TEXT("SMOKE tour: %d spots"), Spots.Num());
+			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
+		}
+	}
+
+	// ---- FogVisit block (gb.Smoke FogVisit): a visual probe of the tunnel smoke on a real map (FutureBase). For each AGBFluidFog
+	// in the world: the player stands inside it, 2 m from one end, looking along it; the smoke is photographed plain, with a
+	// bright light, with a dense blob injected, with shots and a blast across the view, and after; the frame time is measured
+	// with the fog running and forced off. Only a run filtered on this name plays it (the full run and the arena skip it).
+	namespace FogVisitRun
+	{
+		static bool bActive = false;
+		static FTSTicker::FDelegateHandle Ticker;
+		static TArray<TWeakObjectPtr<AGBFluidFog>> Fogs;
+		static int32 Index = 0;
+		static int32 Phase = 0;
+		static double PhaseStart = 0.0;
+		static FVector Floor = FVector::ZeroVector;
+		static FVector Axis = FVector::ForwardVector;
+		static TWeakObjectPtr<AActor> Light;
+		static TArray<TPair<double, float>> Frames;
+		static float FrameOn = 0.f;
+		static bool RunningOn = false;
+		static int32 MaxSources = 0;
+		static const double PhaseTimes[] = { 0.0, 8.0, 8.3, 8.8, 9.0, 10.0, 10.3, 10.6, 12.6, 12.9, 14.9 };
+		static const int32 PhaseCount = UE_ARRAY_COUNT(PhaseTimes);
+
+		static float MeanFrameMs(double Now)
+		{
+			double Sum = 0.0;
+			int32 Count = 0;
+			for (int32 Pos = Frames.Num() - 1; Pos >= 0 && Frames[Pos].Key > Now - 2.0; --Pos)
+			{
+				Sum += Frames[Pos].Value;
+				++Count;
+			}
+			return Count > 0 ? static_cast<float>(Sum / Count * 1000.0) : 0.f;
+		}
+
+		static void SetLight(UWorld* World, bool bOn)
+		{
+			if (!bOn)
+			{
+				if (Light.IsValid())
+				{
+					Light->Destroy();
+				}
+				Light.Reset();
+				return;
+			}
+			const FVector At = Floor + Axis * 400.f + FVector(0.f, 0.f, 100.f);
+			APointLight* Lamp = World->SpawnActor<APointLight>(At, FRotator::ZeroRotator);
+			if (Lamp && Lamp->PointLightComponent)
+			{
+				UPointLightComponent* Comp = Lamp->PointLightComponent;
+				Comp->SetMobility(EComponentMobility::Movable);
+				Comp->SetLightColor(FLinearColor::White);
+				Comp->SetIntensity(20000.f);
+				Comp->SetAttenuationRadius(1500.f);
+				Comp->SetCastShadows(false);
+			}
+			Light = Lamp;
+		}
+
+		static bool Tick(float Delta)
+		{
+			UWorld* World = SmokeWorld.Get();
+			AGBPlayerCharacter* Player = World ? AGBPlayerCharacter::Get(World) : nullptr;
+			if (!World || !Player)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit FAILED: no world or no player"));
+				SmokeQuitNow(TEXT("FogVisit"));
+				return false;
+			}
+			const double Now = FPlatformTime::Seconds();
+			Frames.Emplace(Now, Delta);
+			while (Frames.Num() > 0 && Frames[0].Key < Now - 3.0)
+			{
+				Frames.RemoveAt(0);
+			}
+			AGBFluidFog* Fog = Fogs[Index].Get();
+			if (!Fog)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit %d FAILED: the fog actor went away"), Index);
+				SmokeQuitNow(TEXT("FogVisit"));
+				return false;
+			}
+			if (Phase >= 5 && Phase <= 8)
+			{
+				MaxSources = FMath::Max(MaxSources, Fog->GetLastSourceEntries());
+			}
+			if (Phase >= PhaseCount || Now - PhaseStart < PhaseTimes[Phase])
+			{
+				return true;
+			}
+			const int32 Ran = Phase++;
+			const FVector Eye = Floor + FVector(0.f, 0.f, 160.f);
+			const FVector Right = FVector::CrossProduct(FVector::UpVector, Axis);
+			auto ShotName = [](const TCHAR* Tag) { return FString::Printf(TEXT("fogvisit_%d_%s"), Index, Tag); };
+			switch (Ran)
+			{
+			case 0:
+			{
+				// Only this fog may run: a neighbour inside the active range would spoil the frame-time comparison.
+				for (int32 Other = 0; Other < Fogs.Num(); ++Other)
+				{
+					if (AGBFluidFog* OtherFog = Fogs[Other].Get())
+					{
+						OtherFog->DebugForceOff(Other != Index);
+					}
+				}
+				const FVector Extent = Fog->BoxExtent;
+				const bool bAlongX = Extent.X >= Extent.Y;
+				Axis = bAlongX ? FVector(1.f, 0.f, 0.f) : FVector(0.f, 1.f, 0.f);
+				const float HalfLength = bAlongX ? Extent.X : Extent.Y;
+				const FVector Centre = Fog->GetActorLocation();
+				const FVector Start = Centre - Axis * FMath::Max(0.f, HalfLength - 200.f);
+				FHitResult Hit;
+				FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSmokeFogVisitFloor), false, Player);
+				const FVector From(Start.X, Start.Y, Centre.Z);
+				const bool bHit = World->LineTraceSingleByChannel(Hit, From, From - FVector(0.f, 0.f, Extent.Z + 300.f), ECC_Visibility, Params);
+				Floor = bHit ? FVector(Start.X, Start.Y, Hit.ImpactPoint.Z) : FVector(Start.X, Start.Y, Centre.Z - Extent.Z);
+				const float HalfHeight = Player->GetSimpleCollisionHalfHeight();
+				Player->CancelMantle();
+				Player->ClearMoveInputForTest();
+				Player->GetAttributes()->SetInvulnerable(true);
+				Player->SetActorLocation(Floor + FVector(0.f, 0.f, HalfHeight + 5.f), false, nullptr, ETeleportType::TeleportPhysics);
+				if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+				{
+					Move->Velocity = FVector::ZeroVector;
+				}
+				if (AController* Controller = Player->GetController())
+				{
+					Controller->SetControlRotation(FRotator(-8.f, Axis.Rotation().Yaw, 0.f));
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: placed at %s (floor %s, trace hit %d) along %s"), Index, *Fog->GetActorLocation().ToString(), *Floor.ToString(), bHit ? 1 : 0, *Axis.ToString());
+				MaxSources = 0;
+				break;
+			}
+			case 1:
+				FrameOn = MeanFrameMs(Now);
+				RunningOn = Fog->IsSimulating();
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: running=%d hasSystem=%d extent=%s frameMs(on, last 2 s)=%.2f playerEntries=%d"),
+					Index, Fog->IsSimulating() ? 1 : 0, Fog->HasSystem() ? 1 : 0, *Fog->BoxExtent.ToString(), FrameOn, Fog->GetLastPlayerEntries());
+				Shot(*ShotName(TEXT("plain")));
+				break;
+			case 2:
+				SetLight(World, true);
+				break;
+			case 3:
+				Shot(*ShotName(TEXT("lit")));
+				break;
+			case 4:
+				Fog->DebugInject(Floor + Axis * 300.f + FVector(0.f, 0.f, 150.f), 60.f, 20.f, FVector::ZeroVector, 30);
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: blob injected (radius 60, density 20, 30 frames)"), Index);
+				break;
+			case 5:
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: blob step, most source entries written in the last second=%d"), Index, MaxSources);
+				Shot(*ShotName(TEXT("blob")));
+				break;
+			case 6:
+			{
+				for (int32 Index3 = 0; Index3 < 3; ++Index3)
+				{
+					const float Height = 40.f + 40.f * Index3;
+					const FVector Mid = Floor + Axis * 300.f + FVector(0.f, 0.f, Height);
+					UGBCombatLibrary::OnShotTraced().Broadcast(Mid - Right * 300.f, Mid + Right * 300.f, 0.f);
+				}
+				Fog->DebugBlast(Floor + Axis * 300.f + FVector(0.f, 0.f, 80.f));
+				break;
+			}
+			case 7:
+				Shot(*ShotName(TEXT("push")));
+				break;
+			case 8:
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: push step: shotEntriesTotal=%d sourceEntries=%d maxSources=%d"), Index, Fog->GetTotalShotEntriesWritten(), Fog->GetLastSourceEntries(), MaxSources);
+				Shot(*ShotName(TEXT("after")));
+				break;
+			case 9:
+				Fog->DebugForceOff(true);
+				break;
+			case 10:
+			{
+				const float FrameOff = MeanFrameMs(Now);
+				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: running=%d extent=%s frameMs on=%.2f off=%.2f (running while off=%d)"),
+					Index, RunningOn ? 1 : 0, *Fog->BoxExtent.ToString(), FrameOn, FrameOff, Fog->IsSimulating() ? 1 : 0);
+				Fog->DebugForceOff(false);
+				SetLight(World, false);
+				++Index;
+				if (Index >= Fogs.Num())
+				{
+					SmokeQuitNow(TEXT("FogVisit"));
+					return false;
+				}
+				Phase = 0;
+				PhaseStart = Now;
+				break;
+			}
+			default:
+				break;
+			}
+			return true;
+		}
+
+		static void Begin(UWorld* World, AGBPlayerCharacter*)
+		{
+			if (!bActive)
+			{
+				return;
+			}
+			FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+			Fogs.Reset();
+			for (TActorIterator<AGBFluidFog> It(World); It; ++It)
+			{
+				Fogs.Add(*It);
+			}
+			if (Fogs.Num() == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit FAILED: this map has no AGBFluidFog (run it on /Game/Glyphbound/Maps/FutureBase)"));
+				SmokeQuitNow(TEXT("FogVisit"));
+				return;
+			}
+			// The probe looks; it does not fight. Encounter enemies would write into the smoke and stand in the shots.
+			int32 Removed = 0;
+			for (TActorIterator<AGBEnemyCharacter> It(World); It; ++It)
+			{
+				if (It->GetEncounter())
+				{
+					It->OnDied.RemoveAll(It->GetEncounter());
+					It->Destroy();
+					++Removed;
+				}
+			}
+			for (TActorIterator<AGBEncounter> It(World); It; ++It)
+			{
+				It->Destroy();
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit: %d fog boxes, %d encounter enemies removed"), Fogs.Num(), Removed);
+			Index = 0;
+			Phase = 0;
+			PhaseStart = FPlatformTime::Seconds();
+			Frames.Reset();
 			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
 		}
 	}
@@ -3361,6 +3607,7 @@ namespace GBSmokeRun
 				{ FName(TEXT("Imp_Past")), 1000.f }, { FName(TEXT("Centaur_Past")), 1400.f } };
 			E3DSpawnGroup(TickWorld, TickPlayer, Items);
 			CastleStartTicker(TickPlayer);
+			MarkSim(TickWorld);   // the check counts the fight in simulated seconds (a slow first run gives fewer of them per wall second)
 			for (const FE3DEntry& Entry : E3DGroup)
 			{
 				if (const AGBSkeletalEnemy* Enemy = Cast<AGBSkeletalEnemy>(Entry.Enemy.Get()))
@@ -3380,6 +3627,7 @@ namespace GBSmokeRun
 	/** Each enemy: its sheet (or why not), it moved, it attacked (clip played, hit on the player, a projectile that flew), cover, the pincer. */
 	static void CastleCheck(UWorld* World, AGBPlayerCharacter* Player)
 	{
+		UE_LOG(LogGB, Display, TEXT("SMOKE Castle: the fight lasted %.1f simulated seconds since the spawn"), World ? World->GetTimeSeconds() - SimMark : 0.0);
 		int32 CoveredRanged = 0;
 		int32 Ranged = 0;
 		for (const FE3DEntry& Entry : E3DGroup)
@@ -3519,6 +3767,836 @@ namespace GBSmokeRun
 		if (Player)
 		{
 			Player->GetAttributes()->RestoreAll();
+		}
+	}
+
+	// ---- CastleVisit block (gb.Smoke CastleVisit, only on /Game/Glyphbound/Maps/PastCastle): the castle's own encounters, as placed.
+	// A state machine on the core ticker. While it runs it holds the smoke clock still (StartSeconds follows the wall clock), so the
+	// step after it waits however long the visit takes. Per encounter: the prespawned wave was checked before the player came (all
+	// encounters at the start, the player parked far above the map); the player is put on the navmesh 6-14 m from the zone, in
+	// sight of its enemies, facing them; then notice, attack, a night screenshot, kill, the next waves come and engage, Cleared.
+	namespace CastleVisit
+	{
+		enum class EPhase : uint8 { Park, Begin, Notice, Fight, Kill, NextWave, WaveFight, Finish, Done };
+
+		struct FPre
+		{
+			int32 Prespawned = 0;
+			int32 InZone = 0;
+			int32 OnFloor = 0;
+			int32 Aware = 0;
+			int32 State = 0;
+			bool bChecked = false;
+		};
+
+		static TArray<TWeakObjectPtr<AGBEncounter>> Encounters;
+		static TMap<FName, FPre> Pre;
+		static int32 Index = -1;
+		static EPhase Phase = EPhase::Park;
+		static double PhaseStart = 0.0;
+		static double EncStart = 0.0;
+		static double BlockStart = 0.0;
+		static double FrozenElapsed = 0.0;
+		static double AwareAt = -1.0;
+		static double FirstAttackAt = -1.0;
+		static double WaveStartAt = 0.0;
+		static int32 WaveAttackBase = 0;
+		static int32 LastWave = -1;
+		static int32 WavesSeen = 0;
+		static int32 WavesEngaged = 0;
+		static int32 Hits = 0;
+		static bool bShot = false;
+		static bool bSteppedIn = false;
+		static FVector ParkSpot = FVector::ZeroVector;
+		static FTSTicker::FDelegateHandle Ticker;
+		static FDelegateHandle HitHandle;
+		static TMap<TWeakObjectPtr<AGBEnemyCharacter>, int32> AttackCounts;
+		static TSet<TWeakObjectPtr<AActor>> Members;
+		static TSet<TWeakObjectPtr<AGBEnemyCharacter>> Covered;
+		/** Per ranged member, its last numbers while alive (printed when the encounter ends). */
+		static TMap<TWeakObjectPtr<AGBEnemyCharacter>, FString> RangedInfo;
+		static TMap<TWeakObjectPtr<AGBEnemyCharacter>, int32> HeldBy;
+		/** Projectiles per member (kept after it is gone). */
+		static TMap<TWeakObjectPtr<AGBEnemyCharacter>, int32> ProjBy;
+		static int32 WaveProjBase = 0;
+		static bool bWaveEngaged = false;
+		static bool bWaveFloorChecked = false;
+		static TWeakObjectPtr<AGBValkyrieEnemy> Valk;
+		static float ValkHealthBefore = 0.f;
+		static float ValkHealthAfter = 0.f;
+		static bool bValkAwakeOnArrival = false;
+		static int32 ValkCombos = 0;
+		static int32 ValkJudgements = 0;
+		static bool bValkDied = false;
+
+		static const TCHAR* const Order[] = { TEXT("Opening_Past"), TEXT("Castle_Yard"), TEXT("Castle_FrontHall"), TEXT("Castle_MainHall"),
+			TEXT("Zone_Air"), TEXT("Zone_Fire"), TEXT("Zone_Ice"), TEXT("Valkyrie_Past") };
+
+		static double Now(UWorld* World) { return World ? World->GetTimeSeconds() : 0.0; }
+
+		static void SetPhase(UWorld* World, EPhase NewPhase)
+		{
+			Phase = NewPhase;
+			PhaseStart = Now(World);
+		}
+
+		static AGBEncounter* Current()
+		{
+			return Encounters.IsValidIndex(Index) ? Encounters[Index].Get() : nullptr;
+		}
+
+		static FString IdOf(const AGBEncounter* Encounter)
+		{
+			return Encounter ? Encounter->EncounterId.ToString() : FString(TEXT("?"));
+		}
+
+		static void Living(const AGBEncounter* Encounter, TArray<AGBEnemyCharacter*>& Out)
+		{
+			Out.Reset();
+			if (!Encounter)
+			{
+				return;
+			}
+			for (const TObjectPtr<AGBEnemyCharacter>& Enemy : Encounter->GetEnemies())
+			{
+				if (Enemy && !Enemy->IsDead())
+				{
+					Out.Add(Enemy);
+				}
+			}
+		}
+
+		static int32 AttacksOf(const AGBEnemyCharacter* Enemy)
+		{
+			const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy);
+			if (!Skeletal)
+			{
+				return 0;
+			}
+			int32 Count = Skeletal->GetProjectileCount() + Skeletal->GetMeleeSwingCount() + Skeletal->GetLungeCount();
+			if (const AGBValkyrieEnemy* Vk = Cast<AGBValkyrieEnemy>(Enemy))
+			{
+				Count += Vk->GetSwingCount() + Vk->GetJudgementCasts();
+			}
+			return Count;
+		}
+
+		static int32 TotalAttacks()
+		{
+			int32 Total = 0;
+			for (const TPair<TWeakObjectPtr<AGBEnemyCharacter>, int32>& Pair : AttackCounts)
+			{
+				Total += Pair.Value;
+			}
+			return Total;
+		}
+
+		static int32 TotalProjectiles()
+		{
+			int32 Total = 0;
+			for (const TPair<TWeakObjectPtr<AGBEnemyCharacter>, int32>& Pair : ProjBy)
+			{
+				Total += Pair.Value;
+			}
+			return Total;
+		}
+
+		static bool HasLivingRanged(const AGBEncounter* Encounter)
+		{
+			TArray<AGBEnemyCharacter*> Alive;
+			Living(Encounter, Alive);
+			for (const AGBEnemyCharacter* Enemy : Alive)
+			{
+				const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy);
+				if (Skeletal && Skeletal->FiresProjectiles())
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/** Every frame: the members of the current encounter, their attack counters (kept after death), ranged members in cover. */
+		static void Track(const AGBEncounter* Encounter)
+		{
+			TArray<AGBEnemyCharacter*> Alive;
+			Living(Encounter, Alive);
+			for (AGBEnemyCharacter* Enemy : Alive)
+			{
+				Members.Add(TWeakObjectPtr<AActor>(Enemy));
+				AttackCounts.FindOrAdd(Enemy) = AttacksOf(Enemy);
+				const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy);
+				if (Skeletal && Skeletal->FiresProjectiles() && Skeletal->HasPosition() && Skeletal->GetPosition().bCovered)
+				{
+					Covered.Add(Enemy);
+				}
+				if (Skeletal && Skeletal->FiresProjectiles())
+				{
+					ProjBy.FindOrAdd(Enemy) = Skeletal->GetProjectileCount();
+					HeldBy.FindOrAdd(Enemy) = Skeletal->GetBlockedShots();
+					RangedInfo.FindOrAdd(Enemy) = FString::Printf(TEXT("%s shots=%d projectiles=%d held=%d peekBursts=%d reloc=%d coverTime=%.1f"), *Enemy->GetEnemyId().ToString(),
+						Skeletal->GetShotCount(), Skeletal->GetProjectileCount(), Skeletal->GetBlockedShots(), Skeletal->GetPeekBursts(), Skeletal->GetRelocations(), Skeletal->GetCoverTime());
+				}
+				if (AGBValkyrieEnemy* Vk = Cast<AGBValkyrieEnemy>(Enemy))
+				{
+					Valk = Vk;
+					ValkCombos = FMath::Max(ValkCombos, Vk->GetComboCount());
+					ValkJudgements = FMath::Max(ValkJudgements, Vk->GetJudgementCasts());
+				}
+			}
+		}
+
+		/** The enemy's feet are on the navmesh: on the floor, not under it. */
+		static bool OnFloor(UWorld* World, const AGBEnemyCharacter* Enemy)
+		{
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+			if (!Nav)
+			{
+				return false;
+			}
+			const FVector Foot = Enemy->GetActorLocation() - FVector(0.f, 0.f, Enemy->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+			FNavLocation Projected;
+			return Nav->ProjectPointToNavigation(Foot, Projected, FVector(80.f, 80.f, 120.f)) && FMath::Abs(Projected.Location.Z - Foot.Z) < 70.f;
+		}
+
+		static FVector FootOf(const AGBEnemyCharacter* Enemy)
+		{
+			return Enemy->GetActorLocation() - FVector(0.f, 0.f, Enemy->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		}
+
+		/**
+		 * A floor spot on the navmesh near the zone (6-14 m from its centre, on the level of its enemies), with a clear line from the
+		 * player's eyes to as many of them as possible, from which the navmesh leads to them. Inside the zone scores better: melee
+		 * enemies never leave it.
+		 */
+		static bool FindStand(UWorld* World, const AGBEncounter* Encounter, const TArray<AGBEnemyCharacter*>& Enemies, const AGBPlayerCharacter* Player, FVector& OutFoot, FVector& OutLook)
+		{
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+			if (!Nav || Enemies.Num() == 0)
+			{
+				return false;
+			}
+			const FBox Zone = Encounter->GetZone();
+			FVector Centroid = FVector::ZeroVector;
+			for (const AGBEnemyCharacter* Enemy : Enemies)
+			{
+				Centroid += FootOf(Enemy);
+			}
+			Centroid /= static_cast<float>(Enemies.Num());
+			const FVector Centre(Zone.GetCenter().X, Zone.GetCenter().Y, Centroid.Z);
+			FCollisionQueryParams Params(SCENE_QUERY_STAT(GBCastleVisitStand), false, Player);
+			FCollisionResponseParams IgnorePawns;
+			IgnorePawns.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+			float BestScore = -1.0e9f;
+			bool bFound = false;
+			for (const float Radius : { 1200.f, 1000.f, 1400.f, 800.f, 600.f })
+			{
+				for (int32 K = 0; K < 16; ++K)
+				{
+					const float Angle = K * PI / 8.f;
+					const FVector Guess = Centre + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * Radius;
+					FNavLocation Projected;
+					if (!Nav->ProjectPointToNavigation(Guess, Projected, FVector(150.f, 150.f, 250.f)) || FMath::Abs(Projected.Location.Z - Centroid.Z) > 250.f)
+					{
+						continue;
+					}
+					const FVector Foot = Projected.Location;
+					const FVector Eyes = Foot + FVector(0.f, 0.f, 170.f);
+					int32 Visible = 0;
+					FVector Look = FVector::ZeroVector;
+					const AGBEnemyCharacter* Nearest = nullptr;
+					for (const AGBEnemyCharacter* Enemy : Enemies)
+					{
+						FCollisionQueryParams Line = Params;
+						Line.AddIgnoredActor(Enemy);
+						if (!World->LineTraceTestByChannel(Eyes, Enemy->GetActorLocation(), ECC_Visibility, Line, IgnorePawns))
+						{
+							++Visible;
+							Look += Enemy->GetActorLocation();
+							if (!Nearest || FVector::Dist(Foot, Enemy->GetActorLocation()) < FVector::Dist(Foot, Nearest->GetActorLocation()))
+							{
+								Nearest = Enemy;
+							}
+						}
+					}
+					if (Visible == 0)
+					{
+						continue;
+					}
+					bool bReach = false;
+					if (const UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(World, Foot, FootOf(Nearest), nullptr))
+					{
+						bReach = Path->IsValid() && !Path->IsPartial();
+					}
+					const bool bInside = Zone.IsInsideXY(Foot);
+					const float Score = Visible * 10.f + (bReach ? 25.f : 0.f) + (bInside ? 8.f : 0.f) - FMath::Abs(Radius - 1100.f) / 200.f;
+					if (Score > BestScore)
+					{
+						BestScore = Score;
+						OutFoot = Foot;
+						OutLook = Look / static_cast<float>(Visible);
+						bFound = true;
+					}
+				}
+			}
+			return bFound;
+		}
+
+		static void Face(AGBPlayerCharacter* Player, const FVector& Target)
+		{
+			if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+			{
+				PC->SetControlRotation((Target - Player->GetPawnViewLocation()).Rotation());
+			}
+		}
+
+		static void KillWave(AGBPlayerCharacter* Player, AGBEncounter* Encounter)
+		{
+			TArray<AGBEnemyCharacter*> Alive;
+			Living(Encounter, Alive);
+			for (AGBEnemyCharacter* Enemy : Alive)
+			{
+				AttackCounts.FindOrAdd(Enemy) = AttacksOf(Enemy);
+				if (UGBStatsComponent* EnemyStats = Enemy->GetStats())
+				{
+					EnemyStats->SetBaseStat(FName(TEXT("CorpseTime")), 0.6f);
+				}
+				FGBDamageInfo Info;
+				Info.Amount = 1000000.f;
+				Info.Instigator = Player;
+				Info.HitLocation = Enemy->GetActorLocation();
+				Info.HitDirection = Enemy->GetActorForwardVector();
+				Info.SourceId = TEXT("SmokeCastleVisit");
+				UGBCombatLibrary::DealDamage(Enemy, Info);
+				if (!Enemy->IsDead())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: %s did not die to 1,000,000 damage"), *IdOf(Encounter), *Enemy->GetEnemyId().ToString());
+				}
+				else if (const AGBValkyrieEnemy* Vk = Cast<AGBValkyrieEnemy>(Enemy))
+				{
+					bValkDied = true;
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: the Valkyrie died, death clip playing=%d | %s"), *IdOf(Encounter), Vk->IsDeathClipPlaying() ? 1 : 0, *Vk->DescribeLook());
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: killed wave %d (%d enemies), state=%d"), *IdOf(Encounter), Encounter->GetCurrentWave() + 1, Alive.Num(), static_cast<int32>(Encounter->GetState()));
+		}
+
+		/** Why an enemy is off the floor: where it stands, its nearest spawn point, the floor and the headroom there, its capsule. */
+		static FString WhyOffFloor(UWorld* World, const AGBEncounter* Encounter, const AGBEnemyCharacter* Enemy)
+		{
+			const TArray<FVector> Points = Encounter->GetWorldSpawnPoints();
+			FVector Point = Enemy->GetActorLocation();
+			float Best = TNumericLimits<float>::Max();
+			for (const FVector& Candidate : Points)
+			{
+				const float Dist = FVector::Dist2D(Candidate, Enemy->GetActorLocation());
+				if (Dist < Best)
+				{
+					Best = Dist;
+					Point = Candidate;
+				}
+			}
+			FHitResult Floor;
+			FHitResult Ceiling;
+			FCollisionQueryParams Room(SCENE_QUERY_STAT(GBCastleVisitRoom), false, Enemy);
+			const bool bFloorHit = World->LineTraceSingleByObjectType(Floor, Point, Point - FVector(0.f, 0.f, 600.f), FCollisionObjectQueryParams(ECC_WorldStatic), Room);
+			const FVector FloorAt = bFloorHit ? FVector(Floor.ImpactPoint) : Point;
+			const bool bCeiling = World->LineTraceSingleByObjectType(Ceiling, FloorAt + FVector(0.f, 0.f, 5.f), FloorAt + FVector(0.f, 0.f, 800.f), FCollisionObjectQueryParams(ECC_WorldStatic), Room);
+			FHitResult Under;
+			const bool bUnder = World->LineTraceSingleByObjectType(Under, Enemy->GetActorLocation(), Enemy->GetActorLocation() - FVector(0.f, 0.f, 1000.f), FCollisionObjectQueryParams(ECC_WorldStatic), Room);
+			return FString::Printf(TEXT("%s stands at %s (feet z=%.0f) on %s; its nearest spawn point %s (%.0f cm off): floor z=%.0f, ceiling %s, its capsule %.0f cm tall"),
+				*Enemy->GetEnemyId().ToString(), *Enemy->GetActorLocation().ToCompactString(), FootOf(Enemy).Z,
+				bUnder ? *FString::Printf(TEXT("%s (%s) at z=%.0f"), Under.GetActor() ? *Under.GetActor()->GetName() : TEXT("?"),
+					Under.GetComponent() ? *Under.GetComponent()->GetDetailedInfo() : TEXT("?"), Under.ImpactPoint.Z) : TEXT("nothing"),
+				*Point.ToCompactString(), Best, FloorAt.Z,
+				bCeiling ? *FString::Printf(TEXT("z=%.0f (%s, headroom %.0f cm)"), Ceiling.ImpactPoint.Z, Ceiling.GetActor() ? *Ceiling.GetActor()->GetName() : TEXT("?"), Ceiling.ImpactPoint.Z - FloorAt.Z) : TEXT("open"),
+				2.f * Enemy->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		}
+
+		/** All encounters, before the player came near any of them: the first wave stands, in its zone, on the floor, unaware. */
+		static void PreCheck(UWorld* World)
+		{
+			for (const TWeakObjectPtr<AGBEncounter>& Weak : Encounters)
+			{
+				const AGBEncounter* Encounter = Weak.Get();
+				if (!Encounter)
+				{
+					continue;
+				}
+				FPre& Entry = Pre.FindOrAdd(Encounter->EncounterId);
+				Entry.bChecked = true;
+				TArray<AGBEnemyCharacter*> Alive;
+				Living(Encounter, Alive);
+				const FBox Zone = Encounter->GetZone().ExpandBy(60.f);
+				Entry.Prespawned = Alive.Num();
+				Entry.State = static_cast<int32>(Encounter->GetState());
+				FString Who;
+				for (const AGBEnemyCharacter* Enemy : Alive)
+				{
+					const bool bIn = Zone.IsInside(Enemy->GetActorLocation());
+					const bool bFloor = OnFloor(World, Enemy);
+					Entry.InZone += bIn ? 1 : 0;
+					Entry.OnFloor += bFloor ? 1 : 0;
+					if (!bFloor)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: %s"), *IdOf(Encounter), *WhyOffFloor(World, Encounter, Enemy));
+					}
+					Entry.Aware += Enemy->IsAware() ? 1 : 0;
+					Who += FString::Printf(TEXT(" %s(%s in=%d floor=%d %s)"), *Enemy->GetEnemyId().ToString(), bFloor ? *FString::Printf(TEXT("z=%.0f"), FootOf(Enemy).Z) : *FootOf(Enemy).ToCompactString(), bIn ? 1 : 0, bFloor ? 1 : 0,
+						Enemy->GetUnawareBehavior() == EGBUnawareBehavior::Patrol ? TEXT("patrol") : (Enemy->GetUnawareBehavior() == EGBUnawareBehavior::Dormant ? TEXT("dormant") : TEXT("guard")));
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s BEFORE the player: state=%d prespawn=%d wave=%d of %d, %d standing, inZone=%d onFloor=%d aware=%d |%s"), *IdOf(Encounter), Entry.State,
+					Encounter->IsPrespawn() ? 1 : 0, Encounter->GetCurrentWave() + 1, Encounter->GetNumWaves(), Entry.Prespawned, Entry.InZone, Entry.OnFloor, Entry.Aware, *Who);
+				if (Encounter->IsPrespawn() && Entry.Prespawned == 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: a Prespawn encounter with nobody standing before the player came"), *IdOf(Encounter));
+				}
+				if (Entry.InZone < Entry.Prespawned)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: %d of %d prespawned enemies stand outside their zone"), *IdOf(Encounter), Entry.Prespawned - Entry.InZone, Entry.Prespawned);
+				}
+				if (Entry.OnFloor < Entry.Prespawned)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: %d of %d prespawned enemies are not on the floor (navmesh) where they stand"), *IdOf(Encounter), Entry.Prespawned - Entry.OnFloor, Entry.Prespawned);
+				}
+				if (Entry.State != static_cast<int32>(EGBEncounterState::Waiting) || Entry.Aware > 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: state %d with %d aware before the player came near"), *IdOf(Encounter), Entry.State, Entry.Aware);
+				}
+			}
+		}
+
+		static void BeginEncounter(UWorld* World, AGBPlayerCharacter* Player)
+		{
+			AGBEncounter* Encounter = Current();
+			EncStart = Now(World);
+			AwareAt = -1.0;
+			FirstAttackAt = -1.0;
+			LastWave = -1;
+			WavesSeen = 0;
+			WavesEngaged = 0;
+			Hits = 0;
+			bShot = false;
+			bSteppedIn = false;
+			AttackCounts.Reset();
+			Members.Reset();
+			Covered.Reset();
+			RangedInfo.Reset();
+			HeldBy.Reset();
+			ProjBy.Reset();
+			Valk.Reset();
+			ValkHealthBefore = ValkHealthAfter = 0.f;
+			bValkAwakeOnArrival = false;
+			ValkCombos = ValkJudgements = 0;
+			bValkDied = false;
+			if (!Encounter)
+			{
+				SetPhase(World, EPhase::Finish);
+				return;
+			}
+			TArray<AGBEnemyCharacter*> Alive;
+			Living(Encounter, Alive);
+			LastWave = Encounter->GetCurrentWave();
+			WavesSeen = Alive.Num() > 0 ? 1 : 0;
+			UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: visit begins, state=%d wave=%d of %d, %d standing"), *IdOf(Encounter), static_cast<int32>(Encounter->GetState()),
+				Encounter->GetCurrentWave() + 1, Encounter->GetNumWaves(), Alive.Num());
+			if (Encounter->GetState() == EGBEncounterState::Active)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: already Active when the player comes (an earlier visit woke it)"), *IdOf(Encounter));
+			}
+			FVector Foot;
+			FVector Look;
+			if (!FindStand(World, Encounter, Alive, Player, Foot, Look))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: no floor spot on the navmesh near the zone with a line to its enemies (%d standing)"), *IdOf(Encounter), Alive.Num());
+				SetPhase(World, Alive.Num() > 0 ? EPhase::Kill : EPhase::Finish);
+				return;
+			}
+			E3BTeleport(Player, Foot, false);
+			Face(Player, Look);
+			const FBox Zone = Encounter->GetZone();
+			UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: player at %s (%.0f cm from the zone centre, inside the zone=%d), facing %s"), *IdOf(Encounter), *Foot.ToCompactString(),
+				FVector::Dist2D(Foot, Zone.GetCenter()), Zone.IsInsideXY(Foot) ? 1 : 0, *Look.ToCompactString());
+			for (AGBEnemyCharacter* Enemy : Alive)
+			{
+				if (AGBValkyrieEnemy* Vk = Cast<AGBValkyrieEnemy>(Enemy))
+				{
+					Valk = Vk;
+					bValkAwakeOnArrival = !Vk->IsSealed() && Vk->GetUnawareBehavior() != EGBUnawareBehavior::Dormant && !Encounter->IsSealedNow();
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: the Valkyrie as the player comes in: sealed=%d dormant=%d encounterSealed=%d | %s"), *IdOf(Encounter), Vk->IsSealed() ? 1 : 0,
+						Vk->GetUnawareBehavior() == EGBUnawareBehavior::Dormant ? 1 : 0, Encounter->IsSealedNow() ? 1 : 0, *Vk->DescribeLook());
+					if (!bValkAwakeOnArrival)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: the Valkyrie is sealed or dormant when the player comes into her room"), *IdOf(Encounter));
+					}
+				}
+			}
+			SetPhase(World, EPhase::Notice);
+		}
+
+		static void FinishEncounter(UWorld* World)
+		{
+			const AGBEncounter* Encounter = Current();
+			if (Encounter)
+			{
+				const FPre* Entry = Pre.Find(Encounter->EncounterId);
+				const bool bCleared = Encounter->GetState() == EGBEncounterState::Cleared;
+				for (const TPair<TWeakObjectPtr<AGBEnemyCharacter>, FString>& Info : RangedInfo)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s ranged: %s"), *IdOf(Encounter), *Info.Value);
+				}
+				int32 Held = 0;
+				for (const TPair<TWeakObjectPtr<AGBEnemyCharacter>, int32>& Pair : HeldBy)
+				{
+					Held += Pair.Value;
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: prespawned=%d inZone=%d onFloor=%d awareAfter=%.1fs hits=%d projectiles=%d held=%d attacks=%d cover=%d waves=%d/%d engaged=%d cleared=%d"),
+					*IdOf(Encounter), Entry ? Entry->Prespawned : -1, Entry ? Entry->InZone : -1, Entry ? Entry->OnFloor : -1, AwareAt >= 0.0 ? AwareAt - EncStart : -1.0, Hits, TotalProjectiles(),
+					Held, TotalAttacks(), Covered.Num(), WavesSeen, Encounter->GetNumWaves(), WavesEngaged, bCleared ? 1 : 0);
+				if (!bCleared)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: not Cleared after its waves were killed (state %d, wave %d of %d)"), *IdOf(Encounter), static_cast<int32>(Encounter->GetState()),
+						Encounter->GetCurrentWave() + 1, Encounter->GetNumWaves());
+				}
+				if (Encounter->EncounterId == FName(TEXT("Valkyrie_Past")))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit Valkyrie_Past: awake on arrival=%d health %.0f -> %.0f when hit, combos=%d judgements=%d died=%d"), bValkAwakeOnArrival ? 1 : 0,
+						ValkHealthBefore, ValkHealthAfter, ValkCombos, ValkJudgements, bValkDied ? 1 : 0);
+					if (!(ValkHealthAfter < ValkHealthBefore))
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit Valkyrie_Past FAILED: her health did not drop when hit (%.0f -> %.0f)"), ValkHealthBefore, ValkHealthAfter);
+					}
+					if (ValkCombos < 1 && ValkJudgements < 1)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit Valkyrie_Past FAILED: she fought neither a combo nor a Judgement"));
+					}
+					if (!bValkDied)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit Valkyrie_Past FAILED: she did not die"));
+					}
+				}
+			}
+			++Index;
+			SetPhase(World, Encounters.IsValidIndex(Index) ? EPhase::Begin : EPhase::Done);
+		}
+
+		/** Called from the ticker itself: returning false removes it. */
+		static void Stop()
+		{
+			bHoldClock = false;
+			Ticker.Reset();
+			UGBCombatLibrary::OnDamageDealt().Remove(HitHandle);
+			HitHandle.Reset();
+		}
+
+
+		static bool Tick(float)
+		{
+			UWorld* World = SmokeWorld.Get();
+			AGBPlayerCharacter* Player = World ? AGBPlayerCharacter::Get(World) : nullptr;
+			if (!World || !Player)
+			{
+				Stop();
+				return false;
+			}
+			Player->GetAttributes()->RestoreAll();
+			const double T = Now(World);
+			const double InPhase = T - PhaseStart;
+			if (T - BlockStart > 840.0 && Phase != EPhase::Done)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit FAILED: the visit ran past 840 s (at %s, phase %d)"), *IdOf(Current()), static_cast<int32>(Phase));
+				Phase = EPhase::Done;
+			}
+			AGBEncounter* Encounter = Current();
+			if (Encounter)
+			{
+				Track(Encounter);
+			}
+			switch (Phase)
+			{
+			case EPhase::Park:
+				if (UCharacterMovementComponent* Move = Player->GetCharacterMovement())
+				{
+					Move->Velocity = FVector::ZeroVector;
+				}
+				Player->SetActorLocation(ParkSpot, false, nullptr, ETeleportType::TeleportPhysics);
+				if (InPhase > 2.0)
+				{
+					PreCheck(World);
+					Index = 0;
+					SetPhase(World, Encounters.Num() > 0 ? EPhase::Begin : EPhase::Done);
+				}
+				break;
+
+			case EPhase::Begin:
+				BeginEncounter(World, Player);
+				break;
+
+			case EPhase::Notice:
+			{
+				TArray<AGBEnemyCharacter*> Alive;
+				Living(Encounter, Alive);
+				bool bAware = false;
+				for (const AGBEnemyCharacter* Enemy : Alive)
+				{
+					bAware |= Enemy->IsAware();
+				}
+				if (bAware)
+				{
+					AwareAt = T;
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: noticed after %.1f s, state=%d"), *IdOf(Encounter), AwareAt - EncStart, Encounter ? static_cast<int32>(Encounter->GetState()) : -1);
+					if (Valk.IsValid())
+					{
+						ValkHealthBefore = Valk->GetAttributes()->GetHealth();
+						FGBDamageInfo Info;
+						Info.Amount = 250.f;
+						Info.Instigator = Player;
+						Info.HitLocation = Valk->GetActorLocation();
+						Info.HitDirection = (Valk->GetActorLocation() - Player->GetActorLocation()).GetSafeNormal();
+						Info.SourceId = TEXT("SmokeCastleVisit");
+						UGBCombatLibrary::DealDamage(Valk.Get(), Info);
+						ValkHealthAfter = Valk->GetAttributes()->GetHealth();
+					}
+					SetPhase(World, EPhase::Fight);
+				}
+				else if (InPhase > 15.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: nobody noticed the player in 15 s (%d standing in sight)"), *IdOf(Encounter), Alive.Num());
+					SetPhase(World, EPhase::Kill);
+				}
+				break;
+			}
+
+			case EPhase::Fight:
+			{
+				const int32 Attacks = TotalAttacks();
+				if (FirstAttackAt < 0.0 && (Attacks > 0 || Hits > 0))
+				{
+					FirstAttackAt = T;
+					WavesEngaged = 1;
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: first attack %.1f s after the notice"), *IdOf(Encounter), FirstAttackAt - AwareAt);
+				}
+				// Melee members never leave their zone: a player outside it after 6 s steps in towards its centre.
+				if (!bSteppedIn && InPhase > 6.0 && FirstAttackAt < 0.0 && Encounter && !Encounter->GetZone().IsInsideXY(Player->GetActorLocation()))
+				{
+					bSteppedIn = true;
+					TArray<AGBEnemyCharacter*> Alive;
+					Living(Encounter, Alive);
+					if (Alive.Num() > 0)
+					{
+						const AGBEnemyCharacter* Nearest = Alive[0];
+						for (const AGBEnemyCharacter* Enemy : Alive)
+						{
+							Nearest = FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation()) < FVector::Dist(Nearest->GetActorLocation(), Player->GetActorLocation()) ? Enemy : Nearest;
+						}
+						FNavLocation Projected;
+						UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+						const FVector Toward = FootOf(Nearest) + (Player->GetActorLocation() - Nearest->GetActorLocation()).GetSafeNormal2D() * 500.f;
+						if (Nav && Nav->ProjectPointToNavigation(Toward, Projected, FVector(150.f, 150.f, 250.f)))
+						{
+							E3BTeleport(Player, Projected.Location, false);
+							Face(Player, Nearest->GetActorLocation());
+							UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: no attack in 6 s with the player outside the zone: he steps in, 5 m from %s"), *IdOf(Encounter), *Nearest->GetEnemyId().ToString());
+						}
+					}
+				}
+				if (!bShot && T - AwareAt > 4.0)
+				{
+					bShot = true;
+					TArray<AGBEnemyCharacter*> Alive;
+					Living(Encounter, Alive);
+					if (Alive.Num() > 0)
+					{
+						FVector Look = FVector::ZeroVector;
+						for (const AGBEnemyCharacter* Enemy : Alive)
+						{
+							Look += Enemy->GetActorLocation();
+						}
+						Face(Player, Look / static_cast<float>(Alive.Num()));
+					}
+					Shot(*FString::Printf(TEXT("castlevisit_%s_fight"), *IdOf(Encounter)));
+				}
+				const bool bValkDone = !Valk.IsValid() || ValkCombos > 0 || ValkJudgements > 0;
+				// The ranged need time to reach a position and peek: with archers or shamans alive, the fight goes on until one has
+				// loosed a projectile (or 18 s).
+				const bool bRangedDone = TotalProjectiles() > 0 || !HasLivingRanged(Encounter) || T - AwareAt > 18.0;
+				if ((FirstAttackAt >= 0.0 && T - AwareAt > 8.0 && bValkDone && bRangedDone) || InPhase > (Valk.IsValid() ? 30.0 : 24.0))
+				{
+					if (FirstAttackAt < 0.0)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: noticed, but the squad never attacked in %.0f s"), *IdOf(Encounter), InPhase);
+					}
+					SetPhase(World, EPhase::Kill);
+				}
+				break;
+			}
+
+			case EPhase::Kill:
+				if (Encounter)
+				{
+					KillWave(Player, Encounter);
+				}
+				SetPhase(World, EPhase::NextWave);
+				break;
+
+			case EPhase::NextWave:
+			{
+				if (!Encounter || Encounter->GetState() == EGBEncounterState::Cleared)
+				{
+					SetPhase(World, EPhase::Finish);
+					break;
+				}
+				TArray<AGBEnemyCharacter*> Alive;
+				Living(Encounter, Alive);
+				if (Encounter->GetCurrentWave() > LastWave && Alive.Num() > 0)
+				{
+					LastWave = Encounter->GetCurrentWave();
+					++WavesSeen;
+					WaveStartAt = T;
+					WaveAttackBase = TotalAttacks() + Hits;
+					WaveProjBase = TotalProjectiles();
+					bWaveEngaged = false;
+					bWaveFloorChecked = false;
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: wave %d of %d came: %d enemies, %d in the player's view, wait ran out=%d"), *IdOf(Encounter), LastWave + 1, Encounter->GetNumWaves(),
+						Alive.Num(), Encounter->GetLastReinforceVisible(), Encounter->DidLastReinforceWaitRunOut() ? 1 : 0);
+					SetPhase(World, EPhase::WaveFight);
+				}
+				else if (Alive.Num() > 0 && Encounter->GetCurrentWave() == LastWave && InPhase > 1.0)
+				{
+					SetPhase(World, EPhase::Kill);   // a straggler of this wave (spawned late): kill it too
+				}
+				else if (InPhase > 25.0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: wave %d of %d killed, the next never came in 25 s (state %d)"), *IdOf(Encounter), LastWave + 1, Encounter->GetNumWaves(),
+						static_cast<int32>(Encounter->GetState()));
+					SetPhase(World, EPhase::Finish);
+				}
+				break;
+			}
+
+			case EPhase::WaveFight:
+			{
+				TArray<AGBEnemyCharacter*> Alive;
+				Living(Encounter, Alive);
+				if (Alive.Num() > 0)
+				{
+					FVector Look = FVector::ZeroVector;
+					for (const AGBEnemyCharacter* Enemy : Alive)
+					{
+						Look += Enemy->GetActorLocation();
+					}
+					Face(Player, Look / static_cast<float>(Alive.Num()));
+				}
+				// A second after it came (a fresh spawn may still settle): every one of the wave on the floor, in the zone.
+				if (!bWaveFloorChecked && T - WaveStartAt >= 1.0)
+				{
+					bWaveFloorChecked = true;
+					const FBox Zone = Encounter->GetZone().ExpandBy(60.f);
+					for (const AGBEnemyCharacter* Enemy : Alive)
+					{
+						if (!OnFloor(World, Enemy) || !Zone.IsInside(Enemy->GetActorLocation()))
+						{
+							UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: wave %d's %s stands off the floor or outside the zone a second after it came: %s"), *IdOf(Encounter), LastWave + 1,
+								*Enemy->GetEnemyId().ToString(), *WhyOffFloor(World, Encounter, Enemy));
+						}
+					}
+				}
+				if (!bWaveEngaged && TotalAttacks() + Hits > WaveAttackBase)
+				{
+					bWaveEngaged = true;
+					++WavesEngaged;
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: wave %d engaged %.1f s after it came"), *IdOf(Encounter), LastWave + 1, T - WaveStartAt);
+				}
+				if (bWaveEngaged && bWaveFloorChecked)
+				{
+					// Its archers and shamans get their chance too (up to 14 s after the wave came).
+					if (TotalProjectiles() > WaveProjBase || !HasLivingRanged(Encounter) || T - WaveStartAt > 14.0)
+					{
+						SetPhase(World, EPhase::Kill);
+					}
+				}
+				else if (InPhase > 16.0 || Alive.Num() == 0)
+				{
+					FString Where;
+					for (const AGBEnemyCharacter* Enemy : Alive)
+					{
+						Where += FString::Printf(TEXT(" %s(%.0f cm, aware=%d)"), *Enemy->GetEnemyId().ToString(), FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation()), Enemy->IsAware() ? 1 : 0);
+					}
+					UE_LOG(LogGB, Warning, TEXT("SMOKE CastleVisit %s: wave %d did not attack within 16 s:%s"), *IdOf(Encounter), LastWave + 1, *Where);
+					SetPhase(World, EPhase::Kill);
+				}
+				break;
+			}
+
+			case EPhase::Finish:
+				FinishEncounter(World);
+				break;
+
+			case EPhase::Done:
+				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit: visited %d encounters in %.0f s"), Encounters.Num(), T - BlockStart);
+				Stop();
+				return false;
+			}
+			return true;
+		}
+
+		static void Start(UWorld* World, AGBPlayerCharacter* Player)
+		{
+			if (!World || !World->GetMapName().Contains(TEXT("PastCastle")))
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit skipped: it needs -Map /Game/Glyphbound/Maps/PastCastle"));
+				return;
+			}
+			Encounters.Reset();
+			Pre.Reset();
+			for (const TCHAR* Id : Order)
+			{
+				for (TActorIterator<AGBEncounter> It(World); It; ++It)
+				{
+					if (It->EncounterId == FName(Id))
+					{
+						Encounters.Add(*It);
+					}
+				}
+			}
+			for (TActorIterator<AGBEncounter> It(World); It; ++It)
+			{
+				if (!Encounters.Contains(TWeakObjectPtr<AGBEncounter>(*It)))
+				{
+					Encounters.Add(*It);
+				}
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit: %d encounters in the map"), Encounters.Num());
+			for (const TCHAR* Id : Order)
+			{
+				if (!Encounters.ContainsByPredicate([Id](const TWeakObjectPtr<AGBEncounter>& E) { return E.IsValid() && E->EncounterId == FName(Id); }))
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit FAILED: the encounter %s is not in the map"), Id);
+				}
+			}
+			ParkSpot = Player->GetActorLocation() + FVector(0.f, 0.f, 20000.f);
+			E3BTeleport(Player, ParkSpot, true);
+			UGBSquadSubsystem::bLogTactics = true;
+			Player->GetAttributes()->SetInvulnerable(false);
+			BlockStart = World->GetTimeSeconds();
+			// Freeze at THIS step's time (a long first frame may have put the clock past the done step already).
+			FrozenElapsed = Steps.IsValidIndex(NextStep - 1) ? Steps[NextStep - 1].Time : FPlatformTime::Seconds() - StartSeconds;
+			StartSeconds = FPlatformTime::Seconds() - FrozenElapsed;
+			HoldElapsed = FrozenElapsed;
+			bHoldClock = true;   // the step after this block waits until the visit is over
+			Index = -1;
+			SetPhase(World, EPhase::Park);
+			UGBCombatLibrary::OnDamageDealt().Remove(HitHandle);
+			HitHandle = UGBCombatLibrary::OnDamageDealt().AddLambda([](AActor* Target, const FGBDamageInfo& Info, float Dealt)
+			{
+				AActor* Attacker = Info.Instigator ? Info.Instigator.Get() : Info.Causer.Get();
+				if (Dealt > 0.f && Attacker && Cast<AGBPlayerCharacter>(Target) && Members.Contains(TWeakObjectPtr<AActor>(Attacker)))
+				{
+					++Hits;
+				}
+			});
+			FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+			Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick));
 		}
 	}
 
@@ -7518,7 +8596,7 @@ namespace GBSmokeRun
 			// The boxes cut the navmesh first (the squad plans its cover on it): the spawn waits for the build, at most 4 s.
 			Add(CS + 3.5f, TEXT("Castle: spawn one of each castle enemy"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleSpawn(World, Player); });
 			Add(CS + 9.f, TEXT("Castle: group screenshot"), [](UWorld*, AGBPlayerCharacter* Player) { E3DLookAtGroup(Player); Shot(TEXT("castle_group")); });
-			Add(CS + 21.f, TEXT("Castle: check"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleCheck(World, Player); });
+			Add(CS + 21.f, TEXT("Castle: check"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleCheck(World, Player); }, 16.5f);
 			Add(CS + 21.2f, TEXT("Castle: fight screenshot"), [](UWorld*, AGBPlayerCharacter* Player) { E3DLookAtGroup(Player); Shot(TEXT("castle_fight")); });
 			Add(CS + 21.5f, TEXT("Castle: fly up"), [](UWorld*, AGBPlayerCharacter* Player) { E3TTop(Player); });
 			Add(CS + 22.2f, TEXT("Castle: top screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_top")); });
@@ -7645,6 +8723,17 @@ namespace GBSmokeRun
 				}
 			});
 		}
+		// ---- CastleVisit block (gb.Smoke CastleVisit -Map /Game/Glyphbound/Maps/PastCastle): a state machine, see CastleVisit. It holds
+		// the smoke clock while it runs, so its done step comes when the visit is over. On any other map it is skipped.
+		Add(CS + 50.6f, TEXT("CastleVisit: the castle's encounters as placed (skipped on any other map)"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleVisit::Start(World, Player); });
+		Add(CS + 50.8f, TEXT("CastleVisit: done"), [](UWorld* World, AGBPlayerCharacter*)
+		{
+			if (bFilteredRun && World && World->GetMapName().Contains(TEXT("PastCastle")))
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+				FPlatformMisc::RequestExit(false);
+			}
+		});
 		// ---- Seal block (gb.Smoke seal): a state machine, see SealRun.
 		// It quits the run itself when done; the quit step below is only a far safety net.
 		const float Z = CS + 51.f;
@@ -8117,6 +9206,8 @@ namespace GBSmokeRun
 				FPlatformMisc::RequestExit(false);
 			}
 		});
+		// FogVisit: a state machine on its own ticker that quits the run itself (only in a run filtered on FogVisit; see FogVisitRun).
+		Add(FogT + 14.f, TEXT("FogVisit: the tunnel smoke on a real map, lit, injected, shot, timed"), FogVisitRun::Begin);
 		Add(FogT + 15.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
@@ -8131,6 +9222,10 @@ namespace GBSmokeRun
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE aborted: the world went away"));
 			return false;
+		}
+		if (bHoldClock)
+		{
+			StartSeconds = FPlatformTime::Seconds() - HoldElapsed;
 		}
 		// Read the clock again for every step: a step may wind StartSeconds back (the reload steps stretch the run).
 		while (NextStep < Steps.Num() && Steps[NextStep].Time <= static_cast<float>(FPlatformTime::Seconds() - StartSeconds))
@@ -8167,6 +9262,7 @@ namespace GBSmokeRun
 			// Filtered run (gb.Smoke Entity): only the steps whose name starts with the argument, plus the quit step, from 1 s on.
 			const FString Prefix = Args[0];
 			bFilteredRun = true;
+			FogVisitRun::bActive = Prefix.StartsWith(TEXT("FogVisit"), ESearchCase::IgnoreCase);
 			Steps.RemoveAll([&Prefix](const FStep& Step) { return !FString(Step.Name).StartsWith(Prefix, ESearchCase::IgnoreCase) && FCString::Strcmp(Step.Name, TEXT("quit")) != 0; });
 			if (Steps.Num() <= 1)
 			{
@@ -8180,6 +9276,11 @@ namespace GBSmokeRun
 			for (FStep& Step : Steps)
 			{
 				Step.Time -= FirstTime - 1.f;
+				// A FogVisit run quits by itself when its state machine is done; the quit step is only a far safety net.
+				if (FogVisitRun::bActive && FCString::Strcmp(Step.Name, TEXT("quit")) == 0)
+				{
+					Step.Time = 100000.f;
+				}
 			}
 		}
 		NextStep = 0;
