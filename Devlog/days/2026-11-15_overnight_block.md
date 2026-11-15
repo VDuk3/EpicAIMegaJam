@@ -264,3 +264,4 @@ smoke runs between attempts); the map notes stayed in this chat and were prepare
   rounding makes it 10% larger at 1080p; kept for a clean pixel grid).
 - Sol 6.1 on the HUD and data change: no bugs besides that rounding note.
 - Capture: `Devlog/media/2026-11-15_staff_no_hands.png` (packaged smoke: the basic staff at rest and during a cast, no hands). Verify-Jam green: suite 73, package 934 MB, packaged full smoke 0 errors.
+- Checked in the packaged game (gb.Smoke tour on PastCastle, green, `Devlog/media/2026-11-15_castle_entrance_moon_campfire.png`): the pixel campfire burns in the ward and lights the cobbles; the moon is a small disc with a short glow; the leaded windows show on the keep.
