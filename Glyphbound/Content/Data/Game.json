@@ -207,12 +207,12 @@
 		"FluidFog.ActiveRange": 3000,
 		"FluidFog.WarmupSeconds": 2,
 		"FluidFog.PlayerRadius": 45,
-		"FluidFog.ShotRadius": 12,
+		"FluidFog.ShotRadius": 35,
 		"FluidFog.ShotPush": 1500,
 		"FluidFog.ShotSpacing": 40,
-		"FluidFog.ShotFrames": 3,
+		"FluidFog.ShotFrames": 8,
 		"FluidFog.PuffPush": 500,
-		"FluidFog.PuffRadius": 40,
+		"FluidFog.PuffRadius": 70,
 		"FluidFog.ProjectileRadius": 25,
 		"FluidFog.BlastPush": 1200,
 		"FluidFog.BlastRadius": 90,
@@ -220,7 +220,7 @@
 		"FluidFog.MaxEntries": 64,
 		"FluidFog.GridCornered": 0,
 		"FluidFog.FillDensity": 0.7,
-		"FluidFog.PushDivergence": 1
+		"FluidFog.PushDivergence": 4
 	},
 	"Strings": {
 		"ElementalDefault.FireStatusReaction": "Ignite",

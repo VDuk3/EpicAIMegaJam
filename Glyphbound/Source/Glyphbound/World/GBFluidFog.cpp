@@ -433,8 +433,10 @@ int32 AGBFluidFog::WriteChannels(const TArray<FEntry>& Collision, const TArray<F
 				Writer.WriteDensity(Index, 0.f);
 				Writer.WriteTemperature(Index, 0.f);
 				Writer.WriteColor(Index, FLinearColor::Black);
-				// Bodies push the gas out of their sphere; puffs and blasts burst outwards.
-				Writer.WriteDivergence(Index, PushDivergence);
+				// A moving body pushes the gas out of its sphere in proportion to its speed (one standing still displaces nothing:
+				// a constant divergence blew the whole box full); shots, puffs and blasts burst outwards at full strength.
+				const float Push = bBody ? FMath::Clamp(float(Entry.Velocity.Size()) / 600.f, 0.f, 1.f) : 1.f;
+				Writer.WriteDivergence(Index, PushDivergence * Push);
 				Written += (bPlaced && bPushed) ? 1 : 0;
 			}
 		}
