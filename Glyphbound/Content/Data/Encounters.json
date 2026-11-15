@@ -1165,7 +1165,7 @@
 							"Behavior": "Patrol"
 						},
 						{
-							"EnemyId": "Orc_Future",
+							"EnemyId": "Orc_Future_GunCarrier",
 							"Count": 1,
 							"Behavior": "Guard"
 						},
@@ -1180,7 +1180,7 @@
 					"DelayBefore": 2,
 					"Spawns": [
 						{
-							"EnemyId": "Orc_Future_GunCarrier",
+							"EnemyId": "Orc_Future",
 							"Count": 1
 						},
 						{
@@ -1249,7 +1249,7 @@
 							"Behavior": "Patrol"
 						},
 						{
-							"EnemyId": "Robot_Future",
+							"EnemyId": "Robot_Future_RifleCarrier",
 							"Count": 1,
 							"Behavior": "Patrol"
 						},
