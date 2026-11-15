@@ -315,6 +315,16 @@ def do_valkyrie():
     write_report(d, {"textures": tex, "scale": s, "height_cm": 195, "bones": bones})
 
 
+# The final boss (the Entity's second phase, the plague reaper; owner OK 2026-11-15 at about 3.5 m). Tripo GLB with an
+# auto rig on the UE mannequin's bone names; the scythe is part of the body mesh (it rides the right hand's weights).
+def do_reaper():
+    d = out_dir("Reaper")
+    arm, body, tex, s, bones = humanoid(src("Enemies", "Reaper", "FinalBoss.glb"), "Reaper", 3.50, d, extra_root=True)
+    to_cm(arm, [body])
+    export_skeletal(arm, [body], os.path.join(d, "SK_Reaper.fbx"))
+    write_report(d, {"textures": tex, "scale": s, "height_cm": 350, "bones": bones})
+
+
 # ------------------------------------------------------------------------------------------------- drone
 def do_drone():
     d = out_dir("Drone")

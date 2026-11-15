@@ -28,12 +28,15 @@ RED = (1.0, -0.6, -0.6)
 # The orange light lines painted into the orc's undersuit (collar, elbows, knees, spine): linear (1, 0.09, 0.01) gives
 # 0.95 on this axis; skin, tusks and lips stay under 0.2.
 ORANGE = (1.0, -0.5, -1.0)
+# The final boss's green (scythe runes, belt chains, goggles, chest lines): green over red and blue.
+GREEN = (-0.7, 1.0, -0.7)
 # per asset: material instances {MI name: (glow axis, threshold, boost)}, which mesh gets which MI
 MATS = {
     "EnemyRifle": {"MI_EnemyRifle": (BLUE, 0.12, 6.0)},
     "Robot": {"MI_Robot": (BLUE, 0.15, 4.0)},
     "Orc": {"MI_Orc": (ORANGE, 0.35, 4.0)},
     "Valkyrie": {"MI_Valkyrie": (BLUE, 0.2, 3.0)},
+    "Reaper": {"MI_Reaper": (GREEN, 0.12, 5.0)},
     "ValkyrieSword": {"MI_ValkyrieSword": (BLUE, 0.15, 2.0)},
     "Drone": {"MI_Drone": (RED, 0.25, 2.0), "MI_Drone_Eye": (RED, 0.08, 12.0)},
     "Sentinel": {"MI_Sentinel": (BLUE, 0.12, 3.0), "MI_Sentinel_Core": (BLUE, 0.05, 10.0)},
