@@ -375,3 +375,8 @@ Frame time was not measured on both: the pack castle was not rebuilt to measure 
 - Nobody has walked it by hand yet; PIE is for people.
 
 **Tools used in this part:** Claude Code (Opus 5.5), Unreal Editor 5.9 Python over MCP, Node.js; no image or 3D model generator; no third-party asset.
+
+### The package
+- `Package-Jam.ps1`: `BUILD SUCCESSFUL` (BuildCookRun 106 s). `TeamTBD_Glyphbound.zip` **2,024.9 MB** (was 2,628.8 MB): still over the jam's 1 GB; the rest is mostly the future base's kits.
+- **The castle pack in the cook: 84 MB, was 1,172 MB.** What is left is not the castle's: the future base's map (`FutureBase.umap`) uses two pieces of the pack's rubble (`SM_Rubble_02`, `SM_PillarTop_Broken`) and their wood and stone textures. Replacing those two in the base takes the pack out of the package.
+- On the package: `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 42 spots, 0 without floor`, the seal's map can be opened, no LogGB warnings or errors, **0 engine errors**, 154 s.
