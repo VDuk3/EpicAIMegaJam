@@ -315,7 +315,9 @@ def place_level(stage, folder, name, to, yaw=0.0, drop=None, keep=None, inside=N
 # ---------------------------------------------------------------------------------------------------------------
 # The castle at night under a full moon (owner, 2026-11-15: "Haz que sea noche de luna llena en el mapa de castillo
 # medieval y cubre de niebla impenetrable los alrededores"). Provisional values, tuned on the tour's pictures.
-MOON = dict(pitch=-27.0, yaw=200.0, lux=0.9, color=(165, 185, 255), disk_deg=2.2)   # seen above the keep from the road
+# owner 2026-11-15: "La luna parece un sol. Menos halo de luz": a smaller disc (0.9 deg; the real moon is 0.5), its colour
+# scale 4 instead of 12, a third of the sky's Mie haze and a gentler bloom.
+MOON = dict(pitch=-27.0, yaw=200.0, lux=0.9, color=(165, 185, 255), disk_deg=0.9, disk_scale=4.0, mie=0.35, bloom=0.2)   # seen above the keep from the road
 NIGHT_EXPOSURE = dict(bias=-1.0, min=-0.5, max=1.5)        # the eye adapts to the moonlight (min 0.3 left the halls black)
 # The fog: a bank of curtains around the site, beyond what the player can reach; invisible walls stop the player a few
 # metres into its edge. SITE = the open ground inside the bank (x0, x1, y0, y1). (The engine's local fog volumes were
@@ -337,11 +339,18 @@ async def stage_world():
     c.set_editor_property('atmosphere_sun_light', True)          # the sky atmosphere draws its disc: the moon
     c.set_editor_property('light_source_angle', MOON['disk_deg'])
     try:
-        c.set_editor_property('atmosphere_sun_disk_color_scale', unreal.LinearColor(12.0, 12.0, 12.0, 1.0))
+        k = MOON['disk_scale']
+        c.set_editor_property('atmosphere_sun_disk_color_scale', unreal.LinearColor(k, k, k, 1.0))
     except Exception as e:
         log.append('moon disc colour scale not set: %s' % e)
     tag(moon, s, 'Light')
-    tag(eas.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 3000), rot()), s, 'Light')
+    sa = eas.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 3000), rot())
+    try:
+        sac = sa.get_component_by_class(unreal.SkyAtmosphereComponent)
+        sac.set_editor_property('mie_scattering_scale', sac.get_editor_property('mie_scattering_scale') * MOON['mie'])
+    except Exception as e:
+        log.append('sky Mie not set: %s' % e)
+    tag(sa, s, 'Light')
     hf = eas.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 0), rot())
     fc = hf.get_component_by_class(unreal.ExponentialHeightFogComponent)
     fc.set_editor_property('fog_density', 0.035)
@@ -359,7 +368,7 @@ async def stage_world():
     # Moonlight outside, firelight inside: the eye adapts, within limits, so the ward stays a night and a hall is never black.
     for name, value in (('auto_exposure_method', unreal.AutoExposureMethod.AEM_HISTOGRAM), ('auto_exposure_bias', NIGHT_EXPOSURE['bias']),
                         ('auto_exposure_min_brightness', NIGHT_EXPOSURE['min']), ('auto_exposure_max_brightness', NIGHT_EXPOSURE['max']),
-                        ('auto_exposure_speed_up', 2.0), ('auto_exposure_speed_down', 1.5), ('bloom_intensity', 0.4)):
+                        ('auto_exposure_speed_up', 2.0), ('auto_exposure_speed_down', 1.5), ('bloom_intensity', MOON['bloom'])):
         st.set_editor_property('override_' + name, True)
         st.set_editor_property(name, value)
     ppv.set_editor_property('settings', st)
@@ -545,6 +554,11 @@ async def stage_walls():
     # The front wall, either side of the gatehouse: 3 pieces from inside its round towers to the corner tower's face.
     n += wall_run(s, FRONT_X, -2440.0, FRONT_X, -1240.0, (-1, 0))
     n += wall_run(s, FRONT_X, 1240.0, FRONT_X, 2440.0, (-1, 0))
+    # owner 2026-11-15: "en la entrada, cierra bien la muralla con la torre. De ambos lados": the front wall ends against the
+    # gatehouse's side wall and a thin slit of sky showed between them, up at the crenels. A stone column the wall's whole
+    # thickness and height closes each joint (60 cm wide, half in the wall's end, half in the gatehouse's side).
+    for y0 in (1210.0, -1270.0):
+        stone_block(s, FRONT_X - 215.0, y0, 0.0, 430.0, 60.0, 1375.0)
     # The author's wall tower at each front corner and at the keep's end of each side wall. The keep-end towers stand
     # against the wings' front wall, not in it (they stood 3.5 m inside: a piece of the King's Hall's wall, window and
     # all, filled the tower's room). A tower's floor is at its own height 1000 (measured with a trace: the architect
@@ -712,6 +726,8 @@ async def stage_crypt():
     log.append('crypt: stair of four flights from the Main Hall, three cells, the seal\'s hall at Z %d' % CRYPT_Z)
 
 
+GLASS = dict(stained_w=100.0, stained_h=190.0, stained_z=2300.0)   # a pane this wide and tall, this high: stained glass
+GLASS.update(CFG.get('glass', {}))
 WINDOW_KEY = 'CastleTower_Window_A_'     # the pack's walls with a window and their pixel twins (SM_Px_...)
 _wall_axes = {}
 
@@ -771,11 +787,16 @@ async def stage_windows():
              and a.static_mesh_component.static_mesh and WINDOW_KEY in a.static_mesh_component.static_mesh.get_name()]
     panes = 0
     open_walls = 0
+    kinds = {'bare': 0, 'leaded': 0, 'stained': 0}
+    sizes = []
     for k, a in enumerate(walls):
         cells, at, (u0, n0, n1, step) = window_cells(a, world)
         if not cells:
             continue
         open_walls += 1
+        folder = str(a.get_folder_path())
+        ang = math.degrees(wall_axes(a.static_mesh_component.static_mesh)[2]) % 90.0
+        tower = 'Tower' in folder or 20.0 < ang < 70.0          # the towers' pieces run at 45 degrees
         todo = set(cells)
         while todo:                                   # one pane per opening (cells that touch)
             group, stack = [], [todo.pop()]
@@ -799,9 +820,19 @@ async def stage_windows():
             bc = b.static_mesh_component
             bc.set_mobility(unreal.ComponentMobility.STATIC)
             bc.set_collision_profile_name('BlockAll')
-            bc.set_visibility(False)
             bc.set_editor_property('cast_shadow', False)
-            b.set_actor_hidden_in_game(True)
+            # Owner, 2026-11-15: no bare holes in the walls except in the towers: a pixel pane of leaded glass, and
+            # stained glass in the big windows high up the keep.
+            w, h = ub - ua, zb - za
+            if tower or not pixel(s):
+                bc.set_visibility(False)
+                b.set_actor_hidden_in_game(True)
+                kinds['bare'] += 1
+            else:
+                big = w >= GLASS['stained_w'] and h >= GLASS['stained_h'] and pc.z >= GLASS['stained_z']
+                bc.set_material(0, asset(PX + ('MI_Px_glass_stained' if big else 'MI_Px_glass_leaded')))
+                kinds['stained' if big else 'leaded'] += 1
+            sizes.append((round(w), round(h), round(pc.z), tower))
             tag(b, s, 'Panes')
             panes += 1
         if k % 40 == 0:
@@ -811,8 +842,10 @@ async def stage_windows():
     for a in walls:
         cells, _, _ = window_cells(a, world)
         still += 1 if cells else 0
-    log.append('windows: %d wall pieces with a window, %d had an opening a line could cross, %d unseen panes set; still open after that: %d'
-               % (len(walls), open_walls, panes, still))
+    log.append('windows: %d wall pieces with a window, %d had an opening a line could cross, %d panes set (%s); still open after that: %d'
+               % (len(walls), open_walls, panes, kinds, still))
+    big = sorted(set(sz for sz in sizes if not sz[3]), key=lambda t: -t[0] * t[1])[:12]
+    log.append('windows: the largest glazed openings (w, h, z): %s' % [sz[:3] for sz in big])
 
 
 KEG = PROPS + 'SM_Large_Keg'            # 1.13 x 1.33 m, 1.27 m high: low cover, and a step
@@ -847,8 +880,16 @@ async def stage_camp():
     # The orcs' camp in the lower ward: a fire in the middle, their stores stacked as barricades between it and the
     # gate and across the way to the stair, a cart left where it was unloaded. No line runs clear from gate to stair.
     mesh(s, 'Camp', PROPS + 'SM_FirePit_01', (1400.0, 0.0, 0.0), scale=(1.6, 1.6, 1.6))
-    fire = point_light(s, 'Camp', (1400.0, 0.0, 90.0), (255, 150, 70), 60.0, 1900.0, shadow=True)   # (a quarter for the night: at 260 cd the eye, adapted to the dark, saw the paving white)
-    fire.light_component.set_editor_property('light_function_material', asset('/Game/Glyphbound/Materials/M_GB_LightFlicker'))
+    # owner 2026-11-15: "Reemplaza la luz de la entrada por una fogata de niagara fluids vuelta pixel art con el plugin":
+    # the bare point light is gone; the fire is the baked Niagara Fluids fire (Content/Data/Vfx/FluidFire, made by the
+    # GBPixelVfx plugin) on an AGBTorch with no holder, about 1.6 m tall, whose own light follows the flame.
+    camp = eas.spawn_actor_from_class(unreal.GBTorch, unreal.Vector(1400.0, 0.0, 20.0), rot())
+    camp.get_editor_property('holder').set_static_mesh(None)
+    camp.set_editor_property('clip_id', 'FluidFire')
+    camp.set_editor_property('flame_size', 0.5)
+    camp.set_editor_property('light_scale', 1.0)
+    camp.set_editor_property('light_casts_shadows', True)
+    tag(camp, s, 'Camp')
     barricade(s, 820.0, -1340.0, 0.0, 'KKCK')
     barricade(s, 1880.0, 780.0, 90.0, 'KBKK')
     barricade(s, 640.0, 1040.0, 0.0, 'CKB')
@@ -1107,6 +1148,10 @@ for name, fn in ALL:
     await asyncio.sleep(0)
 enable_collision()
 await asyncio.sleep(0.5)
+if not STAGES or 'keep' in STAGES:
+    # owner, 2026-11-15: no step between the halls' plank floors (castle_floor_level.py)
+    exec(open('C:/GameJam/Tools/Jam/castle_floor_level.py').read())
+    log.append(level_floors())
 if not STAGES or 'windows' in STAGES:
     clear('windows')            # after the collision flags: before them a wall piece blocks nothing
     await stage_windows()
