@@ -2,6 +2,7 @@
 
 #include "Combat/GBCombatLibrary.h"
 #include "Components/PointLightComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMesh.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -289,8 +290,33 @@ void AGBSword::Tick(float DeltaSeconds)
 				Light->SetAttenuationRadius(350.f);
 				Light->SetLightColor(GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement)));
 				const float Time = GetWorld() ? (float)GetWorld()->GetTimeSeconds() : 0.f;
-				Light->SetIntensity(10.f * (0.9f + 0.1f * FMath::Sin(Time * 9.f)));
+				Light->SetIntensity(4.f * (0.9f + 0.1f * FMath::Sin(Time * 9.f)));
 			}
+		}
+
+		// The katana itself glows, evenly over the whole model (owner: a light only lit things around it and read as a
+		// bulb): an additive emissive overlay in the enchant's color, stronger at the silhouette, with a soft pulse.
+		UMaterialInstanceDynamic* Glow = Cast<UMaterialInstanceDynamic>(Grip->GetOverlayMaterial());
+		if (bEnchanted)
+		{
+			if (!Glow)
+			{
+				if (UMaterialInterface* GlowBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Weapons/Katana/M_KatanaEnchantGlow.M_KatanaEnchantGlow"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+				{
+					Glow = UMaterialInstanceDynamic::Create(GlowBase, this);
+					Grip->SetOverlayMaterial(Glow);
+				}
+			}
+			if (Glow)
+			{
+				const float Time = GetWorld() ? (float)GetWorld()->GetTimeSeconds() : 0.f;
+				Glow->SetVectorParameterValue(TEXT("Color"), GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement)));
+				Glow->SetScalarParameterValue(TEXT("Intensity"), 3.f * (0.85f + 0.15f * FMath::Sin(Time * 6.f)));
+			}
+		}
+		else if (Glow)
+		{
+			Grip->SetOverlayMaterial(nullptr);
 		}
 		Super::Tick(DeltaSeconds);
 		return;
