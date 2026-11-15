@@ -1129,8 +1129,9 @@
 			]
 		},
 		{
-			"Comment": "The final fight (owner 2026-11-15): the plague reaper alone (Entity_Phase2); the machine (Entity_Phase1) is not in it.",
+			"Comment": "The final fight (owner 2026-11-15): the plague reaper alone (Entity_Phase2); the machine (Entity_Phase1) is not in it. Prespawned: she waits in the centre of the arena and the fight starts when the player comes near (owner).",
 			"Id": "Entity",
+			"Prespawn": true,
 			"Waves": [
 				{
 					"DelayBefore": 1,

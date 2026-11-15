@@ -226,7 +226,7 @@
 		"ElementalDefault.FireStatusReaction": "Ignite",
 		"ElementalDefault.LightningStatusReaction": "Stun",
 		"ElementalDefault.IceStatusReaction": "Freeze",
-		"EntityMapPath": "",
+		"EntityMapPath": "/Game/Glyphbound/Maps/EntityArena",
 		"FluidFog.System": "/Game/Glyphbound/FX/NS_TunnelFog.NS_TunnelFog"
 	}
 }
