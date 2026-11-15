@@ -49,21 +49,21 @@ Limits of the count:
 - The skill menu shows a "+1 skill point" test button with no build check, so in the current build the
   player can add unlimited points. It should be hidden in the shipped build.
 
-## Spendable: 114 points (every skill at max rank)
+## Spendable: 124 points (every skill at max rank)
 
-All 32 skills have 3 ranks.
+All 36 skills have 3 ranks, except the four potion perks (1 rank each).
 
 | Tree / branch | Skills | Points to max |
 |---|---|---|
-| Spell (incl. the new Vitality 6 and Deep Reserves 6) | 14 | 54 |
+| Spell (incl. Vitality 6, Deep Reserves 6, Potent Remedy 2, Potent Elixir 2, Emergency Draught 3, Emergency Focus 3) | 18 | 64 |
 | Weapon core | 4 | 18 |
 | Weapon / Pistol | 4 | 12 |
 | Weapon / Rifle | 5 | 15 |
 | Weapon / Shotgun | 5 | 15 |
-| **Total** | **32** | **114** |
+| **Total** | **36** | **124** |
 
 ## Verdict
 
-Earnable 43 vs spendable 114: the player can buy a bit over a third of the tree (71 points short) and
-must choose. Maxing both new perks alone costs 12 of the 43 points. The free reset button lets the player
+Earnable 43 vs spendable 124: the player can buy about a third of the tree (81 points short) and
+must choose. The six health / mana perks together cost 22 of the 43 points. The free reset button lets the player
 re-spend everything at any time.

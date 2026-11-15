@@ -382,8 +382,52 @@
 			"Cost": 2,
 			"MaxRank": 3,
 			"ModifiersPerRank": [ { "Stat": "MaxMana", "Op": "Multiply", "Value": 1.3333334 } ],
+			"Column": 5,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_HealthPotionPower",
+			"Tree": "Spell",
+			"DisplayName": "Potent Remedy",
+			"Description": "Health potions restore 50% more health.",
+			"Cost": 2,
+			"MaxRank": 1,
+			"ModifiersPerRank": [ { "Stat": "HealthPotionTaken", "Op": "Multiply", "Value": 1.5 } ],
 			"Column": 4,
 			"Row": 1
+		},
+		{
+			"Id": "Spell_AutoHealthPotion",
+			"Tree": "Spell",
+			"DisplayName": "Emergency Draught",
+			"Description": "Below 33% health, you drink a health potion by yourself (if you carry one).",
+			"Cost": 3,
+			"MaxRank": 1,
+			"ModifiersPerRank": [ { "Stat": "AutoHealthPotion", "Op": "Add", "Value": 1 } ],
+			"Column": 4,
+			"Row": 2
+		},
+		{
+			"Id": "Spell_ManaPotionPower",
+			"Tree": "Spell",
+			"DisplayName": "Potent Elixir",
+			"Description": "Mana potions restore 50% more mana.",
+			"Cost": 2,
+			"MaxRank": 1,
+			"ModifiersPerRank": [ { "Stat": "ManaPotionTaken", "Op": "Multiply", "Value": 1.5 } ],
+			"Column": 5,
+			"Row": 1
+		},
+		{
+			"Id": "Spell_AutoManaPotion",
+			"Tree": "Spell",
+			"DisplayName": "Emergency Focus",
+			"Description": "Below 33% mana, you drink a mana potion by yourself (if you carry one).",
+			"Cost": 3,
+			"MaxRank": 1,
+			"ModifiersPerRank": [ { "Stat": "AutoManaPotion", "Op": "Add", "Value": 1 } ],
+			"Column": 5,
+			"Row": 2
 		}
 	]
 }

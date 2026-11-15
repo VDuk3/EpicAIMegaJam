@@ -13,6 +13,17 @@
 #include "Player/GBPlayerCharacter.h"
 #include "World/GBProgressSubsystem.h"
 #include "UI/GBHUD.h"
+#include "Stats/GBAttributeComponent.h"
+
+namespace GBInventoryLocal
+{
+	// Skill-perk stats (Skills.json, base 0) and the potions they drink.
+	const FName AutoHealthPotionStat(TEXT("AutoHealthPotion"));
+	const FName AutoManaPotionStat(TEXT("AutoManaPotion"));
+	const FName HealthPotionId(TEXT("HealthPotion"));
+	const FName ManaPotionId(TEXT("ManaPotion"));
+	constexpr float AutoPotionFraction = 0.33f;
+}
 
 namespace
 {
@@ -51,6 +62,38 @@ void UGBInventoryComponent::BeginPlay()
 	if (UGBDataSubsystem* Data = UGBDataSubsystem::Get(this))
 	{
 		DataReloadedHandle = Data->OnDataReloaded.AddUObject(this, &UGBInventoryComponent::HandleDataReloaded);
+	}
+
+	// Skill perks "Emergency Draught" / "Emergency Focus": below a third of the resource, drink a potion by
+	// itself. The perk sets the stat AutoHealthPotion / AutoManaPotion above 0. One potion at a time: none is
+	// drunk while the same potion is still working.
+	if (UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner()))
+	{
+		auto TryAutoPotion = [this](FName PerkStat, FName PotionId, float Value, float MaxValue)
+		{
+			const UGBStatsComponent* Stats = UGBStatsComponent::Find(GetOwner());
+			if (!Stats || Stats->GetStat(PerkStat, 0.f) <= 0.f || MaxValue <= 0.f || Value <= 0.f
+				|| Value >= MaxValue * GBInventoryLocal::AutoPotionFraction || !HasItem(PotionId))
+			{
+				return;
+			}
+			const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
+			const FGBItemDefinition* Def = Data ? Data->FindItem(PotionId) : nullptr;
+			const UGBStatusEffectComponent* Effects = UGBStatusEffectComponent::Find(GetOwner());
+			if (!Def || !Effects || Effects->HasEffect(Def->UseEffect))
+			{
+				return;
+			}
+			UseItem(PotionId);
+		};
+		Attributes->OnHealthChanged.AddWeakLambda(this, [TryAutoPotion](float Health, float MaxHealth)
+		{
+			TryAutoPotion(GBInventoryLocal::AutoHealthPotionStat, GBInventoryLocal::HealthPotionId, Health, MaxHealth);
+		});
+		Attributes->OnManaChanged.AddWeakLambda(this, [TryAutoPotion](float Mana, float MaxMana)
+		{
+			TryAutoPotion(GBInventoryLocal::AutoManaPotionStat, GBInventoryLocal::ManaPotionId, Mana, MaxMana);
+		});
 	}
 }
 
