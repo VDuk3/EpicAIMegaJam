@@ -1129,19 +1129,11 @@
 			]
 		},
 		{
+			"Comment": "The final fight (owner 2026-11-15): the plague reaper alone (Entity_Phase2); the machine (Entity_Phase1) is not in it.",
 			"Id": "Entity",
 			"Waves": [
 				{
-					"DelayBefore": 0,
-					"Spawns": [
-						{
-							"EnemyId": "Entity_Phase1",
-							"Count": 1
-						}
-					]
-				},
-				{
-					"DelayBefore": 3,
+					"DelayBefore": 1,
 					"Spawns": [
 						{
 							"EnemyId": "Entity_Phase2",

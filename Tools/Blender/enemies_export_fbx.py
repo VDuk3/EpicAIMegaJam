@@ -320,9 +320,67 @@ def do_valkyrie():
 def do_reaper():
     d = out_dir("Reaper")
     arm, body, tex, s, bones = humanoid(src("Enemies", "Reaper", "FinalBoss.glb"), "Reaper", 3.50, d, extra_root=True)
+    # The crescent blade starts at the staff's head and curves back over the shoulder, but the auto rig skinned it to
+    # clavicle_r / upperarm_r: it stayed on the back while the staff swung. Its thin islands (model's right side, mostly
+    # clavicle/upper arm weights) are skinned rigidly to hand_r, like the staff (reaper_blade_island.py found and checked them).
+    me = body.data
+    H = 3.50
+    names = {g.index: g.name for g in body.vertex_groups}
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    seen = [False] * len(bm.verts)
+    moved = 0
+    blade_pts = []
+    for v in bm.verts:
+        if seen[v.index]:
+            continue
+        st = [v]
+        seen[v.index] = True
+        isl = []
+        while st:
+            a = st.pop()
+            isl.append(a.index)
+            for e in a.link_edges:
+                b = e.other_vert(a)
+                if not seen[b.index]:
+                    seen[b.index] = True
+                    st.append(b)
+        if len(isl) >= 200:
+            continue
+        ps = [body.matrix_world @ me.vertices[i].co for i in isl]
+        if max(p.x for p in ps) >= -0.01 * H or (max(p.z for p in ps) - min(p.z for p in ps)) <= H * 0.1:
+            continue
+        acc = {}
+        for i in isl:
+            for g in me.vertices[i].groups:
+                acc[names[g.group]] = acc.get(names[g.group], 0.0) + g.weight
+        if not acc or max(acc, key=acc.get) not in ("clavicle_r", "upperarm_r"):
+            continue
+        for i in isl:
+            for g in list(me.vertices[i].groups):
+                body.vertex_groups[names[g.group]].remove([i])
+            body.vertex_groups["hand_r"].add([i], 1.0, "REPLACE")
+        moved += len(isl)
+        blade_pts += ps
+    bm.free()
+    print("REAPER blade vertices skinned to hand_r:", moved)
+    # sockets for the empowered-scythe VFX (metres, model frame, reference pose): the blade's root at the staff's head, the
+    # point of the crescent farthest from it, the crescent's outer middle, and the thorny grip band of the staff
+    base = max(blade_pts, key=lambda p: p.z)
+    tip = max(blade_pts, key=lambda p: (p - base).length)
+    mid = max(blade_pts, key=lambda p: min((p - base).length, (p - tip).length))
+    gi = body.vertex_groups["hand_r"].index
+    staff = [body.matrix_world @ v.co for v in me.vertices if any(g.group == gi and g.weight > 0.6 for g in v.groups)]
+    staff = [p for p in staff if p not in blade_pts]
+    zs = sorted(p.z for p in staff)
+    band = [p for p in staff if zs[len(zs) * 3 // 10] <= p.z <= zs[len(zs) * 6 // 10]]
+    grip = sum(band, Vector()) / max(len(band), 1)
+    sockets = {k: v3(p) for k, p in (("BladeBase", base), ("BladeMid", mid), ("BladeTip", tip), ("Grip", grip))}
+    print("REAPER sockets", sockets)
     to_cm(arm, [body])
     export_skeletal(arm, [body], os.path.join(d, "SK_Reaper.fbx"))
-    write_report(d, {"textures": tex, "scale": s, "height_cm": 350, "bones": bones})
+    write_report(d, {"textures": tex, "scale": s, "height_cm": 350, "bones": bones, "sockets_m": sockets})
 
 
 # ------------------------------------------------------------------------------------------------- drone
