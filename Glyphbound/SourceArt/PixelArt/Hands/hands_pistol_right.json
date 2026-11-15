@@ -12,8 +12,8 @@
                 },
     "sprites":  [
                     {
-                        "x":  99,
-                        "y":  68,
+                        "x":  101,
+                        "y":  71,
                         "rowsFile":  "hands_pistol_right.txt"
                     }
                 ]
