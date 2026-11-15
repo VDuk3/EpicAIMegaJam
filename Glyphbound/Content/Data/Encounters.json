@@ -167,17 +167,21 @@
 		},
 		{
 			"Id": "Opening_Future",
+			"Comment": "Owner 2026-11-15: the fight of the energy-gate room before the Valkyrie (the lab room). Prespawned; the Armored Orc on guard drops the shotgun. Then drones and orcs come in.",
+			"Prespawn": true,
 			"Waves": [
 				{
 					"DelayBefore": 0,
 					"Spawns": [
 						{
-							"EnemyId": "Orc_Future_GunCarrier",
-							"Count": 1
+							"EnemyId": "Orc_Future_ShotgunCarrier",
+							"Count": 1,
+							"Behavior": "Guard"
 						},
 						{
 							"EnemyId": "Orc_Future",
-							"Count": 3
+							"Count": 2,
+							"Behavior": "Patrol"
 						}
 					]
 				},
@@ -190,7 +194,7 @@
 						},
 						{
 							"EnemyId": "Orc_Future",
-							"Count": 3
+							"Count": 2
 						}
 					]
 				}
