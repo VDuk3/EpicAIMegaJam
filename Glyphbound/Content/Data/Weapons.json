@@ -18,10 +18,17 @@
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
 				"SpritePixelScale": 0.5,
-				"AllDamageBonus": 0.05
+				"AllDamageBonus": 0.05,
+				"LightIntensity": 6,
+				"LightRadius": 800,
+				"GlowPulsePeriod": 2.4,
+				"GlowMin": 0.05,
+				"GlowMax": 0.18
 			},
 			"Strings": {
 				"Sprite": "staff_basic",
+				"GlowSprite": "staff_basic_glow",
+				"LightColor": "#DDE4FF",
 				"ProjectileSprite": "bolt_arcane"
 			}
 		},
@@ -46,10 +53,17 @@
 				"SpritePixelScale": 0.5,
 				"ElementDamageBonus": 0.15,
 				"SplashRadius": 200,
-				"SplashDamageFraction": 0.4
+				"SplashDamageFraction": 0.4,
+				"LightIntensity": 6,
+				"LightRadius": 800,
+				"GlowPulsePeriod": 2.4,
+				"GlowMin": 0.06,
+				"GlowMax": 0.3
 			},
 			"Strings": {
 				"Sprite": "staff_fire",
+				"GlowSprite": "staff_fire_glow",
+				"LightColor": "#FF5A14",
 				"ProjectileSprite": "fireball"
 			}
 		},
@@ -72,11 +86,18 @@
 				"HeadshotMult": 1.5,
 				"SpritePixelScale": 0.5,
 				"IceBuildUp": 18,
-				"ElementDamageBonus": 0.15
+				"ElementDamageBonus": 0.15,
+				"LightIntensity": 6,
+				"LightRadius": 800,
+				"GlowPulsePeriod": 2.4,
+				"GlowMin": 0.06,
+				"GlowMax": 0.3
 			},
 			"Strings": {
 				"OnHitEffect": "FrostStaffChill",
 				"Sprite": "staff_ice",
+				"GlowSprite": "staff_ice_glow",
+				"LightColor": "#19E6FF",
 				"ProjectileSprite": "bolt_arcane"
 			}
 		},
@@ -101,10 +122,17 @@
 				"LightningBuildUp": 18,
 				"ElementDamageBonus": 0.15,
 				"SplashRadius": 200,
-				"SplashDamageFraction": 0.4
+				"SplashDamageFraction": 0.4,
+				"LightIntensity": 6,
+				"LightRadius": 800,
+				"GlowPulsePeriod": 2.4,
+				"GlowMin": 0.06,
+				"GlowMax": 0.3
 			},
 			"Strings": {
 				"Sprite": "staff_storm",
+				"GlowSprite": "staff_storm_glow",
+				"LightColor": "#B23EDB",
 				"ProjectileSprite": "lightning_bolt"
 			}
 		},

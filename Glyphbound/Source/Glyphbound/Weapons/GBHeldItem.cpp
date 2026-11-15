@@ -8,7 +8,77 @@
 #include "Player/GBPlayerCharacter.h"
 #include "Spells/GBSpellbookComponent.h"
 #include "Stats/GBStatsComponent.h"
+#include "UI/GBStaffView.h"
 #include "Weapons/GBEquipmentComponent.h"
+#include "Components/PointLightComponent.h"
+
+namespace GBHeldLight
+{
+	// Weapons.json: a faint torch-like light of the gem's colour while the staff is held (owner, 2026-11-15).
+	const FName LightColor(TEXT("LightColor"));          // Strings: "#RRGGBB"; missing = no light
+	const FName LightIntensity(TEXT("LightIntensity"));  // Stats: candelas at the pulse's middle
+	const FName LightRadius(TEXT("LightRadius"));        // Stats: attenuation radius, cm
+	const FName GlowPulsePeriod(TEXT("GlowPulsePeriod")); // Stats: seconds of one slow breath (the HUD gem glow uses the same)
+	/** The light sits this far from the camera, in the direction of the drawn staff's head. */
+	constexpr float HeadDistanceCm = 60.f;
+
+	/** 0..1 slow, slightly irregular breath; the HUD repeats this formula for the gem glow so both move together. */
+	float Pulse01(float Time, float Period)
+	{
+		const float Angle = 2.f * PI * Time / FMath::Max(0.5f, Period);
+		return FMath::Clamp(0.5f + 0.35f * FMath::Sin(Angle) + 0.15f * FMath::Sin(Angle * 2.7f + 1.3f), 0.f, 1.f);
+	}
+
+	/** Movable point light (dynamic: lit by Lumen / ray traced shadows), created the first time the staff is held. */
+	void Update(AGBHeldItem* Item)
+	{
+		const FGBWeaponDefinition* Def = Item->GetDefinition();
+		const FString* ColorHex = Def ? Def->Strings.Find(LightColor) : nullptr;
+		if (!ColorHex || ColorHex->IsEmpty())
+		{
+			return;
+		}
+		UPointLightComponent* Light = Item->FindComponentByClass<UPointLightComponent>();
+		if (!Light)
+		{
+			Light = NewObject<UPointLightComponent>(Item, TEXT("StaffLight"));
+			Light->SetMobility(EComponentMobility::Movable);
+			Light->SetUsingAbsoluteLocation(true);
+			Light->SetUsingAbsoluteRotation(true);
+			Light->SetupAttachment(Item->GetRootComponent());
+			Light->SetIntensityUnits(ELightUnits::Candelas);
+			Light->SetLightColor(FColor::FromHex(*ColorHex));
+			Light->SetAttenuationRadius(Item->GetStat(LightRadius, 800.f));
+			Light->SetSourceRadius(4.f);
+			Light->SetCastShadows(true);
+			Light->RegisterComponent();
+			Item->AddInstanceComponent(Light);
+		}
+
+		const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Item->GetOwner());
+		const bool bShow = Player && Item->IsEquipped();
+		if (Light->IsVisible() != bShow)
+		{
+			Light->SetVisibility(bShow);
+		}
+		if (!bShow)
+		{
+			return;
+		}
+
+		const FRotator AimRot = Player->GetAimDirection().Rotation();
+		FVector HeadDir;
+		if (!GBStaffView::GetHeadAimDir(HeadDir))
+		{
+			HeadDir = FVector(1.f, 0.35f, -0.2f); // lower right of the view, where the staff stands
+		}
+		Light->SetWorldLocation(Player->GetAimOrigin() + AimRot.RotateVector(HeadDir.GetSafeNormal()) * HeadDistanceCm);
+
+		const float Time = Item->GetWorld() ? (float)Item->GetWorld()->GetTimeSeconds() : 0.f;
+		const float Pulse = Pulse01(Time, Item->GetStat(GlowPulsePeriod, 2.4f));
+		Light->SetIntensity(Item->GetStat(LightIntensity, 6.f) * (0.8f + 0.4f * Pulse));
+	}
+}
 
 AGBHeldItem::AGBHeldItem()
 {
@@ -240,6 +310,7 @@ void AGBHeldItem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	UpdateTrigger();
+	GBHeldLight::Update(this);
 }
 
 FVector AGBHeldItem::FindAimPoint(float Range) const

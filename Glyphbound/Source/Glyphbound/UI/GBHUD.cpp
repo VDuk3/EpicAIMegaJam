@@ -656,6 +656,22 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 			Tile.BlendMode = SE_BLEND_Translucent;
 			Canvas->DrawItem(Tile);
 
+			// The gem breathes (owner, 2026-11-15): Strings["GlowSprite"] holds only the gem's pixels, added on top with a
+			// slow pulse. Same formula and period as the staff's light (GBHeldItem.cpp, GBHeldLight::Pulse01).
+			const FString* GlowSpriteId = WeaponDef ? WeaponDef->Strings.Find(TEXT("GlowSprite")) : nullptr;
+			UTexture2D* Glow = GlowSpriteId ? Sprites->GetSprite(FName(**GlowSpriteId)) : nullptr;
+			if (Glow)
+			{
+				const float Angle = 2.f * PI * Time / FMath::Max(0.5f, Item->GetStat(TEXT("GlowPulsePeriod"), 2.4f));
+				const float Pulse = FMath::Clamp(0.5f + 0.35f * FMath::Sin(Angle) + 0.15f * FMath::Sin(Angle * 2.7f + 1.3f), 0.f, 1.f);
+				const float Strength = FMath::Lerp(Item->GetStat(TEXT("GlowMin"), 0.06f), Item->GetStat(TEXT("GlowMax"), 0.3f), Pulse);
+				FCanvasTileItem GlowTile(Tile.Position, Glow->GetResource(), StaffSize, FLinearColor(Strength, Strength, Strength, 1.f));
+				GlowTile.Rotation = Tile.Rotation;
+				GlowTile.PivotPoint = Pivot01;
+				GlowTile.BlendMode = SE_BLEND_Additive;
+				Canvas->DrawItem(GlowTile);
+			}
+
 			// Record where the head is, so staff shots and spells leave from it (owner, 2026-11-15).
 			const FVector2D Head = Grip + Along * ((GBHudLayout::StaffGripFrac - GBHudLayout::StaffHeadFrac) * StaffSize.Y);
 			FVector RayOrigin, RayDir;
