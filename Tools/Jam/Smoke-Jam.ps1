@@ -8,6 +8,7 @@ Usage:
   powershell -File Tools/Jam/Smoke-Jam.ps1              # uncooked game with the Editor binaries (-game)
   powershell -File Tools/Jam/Smoke-Jam.ps1 -Packaged    # the packaged build in Glyphbound/Build/Windows
   powershell -File Tools/Jam/Smoke-Jam.ps1 -Only Entity -Offscreen   # only the Entity steps, no window
+  powershell -File Tools/Jam/Smoke-Jam.ps1 -Only Castle -Offscreen -FailFast   # while iterating: stop at the first error
 Output: the SMOKE lines, errors and warnings of our log category, and the list of screenshots.
 Exit code: 0 = the script reached "SMOKE DONE" with no error lines and no crash.
 #>
@@ -15,6 +16,7 @@ param(
     [switch]$Packaged,
     [string]$Only = '',      # filtered run: only the steps whose name starts with this (for example Entity), then quit
     [switch]$Offscreen,        # adds -RenderOffscreen: no window pops up
+    [switch]$FailFast,         # while iterating: stop the game at the first LogGB error or crash line instead of running to the end
     [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
     [int]$TimeoutSeconds = 540,   # the full run takes about 350 s since the tactics and vault blocks (2026-11-14); the FutureBase tour about 320 s
@@ -44,8 +46,45 @@ if ($Packaged) {
 }
 if (Test-Path $shotDir) { Remove-Item (Join-Path $shotDir '*.png') -Force -ErrorAction SilentlyContinue }
 $sw = [Diagnostics.Stopwatch]::StartNew()
+$startUtc = [DateTime]::UtcNow
 $p = Start-Process -FilePath $exe -ArgumentList $argList -PassThru
-$timedOut = -not $p.WaitForExit($TimeoutSeconds * 1000)
+$failedFast = $false
+if ($FailFast) {
+    # Follow the log while the game runs. A red run used to cost its whole length (up to the timeout); now it costs
+    # the time to its first error plus 3 s. The packaged log keeps its name between runs, so it is read only once
+    # this run has written to it.
+    $failPattern = 'LogGB: Error|Fatal error|Unhandled Exception|Assertion failed|appError'
+    $offset = 0L
+    $timedOut = $false
+    while (-not $p.WaitForExit(2000)) {
+        if ($sw.Elapsed.TotalSeconds -gt $TimeoutSeconds) { $timedOut = $true; break }
+        $fi = Get-Item $log -ErrorAction SilentlyContinue
+        if (-not $fi -or $fi.LastWriteTimeUtc -lt $startUtc) { continue }
+        try {
+            $fs = [IO.File]::Open($log, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]'ReadWrite, Delete')
+            try {
+                if ($fs.Length -lt $offset) { $offset = 0L }
+                $buf = New-Object byte[] ($fs.Length - $offset)
+                [void]$fs.Seek($offset, 'Begin')
+                $read = $fs.Read($buf, 0, $buf.Length)
+            } finally { $fs.Dispose() }
+        } catch { continue }
+        $text = [Text.Encoding]::UTF8.GetString($buf, 0, $read)
+        $cut = $text.LastIndexOf("`n")
+        if ($cut -lt 0) { continue }
+        $offset += [Text.Encoding]::UTF8.GetByteCount($text.Substring(0, $cut + 1))   # a half-written line is read again next time
+        if ($text.Substring(0, $cut + 1) -match $failPattern) {
+            Start-Sleep 3   # let the lines that explain the failure reach the log
+            Write-Host "FAILFAST: first error after $([int]$sw.Elapsed.TotalSeconds) s: stopping the game process."
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            [void]$p.WaitForExit(5000)
+            $failedFast = $true
+            break
+        }
+    }
+} else {
+    $timedOut = -not $p.WaitForExit($TimeoutSeconds * 1000)
+}
 if ($timedOut) {
     # This is the game process, not the Editor: stopping it is safe.
     Write-Host "TIMEOUT after $TimeoutSeconds s: stopping the game process."
