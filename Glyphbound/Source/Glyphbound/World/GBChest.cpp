@@ -13,20 +13,21 @@
 
 namespace GBChestLocal
 {
-	// Placeholder look (cm), visuals only. The chest faces +X.
-	const FVector BodySize(110.f, 70.f, 60.f);
-	const FVector LidSize(114.f, 74.f, 14.f);
-	const FVector LidClosedLocation(0.f, 0.f, 67.f);
-	const FVector LidOpenLocation(-42.f, 0.f, 100.f);
-	const FRotator LidOpenRotation(75.f, 0.f, 0.f);
+	// Look (cm), visuals only. The chest is long along X and faces +Y: the lid hinges on its long back edge (-Y).
+	// Owner, 2026-11-15: it opened on a short end, and it was small; now 1.3 times the first size.
+	const FVector BodySize(140.f, 90.f, 76.f);
+	const FVector LidSize(146.f, 96.f, 18.f);
+	const FVector LidClosedLocation(0.f, 0.f, 85.f);
+	const FVector LidOpenLocation(0.f, -44.f, 125.f);
+	const FRotator LidOpenRotation(0.f, 0.f, -75.f);   // roll: the front (+Y) edge goes up
 	const FLinearColor BodyColor(0.32f, 0.18f, 0.07f);
 	const FLinearColor LidColor(0.55f, 0.4f, 0.12f);
 	const FLinearColor OpenBodyColor(0.16f, 0.09f, 0.04f);
 	const FLinearColor OpenLidColor(0.3f, 0.22f, 0.08f);
 	// Where things the player could not carry are left: in front of the chest, spread sideways.
-	constexpr float LeftoverForward = 120.f;
+	constexpr float LeftoverForward = 140.f;
 	constexpr float LeftoverSpacing = 60.f;
-	constexpr float ChestInteractRadius = 120.f;
+	constexpr float ChestInteractRadius = 150.f;
 }
 
 AGBChest::AGBChest()
@@ -153,7 +154,7 @@ void AGBChest::Interact(AGBPlayerCharacter* Player)
 		if (!bAllTaken)
 		{
 			const float Side = (Leftovers % 2 == 0 ? 1.f : -1.f) * GBChestLocal::LeftoverSpacing * ((Leftovers + 1) / 2);
-			const FVector Location = GetActorLocation() + GetActorForwardVector() * GBChestLocal::LeftoverForward + GetActorRightVector() * Side;
+			const FVector Location = GetActorLocation() + GetActorRightVector() * GBChestLocal::LeftoverForward + GetActorForwardVector() * Side;
 			AGBPickup::SpawnPickup(GetWorld(), Remaining, Location);
 			++Leftovers;
 		}
