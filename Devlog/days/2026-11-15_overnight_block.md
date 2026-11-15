@@ -246,3 +246,21 @@ smoke runs between attempts); the map notes stayed in this chat and were prepare
   `castle_floor_level.py` lowers such tiles onto their neighbours (with what stands on them) and runs after the keep
   stage. Captures before and after. The stone thresholds under the walls stay.
 - **The VSM overflow message:** `r.Shadow.Virtual.AllowScreenOverflowMessages=0` (a debug message, never for players).
+
+## No hands at all, and the hand-drawn staffs
+
+- **The owner asked why the demo still showed hands** after the other chat removed them on 2026-11-14. Not a version
+  or commit problem: that commit (`b377478`) removed the hands with a gun only, and its own message says the staff and
+  the sword kept their hand. The staff is the starting weapon, so the hands were the first thing seen. The owner's
+  rule is no hands at all: `GBHUD` now draws no hand on the staff or the sword, no hand when empty-handed, no left
+  hand, no casting hand and no climbing hands; only the weapon sprites and the 3D guns with their own motion remain.
+- **Four staffs drawn by Romelt in Pixelorama** (2026-11-12, during the jam; sent from the LAPTOP inbox with hashes):
+  basic (`baston1`, white-silver orb), storm (`baston1.2`), ice (`baston2`), fire (`baston3`). Sources in
+  `Glyphbound/SourceArt/PixelArt/Staffs` (the `.pxo` files, the 1:1 PNGs, the laptop's notes and Play captures).
+  `Tools/Jam/png_to_sprite.js` turns each PNG into a `Sprites.json` entry (palette and rows, cropped to the drawing).
+  The basic staff is now the starting staff (`Staff_Apprentice`); the fire staff replaces the ember staff's sprite;
+  `Staff_Frost` (ice) and `Staff_Storm` (lightning) are defined. The new art is twice the old staffs' resolution
+  (22x90), so `SpritePixelScale` 0.5 draws it at about the old size; it stays on whole screen pixels (Sol noted the
+  rounding makes it 10% larger at 1080p; kept for a clean pixel grid).
+- Sol 6.1 on the HUD and data change: no bugs besides that rounding note.
+- Capture: `Devlog/media/2026-11-15_staff_no_hands.png` (packaged smoke: the basic staff at rest and during a cast, no hands). Verify-Jam green: suite 73, package 934 MB, packaged full smoke 0 errors.

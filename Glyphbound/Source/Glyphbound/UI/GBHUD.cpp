@@ -585,12 +585,15 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 			}
 		}
 		UTexture2D* Staff = Sprites->GetSprite(StaffId);
-		const FVector2D StaffSize = SizeOf(Staff);
-		// The basic attack thrusts the staff up a little.
+		// The hand-drawn staffs (2026-11-15) are drawn at twice the old staffs' resolution: SpritePixelScale 0.5 keeps
+		// them the same size on screen.
+		const float SP = FMath::Max(1.f, (float)FMath::RoundToInt(P * Item->GetStat(TEXT("SpritePixelScale"), 1.f)));
+		const FVector2D StaffSize = Staff ? FVector2D(Staff->GetSizeX() * SP, Staff->GetSizeY() * SP) : FVector2D::ZeroVector;
+		// The basic attack thrusts the staff up a little. No hand on it (owner, 2026-11-15: no hands at all, only the
+		// weapons and their own motion).
 		const float CenterX = W * 0.72f + Bob.X;
 		const float StaffY = H - StaffSize.Y * 0.8f + Bob.Y - Kick01 * 5.f * P;
-		DrawSprite(Staff, CenterX - StaffSize.X * 0.5f, StaffY, P);
-		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, StaffY + StaffSize.Y * 0.45f, P);
+		DrawSprite(Staff, CenterX - StaffSize.X * 0.5f, StaffY, SP);
 	}
 	else if (Item && Slot == EGBHeldSlot::Gun)
 	{
@@ -612,14 +615,11 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(Item->GetElement()), 0.5f);
 		// The swing moves the sword to the left.
 		const float CenterX = W * 0.70f + Bob.X - Kick01 * 12.f * P;
+		// Where the (no longer drawn) hand held the hilt: the blade rises from the same place.
 		const float HandY = H - RightSize.Y * 0.75f + Bob.Y;
 		DrawSprite(Blade, CenterX - BladeSize.X * 0.5f, HandY - BladeSize.Y + 4.f * P, P, Tint);
-		DrawSprite(HandRight, CenterX - RightSize.X * 0.5f, HandY, P);
 	}
-	else
-	{
-		DrawSprite(HandRight, W * 0.72f - RightSize.X * 0.5f + Bob.X, H - RightSize.Y * 0.45f + Bob.Y, P);
-	}
+	// Empty-handed: nothing (no hands).
 
 	// The summoned shield is held by the left hand: while it is up (or sliding) the left hand is hidden.
 	const UGBSpellbookComponent* Spellbook = Player->GetSpellbook();
@@ -630,22 +630,12 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
 
-	const bool bGunInHand = Item && Slot == EGBHeldSlot::Gun;
-	if (!HasHandOverlay() && !bGunInHand && bCastPose && ShieldRaise01 < 0.5f && !bMantling)
-	{
-		// The left hand draws the glyph, raised at the left (no hands at all with a gun in hand).
-		DrawSprite(HandCast, W * 0.30f - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
-	}
-	else if (!HasHandOverlay() && !bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
-	{
-		DrawSprite(HandLeft, W * 0.22f - LeftSize.X * 0.5f + Bob.X, H - LeftSize.Y * 0.45f + Bob.Y, P);
-	}
-	// The arms reach up from the bottom edge while the hands grip the ledge; the raised shield stays down.
-	if (bMantling)
-	{
-		DrawMantleHands(Player, P);
-	}
-	else
+	// No left hand, casting hand or climbing hands (owner, 2026-11-15: no hands at all). The raised shield stays down
+	// while mantling.
+	(void)bCastPose;
+	(void)LeftSize;
+	(void)CastSize;
+	if (!bMantling)
 	{
 		DrawRaisedShield(Player, P, Bob);
 	}

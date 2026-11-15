@@ -16,10 +16,11 @@
 				"ProjectileGravity": 0,
 				"Range": 6000,
 				"ManaCost": 0,
-				"HeadshotMult": 1.5
+				"HeadshotMult": 1.5,
+				"SpritePixelScale": 0.5
 			},
 			"Strings": {
-				"Sprite": "staff_apprentice",
+				"Sprite": "staff_basic",
 				"ProjectileSprite": "bolt_arcane"
 			}
 		},
@@ -40,11 +41,62 @@
 				"Range": 6000,
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
-				"FireBuildUp": 18
+				"FireBuildUp": 18,
+				"SpritePixelScale": 0.5
 			},
 			"Strings": {
-				"Sprite": "staff_ember",
+				"Sprite": "staff_fire",
 				"ProjectileSprite": "fireball"
+			}
+		},
+		{
+			"Id": "Staff_Frost",
+			"DisplayName": "Frost Staff",
+			"Slot": "Staff",
+			"Element": "Ice",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 22,
+				"FireInterval": 0.6,
+				"ProjectileSpeed": 2800,
+				"ProjectileRadius": 14,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0,
+				"HeadshotMult": 1.5,
+				"SpritePixelScale": 0.5,
+				"IceBuildUp": 18
+			},
+			"Strings": {
+				"Sprite": "staff_ice",
+				"ProjectileSprite": "bolt_arcane"
+			}
+		},
+		{
+			"Id": "Staff_Storm",
+			"DisplayName": "Storm Staff",
+			"Slot": "Staff",
+			"Element": "Lightning",
+			"ActorClass": "",
+			"FireMode": "Projectile",
+			"bAutomatic": false,
+			"Stats": {
+				"Damage": 22,
+				"FireInterval": 0.6,
+				"ProjectileSpeed": 2800,
+				"ProjectileRadius": 14,
+				"ProjectileGravity": 0,
+				"Range": 6000,
+				"ManaCost": 0,
+				"HeadshotMult": 1.5,
+				"SpritePixelScale": 0.5,
+				"LightningBuildUp": 18
+			},
+			"Strings": {
+				"Sprite": "staff_storm",
+				"ProjectileSprite": "lightning_bolt"
 			}
 		},
 		{
@@ -76,7 +128,7 @@
 				"FalloffNearMult": 1,
 				"FalloffFarMult": 0.6,
 				"HeadshotMult": 2,
-				"AimFOV": 43.0,
+				"AimFOV": 43,
 				"AimMoveSpeedMult": 0.7,
 				"AimTime": 0.15,
 				"ViewOffsetX": 0,
@@ -85,7 +137,7 @@
 				"ViewPitch": 0,
 				"ViewYaw": -6,
 				"ViewRoll": 0,
-				"ViewScale": 0.30,
+				"ViewScale": 0.3,
 				"EnchantBuildUpMult": 1,
 				"FireBuildUp": 15,
 				"LightningBuildUp": 15,
@@ -169,7 +221,7 @@
 				"FalloffNearMult": 0.8,
 				"FalloffFarMult": 1.15,
 				"HeadshotMult": 1.5,
-				"AimFOV": 36.0,
+				"AimFOV": 36,
 				"AimMoveSpeedMult": 0.65,
 				"AimTime": 0.2,
 				"ViewOffsetX": -12,
