@@ -1,0 +1,35 @@
+{
+	"Id": "FlameStreamB",
+	"Atlas": "FlameStreamB.png",
+	"FrameWidth": 32,
+	"FrameHeight": 32,
+	"Columns": 4,
+	"FrameCount": 16,
+	"Fps": 24,
+	"Loop": true,
+	"WorldWidthCm": 100,
+	"WorldHeightCm": 100,
+	"PivotU": 0.5,
+	"PivotV": 0.5,
+	"Facing": "Billboard",
+	"Glow": 1.5,
+	"Lit": false,
+	"Light": {
+		"Enabled": false,
+		"Color": "#F3610B",
+		"Intensity": 0,
+		"RadiusCm": 0,
+		"CastShadows": false,
+		"AnchorU": 0.5,
+		"AnchorV": 0.5,
+		"TrackMode": "Constant",
+		"Track": []
+	},
+	"Source": {
+		"System": "Tools/Jam/make_flame_stream.js (hand-made pixel frames, no Niagara source)",
+		"DurationSeconds": 0.6666666666666666,
+		"SimFps": 24,
+		"EngineVersion": "",
+		"BakedUtc": ""
+	}
+}

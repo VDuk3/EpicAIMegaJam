@@ -288,6 +288,7 @@
 			},
 			"Strings": {
 				"Sprite": "flame",
+				"StreamVfx": "FlameStream",
 				"Color": "#FF8C1A"
 			}
 		},
