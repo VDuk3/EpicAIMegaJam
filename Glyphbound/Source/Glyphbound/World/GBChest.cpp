@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
+#include "Materials/MaterialInterface.h"
 #include "Core/GBPlaceholder.h"
 #include "Player/GBPlayerCharacter.h"
 #include "UI/GBHUD.h"
@@ -61,6 +62,16 @@ void AGBChest::BeginPlay()
 
 	SetPlaceholderLook(false, NAME_None, GBChestLocal::BodyColor, GBChestLocal::BodySize);
 	GBPlaceholder::SetupShape(Lid, EGBShape::Cube, GBChestLocal::LidSize, GBChestLocal::LidColor, false);
+
+	// Pixel-art look (owner, 2026-11-15): when the two chest materials exist (Tools/Jam/castle_chest.py makes them),
+	// they replace the plain tinted boxes. A cube's faces carry 0..1 UVs, so each face shows the picture once.
+	UMaterialInterface* BodyArt = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Castle/Pixel/MI_Px_chest_body.MI_Px_chest_body"), FStringView(), LOAD_NoWarn | LOAD_Quiet);
+	UMaterialInterface* LidArt = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Castle/Pixel/MI_Px_chest_lid.MI_Px_chest_lid"), FStringView(), LOAD_NoWarn | LOAD_Quiet);
+	if (BodyArt && LidArt)
+	{
+		Mesh->SetMaterial(0, BodyArt);
+		Lid->SetMaterial(0, LidArt);
+	}
 
 	const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this);
 	SetOpenLook(Progress && Progress->HasFlag(GetOpenedFlag()));
