@@ -92,9 +92,8 @@ bool AGBStaff::PerformAttack()
 		SplashInfo.Amount *= SplashFraction;
 		SplashInfo.BuildUp *= SplashFraction;
 		SplashInfo.OnHitEffect = NAME_None;
-		const FLinearColor SplashColor = Config.Color;
 		const TWeakObjectPtr<AGBPlayerCharacter> WeakPlayer(Player);
-		Projectile->OnImpact.AddLambda([SplashInfo, SplashRadius, SplashColor, WeakPlayer](AGBProjectile* Shot, AActor* HitActor, const FVector& Location)
+		Projectile->OnImpact.AddLambda([SplashInfo, SplashRadius, WeakPlayer](AGBProjectile* Shot, AActor* HitActor, const FVector& Location)
 		{
 			// Null = the bolt reached the end of its range in the air: no impact, no splash.
 			if (!HitActor || !Shot)
@@ -114,7 +113,6 @@ bool AGBStaff::PerformAttack()
 			FGBDamageInfo Info = SplashInfo;
 			Info.Causer = Shot;
 			UGBCombatLibrary::DealRadialDamage(Shot, Location, SplashRadius, Info, Ignore, /*bLinearFalloff*/ false);
-			AGBExplosionEffect::Spawn(Shot->GetWorld(), Location, SplashRadius, SplashColor, 0.25f);
 		});
 	}
 	return true;
