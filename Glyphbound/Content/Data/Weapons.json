@@ -319,15 +319,15 @@
 				"FireBuildUp": 20,
 				"LightningBuildUp": 20,
 				"IceBuildUp": 20,
-				"SwingTime": 0.4,
+				"SwingTime": 0.5,
 				"ViewScale": 0.08,
 				"ViewGripX": -170,
-				"ViewOffsetX": 5,
-				"ViewOffsetY": -2,
-				"ViewOffsetZ": 8,
-				"ViewPitch": -25,
+				"ViewOffsetX": 15,
+				"ViewOffsetY": 6,
+				"ViewOffsetZ": -5,
+				"ViewPitch": -35,
 				"ViewYaw": 0,
-				"ViewRoll": 0
+				"ViewRoll": 15
 			},
 			"Strings": {
 				"ViewMesh": "/Game/Glyphbound/Weapons/Katana/SM_Katana.SM_Katana"

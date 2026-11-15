@@ -55,16 +55,118 @@ namespace
 			return Found ? *Found : Fallback;
 		}
 
-		/** 0 -> 1 -> 0 over the swing: a fast cut down to the left and a slower return. */
-		float SwingAmount(float Since, float Duration)
+		/**
+		 * The katana's three-cut combo (owner, 2026-11-15, "like a cyberpunk katana"): 1) diagonal, right to left and down;
+		 * 2) right after it, diagonal from the left to the right; 3) a horizontal cut from right to left with the blade raised.
+		 * Each cut has weight: a slow wind-up, a very fast strike, a follow-through that overshoots and slows, then a return.
+		 * Keys are the Root's pose (rotation about the hand anchor, offset in cm, camera space), solved against screen
+		 * targets measured on the owner's screenshot (Tools: scratch projection of guard and tip).
+		 */
+		struct FKatanaKey { FRotator Rot; FVector Loc; };
+		const FKatanaKey ComboKeys[3][2] = {
+			{ { FRotator(40.f, -20.f, 10.f), FVector(0.f, 8.f, -8.f) }, { FRotator(-30.f, -40.f, -40.f), FVector(4.f, 0.f, 8.f) } },
+			{ { FRotator(10.f, -50.f, -30.f), FVector(0.f, 0.f, 0.f) }, { FRotator(-10.f, 10.f, 90.f), FVector(4.f, 0.f, 8.f) } },
+			{ { FRotator(30.f, 10.f, 100.f), FVector(0.f, 0.f, 8.f) }, { FRotator(0.f, -30.f, -70.f), FVector(4.f, -10.f, 8.f) } },
+		};
+		// Phase lengths in seconds at SwingTime 0.5 (scaled by SwingTime / 0.5).
+		constexpr float WindupTime = 0.10f;
+		constexpr float StrikeTime = 0.05f;
+		constexpr float FollowTime = 0.11f;
+		constexpr float ReturnTime = 0.24f;
+		constexpr float Overshoot = 0.12f;     // the follow-through carries this fraction past the strike's end
+		constexpr float ArcPushCm = 7.f;       // the blade swings out (forward) in the middle of the strike
+		constexpr float ComboGrace = 0.35f;    // a press within FireInterval + this keeps the combo going
+
+		struct FComboState
 		{
-			if (Duration <= 0.f || Since < 0.f || Since >= Duration)
+			double SeenAttack = -1000.0;
+			int32 Index = -1;
+			FQuat StartRot = FQuat::Identity;
+			FVector StartLoc = FVector::ZeroVector;
+		};
+
+		TMap<TWeakObjectPtr<const AActor>, FComboState>& ComboStates()
+		{
+			static TMap<TWeakObjectPtr<const AActor>, FComboState> States;
+			return States;
+		}
+
+		/** The Root pose for this frame; also starts a new cut when the item attacked since the last frame. */
+		void ComboPose(const AActor* Sword, double Now, double LastAttack, float FireInterval, float Speed, const FQuat& CurrentRot,
+			const FVector& CurrentLoc, FQuat& OutRot, FVector& OutLoc)
+		{
+			TMap<TWeakObjectPtr<const AActor>, FComboState>& States = ComboStates();
+			if (!States.Contains(Sword))
 			{
-				return 0.f;
+				for (auto It = States.CreateIterator(); It; ++It)
+				{
+					if (!It.Key().IsValid())
+					{
+						It.RemoveCurrent();
+					}
+				}
 			}
-			const float T = Since / Duration;
-			const float CutEnd = 0.35f;
-			return T < CutEnd ? FMath::InterpEaseOut(0.f, 1.f, T / CutEnd, 2.f) : FMath::InterpEaseInOut(1.f, 0.f, (T - CutEnd) / (1.f - CutEnd), 2.f);
+			FComboState& S = States.FindOrAdd(Sword);
+			if (LastAttack > -100.0 && LastAttack != S.SeenAttack)
+			{
+				const bool bChain = S.Index >= 0 && LastAttack - S.SeenAttack <= FireInterval + ComboGrace;
+				S.Index = bChain ? (S.Index + 1) % 3 : 0;
+				S.SeenAttack = LastAttack;
+				S.StartRot = CurrentRot;
+				S.StartLoc = CurrentLoc;
+			}
+
+			// Idle: a slow sway, so the blade never looks bolted to the screen.
+			const float SwayT = static_cast<float>(FMath::Fmod(Now, 1000.0));
+			const FRotator Sway(FMath::Sin(SwayT * 1.3f) * 1.2f, FMath::Sin(SwayT * 0.9f) * 0.8f, FMath::Sin(SwayT * 1.1f) * 1.5f);
+			const FVector SwayLoc(0.f, FMath::Sin(SwayT * 0.9f) * 0.3f, FMath::Sin(SwayT * 1.8f) * 0.4f);
+			OutRot = Sway.Quaternion();
+			OutLoc = SwayLoc;
+			if (S.Index < 0)
+			{
+				return;
+			}
+
+			const float TimeScale = FMath::Max(0.2f, Speed / 0.5f);
+			const float W = WindupTime * TimeScale, St = StrikeTime * TimeScale, F = FollowTime * TimeScale, R = ReturnTime * TimeScale;
+			const float T = static_cast<float>(Now - S.SeenAttack);
+			if (T < 0.f || T >= W + St + F + R)
+			{
+				return;
+			}
+			const FKatanaKey& KeyW = ComboKeys[S.Index][0];
+			const FKatanaKey& KeyE = ComboKeys[S.Index][1];
+			const FQuat QW = KeyW.Rot.Quaternion();
+			const FQuat QE = KeyE.Rot.Quaternion();
+			const FQuat QO = FQuat::Slerp(FQuat::Identity, QE * QW.Inverse(), Overshoot) * QE;
+			const FVector LO = KeyE.Loc + (KeyE.Loc - KeyW.Loc) * Overshoot;
+			if (T < W)
+			{
+				// Weight: the wind-up eases in and out, slow against the strike.
+				const float A = FMath::InterpEaseInOut(0.f, 1.f, T / W, 2.f);
+				OutRot = FQuat::Slerp(S.StartRot, QW, A);
+				OutLoc = FMath::Lerp(S.StartLoc, KeyW.Loc, A);
+			}
+			else if (T < W + St)
+			{
+				// The cut: very fast, and the blade swings out along an arc in the middle of it.
+				const float A = FMath::InterpEaseIn(0.f, 1.f, (T - W) / St, 1.5f);
+				OutRot = FQuat::Slerp(QW, QE, A);
+				OutLoc = FMath::Lerp(KeyW.Loc, KeyE.Loc, A) + FVector(ArcPushCm * FMath::Sin(A * PI), 0.f, 0.f);
+			}
+			else if (T < W + St + F)
+			{
+				// Follow-through: momentum carries it a little past the end and dies out.
+				const float A = FMath::InterpEaseOut(0.f, 1.f, (T - W - St) / F, 3.f);
+				OutRot = FQuat::Slerp(QE, QO, A);
+				OutLoc = FMath::Lerp(KeyE.Loc, LO, A);
+			}
+			else
+			{
+				const float A = FMath::InterpEaseInOut(0.f, 1.f, (T - W - St - F) / R, 2.f);
+				OutRot = FQuat::Slerp(QO, OutRot, A);
+				OutLoc = FMath::Lerp(LO, OutLoc, A);
+			}
 		}
 	}
 }
@@ -131,10 +233,14 @@ void AGBSword::Tick(float DeltaSeconds)
 	{
 		// 3D view model: its own swing (a cut down to the left, pivoting on the grip), and a light in the enchant's color.
 		const FGBWeaponDefinition* Def = GetDefinition();
-		const float Duration = Def ? GBSwordView::DefStat(*Def, GBSwordView::SwingTime, 0.4f) : 0.4f;
-		const float A = GBSwordView::SwingAmount(GetTimeSinceLastAttack(), FMath::Min(Duration, FMath::Max(0.05f, GetStat(GBStat::FireInterval, 0.5f))));
-		Root->SetRelativeRotation(FRotator(-40.f * A, -35.f * A, -35.f * A));
-		Root->SetRelativeLocation(FVector(6.f * A, -14.f * A, 2.f * A));
+		const float Speed = Def ? GBSwordView::DefStat(*Def, GBSwordView::SwingTime, 0.5f) : 0.5f;
+		const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+		FQuat PoseRot;
+		FVector PoseLoc;
+		GBSwordView::ComboPose(this, Now, LastAttackTime, GetStat(GBStat::FireInterval, 0.45f), Speed, Root->GetRelativeRotation().Quaternion(),
+			Root->GetRelativeLocation(), PoseRot, PoseLoc);
+		Root->SetRelativeRotation(PoseRot);
+		Root->SetRelativeLocation(PoseLoc);
 
 		EGBElement EnchantElement = EGBElement::Physical;
 		FName EnchantEffect = NAME_None;
