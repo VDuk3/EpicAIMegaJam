@@ -667,6 +667,7 @@ void AGBValkyrieEnemy::StartAction(EKind Kind, AActor* Goal)
 		StartCombo(Goal);
 		break;
 	case EKind::Dash:
+		VolleysDone = 1;    // dashes in this chain (the lance counters are free during a dash)
 		StartDash(Goal, FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation()));
 		break;
 	case EKind::Judgement:
@@ -1140,8 +1141,10 @@ void AGBValkyrieEnemy::TickDash(AActor* Goal, float DeltaSeconds)
 	if (DashTimeLeft <= 0.f || Flat.Size() <= V(TEXT("DashStopDistance"), 180.f))
 	{
 		// DashChain: still out of reach when the dash runs out, it dashes again at once, as many times as it takes
-		if (S(TEXT("DashChain"), 0.f) > 0.5f && Flat.Size() > S(TEXT("MeleeRange"), 280.f))
+		if (S(TEXT("DashChain"), 0.f) > 0.5f && Flat.Size() > S(TEXT("MeleeRange"), 280.f)
+			&& VolleysDone < FMath::RoundToInt(S(TEXT("DashChainMax"), 2.f)))
 		{
+			++VolleysDone;
 			StartDash(Goal, Flat.Size());
 			return;
 		}
