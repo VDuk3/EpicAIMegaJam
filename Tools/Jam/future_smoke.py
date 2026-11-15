@@ -96,7 +96,7 @@ def planes(eas, plane, mi, name, box, along_x, spacing, first):
         m.set_actor_scale3d(unreal.Vector((z1 - z0) / 100.0, w / 100.0, 1.0))
         sm = m.static_mesh_component
         sm.set_material(0, mi)
-        sm.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+        no_collision(sm)
         sm.set_editor_property('cast_shadow', False)
         tagged(m, name)
         m.set_actor_label('Smoke_%s_Mist%02d' % (name, first + n))
@@ -213,11 +213,18 @@ def carpet(eas, plane, mi, name, box):
         m.set_actor_scale3d(unreal.Vector((x1 - x0) / 100.0, (y1 - y0) / 100.0, 1.0))
         sm = m.static_mesh_component
         sm.set_material(0, mi)
-        sm.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+        no_collision(sm)
         sm.set_editor_property('cast_shadow', False)
         tagged(m, name)
         m.set_actor_label('Smoke_%s_Carpet%02d' % (name, i))
     return LAYERS
+
+
+def no_collision(sm):
+    """Smoke is walked through: no collision profile (set_collision_enabled alone did not stick, the planes kept BlockAll
+    and the player could not walk into the smoke) and no effect on the navmesh."""
+    sm.set_collision_profile_name('NoCollision')
+    sm.set_editor_property('can_ever_affect_navigation', False)
 
 
 def tagged(a, folder):
