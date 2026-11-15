@@ -24,7 +24,7 @@ namespace GBEnemyAnimLocal
 
 	const TCHAR* const ClipNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("StrafeLeft"), TEXT("StrafeRight"), TEXT("WalkBack"), TEXT("Attack"), TEXT("Hit"), TEXT("Death"),
 		TEXT("RelaxedIdle"), TEXT("PatrolWalk"), TEXT("Sprint"), TEXT("CrouchIdle"), TEXT("CrouchWalk"),
-		TEXT("Action0"), TEXT("Action1"), TEXT("Action2"), TEXT("Action3"), TEXT("Action4"), TEXT("Action5") };
+		TEXT("Action0"), TEXT("Action1"), TEXT("Action2"), TEXT("Action3"), TEXT("Action4"), TEXT("Action5"), TEXT("Action6") };
 	static_assert(UE_ARRAY_COUNT(ClipNames) == GBEnemyAnim::NumClips, "ClipNames must list every EGBEnemyClip");
 
 	/** A rotation given in the actor's frame (pitch up, yaw, roll), turned into the mesh component's frame. */

@@ -45,7 +45,7 @@ namespace GBSkeletalEnemyLocal
 	const TCHAR* const ClipKeys[GBEnemyAnim::NumClips] = { TEXT("Anim.Idle"), TEXT("Anim.Walk"), TEXT("Anim.Run"), TEXT("Anim.StrafeLeft"), TEXT("Anim.StrafeRight"),
 		TEXT("Anim.WalkBack"), TEXT("Anim.Attack"), TEXT("Anim.Hit"), TEXT("Anim.Death"),
 		TEXT("Anim.RelaxedIdle"), TEXT("Anim.PatrolWalk"), TEXT("Anim.Sprint"), TEXT("Anim.CrouchIdle"), TEXT("Anim.CrouchWalk"),
-		TEXT("Anim.Action0"), TEXT("Anim.Action1"), TEXT("Anim.Action2"), TEXT("Anim.Action3"), TEXT("Anim.Action4"), TEXT("Anim.Action5") };
+		TEXT("Anim.Action0"), TEXT("Anim.Action1"), TEXT("Anim.Action2"), TEXT("Anim.Action3"), TEXT("Anim.Action4"), TEXT("Anim.Action5"), TEXT("Anim.Action6") };
 	constexpr float SightInterval = 0.1f;          // s between line-of-sight traces
 	constexpr float StrafeReachRadius = 80.f;      // cm: a strafe goal this close counts as reached
 	constexpr float StrafeNavExtentXY = 150.f;

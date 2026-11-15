@@ -9,6 +9,8 @@
 //   Judgement  she rises, marks circles on the floor round and at the player (a disc grows to the ring over JudgementTelegraph),
 //              then a pillar of light strikes each (AGBJudgementMark).
 //   Lances     a fan of light lances (projectiles that fly straight, dodgeable between the gaps).
+//   Empower    (only with WeightEmpower > 0: the final boss) a flourish (Anim.Action6), then for EmpowerTime her swings deal
+//              EmpowerDamageMult more and the blade carries the Fx.EmpowerTrail systems on the mesh sockets Fx.EmpowerSockets.
 // Under PhaseTwoHealthFraction of her health: shorter cooldowns, more circles, longer combos (the "P2" keys).
 // The look is only reached through AGBSkeletalEnemy (anim instance, weapon, muzzle), all guarded: a sprite look just has no clips,
 // so every timing falls back to its data value.
@@ -80,10 +82,10 @@ public:
 	AGBValkyrieEnemy();
 
 	/** What she is doing: the fight loop between actions, or one of the actions. */
-	enum class EAct : uint8 { Fight, Combo, Dash, Hop, Judgement, Lances };
+	enum class EAct : uint8 { Fight, Combo, Dash, Hop, Judgement, Lances, Empower };
 
 	/** The kinds of action, for the smoke's forced start. */
-	enum class EKind : uint8 { Combo, Dash, Judgement, Lances };
+	enum class EKind : uint8 { Combo, Dash, Judgement, Lances, Empower };
 
 	virtual FString DescribeTactics() const override;
 
@@ -159,6 +161,12 @@ protected:
 	void EndLift();
 	void EnterPhaseTwo();
 
+	void StartEmpower(AActor* Goal);
+	void TickEmpower(AActor* Goal, float DeltaSeconds);
+	/** Empowered blade on (the trail systems on the blade sockets) or off. */
+	void SetEmpowered(bool bOn);
+	bool IsEmpowered() const { return EmpowerTimeLeft > 0.f; }
+
 	void StartLances(AActor* Goal);
 	void TickLances(AActor* Goal, float DeltaSeconds);
 	void FireVolley(AActor* Goal);
@@ -178,7 +186,7 @@ protected:
 	bool bFightInit = false;
 	bool bPhaseTwo = false;
 	int32 QueuedKind = -1;
-	int32 AutoMask = 0xF;
+	int32 AutoMask = 0x1F;
 	bool bFrozen = false;
 
 	// Fight loop
@@ -215,6 +223,12 @@ protected:
 	bool bLifted = false;
 	int32 MarksWanted = 0;
 	TArray<TWeakObjectPtr<AGBJudgementMark>> Marks;
+
+	// Empower
+	float EmpowerCooldown = 0.f;
+	float EmpowerTimeLeft = 0.f;
+	float EmpowerClipLength = 0.f;
+	UPROPERTY() TArray<TObjectPtr<class UNiagaraComponent>> EmpowerFx;
 
 	// Lances
 	int32 VolleysDone = 0;

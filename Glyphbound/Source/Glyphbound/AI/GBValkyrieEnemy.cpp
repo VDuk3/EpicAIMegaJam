@@ -4,6 +4,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "CollisionQueryParams.h"
 #include "Engine/World.h"
@@ -22,6 +23,89 @@
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
+#include "EngineUtils.h"
+#include "NiagaraComponent.h"
+#include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
+#include "UObject/StrongObjectPtr.h"
+
+// The final boss (Enemies.json Entity_Phase2, the plague reaper) fights with this class too; its Niagara look is opt-in
+// through Strings, so the Valkyries are unchanged when the keys are absent:
+//   Fx.LanceNiagara / Fx.LanceImpactNiagara   the lances become plague balls (system attached to each projectile, its meshes
+//                                              hidden, the bolt light kept) and burst with the impact system where they end.
+//   Fx.JudgementNiagara                        the circles are drawn by this one-shot system (user floats Radius, Telegraph:
+//                                              seconds until that circle strikes); the mark's own shapes are hidden.
+//   Fx.LiquidTag                               actors with this tag hold the arena's floor liquid (a Niagara component); while
+//                                              she fights, the player, she, her swings, impacts and circle strikes stir it
+//                                              (user Vector4 array Fx.LiquidParam, default "Disturbers": xyz world, w strength).
+namespace GBReaperFx
+{
+	struct FPulse { FVector Location; float Strength; double At; };
+	static TArray<FPulse> Pulses;
+	static TArray<TStrongObjectPtr<UNiagaraSystem>> Keep;
+	constexpr double PulseLife = 0.6;
+	constexpr int32 MaxDisturbers = 8;
+
+	UNiagaraSystem* Load(const FGBEnemyDefinition& Def, const TCHAR* Key, FName Owner)
+	{
+		const FString Path = GBEnemy3D::Str(Def, FName(Key));
+		if (Path.IsEmpty())
+		{
+			return nullptr;
+		}
+		UNiagaraSystem* System = GBEnemy3D::LoadAsset<UNiagaraSystem>(Path, Owner);
+		if (System && !Keep.ContainsByPredicate([System](const TStrongObjectPtr<UNiagaraSystem>& K) { return K.Get() == System; }))
+		{
+			Keep.Emplace(System);
+		}
+		return System;
+	}
+
+	void AddPulse(const UWorld* World, const FVector& Location, float Strength, float Delay = 0.f)
+	{
+		if (World)
+		{
+			Pulses.Add({ Location, Strength, World->GetTimeSeconds() + Delay });
+		}
+	}
+
+	/** Sends the movers and the live pulses to every floor liquid tagged Tag (no movers and no pulses calm it). */
+	void Feed(UWorld* World, FName Tag, FName Param, const TArray<FVector4>& Movers)
+	{
+		if (!World || Tag.IsNone())
+		{
+			return;
+		}
+		const double Now = World->GetTimeSeconds();
+		Pulses.RemoveAll([Now](const FPulse& P) { return Now - P.At > PulseLife || P.At > Now + 10.0; });
+		TArray<FVector4> Values(Movers);
+		for (const FPulse& P : Pulses)
+		{
+			if (P.At <= Now && Values.Num() < MaxDisturbers)
+			{
+				const float Fade = 1.f - static_cast<float>((Now - P.At) / PulseLife);
+				Values.Add(FVector4(P.Location.X, P.Location.Y, P.Location.Z, P.Strength * Fade));
+			}
+		}
+		while (Values.Num() < MaxDisturbers)
+		{
+			Values.Add(FVector4(0.f, 0.f, 0.f, 0.f));
+		}
+		for (TActorIterator<AActor> It(World); It; ++It)
+		{
+			if (It->ActorHasTag(Tag))
+			{
+				TInlineComponentArray<UNiagaraComponent*> Comps(*It);
+				for (UNiagaraComponent* Comp : Comps)
+				{
+					UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector4(Comp, Param, Values);
+				}
+			}
+		}
+	}
+}
+
 
 namespace GBValkyrieLocal
 {
@@ -325,6 +409,20 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		return false;
 	}
 	bSight = bSightCached;
+	if (const FGBEnemyDefinition* LiquidDef = GetDefinition())
+	{
+		const FString Tag = GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidTag")));
+		if (!Tag.IsEmpty())
+		{
+			const FVector Me = GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+			const FVector Them = Goal->GetActorLocation();
+			const float MySpeed = FMath::Min(GetVelocity().Size2D() / 600.f, 1.f);
+			const float TheirSpeed = FMath::Min(Goal->GetVelocity().Size2D() / 600.f, 1.f);
+			GBReaperFx::Feed(GetWorld(), FName(*Tag), FName(*GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidParam")), TEXT("Disturbers"))),
+				{ FVector4(Me.X, Me.Y, Me.Z, V(TEXT("LiquidBossStrength"), 140.f) * (0.35f + MySpeed)),
+				  FVector4(Them.X, Them.Y, Them.Z, V(TEXT("LiquidPlayerStrength"), 70.f) * (0.35f + TheirSpeed)) });
+		}
+	}
 	if (!bFightInit)
 	{
 		bFightInit = true;
@@ -335,6 +433,7 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		SpellCooldown = S(TEXT("FirstSpellDelay"), 3.f);
 		DashCooldown = S(TEXT("FirstDashDelay"), 2.f);
 		LanceCooldown = S(TEXT("FirstLanceDelay"), 4.f);
+		EmpowerCooldown = S(TEXT("FirstEmpowerDelay"), 8.f);
 		ComboCooldown = 0.f;
 		ActionPause = S(TEXT("FirstActionDelay"), 0.8f);
 		DecisionTimer = 0.f;
@@ -348,6 +447,15 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 	SpellCooldown = FMath::Max(0.f, SpellCooldown - DeltaSeconds);
 	LanceCooldown = FMath::Max(0.f, LanceCooldown - DeltaSeconds);
 	BurstCooldown = FMath::Max(0.f, BurstCooldown - DeltaSeconds);
+	EmpowerCooldown = FMath::Max(0.f, EmpowerCooldown - DeltaSeconds);
+	if (EmpowerTimeLeft > 0.f)
+	{
+		EmpowerTimeLeft -= DeltaSeconds;
+		if (EmpowerTimeLeft <= 0.f)
+		{
+			SetEmpowered(false);
+		}
+	}
 
 	if (!bPhaseTwo && Attributes && Attributes->GetMaxHealth() > 0.f && Attributes->GetHealth() < Attributes->GetMaxHealth() * S(TEXT("PhaseTwoHealthFraction"), 0.5f))
 	{
@@ -374,6 +482,9 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		break;
 	case EAct::Lances:
 		TickLances(Goal, DeltaSeconds);
+		break;
+	case EAct::Empower:
+		TickEmpower(Goal, DeltaSeconds);
 		break;
 	}
 	return true;
@@ -481,7 +592,7 @@ void AGBValkyrieEnemy::ChooseAction(AActor* Goal, float Distance)
 {
 	const float MeleeRange = S(TEXT("MeleeRange"), 280.f);
 	struct FOption { EKind Kind; float Weight; };
-	TArray<FOption, TInlineAllocator<4>> Options;
+	TArray<FOption, TInlineAllocator<5>> Options;
 	auto Allowed = [this](EKind Kind) { return (AutoMask & (1 << static_cast<int32>(Kind))) != 0; };
 	if (Allowed(EKind::Combo) && Distance <= MeleeRange * 1.05f && ComboCooldown <= 0.f && bSight)
 	{
@@ -498,6 +609,10 @@ void AGBValkyrieEnemy::ChooseAction(AActor* Goal, float Distance)
 	if (Allowed(EKind::Lances) && Distance >= V(TEXT("LanceMinRange"), 500.f) && Distance <= V(TEXT("LanceMaxRange"), 2600.f) && LanceCooldown <= 0.f && bSight)
 	{
 		Options.Add({ EKind::Lances, V(TEXT("WeightLances"), 3.f) });
+	}
+	if (Allowed(EKind::Empower) && V(TEXT("WeightEmpower"), 0.f) > 0.f && EmpowerCooldown <= 0.f && EmpowerTimeLeft <= 0.f && bSight)
+	{
+		Options.Add({ EKind::Empower, V(TEXT("WeightEmpower"), 0.f) });
 	}
 	if (Options.Num() == 0)
 	{
@@ -547,6 +662,97 @@ void AGBValkyrieEnemy::StartAction(EKind Kind, AActor* Goal)
 	case EKind::Lances:
 		StartLances(Goal);
 		break;
+	case EKind::Empower:
+		StartEmpower(Goal);
+		break;
+	}
+}
+
+void AGBValkyrieEnemy::StartEmpower(AActor* Goal)
+{
+	Act = EAct::Empower;
+	EmpowerClipLength = 0.f;
+	if (!PlayActionClip(6, EmpowerClipLength) || EmpowerClipLength <= 0.f)
+	{
+		EmpowerClipLength = V(TEXT("EmpowerTimeFallback"), 1.2f);
+	}
+	EmpowerCooldown = V(TEXT("EmpowerCooldown"), 22.f);
+}
+
+void AGBValkyrieEnemy::TickEmpower(AActor* Goal, float DeltaSeconds)
+{
+	ActTime += DeltaSeconds;
+	TurnTowards(Goal, DeltaSeconds);
+	// the blade lights up partway through the flourish, and the buff lasts EmpowerTime from then
+	if (EmpowerTimeLeft <= 0.f && ActTime >= EmpowerClipLength * V(TEXT("EmpowerLightFrac"), 0.45f))
+	{
+		EmpowerTimeLeft = V(TEXT("EmpowerTime"), 12.f);
+		SetEmpowered(true);
+	}
+	if (ActTime >= EmpowerClipLength)
+	{
+		if (EmpowerTimeLeft <= 0.f)
+		{
+			EmpowerTimeLeft = V(TEXT("EmpowerTime"), 12.f);
+			SetEmpowered(true);
+		}
+		FinishAction(V(TEXT("EmpowerRecover"), 0.2f));
+	}
+}
+
+void AGBValkyrieEnemy::SetEmpowered(bool bOn)
+{
+	for (UNiagaraComponent* Fx : EmpowerFx)
+	{
+		if (Fx)
+		{
+			Fx->Deactivate();
+			Fx->DestroyComponent();
+		}
+	}
+	EmpowerFx.Reset();
+	if (!bOn)
+	{
+		EmpowerTimeLeft = 0.f;
+		return;
+	}
+	const FGBEnemyDefinition* Def = GetDefinition();
+	USkeletalMeshComponent* Body = GetMesh();
+	if (!Def || !Body)
+	{
+		return;
+	}
+	// Strings Fx.EmpowerTrail<N> = system path, Fx.EmpowerSocket<N> = socket it rides, Fx.EmpowerEnd<N> = "x y z" end of the
+	// trail in that socket's space (the system's EndParticle_Position), for N = 0..5
+	for (int32 Index = 0; Index < 6; ++Index)
+	{
+		UNiagaraSystem* System = GBReaperFx::Load(*Def, *FString::Printf(TEXT("Fx.EmpowerTrail%d"), Index), EnemyId);
+		if (!System)
+		{
+			continue;
+		}
+		const FName Socket(*GBEnemy3D::Str(*Def, FName(*FString::Printf(TEXT("Fx.EmpowerSocket%d"), Index)), TEXT("BladeBase")));
+		UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAttached(System, Body, Socket, FVector::ZeroVector, FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget, false);
+		if (!Fx)
+		{
+			continue;
+		}
+		const FString End = GBEnemy3D::Str(*Def, FName(*FString::Printf(TEXT("Fx.EmpowerEnd%d"), Index)));
+		TArray<FString> Parts;
+		End.ParseIntoArray(Parts, TEXT(" "));
+		if (Parts.Num() == 3)
+		{
+			const FVector EndAt(FCString::Atof(*Parts[0]), FCString::Atof(*Parts[1]), FCString::Atof(*Parts[2]));
+			Fx->SetVariableVec3(FName(TEXT("EndParticle_Position")), EndAt);
+			Fx->SetVariableFloat(FName(TEXT("SwordLength")), EndAt.Size());
+		}
+		const FString Width = GBEnemy3D::Str(*Def, FName(*FString::Printf(TEXT("Fx.EmpowerWidth%d"), Index)));
+		if (!Width.IsEmpty())
+		{
+			Fx->SetVariableFloat(FName(TEXT("Trail Width")), FCString::Atof(*Width));
+		}
+		EmpowerFx.Add(Fx);
 	}
 }
 
@@ -571,6 +777,10 @@ void AGBValkyrieEnemy::ResetFightState()
 	Act = EAct::Fight;
 	QueuedKind = -1;
 	DashTimeLeft = 0.f;
+	if (EmpowerTimeLeft > 0.f || EmpowerFx.Num() > 0)
+	{
+		SetEmpowered(false);
+	}
 }
 
 void AGBValkyrieEnemy::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -593,6 +803,18 @@ void AGBValkyrieEnemy::DestroyMarks()
 
 void AGBValkyrieEnemy::HandleDeath(const FGBDamageInfo& KillingBlow)
 {
+	if (const FGBEnemyDefinition* LiquidDef = GetDefinition())
+	{
+		const FString Tag = GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidTag")));
+		if (!Tag.IsEmpty())
+		{
+			// her fall is the last splash; afterwards nobody feeds the floor and it settles
+			GBReaperFx::Pulses.Reset();
+			const FVector At = GetActorLocation();
+			GBReaperFx::Feed(GetWorld(), FName(*Tag), FName(*GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidParam")), TEXT("Disturbers"))),
+				{ FVector4(At.X, At.Y, At.Z, V(TEXT("LiquidDeathStrength"), 400.f)) });
+		}
+	}
 	ResetFightState();
 	Super::HandleDeath(KillingBlow);
 }
@@ -741,12 +963,19 @@ void AGBValkyrieEnemy::SwingHit(AActor* Goal)
 	const float Reach = V(TEXT("SwingReach"), S(TEXT("MeleeRange"), 280.f) * 1.1f);
 	const float ConeCosine = FMath::Cos(FMath::DegreesToRadians(V(TEXT("SwingConeDeg"), 70.f)));
 	const bool bIn = FlatDistance <= Reach && Cosine >= ConeCosine && FMath::Abs(Player.Z - Me.Z) <= V(TEXT("SwingHeight"), 220.f);
+	// the scythe's sweep cuts the floor liquid in front of her (only where an arena liquid is fed)
+	GBReaperFx::AddPulse(GetWorld(), Me + Forward * Reach * 0.7f - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),
+		V(TEXT("LiquidSwingStrength"), 220.f));
 	if (!bIn)
 	{
 		return;
 	}
 	FGBDamageInfo Info = MakeShotInfo();
 	Info.Amount = V(TEXT("SwingDamage"), Info.Amount * S(TEXT("MeleeDamageMult"), 1.5f));
+	if (IsEmpowered())
+	{
+		Info.Amount *= V(TEXT("EmpowerDamageMult"), 1.6f);
+	}
 	if (ComboSwingsWanted > 1 && SwingIndex == ComboSwingsWanted - 1)
 	{
 		Info.Amount *= V(TEXT("FinisherMult"), 1.4f);
@@ -755,7 +984,19 @@ void AGBValkyrieEnemy::SwingHit(AActor* Goal)
 	Info.HitDirection = Flat.GetSafeNormal();
 	UGBCombatLibrary::DealDamage(Goal, Info);
 	++SwingHits;
-	if (ShotFx.HitImpact)
+	UNiagaraSystem* EmpoweredHit = nullptr;
+	if (IsEmpowered())
+	{
+		if (const FGBEnemyDefinition* Def = GetDefinition())
+		{
+			EmpoweredHit = GBReaperFx::Load(*Def, TEXT("Fx.EmpowerHit"), EnemyId);
+		}
+	}
+	if (EmpoweredHit)
+	{
+		GBEnemy3D::SpawnFx(this, EmpoweredHit, Info.HitLocation, (-Info.HitDirection).Rotation());
+	}
+	else if (ShotFx.HitImpact)
 	{
 		GBEnemy3D::SpawnFx(this, ShotFx.HitImpact, Info.HitLocation, (-Info.HitDirection).Rotation());
 	}
@@ -950,9 +1191,11 @@ void AGBValkyrieEnemy::SpawnMarks(AActor* Goal)
 	const float Damage = V(TEXT("JudgementDamage"), 30.f);
 	FLinearColor Color(1.f, 0.88f, 0.54f);
 	UNiagaraSystem* ImpactFx = ShotFx.Impact;
+	UNiagaraSystem* CircleFx = nullptr;
 	if (const FGBEnemyDefinition* Def = GetDefinition())
 	{
 		Color = UGBDataSubsystem::ParseColor(GBEnemy3D::Str(*Def, FName(TEXT("JudgementColor")), TEXT("#FFE08A")), Color);
+		CircleFx = GBReaperFx::Load(*Def, TEXT("Fx.JudgementNiagara"), EnemyId);
 	}
 
 	TArray<FVector> Spots;
@@ -987,7 +1230,19 @@ void AGBValkyrieEnemy::SpawnMarks(AActor* Goal)
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		if (AGBJudgementMark* Mark = World->SpawnActor<AGBJudgementMark>(Spots[Index], FRotator::ZeroRotator, Params))
 		{
-			Mark->Init(this, Goal, Spots[Index], Radius, Telegraph, Index * Stagger, StrikeTime, Damage, Color, ImpactFx);
+			Mark->Init(this, Goal, Spots[Index], Radius, Telegraph, Index * Stagger, StrikeTime, Damage, Color, CircleFx ? nullptr : ImpactFx);
+			if (CircleFx)
+			{
+				// the reaper's circles are the floor liquid churning, then erupting: the system draws both, the mark keeps the
+				// timing and the damage with its own shapes hidden
+				Mark->SetActorHiddenInGame(true);
+				if (UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, CircleFx, Spots[Index]))
+				{
+					Fx->SetVariableFloat(FName(TEXT("Radius")), Radius);
+					Fx->SetVariableFloat(FName(TEXT("Telegraph")), Telegraph + Index * Stagger);
+				}
+				GBReaperFx::AddPulse(World, Spots[Index], V(TEXT("LiquidStrikeStrength"), 350.f), Telegraph + Index * Stagger);
+			}
 			Marks.Add(Mark);
 			++CirclesMade;
 		}
@@ -1077,13 +1332,40 @@ void AGBValkyrieEnemy::FireVolley(AActor* Goal)
 		Config.FlightVfxId = FName(*GBEnemy3D::Str(*Def, FName(TEXT("LanceVfx"))));
 		Config.FlightVfxHeight = V(TEXT("LanceVfxHeight"), 60.f);
 	}
+	UNiagaraSystem* BallFx = GBReaperFx::Load(*Def, TEXT("Fx.LanceNiagara"), EnemyId);
+	UNiagaraSystem* BurstFx = GBReaperFx::Load(*Def, TEXT("Fx.LanceImpactNiagara"), EnemyId);
+	const float ImpactStrength = V(TEXT("LiquidImpactStrength"), 250.f);
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
 		const float Alpha = Count > 1 ? static_cast<float>(Index) / (Count - 1) : 0.5f;
 		const float Yaw = FMath::Lerp(-Fan * 0.5f, Fan * 0.5f, Alpha);
-		if (AGBProjectile::SpawnProjectile(World, Config, Origin, Aim.RotateAngleAxis(Yaw, FVector::UpVector), this))
+		if (AGBProjectile* Shot = AGBProjectile::SpawnProjectile(World, Config, Origin, Aim.RotateAngleAxis(Yaw, FVector::UpVector), this))
 		{
 			++LancesFired;
+			if (BallFx)
+			{
+				// a plague ball: the Niagara system is the look, the bolt's shapes are hidden (its light stays)
+				TInlineComponentArray<UStaticMeshComponent*> Shapes(Shot);
+				for (UStaticMeshComponent* Shape : Shapes)
+				{
+					Shape->SetVisibility(false);
+				}
+				UNiagaraFunctionLibrary::SpawnSystemAttached(BallFx, Shot->GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator,
+					EAttachLocation::KeepRelativeOffset, true);
+			}
+			if (BurstFx)
+			{
+				TWeakObjectPtr<UNiagaraSystem> WeakBurst(BurstFx);
+				Shot->OnImpact.AddLambda([WeakBurst, ImpactStrength](AGBProjectile* Projectile, AActor*, const FVector& Location)
+				{
+					UWorld* ShotWorld = Projectile ? Projectile->GetWorld() : nullptr;
+					if (ShotWorld && WeakBurst.IsValid())
+					{
+						UNiagaraFunctionLibrary::SpawnSystemAtLocation(ShotWorld, WeakBurst.Get(), Location);
+					}
+					GBReaperFx::AddPulse(ShotWorld, Location, ImpactStrength);
+				});
+			}
 		}
 	}
 	++VolleyCount;

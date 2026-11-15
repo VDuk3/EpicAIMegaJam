@@ -29,13 +29,14 @@ enum class EGBEnemyClip : uint8
 	Sprint,
 	CrouchIdle,
 	CrouchWalk,
-	// Full-body one-shot actions of a boss (Enemies.json Anim.Action0 .. Anim.Action5): played with PlayOneShot, never cut by a hit reaction.
+	// Full-body one-shot actions of a boss (Enemies.json Anim.Action0 .. Anim.Action6): played with PlayOneShot, never cut by a hit reaction.
 	Action0,
 	Action1,
 	Action2,
 	Action3,
 	Action4,
 	Action5,
+	Action6,
 	Count
 };
 

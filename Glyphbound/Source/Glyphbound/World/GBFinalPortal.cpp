@@ -11,6 +11,11 @@
 #include "Player/GBPlayerCharacter.h"
 #include "UI/GBHUD.h"
 #include "World/GBEraComponent.h"
+#include "World/GBProgressSubsystem.h"
+#include "Engine/World.h"
+#include "GameFramework/Controller.h"
+#include "TimerManager.h"
+#include "UObject/UObjectGlobals.h"
 
 namespace GBFinalPortalLocal
 {
@@ -22,6 +27,59 @@ namespace GBFinalPortalLocal
 	constexpr float SegmentThickness = 28.f;
 	const FLinearColor RingColor(0.9f, 0.1f, 0.45f);
 	constexpr float InteractRadius = 230.f;
+
+	// The hand-over to the Entity's map: the player's whole state (weapons, ammo, spells, items, skills, health) is saved
+	// as the checkpoint right before OpenLevel; when the next map has loaded and its new pawn exists, that snapshot is
+	// applied to it at the pawn's own spawn (the arena's PlayerStart), and saved again there so a death respawns in the arena.
+	bool bHandoverPending = false;
+	FDelegateHandle MapLoadedHandle;
+	constexpr float HandoverPoll = 0.1f;
+	constexpr int32 HandoverTries = 50;
+
+	void TryHandover(TWeakObjectPtr<UWorld> WeakWorld, int32 TriesLeft)
+	{
+		UWorld* World = WeakWorld.Get();
+		if (!World || !bHandoverPending)
+		{
+			return;
+		}
+		AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(World);
+		UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(World);
+		if (!Player || !Progress)
+		{
+			if (TriesLeft > 0)
+			{
+				FTimerHandle Retry;
+				World->GetTimerManager().SetTimer(Retry, FTimerDelegate::CreateLambda([WeakWorld, TriesLeft]() { TryHandover(WeakWorld, TriesLeft - 1); }),
+					HandoverPoll, false);
+			}
+			else
+			{
+				bHandoverPending = false;
+				UE_LOG(LogGB, Warning, TEXT("FinalPortal: no player in the new map to hand the state over to."));
+			}
+			return;
+		}
+		bHandoverPending = false;
+		if (!Progress->HasCheckpoint())
+		{
+			return;
+		}
+		FGBPlayerSnapshot Snapshot = Progress->GetCheckpoint();
+		Snapshot.Transform = Player->GetActorTransform();
+		Snapshot.ControlRotation = Player->GetActorRotation();
+		Player->RespawnAt(Snapshot);
+		Progress->SaveCheckpoint(Player);
+		UE_LOG(LogGB, Log, TEXT("FinalPortal: player state handed over to %s."), *World->GetMapName());
+	}
+
+	void OnMapLoaded(UWorld* World)
+	{
+		if (bHandoverPending && World)
+		{
+			TryHandover(World, HandoverTries);
+		}
+	}
 }
 
 AGBFinalPortal::AGBFinalPortal()
@@ -110,11 +168,15 @@ void AGBFinalPortal::Interact(AGBPlayerCharacter* Player)
 		return;
 	}
 
-	// TODO before a real Entity map is plugged in: a map-transition snapshot handover is still missing. The player
-	// pawn is destroyed by OpenLevel, and the only thing that survives is the progress subsystem (flags, checkpoint).
-	// The checkpoint is the LAST portal / encounter save (coordinates of this map, not a hand-over of the current
-	// inventory, weapons, spells and skill points), so nothing is saved here on purpose: saving it now would give
-	// the new map stale coordinates and still lose what was picked up since. The new map must restore the player
-	// from a snapshot taken at this moment (and ignore its transform).
+	// The player's state crosses with the progress checkpoint (see GBFinalPortalLocal::TryHandover).
+	if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))
+	{
+		Progress->SaveCheckpoint(Player);
+		GBFinalPortalLocal::bHandoverPending = true;
+		if (!GBFinalPortalLocal::MapLoadedHandle.IsValid())
+		{
+			GBFinalPortalLocal::MapLoadedHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddStatic(&GBFinalPortalLocal::OnMapLoaded);
+		}
+	}
 	UGameplayStatics::OpenLevel(this, FName(*MapPath));
 }
