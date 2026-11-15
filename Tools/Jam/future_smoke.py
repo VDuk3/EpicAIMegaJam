@@ -31,21 +31,36 @@ AREAS = {
     'Worn': dict(box=(6954, 11000, -265, 265, Z, Z + 310), fill=0, cells=0, along=500, across=0, opacity=0.15, fade=0.35,
                  color=(0.45, 0.62, 0.60, 0.13)),
     # 2. the small room: more.
-    'Nest': dict(box=(11054, 12254, -600, 600, Z, Z + 600), fill=1.5, cells=128, along=300, across=400, opacity=0.18, fade=0.4,
+    'Nest': dict(box=(11054, 12254, -600, 600, Z, Z + 600), fill=0, cells=0, along=300, across=400, opacity=0.18, fade=0.4,
                  color=(0.62, 0.48, 0.45, 0.10)),
     # 3. the dark corridor: more still.
     'Dark': dict(box=(12254, 14762, -200, 200, Z, Z + 350), fill=0, cells=0, along=230, across=0, opacity=0.26, fade=0.6,
                  color=(0.42, 0.52, 0.66, 0.10)),
     # 4. the tentacle boss's hall: full of smoke, seeing is hard.
-    'Pit': dict(box=(14762, 18362, -1400, 1400, Z, Z + 600), fill=3.0, cells=128, along=200, across=250, opacity=0.30, fade=0.8,
+    'Pit': dict(box=(14762, 18362, -1400, 1400, Z, Z + 600), fill=0, cells=0, along=200, across=250, opacity=0.30, fade=0.8,
                 color=(0.50, 0.55, 0.55, 0.11)),
 }
+
+# The floor fog (owner, later the same day: "dense fog on the floor, strong, with Niagara Fluids"): along the whole
+# path a low, heavy layer from the floor to knee-waist height. Per area: a flat AGBFluidFog box (wide, shallow: a few
+# cells high, so it stays cheap) with a strong fill, and close-set low mist planes under it so the floor is hidden even
+# where the gas thins. x: the fluid box's X range (None = the area's; the worn corridor's last 15 m and the dark
+# corridor keep the boxes Build-FutureBase.py placed, made denser with a FogDensity tag below).
+# h: height of the layer, cm. The ramp still holds: the pit's is the densest and highest.
+FLOOR = {
+    'Worn': dict(h=110, x=(6954, 9500), fill=3.0, cells=96, along=110, across=0, opacity=0.40, fade=0.4, color=(0.45, 0.62, 0.60, 0.26)),
+    'Nest': dict(h=130, x=None, fill=4.0, cells=96, along=110, across=150, opacity=0.34, fade=0.4, color=(0.62, 0.50, 0.46, 0.16)),
+    'Dark': dict(h=140, x=None, fill=0, cells=0, along=110, across=0, opacity=0.38, fade=0.45, color=(0.42, 0.52, 0.66, 0.16)),
+    'Pit': dict(h=170, x=None, fill=5.0, cells=128, along=110, across=140, opacity=0.42, fade=0.5, color=(0.52, 0.57, 0.57, 0.17)),
+}
+# Build-FutureBase.py's own fog boxes (not removed by this script): their fill, multiplied, by the box's centre X range.
+BASE_FOG = [((9500, 11000), 3.0), ((12254, 14762), 4.0)]
 
 # Lamps inside this box (x0, x1, y0, y1, z0, z1) get the failing-lamp light function: the worn corridor's.
 FLICKER_BOX = (6954, 11000, -300, 300, Z - 50, Z + 400)
 
 
-def mist_instance(name, z0, z1, opacity, fade, color):
+def mist_instance(name, z0, z1, opacity, fade, color, top_pad=80.0):
     eal = unreal.EditorAssetLibrary
     mel = unreal.MaterialEditingLibrary
     path = SMOKE_DIR + '/MI_GB_Mist_' + name
@@ -55,7 +70,7 @@ def mist_instance(name, z0, z1, opacity, fade, color):
         mi = unreal.AssetToolsHelpers.get_asset_tools().create_asset('MI_GB_Mist_' + name, SMOKE_DIR, unreal.MaterialInstanceConstant,
                                                                     unreal.MaterialInstanceConstantFactoryNew())
     mi.set_editor_property('parent', unreal.load_asset(FOG_MAT))
-    for k, v in (('Opacity', opacity), ('NoiseOpacity', 1.0), ('FogFadeStart', z0 + (z1 - z0) * fade), ('FogTop', z1 + 80.0),
+    for k, v in (('Opacity', opacity), ('NoiseOpacity', 1.0), ('FogFadeStart', z0 + (z1 - z0) * fade), ('FogTop', z1 + top_pad),
                  ('Brightness', color[3])):
         mel.set_material_instance_scalar_parameter_value(mi, k, v)
     mel.set_material_instance_vector_parameter_value(mi, 'FogColor', unreal.LinearColor(color[0], color[1], color[2], 1.0))
@@ -120,6 +135,32 @@ def build():
         if d['across']:
             n += planes(eas, plane, mi, name, d['box'], False, d['across'], n)
         log.append('%s: fluid x%g, %d mist planes' % (name, d['fill'], n))
+        fl = FLOOR.get(name)
+        if fl:
+            fx0, fx1 = fl['x'] or (x0, x1)
+            fbox = (fx0, fx1, y0, y1, z0, z0 + fl['h'])
+            if fl['fill'] > 0:
+                # The fluid box is a bit higher than the layer, so the gas has room to roll over itself.
+                fz1 = z0 + fl['h'] * 1.6
+                f = eas.spawn_actor_from_class(unreal.GBFluidFog, unreal.Vector((fx0 + fx1) / 2.0, c.y, (z0 + fz1) / 2.0), unreal.Rotator(0, 0, 0))
+                f.set_editor_property('box_extent', unreal.Vector((fx1 - fx0) / 2.0, (y1 - y0) / 2.0, (fz1 - z0) / 2.0))
+                f.tags = [unreal.Name('FogDensity=%g' % fl['fill']), unreal.Name('FogResolution=%d' % fl['cells'])]
+                tagged(f, name)
+                f.set_actor_label('Smoke_%s_FloorFluid' % name)
+            fmi = mist_instance(name + '_Floor', fbox[4], fbox[5], fl['opacity'], fl['fade'], fl['color'], top_pad=-5.0)   # gone at the planes' top: no hard edge
+            k = 0
+            if fl['along']:
+                k += planes(eas, plane, fmi, name + '_Floor', fbox, True, fl['along'], k)
+            if fl['across']:
+                k += planes(eas, plane, fmi, name + '_Floor', fbox, False, fl['across'], k)
+            log.append('%s floor: fluid x%g, %d low planes' % (name, fl['fill'], k))
+    for a in eas.get_all_level_actors():
+        if isinstance(a, unreal.GBFluidFog) and unreal.Name(TAG) not in a.tags:
+            x = a.get_actor_location().x
+            for (bx0, bx1), mult in BASE_FOG:
+                if bx0 <= x <= bx1:
+                    a.tags = [t for t in a.tags if not str(t).startswith('FogDensity=')] + [unreal.Name('FogDensity=%g' % mult)]
+                    log.append('%s: FogDensity=%g' % (a.get_actor_label(), mult))
     if FLICKER_BOX:
         fx0, fx1, fy0, fy1, fz0, fz1 = FLICKER_BOX
         fn = unreal.load_asset(FLICKER)
