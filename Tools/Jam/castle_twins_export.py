@@ -4,6 +4,8 @@
 #         "v": [x, y, z, ...] (cm, the mesh's own frame), "t": [i0, i1, i2, ...], "m": [slot of each triangle]}
 #         and <Saved>/CastleTwins/src/_used.json: every pack mesh in the map with its count of placed pieces.
 # The twins (Tools/Jam/castle_twins.js) are made from these files outside the Editor.
+# Needs the pack's meshes and a map built with the "pack" look: since 2026-11-15 they wait outside Content, in
+# C:/GameJam/_RemovedContent/Content (see Build-PastCastle.py). The files already written are enough to remake the twins.
 import json
 import os
 

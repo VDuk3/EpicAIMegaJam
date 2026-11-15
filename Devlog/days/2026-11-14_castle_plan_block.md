@@ -450,3 +450,23 @@ and then: *"Si no das con la respuesta. Consulta al advisor"* (if you can't find
 - Full smoke (`Smoke-Jam.ps1 -Offscreen`): 0 LogGB errors, 0 engine errors (393 s). Package: `BUILD SUCCESSFUL`, zip **2,023 MB**, still over the jam's 1 GB limit (separate work). Packaged tour: 42 spots, 0 without floor, the seal's map can be opened, 0 engine errors.
 - Pictures (packaged game): `media/2026-11-15/castle_normals_23_cells.png`, `media/2026-11-15/castle_normals_13_front_hall.png`; the whole tour on one sheet (Editor build): `media/2026-11-15/castle_normals_tour_sheet.jpg`.
 - Implementer: the architect (Opus) directly, as for the rest of the castle rebuild. This is a diagnosis inside the architect's own tool chain, where handing off would have cost more than it saved.
+
+---
+
+## Tenth part: the castle's unused assets taken out of the project
+The owner (Spanish): *"Limpia del proyecto los assets del castillo que no se estén usando"* (clean the castle assets that are not being used out of the project).
+
+### How "unused" was decided
+- Measured in the Editor with the asset registry, not by guessing from names. The candidates were everything under `/Game/CastleTown` (the castle pack), the pack's own demo-level actors (`/Game/__ExternalActors__/CastleTown`, `/Game/__ExternalObjects__/CastleTown`), our builder's folder `/Game/Glyphbound/Castle`, and the old world-aligned castle material instances `MI_GB_WA_Castle*`. The roots were every other package in `/Game`: our two maps, the always-cooked folders and the other packs. Every hard and soft dependency was followed from those roots. A candidate is used only if a root reaches it.
+- The game's code and config hold no paths into the castle folders (checked with a search); the game cooks `PastCastle`, `FutureBase` and the always-cooked directories.
+- **Of 7,496 candidate packages, 159 are used:** the castle map's pixel twins, tiles and tile materials; two rubble meshes the future base places (`SM_Rubble_02`, `SM_PillarTop_Broken`); and four pack textures that are the default parameters of our material `M_GB_WorldAligned`.
+
+### What was moved
+- **7,337 packages (4.9 GB)** and one orphan blueprint the registry did not list (`BP_Wardrobe_02`): 6,277 actor files of the pack's demo levels, 1,031 pack assets (meshes, materials, textures, VFX, blueprints, demo levels), 18 of our own leftovers (the world-aligned tile instances and their master, the dropped block, brick, slab and seam-hider twins) and the three `MI_GB_WA_Castle*` instances.
+- **Moved, not deleted.** `Content` is not in git, so a deletion could not be undone. The files went with the Editor closed to `C:/GameJam/_RemovedContent/Content`, under the same paths (ignored by git), and the empty folders were removed. `/Game/CastleTown` in the project is now 118 MB (was 4.7 GB).
+- The cost: the castle's "pack" look (the way back the rebuild kept) and `castle_twins_export.py` need those files moved back. Both scripts say so in their headers. The twins can still be remade from the geometry files already exported.
+
+### Checks
+- Full smoke (`Smoke-Jam.ps1 -Offscreen`): 0 LogGB errors, 0 engine errors (387 s).
+- Package: `BUILD SUCCESSFUL`; the cook log has no mention of `CastleTown` and no missing-asset warnings. Zip **2,000.3 MB** (was 2,023 MB; the pack's unused assets were never cooked, so the zip is still over the jam's 1 GB limit).
+- Packaged tour: 42 spots, 0 without floor, the seal's map can be opened, 0 engine errors.

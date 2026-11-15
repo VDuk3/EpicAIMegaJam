@@ -45,3 +45,6 @@ _backup_presync/
 
 # Unzipped copies of the packaged build (for play-testing)
 Glyphbound/TeamTBD_*/
+
+# Unused pack assets taken out of Content (2026-11-15), kept outside the project in case one is needed again
+/_RemovedContent/

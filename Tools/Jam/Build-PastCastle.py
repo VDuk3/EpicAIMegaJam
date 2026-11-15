@@ -49,6 +49,8 @@ WALK_Z = 1200.0          # the wall walk: 12 m above the curtain wall's base (me
 # castle pack's sculpted pieces, as built until now. "pixel": each pack mesh is replaced by its pixel twin (same pivot and
 # size, flat faces with drawn tiles: Tools/Jam/castle_twins.js), and our own boxes wear the drawn tiles. pixel_stages
 # limits the pixel look to some stages (the first zone was shown to the owner on its own).
+# Since 2026-11-15 the pack's unused assets are out of Content (owner: clean the castle's unused assets): they wait in
+# C:/GameJam/_RemovedContent/Content with their paths. The "pack" look, and castle_twins_export.py, need them moved back.
 LOOK = CFG.get('look', 'pack')
 PIXEL_STAGES = CFG.get('pixel_stages')
 PX = '/Game/Glyphbound/Castle/Pixel/'
