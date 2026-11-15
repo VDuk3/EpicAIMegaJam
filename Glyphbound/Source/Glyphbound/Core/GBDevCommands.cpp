@@ -8756,6 +8756,8 @@ namespace GBSmokeRun
 				Vk->DebugQueue(AGBValkyrieEnemy::EKind::Judgement);
 			});
 			Add(CS + 42.5f, TEXT("Castle: Valkyrie Judgement screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_valkyrie_judgement")); });
+			Add(CS + 43.f, TEXT("Castle: Valkyrie Judgement strike screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_valkyrie_judgement_strike")); });
+			Add(CS + 43.4f, TEXT("Castle: Valkyrie Judgement blast screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_valkyrie_judgement_blast")); });
 			Add(CS + 45.f, TEXT("Castle: Valkyrie Judgement check, kill"), [](UWorld*, AGBPlayerCharacter* Player)
 			{
 				AGBValkyrieEnemy* Vk = CastleValk.Get();
@@ -9332,7 +9334,10 @@ namespace GBSmokeRun
 			const FString Prefix = Args[0];
 			bFilteredRun = true;
 			FogVisitRun::bActive = Prefix.StartsWith(TEXT("FogVisit"), ESearchCase::IgnoreCase);
-			Steps.RemoveAll([&Prefix](const FStep& Step) { return !FString(Step.Name).StartsWith(Prefix, ESearchCase::IgnoreCase) && FCString::Strcmp(Step.Name, TEXT("quit")) != 0; });
+			// Spaces are ignored on both sides, so a sub-block can be named without quoting: "Enemies3D:tactics" runs only the
+			// steps named "Enemies3D: tactics ..." (about 30 s instead of the whole 220 s block).
+			const FString Compact = Prefix.Replace(TEXT(" "), TEXT(""));
+			Steps.RemoveAll([&Compact](const FStep& Step) { return !FString(Step.Name).Replace(TEXT(" "), TEXT("")).StartsWith(Compact, ESearchCase::IgnoreCase) && FCString::Strcmp(Step.Name, TEXT("quit")) != 0; });
 			if (Steps.Num() <= 1)
 			{
 				UE_LOG(LogGB, Warning, TEXT("gb.Smoke %s: no step starts with that name"), *Prefix);
@@ -9342,13 +9347,24 @@ namespace GBSmokeRun
 			{
 				FirstTime = FMath::Min(FirstTime, Step.Time);
 			}
+			float LastKept = 1.f;
 			for (FStep& Step : Steps)
 			{
 				Step.Time -= FirstTime - 1.f;
-				// A FogVisit run quits by itself when its state machine is done; the quit step is only a far safety net.
-				if (FogVisitRun::bActive && FCString::Strcmp(Step.Name, TEXT("quit")) == 0)
+				if (FCString::Strcmp(Step.Name, TEXT("quit")) != 0)
 				{
-					Step.Time = 100000.f;
+					LastKept = FMath::Max(LastKept, Step.Time);
+				}
+			}
+			for (FStep& Step : Steps)
+			{
+				if (FCString::Strcmp(Step.Name, TEXT("quit")) == 0)
+				{
+					// A FogVisit run quits by itself when its state machine is done; the quit step is only a far safety net.
+					// Any other filtered run quits 5 s after its last step, not at the full run's end (the quit step's own
+					// time): a block from the middle of the run used to sit idle until then, a sub-block until the timeout.
+					// Blocks that run a state machine past their last step hold the step clock meanwhile (CastleVisit).
+					Step.Time = FogVisitRun::bActive ? 100000.f : LastKept + 5.f;
 				}
 			}
 		}

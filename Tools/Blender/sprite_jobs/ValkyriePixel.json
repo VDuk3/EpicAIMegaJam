@@ -94,9 +94,12 @@
    "#FF0000"
   ],
   "wings": [
-   "#A19D4F",
-   "#E2DE9C",
-   "#F5F3CF"
+   "#3E2F6B",
+   "#6E58A0",
+   "#B48CC0",
+   "#E8B9A6",
+   "#F6D98E",
+   "#FFF4D6"
   ],
   "skin": [
    "#C88A6A",
@@ -126,18 +129,20 @@
    "name": "wings",
    "ramp": "wings",
    "range": [
-    0.3,
-    1
+    0.15,
+    1.1
    ],
-   "close": 2,
-   "blur": 3,
-   "open": true,
+   "close": 0,
+   "blur": 0,
+   "open": false,
    "absorb": 12,
-   "mode_passes": 3,
-   "min_band": 8,
+   "mode_passes": 0,
+   "min_band": 2,
    "inner_outline": false,
    "weight": 1.2,
-   "gradient_weight": 0.55
+   "gradient_weight": 0.4,
+   "outline": false,
+   "albedo_weight": 0.9
   },
   {
    "name": "skin",

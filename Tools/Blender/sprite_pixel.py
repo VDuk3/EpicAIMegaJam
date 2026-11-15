@@ -325,20 +325,27 @@ def despeckle_index(idx, reg, protect):
     return idx
 
 
-def fill_pinholes(idx):
-    """A transparent pixel closed on all 4 sides becomes outline black."""
+def fill_pinholes(idx, bare=None):
+    """A transparent pixel closed on all 4 sides becomes outline black (not next to a bare region: gaps between
+    feathers stay open)."""
     on = idx > 0
     n = neighbours4(on, False)
     hole = (~on) & n[0] & n[1] & n[2] & n[3]
+    if bare is not None:
+        nb = neighbours4(bare, False)
+        hole &= ~(nb[0] | nb[1] | nb[2] | nb[3])
     out = idx.copy()
     out[hole] = 1
     return out
 
 
-def outer_outline(idx):
-    """1 px black outline, 4-connected, outside the silhouette. idx 0 = transparent, 1 = black."""
+def outer_outline(idx, bare=None):
+    """1 px black outline, 4-connected, outside the silhouette. idx 0 = transparent, 1 = black.
+    bare: pixels of regions drawn without an outline (ethereal parts such as feathered wings); the ring is only
+    drawn next to the other pixels."""
     on = idx > 0
-    n = neighbours4(on, False)
+    drawn = on if bare is None else (on & ~bare)
+    n = neighbours4(drawn, False)
     ring = (~on) & (n[0] | n[1] | n[2] | n[3])
     out = idx.copy()
     out[ring] = 1

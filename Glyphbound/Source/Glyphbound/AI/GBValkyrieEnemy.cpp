@@ -14,6 +14,10 @@
 #include "Combat/GBCombatLibrary.h"
 #include "Combat/GBProjectile.h"
 #include "Core/GBPlaceholder.h"
+#include "GBPixelVfxActor.h"
+#include "GBPixelVfxComponent.h"
+#include "GBPixelVfxSubsystem.h"
+#include "Engine/GameInstance.h"
 #include "Core/GBStatNames.h"
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBAttributeComponent.h"
@@ -94,6 +98,28 @@ void AGBJudgementMark::Init(AGBValkyrieEnemy* InOwner, AActor* InTarget, const F
 	ImpactFx = InImpactFx;
 	SetActorLocation(Center);
 
+	bPixel = InOwner && InOwner->HasSpriteLook();
+	if (bPixel)
+	{
+		// The castle is pixel art: the circle is a flat pixel sigil on the floor (its ring at the reach, a cross in the
+		// middle) over a dim pixel disc that grows to it; the strike is a baked pixel blast instead of the 3D pillar.
+		GBPlaceholder::SetupFlatSprite(Disc, FName(TEXT("judgement_fill")), 100.f, Color * 0.45f, 0.6f);
+		Disc->SetRelativeLocation(FVector(0.f, 0.f, 2.f));
+		Disc->SetRelativeScale3D(FVector(0.01f, 0.01f, 1.f));
+		UStaticMeshComponent* Sigil = NewObject<UStaticMeshComponent>(this);
+		GBPlaceholder::SetupFlatSprite(Sigil, FName(TEXT("judgement_sigil")), Radius * 2.f, Color, 2.5f);
+		Sigil->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Sigil->SetCastShadow(false);
+		Sigil->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+		Sigil->SetRelativeLocation(FVector(0.f, 0.f, 4.f));
+		Sigil->RegisterComponent();
+		RingParts.Add(Sigil);
+		Light->SetLightColor(Color);
+		Light->SetAttenuationRadius(StrikeLightRadius);
+		Light->SetRelativeLocation(FVector(0.f, 0.f, 260.f));
+		bInitialized = true;
+		return;
+	}
 	GBPlaceholder::SetupShape(Disc, EGBShape::Cylinder, FVector(100.f, 100.f, DiscThickness), Color * 0.35f, true);
 	Disc->SetRelativeLocation(FVector(0.f, 0.f, DiscThickness));
 	Disc->SetRelativeScale3D(FVector(0.01f, 0.01f, DiscThickness / 100.f));
@@ -136,7 +162,7 @@ void AGBJudgementMark::Tick(float DeltaSeconds)
 		// The disc grows to the ring over the telegraph and waits there until its turn to strike.
 		const float Grow = FMath::Clamp(Age / TelegraphTime, 0.f, 1.f);
 		const float Size = FMath::Max(Radius * 2.f * Grow, 1.f) / 100.f;
-		Disc->SetRelativeScale3D(FVector(Size, Size, GBValkyrieLocal::DiscThickness / 100.f));
+		Disc->SetRelativeScale3D(FVector(Size, Size, bPixel ? 1.f : GBValkyrieLocal::DiscThickness / 100.f));
 		if (Age >= TelegraphTime + StrikeDelay)
 		{
 			Strike();
@@ -148,7 +174,7 @@ void AGBJudgementMark::Tick(float DeltaSeconds)
 	// The pillar thins out and the flash dies away.
 	const float Width = Radius * 2.f * GBValkyrieLocal::PillarRadiusShare * (1.f - Done * Done) / 100.f;
 	Pillar->SetRelativeScale3D(FVector(FMath::Max(Width, 0.01f), FMath::Max(Width, 0.01f), GBValkyrieLocal::PillarHeight / 100.f));
-	Light->SetIntensity(GBValkyrieLocal::StrikeLightIntensity * (1.f - Done));
+	Light->SetIntensity(GBValkyrieLocal::StrikeLightIntensity * (bPixel ? 0.25f : 1.f) * (1.f - Done));
 	if (Done >= 1.f)
 	{
 		Destroy();
@@ -159,9 +185,10 @@ void AGBJudgementMark::Strike()
 {
 	bStruck = true;
 	StruckAge = 0.f;
-	Pillar->SetVisibility(true);
+	Pillar->SetVisibility(!bPixel);
 	Light->SetVisibility(true);
-	Light->SetIntensity(GBValkyrieLocal::StrikeLightIntensity);
+	// The pixel blast carries its own glow: a quarter of the light, or three strikes at once wash the castle out.
+	Light->SetIntensity(GBValkyrieLocal::StrikeLightIntensity * (bPixel ? 0.25f : 1.f));
 	Disc->SetVisibility(false);
 	for (UStaticMeshComponent* Part : RingParts)
 	{
@@ -170,7 +197,17 @@ void AGBJudgementMark::Strike()
 			Part->SetVisibility(false);
 		}
 	}
-	if (ImpactFx)
+	if (bPixel)
+	{
+		// A baked pixel blast as wide as the circle, its foot on the floor (the clip's pivot is at its base).
+		const UGameInstance* GameInstance = GetGameInstance();
+		const UGBPixelVfxSubsystem* Vfx = GameInstance ? GameInstance->GetSubsystem<UGBPixelVfxSubsystem>() : nullptr;
+		const FName ClipId(TEXT("FluidExplosion"));
+		const FGBPixelVfxClip* Clip = Vfx ? Vfx->FindClip(ClipId) : nullptr;
+		const float Scale = Clip && Clip->WorldWidthCm > 0.f ? Radius * 2.2f / Clip->WorldWidthCm : 1.f;
+		AGBPixelVfxActor::SpawnPixelVfx(this, ClipId, FTransform(Center), Scale);
+	}
+	else if (ImpactFx)
 	{
 		GBEnemy3D::SpawnFx(this, ImpactFx, Center + FVector(0.f, 0.f, 10.f), FRotator::ZeroRotator);
 	}

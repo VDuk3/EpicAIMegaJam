@@ -1256,8 +1256,8 @@
 		{
 			"Id": "tile_stone_floor",
 			"Palette": {
-				"g": "#2E2C2A",
 				"1": "#9C988F",
+				"g": "#2E2C2A",
 				"a": "#7A7670",
 				"b": "#8C8882",
 				"c": "#6C6862"
@@ -1597,6 +1597,88 @@
 				"...obbbbbbo.....",
 				"....oooooo......",
 				"................"
+			]
+		},
+		{
+			"Id": "judgement_sigil",
+			"Palette": {
+				"o": "#4A3400",
+				"y": "#FFD860",
+				"w": "#FFF6D8"
+			},
+			"Rows": [
+				"............oooooooo............",
+				".........oooyyyyyyyyooo.........",
+				".......ooyyyyyyyyyyyyyyoo.......",
+				"......ooyyyyooooooooyyyyoo......",
+				".....oyyyyooo......oooyyyyo.....",
+				"....oyyyoo............ooyyyo....",
+				"...oyyyoo......yy......ooyyyo...",
+				"..ooyyoo....yyyyyyyy....ooyyoo..",
+				"..oyyoo...yy...ww...yy...ooyyo..",
+				".oyyyo...yy....ww....yy...oyyyo.",
+				".oyyo...yy.....ww.....yy...oyyo.",
+				".oyyo...y......ww......y...oyyo.",
+				"oyyoo..y.......ww.......y..ooyyo",
+				"oyyo...y.......ww.......y...oyyo",
+				"oyyo...y......yyyy......y...oyyo",
+				"oyyo..yywwwwwwyyyywwwwwwyy..oyyo",
+				"oyyo..yywwwwwwyyyywwwwwwyy..oyyo",
+				"oyyo...y......yyyy......y...oyyo",
+				"oyyo...y.......ww.......y...oyyo",
+				"oyyoo..y.......ww.......y..ooyyo",
+				".oyyo...y......ww......y...oyyo.",
+				".oyyo...yy.....ww.....yy...oyyo.",
+				".oyyyo...yy....ww....yy...oyyyo.",
+				"..oyyoo...yy...ww...yy...ooyyo..",
+				"..ooyyoo....yyyyyyyy....ooyyoo..",
+				"...oyyyoo......yy......ooyyyo...",
+				"....oyyyoo............ooyyyo....",
+				".....oyyyyooo......oooyyyyo.....",
+				"......ooyyyyooooooooyyyyoo......",
+				".......ooyyyyyyyyyyyyyyoo.......",
+				".........oooyyyyyyyyooo.........",
+				"............oooooooo............"
+			]
+		},
+		{
+			"Id": "judgement_fill",
+			"Palette": {
+				"f": "#FFE08A"
+			},
+			"Rows": [
+				"................................",
+				"............ffffffff............",
+				".........ffffffffffffff.........",
+				"........ffffffffffffffff........",
+				"......ffffffffffffffffffff......",
+				".....ffffffffffffffffffffff.....",
+				"....ffffffffffffffffffffffff....",
+				"....ffffffffffffffffffffffff....",
+				"...ffffffffffffffffffffffffff...",
+				"..ffffffffffffffffffffffffffff..",
+				"..ffffffffffffffffffffffffffff..",
+				"..ffffffffffffffffffffffffffff..",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				".ffffffffffffffffffffffffffffff.",
+				"..ffffffffffffffffffffffffffff..",
+				"..ffffffffffffffffffffffffffff..",
+				"..ffffffffffffffffffffffffffff..",
+				"...ffffffffffffffffffffffffff...",
+				"....ffffffffffffffffffffffff....",
+				"....ffffffffffffffffffffffff....",
+				".....ffffffffffffffffffffff.....",
+				"......ffffffffffffffffffff......",
+				"........ffffffffffffffff........",
+				".........ffffffffffffff.........",
+				"............ffffffff............",
+				"................................"
 			]
 		}
 	]

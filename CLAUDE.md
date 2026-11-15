@@ -45,7 +45,9 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
 - **Prueba automática (smoke) filtrada mientras se itera** (dueño, 2026-11-13: sacar a cada momento una ventana que corre el juego entero es perder el tiempo si no se está tocando todo):
   - mientras se trabaja en una parte, se corre solo esa parte y sin ventana: `Tools/Jam/Smoke-Jam.ps1 -Only <Paso> -Offscreen` (por ejemplo `-Only Entity`, unos 20 s frente a los 95 s de la completa). Si la parte aún no tiene filtro, se añade su paso a `gb.Smoke <Prefijo>`;
   - mientras se itera, se compila solo el target del Editor;
-  - el `Smoke-Jam.ps1` completo y `Build-Jam.ps1 -Target Glyphbound` se corren **una sola vez, al final**, antes del commit o del empaquetado;
+  - el filtro baja hasta un sub-bloque, sin comillas (los espacios del nombre del paso se ignoran): `-Only Enemies3D:tactics` tarda 45 s frente a los 223 s del bloque. Una corrida filtrada termina 5 s después de su último paso (antes esperaba hasta la hora del final de la corrida completa);
+  - **cierre de un bloque de trabajo: un solo comando en segundo plano**, `Tools/Jam/Verify-Jam.ps1` (suite, paquete y smoke completo del juego empaquetado; con `-Visits`, también FogVisit, CastleVisit y Enemies3DBase en sus mapas, solo si se tocaron esos mapas, el humo o la IA). Imprime una línea por etapa y VERIFY GREEN o RED. No se repite el smoke completo sin cocinar (son los mismos 559 pasos que el empaquetado), ni `Build-Jam.ps1 -Target Glyphbound` (el paquete ya compila el juego), ni smokes filtrados que el completo ya cubre;
+  - cambios solo en datos (`Content/Data/*.json`) no necesitan compilar;
   - todo encargo a un implementador (Muse, Sonnet u otro) incluye esta regla.
 - Comandos largos en segundo plano, sin bucles de espera.
 

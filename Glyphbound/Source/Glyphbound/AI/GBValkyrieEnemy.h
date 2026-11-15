@@ -67,6 +67,8 @@ private:
 	bool bStruck = false;
 	float StruckAge = 0.f;
 	bool bInitialized = false;
+	/** The pixel Valkyrie's marks (her caster has the sprite look): flat pixel sprites and a baked pixel blast, no 3D shapes. */
+	bool bPixel = false;
 };
 
 UCLASS()

@@ -647,8 +647,10 @@ def make_cell(P, R, job, cls, prev):
                 idx[sm] = 2
     keep = [i + 1 for i, r in enumerate(cls.regions) if r.get("keep_single")]
     idx = px.despeckle_index(idx, creg, keep)
-    idx = px.outer_outline(idx)
-    idx = px.fill_pinholes(idx)
+    bare_ids = [i + 1 for i, r in enumerate(cls.regions) if r.get("outline", True) is False]
+    bare = np.isin(creg, bare_ids) if bare_ids else None
+    idx = px.outer_outline(idx, bare)
+    idx = px.fill_pinholes(idx, bare)
     return idx, {"reg": creg, "tone": tone}
 
 

@@ -178,3 +178,26 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   (8 of 8 fights cleared).
 - For the owner's eyes (no PIE tonight): the tunnel smoke in motion, the castle fights' feel and difficulty, the pixel
   Valkyrie's wings (clean but blocky), the Judgement rings (3D, not pixel art), the dark corridor's emergency lights.
+
+## After the block: the owner awake (late morning)
+- **The pixel Valkyrie's Judgement in pixel art** (the circles were 3D shapes in a pixel castle): when her caster has
+  the sprite look, each circle is a flat pixel sigil on the floor (`judgement_sigil` in `Sprites.json`, 32 x 32, a
+  gold ring and a cross, generated clean by script) over a dim pixel disc that grows to it (`judgement_fill`), and the
+  strike is the baked pixel blast `FluidExplosion` as wide as the circle instead of the 3D pillar; its light is a
+  quarter of the 3D one (three strikes at once washed the castle white in the capture). Castle smoke green with
+  telegraph, strike and blast captures.
+- **Her wings, owner's note** (Spanish, translated: "the Valkyrie's wings should not be one colour, they should have
+  shape, shadows, nuances, different colours. Also remove the border: it makes them look flat and solid instead of
+  something ethereal made of feathers"). The baker gets a per-region `outline: false` (`sprite_pixel.py`: no black ring
+  and no filled pinholes next to such a region); the wings get a six-tone ramp from violet at the root through mauve and
+  rose to gold and cream at the tips, the feather texture's luminance in the tone (`albedo_weight` 0.9), and none of the
+  smoothing that had flattened them (no close, open, blur or mode passes): the feathers now fan out one by one.
+- **Time savings (owner: under 12 hours left):** measured where the runs went. A filtered smoke run kept its quit step
+  at the full run's end, so a block sat idle until then and a sub-block until the timeout: it now quits 5 s after its
+  last step. The filter ignores spaces, so a sub-block can be run alone (`-Only Enemies3D:tactics`: 45 s instead of
+  223 s). `Tools/Jam/Verify-Jam.ps1` is the end-of-block check in one background command (suite, package, packaged
+  full smoke; `-Visits` adds the three map visits): the uncooked full smoke (the same 559 steps), the separate Game
+  build (the package compiles it) and filtered packaged runs the full run covers are no longer repeated. Rules added to
+  `CLAUDE.md`.
+- The POV hands (owner's question): the other chat's removal (`b377478`) is in the build; the packaged captures show
+  the pistol and the rifle with no hands.
