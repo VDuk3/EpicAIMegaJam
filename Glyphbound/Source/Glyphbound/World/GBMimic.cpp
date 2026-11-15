@@ -181,7 +181,12 @@ void AGBMimic::Interact(AGBPlayerCharacter* Player)
 	{
 		return;
 	}
+	const bWasAsleep = !bAwake;
 	Wake();          // no loot: the "chest" opens its mouth instead
+	if (bWasAsleep && bAwake && Player)
+	{
+		Bite(Player);          // coming alive IS the first bite (owner): the hand that reached for the lid gets it
+	}
 }
 
 void AGBMimic::HandleDamaged(const FGBDamageInfo& Info, float ActualDamage)
