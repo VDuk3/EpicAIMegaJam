@@ -1367,7 +1367,7 @@ async def stage_deep():
     nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector((WELL[0] + PIT[1]) / 2.0, 0, Z + 300), rot())
     nav.set_actor_scale3d(unreal.Vector((PIT[1] - WELL[0]) / 200.0 + 1.0, 15.0, 8.0))
     tag(nav, s, 'Gameplay')
-    # No enemies and no boss here yet (owner). The boss's encounter will stand in the middle of the last hall.
+    # The boss's encounter (Boss_Tentacle) stands in the middle of the last hall: stage_encounters.
     log.append('deep: stairwell 16 x 12 m with a landing and a 4 m stair 6 m down, worn corridor 40 m (2 failing lamps), small room 12 x 12 m, dark corridor 25 m, tentacle hall 36 x 28 x 12 m with broken galleries and a rubble heap')
 
 
@@ -1392,6 +1392,10 @@ ENCOUNTERS = [
     # the deep wing: the small room, with more coming up the dark corridor behind it
     ('Future_DeepWing', (11654, 0, -450), (540, 540, 250), -600,
      [(12050, -300), (12050, 300), (11900, 0), (12800, 0), (13400, 60), (14000, -60)]),
+    # the tentacle boss (owner, 2026-11-15): the machine waits in the middle of the deep wing's last hall; the fight starts
+    # once the player is a few metres in from the dark corridor
+    ('Boss_Tentacle', (16762, 0, -450), (1500, 1300, 500), -600,
+     [(16862, -200)]),
     # the Valkyrie's room (owner, 2026-11-14: "add the Valkyrie with her sword"; then, after playing: inside her tube,
     # behind its glass, until the player breaks it): one spawn point in the middle of the glass cylinder (its axis is
     # 264 cm in front of the tube's own origin at the wall; 1.8 m of room round her), on the dais
