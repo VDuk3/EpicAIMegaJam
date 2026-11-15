@@ -51,21 +51,25 @@ def instance(name, tex):
 
 instance('MI_Px_chest_body', import_tex('T_px_chest_body'))
 instance('MI_Px_chest_lid', import_tex('T_px_chest_lid'))
+instance('MI_Px_chest_lock', import_tex('T_px_chest_lock'))
 
+# The owner moves and turns the chest by hand: an existing one is kept where it is.
 slab = None
+chest = None
 for a in eas.get_all_level_actors():
     if a.get_actor_label().startswith('Chest_Cell'):
-        eas.destroy_actor(a)
+        chest = a
     elif a.get_name() == SLAB:
         slab = a
 o, e = slab.get_actor_bounds(False)
-chest = eas.spawn_actor_from_class(unreal.GBChest, unreal.Vector(o.x, o.y, o.z + e.z), unreal.Rotator(0, 0, 0))
-chest.set_actor_label('Chest_Cell')
-chest.set_folder_path('Chests')
+if chest is None:
+    chest = eas.spawn_actor_from_class(unreal.GBChest, unreal.Vector(o.x, o.y, o.z + e.z), unreal.Rotator(0, 0, 0))
+    chest.set_actor_label('Chest_Cell')
+    chest.set_folder_path('Chests')
 drop = unreal.GBDropDefinition()
 drop.set_editor_property('weapon_id', WEAPON)
 drop.set_editor_property('count', 1)
 chest.set_editor_property('contents', [drop])
 chest.set_editor_property('opened_flag', 'Chest.PastCastle.Cell')
 saved = les.save_current_level()
-'chest at (%.0f, %.0f, %.0f) with %s, saved=%s' % (o.x, o.y, o.z + e.z, WEAPON, saved)
+'chest at %s yaw %.0f with %s, saved=%s' % (chest.get_actor_location(), chest.get_actor_rotation().yaw, WEAPON, saved)

@@ -17,6 +17,7 @@ namespace GBChestLocal
 	// Owner, 2026-11-15: it opened on a short end, and it was small; now 1.3 times the first size.
 	const FVector BodySize(140.f, 90.f, 76.f);
 	const FVector LidSize(146.f, 96.f, 18.f);
+	const FVector LockSize(22.f, 4.f, 22.f);
 	const FVector LidClosedLocation(0.f, 0.f, 85.f);
 	const FVector LidOpenLocation(0.f, -44.f, 125.f);
 	const FRotator LidOpenRotation(0.f, 0.f, -75.f);   // roll: the front (+Y) edge goes up
@@ -72,6 +73,19 @@ void AGBChest::BeginPlay()
 	{
 		Mesh->SetMaterial(0, BodyArt);
 		Lid->SetMaterial(0, LidArt);
+	}
+
+	// The lock: a brass plate on the front face (+Y), under the lid's edge. On the body, not on the lid (owner).
+	if (UMaterialInterface* LockArt = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Castle/Pixel/MI_Px_chest_lock.MI_Px_chest_lock"), FStringView(), LOAD_NoWarn | LOAD_Quiet))
+	{
+		UStaticMeshComponent* Lock = NewObject<UStaticMeshComponent>(this, TEXT("Lock"));
+		Lock->SetupAttachment(Root);
+		Lock->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+		Lock->SetGenerateOverlapEvents(false);
+		Lock->RegisterComponent();
+		GBPlaceholder::SetupShape(Lock, EGBShape::Cube, GBChestLocal::LockSize, GBChestLocal::LidColor, false);
+		Lock->SetRelativeLocation(FVector(0.f, GBChestLocal::BodySize.Y * 0.5f + GBChestLocal::LockSize.Y * 0.5f - 1.f, GBChestLocal::BodySize.Z - GBChestLocal::LockSize.Z * 0.5f - 6.f));
+		Lock->SetMaterial(0, LockArt);
 	}
 
 	const UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this);

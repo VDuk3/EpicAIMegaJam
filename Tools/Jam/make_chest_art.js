@@ -26,11 +26,14 @@ let b = planks(8);
 band(b, 1, 5, 1, 30); band(b, 26, 30, 1, 30); band(b, 1, 30, 26, 30);
 for (const y of [5, 14, 22]) { rivet(b, 3, y); rivet(b, 28, y); }
 frame(b); save('T_px_chest_body.png', b);
-// lid: planks, iron rim all round, a brass lock plate in the middle
+// lid: planks and an iron rim all round. No lock here (owner: the lock belongs on the front, not on the lid)
 let l = planks(8);
 band(l, 1, 30, 1, 4); band(l, 1, 30, 27, 30); band(l, 1, 4, 1, 30); band(l, 27, 30, 1, 30);
-for (let y = 11; y <= 20; y++) for (let x = 12; x <= 19; x++) l[y][x] = (x === 12 || y === 11) ? 'h' : (x === 19 || y === 20) ? 's' : 'g';
-l[14][15] = l[14][16] = l[15][15] = l[15][16] = 'o'; l[16][15] = l[17][15] = 'o';
 for (const p of [[2, 2], [29, 2], [2, 28], [29, 28]]) rivet(l, p[0], p[1]);
 frame(l); save('T_px_chest_lid.png', l);
+// lock plate: brass, with a square keyhole in the middle (the same whichever way the face's UVs run)
+const k = [];
+for (let y = 0; y < N; y++) { k.push([]); for (let x = 0; x < N; x++) k[y].push((x < 4 || y < 4) ? 'h' : (x > 27 || y > 27) ? 's' : 'g'); }
+for (let y = 11; y <= 20; y++) for (let x = 11; x <= 20; x++) k[y][x] = (x === 11 || y === 11 || x === 20 || y === 20) ? 's' : 'o';
+frame(k); save('T_px_chest_lock.png', k);
 console.log('chest art written to ' + OUT);
