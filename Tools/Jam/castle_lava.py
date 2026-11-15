@@ -7,6 +7,7 @@ import unreal
 
 DIR = '/Game/Glyphbound/Castle/Pixel'
 MAP = '/Game/Glyphbound/Maps/PastCastle'
+LAVA_LIGHT_CD = 90.0
 GROUPS = (('StaticMeshActor_21287', 'StaticMeshActor_21283', 'StaticMeshActor_21290'),
           ('StaticMeshActor_21269', 'StaticMeshActor_21265', 'StaticMeshActor_21272'))
 eal = unreal.EditorAssetLibrary
@@ -144,36 +145,32 @@ for gi, names in enumerate(GROUPS):
         mxv = unreal.Vector(o.x + e.x, o.y + e.y, o.z + e.z)
         lo = mn if lo is None else unreal.Vector(min(lo.x, mn.x), min(lo.y, mn.y), min(lo.z, mn.z))
         hi = mxv if hi is None else unreal.Vector(max(hi.x, mxv.x), max(hi.y, mxv.y), max(hi.z, mxv.z))
-        lt = eas.spawn_actor_from_class(unreal.PointLight, unreal.Vector(o.x, o.y, o.z + e.z + 110.0))
+        # The lava is the light (owner: no light in the air without a source): a rect light the size of the tile lies on
+        # the lava and shines up. Shadows on, every channel: whatever stands over the lava is lit by it.
+        lt = eas.spawn_actor_from_class(unreal.RectLight, unreal.Vector(o.x, o.y, o.z + e.z + 4.0), unreal.Rotator(0, 90, 0))
         lt.set_actor_label('LavaGlow_%d_%s' % (gi, nm[-5:]))
         lt.set_folder_path('Lava')
-        lc = lt.point_light_component
-        if ref_light:
-            lc.set_editor_property('intensity_units', ref_light.point_light_component.get_editor_property('intensity_units'))
-            lc.set_editor_property('intensity', ref_light.point_light_component.get_editor_property('intensity') * 1.5)
+        lc = lt.get_component_by_class(unreal.RectLightComponent)
+        lc.set_editor_property('source_width', e.y * 2.0)
+        lc.set_editor_property('source_height', e.x * 2.0)
+        lc.set_editor_property('barn_door_angle', 90.0)
+        lc.set_editor_property('intensity_units', unreal.LightUnits.CANDELAS)
+        lc.set_editor_property('intensity', LAVA_LIGHT_CD)
         lc.set_editor_property('light_color', unreal.Color(r=255, g=96, b=20, a=255))
-        lc.set_editor_property('attenuation_radius', 520.0)   # the corridor is 8 m wide: the glow stops at its walls
-        lc.set_lighting_channels(False, True, False)   # only the corridor's own pieces take this light (below)
-        lc.set_editor_property('cast_shadows', True)   # without shadows the glow went through the walls (owner)
+        lc.set_editor_property('attenuation_radius', 1000.0)
+        lc.set_editor_property('cast_shadows', True)
         n_lights += 1
     if lo is None:
         continue
     boxes.append((lo, hi))
     log.append('group %d: floor top z=%.0f, %.0f x %.0f cm' % (gi, hi.z, hi.x - lo.x, hi.y - lo.y))
 
-# The glow lit the cell behind the barred wall (owner: "the lava's light goes through the jail wall"). The lava lights
-# are on lighting channel 1, and only the pieces standing over the lava (its walls, vault and pillars) are on it.
-n_ch = 0
+# An earlier try put the corridor's pieces on lighting channel 1: back to the default.
 for a in eas.get_all_level_actors():
-    if not isinstance(a, unreal.StaticMeshActor):
-        continue
-    o, e = a.get_actor_bounds(False)
-    c = a.static_mesh_component
-    inside = any(lo.x - 80 <= o.x <= hi.x + 80 and lo.y - 80 <= o.y <= hi.y + 80 and lo.z - 100 <= o.z <= hi.z + 900 for lo, hi in boxes)
-    if inside:
-        c.set_lighting_channels(True, True, False)
-        n_ch += 1
-log.append('%d pieces of the lava corridor take the lava light' % n_ch)
+    if isinstance(a, unreal.StaticMeshActor):
+        o, e = a.get_actor_bounds(False)
+        if any(lo.x - 80 <= o.x <= hi.x + 80 and lo.y - 80 <= o.y <= hi.y + 80 and lo.z - 100 <= o.z <= hi.z + 900 for lo, hi in boxes):
+            a.static_mesh_component.set_lighting_channels(True, False, False)
 saved = les.save_current_level()
 log.append('lava on %d tiles, %d lights (ref %s), saved=%s' % (n_tiles, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
 unreal.log('\n'.join(log))
