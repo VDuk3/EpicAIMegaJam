@@ -230,8 +230,13 @@ def torch(stage, folder, loc, r):
     a = eas.spawn_actor_from_class(unreal.GBTorch, unreal.Vector(*loc), r)
     holder = a.get_editor_property('holder')
     holder.set_static_mesh(asset(twin(CT + 'Static_Mesh/Props/SM_Torch_A')))
+    # the light sits right over the stick: the stick's own shadow ran down the wall as a long diagonal wedge (owner)
+    holder.set_editor_property('cast_shadow', False)
     a.set_editor_property('flame_size', FLAME['size'])
     a.set_editor_property('light_scale', FLAME['light'])
+    # no shadows from a torch's light: it hangs a hand's breadth from the wall, and every step of the stone near it
+    # threw a long grazing shadow across the wall, a diagonal line under the torch (owner: "esta raro eso")
+    a.set_editor_property('light_casts_shadows', False)
     a.get_editor_property('flame').set_editor_property('relative_location', unreal.Vector(*FLAME['offset']))
     tag(a, stage, folder)
     return a

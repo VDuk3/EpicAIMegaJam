@@ -62,6 +62,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PixelVfx")
 	bool bPivotAtLightAnchor = false;
 
+	// Moves the clip's light away from where the clip places it, in this component's own frame (cm). A torch on a
+	// wall: the flame stays on the torch, the light stands out from the wall so the stone around it is lit evenly.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PixelVfx")
+	FVector LightOffset = FVector::ZeroVector;
+
 	// Quad world origin/extent for diagnostics (bake showcase logging).
 	void GetQuadWorldBounds(FVector& OutOrigin, FVector& OutExtent) const;
 

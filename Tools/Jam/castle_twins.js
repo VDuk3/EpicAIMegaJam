@@ -897,10 +897,55 @@ function hullTwin(name, src, opt) {
   return { name, srcTris: src.t.length / 3, tris, cells: 0, snapped: 0, lone: 0, boxes: 0, kinds: kind + ' (hull)' };
 }
 
+// Each triangle turned to face out: a ray from its middle along its normal that crosses the piece an odd number of
+// times started inside. The pack's meshes mix both windings (drawn two-sided, it never showed); lit with normals from
+// the winding, the two halves of one wall face lit differently, a diagonal line across the stone (owner).
+function orientOutward(V, T) {
+  const out = T.slice();
+  const n = T.length / 3;
+  const P = (i) => [V[i * 3], V[i * 3 + 1], V[i * 3 + 2]];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const tris = [];
+  for (let k = 0; k < n; k++) tris.push([P(T[k * 3]), P(T[k * 3 + 1]), P(T[k * 3 + 2])]);
+  const hits = (o, d, skip) => {
+    let c = 0;
+    for (let k = 0; k < n; k++) {
+      if (k === skip) continue;
+      const [a, b, cc] = tris[k];
+      const e1 = sub(b, a), e2 = sub(cc, a), p = cross(d, e2), det = dot(e1, p);
+      if (Math.abs(det) < 1e-9) continue;
+      const iv = 1 / det, tv = sub(o, a), u = dot(tv, p) * iv;
+      if (u < 0 || u > 1) continue;
+      const q = cross(tv, e1), v = dot(d, q) * iv;
+      if (v < 0 || u + v > 1) continue;
+      if (dot(e2, q) * iv > 0.01) c++;
+    }
+    return c;
+  };
+  for (let k = 0; k < n; k++) {
+    const [a, b, c] = tris[k];
+    let nr = cross(sub(b, a), sub(c, a));
+    const ln = Math.hypot(...nr);
+    if (ln < 1e-9) continue;
+    nr = nr.map((x) => x / ln);
+    const m = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3];
+    // three slightly different rays vote (one may graze an edge)
+    let inside = 0;
+    for (const j of [[0.013, 0.007, 0.011], [-0.009, 0.012, -0.005], [0.004, -0.011, 0.014]]) {
+      const d = [nr[0] + j[0], nr[1] + j[1], nr[2] + j[2]];
+      if (hits([m[0] + nr[0] * 0.05, m[1] + nr[1] * 0.05, m[2] + nr[2] * 0.05], d, k) % 2 === 1) inside++;
+    }
+    if (inside >= 2) { out[k * 3 + 1] = T[k * 3 + 2]; out[k * 3 + 2] = T[k * 3 + 1]; }
+  }
+  return out;
+}
+
 function keepSource(name, src, opt) {
   const kinds = src.mats.map((m) => (opt.tiles && opt.tiles[m]) || opt.tile || tileFor(m));
   const sections = {};
-  const V = src.v, T = src.t;
+  const V = src.v, T = src.t.length / 3 <= 12000 ? orientOutward(src.v, src.t) : src.t;
   for (let k = 0; k < T.length / 3; k++) {
     const P = [0, 1, 2].map((q) => { const i = T[k * 3 + q] * 3; return [V[i], V[i + 1], V[i + 2]]; });
     const e1 = P[1].map((x, i) => x - P[0][i]), e2 = P[2].map((x, i) => x - P[0][i]);
@@ -918,10 +963,19 @@ function keepSource(name, src, opt) {
       sec.uv.push(Math.round(u * 10000) / 10000, Math.round(v * 10000) / 10000);
       sec.n.push(...nr.map((x) => Math.round((x / ln) * 10000) / 10000));
     }
-    sec.t.push(base, base + 1, base + 2);
+    sec.t.push(base, base + 1, base + 2);   // (turned to face out above, in this tool's winding)
   }
   const tris = Object.values(sections).reduce((x, q) => x + q.t.length / 3, 0);
-  fs.writeFileSync(path.join(OUT, name + '.json'), JSON.stringify({ name, path: src.path, grid: 0, sections, boxes: null, nboxes: 0, tris, kept: true }));
+  // collision: boxes merged from the piece's solid on the fine grid (the faces' own complex collision answered from one
+  // side only once the winding was turned, and the player fell through the crypt's floors)
+  let boxList = null;
+  try {
+    const vx = voxelize(src, Object.assign({}, DEF, { yaw: 0, grid: 6.25 }));
+    cleanLone(vx, 1);
+    const bx = boxes(vx);
+    if (bx.length <= 3000) boxList = bx.map(([x0, y0, z0, x1, y1, z1]) => ({ c: [vx.lo[0] + (x0 + x1) / 2 * vx.g, vx.lo[1] + (y0 + y1) / 2 * vx.g, vx.lo[2] + (z0 + z1) / 2 * vx.g], s: [(x1 - x0) * vx.g, (y1 - y0) * vx.g, (z1 - z0) * vx.g], yaw: 0 }));
+  } catch (e) { boxList = null; }
+  fs.writeFileSync(path.join(OUT, name + '.json'), JSON.stringify({ name, path: src.path, grid: 0, sections, boxes: boxList, nboxes: boxList ? boxList.length : 0, tris, kept: true }));
   return { name, srcTris: T.length / 3, tris, cells: 0, snapped: 0, lone: 0, boxes: 0, kinds: Object.keys(sections).join('+') + ' (kept)' };
 }
 

@@ -42,6 +42,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Torch")
 	bool bLightCastsShadows = true;
 
+	/** The light's place relative to the flame, in the torch's frame (+Y leans out of the wall). A light a hand's
+	 *  breadth from the wall drew hard dark wedges down the stone under each torch (owner); 1.5 m out it lights the
+	 *  passage evenly. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glyphbound|Torch")
+	FVector LightOffset = FVector(0.f, 150.f, 0.f);
+
 protected:
 	virtual void BeginPlay() override;
 };

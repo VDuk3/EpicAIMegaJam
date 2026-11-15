@@ -356,7 +356,7 @@ void UGBPixelVfxComponent::UpdateQuadTransform()
 
 	if (ClipLight)
 	{
-		ClipLight->SetWorldLocation(LightLoc);
+		ClipLight->SetWorldLocation(LightLoc + GetComponentQuat().RotateVector(LightOffset));
 	}
 }
 

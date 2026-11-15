@@ -409,3 +409,15 @@ Translation: let's replace the castle's lights with torches. The project already
 - Builder: `walks: clear on 12 walks`.
 - Tour (Editor build): `SMOKE tour block passed: 42 spots, 0 without floor`, no LogGB errors, 0 engine errors. Pictures of the gate passage and the cell corridor looked at close: the flame first sat half inside the torch's cup and the wall beside it burned white; it was raised over the cup, the light lowered to 40% and the clip's glow to 1.2.
 - **Sol 6.1 review** (medium, read-only, Codex CLI through the logged wrapper; prompt `Prompts/review_castle_torches_sol.md`): *"No concrete defects found in the reviewed change."*
+
+### The diagonal line under the torches (owner)
+> *"Noto que debajo de las antorchas hay una línea de sombra diagonal. Está raro eso"* (I notice there is a diagonal shadow line under the torches. That looks odd.)
+
+Taken one cause at a time, each tested through the game's tour:
+1. **The torch's own stick shadowed its light** (the light hung right over it): the holder casts no shadow now. The line stayed.
+2. **No shadows from torch lights at all** (a light a hand's breadth from the wall throws a grazing shadow from every step of stone near it). The line stayed.
+3. **The pack's meshes wind their faces the other way round from the twins** (signed volume negative): the crypt's set, the spiral stairs and the small things were lit as if from behind. Each kept face is now turned outward by a ray test (a ray from its middle that crosses the piece an odd number of times started inside), and those twins get box collision from their solid (their single-sided faces had let the player fall through the crypt's floors once turned). The line stayed in the crypt.
+4. **The light is the cause** (all torch lights off: no line) **and its place was**: the clip's light sat at the flame, a few centimetres from the wall. `UGBPixelVfxComponent` has a `LightOffset` now (zero by default, so the Fireball is unchanged) and `AGBTorch` puts its light **1.5 m out from the wall**. The gate passage is lit evenly; in the cell corridor a soft band is left where the vault meets the wall.
+- Tried and taken back: keeping the flame's quad out of every occlusion effect (contact shadows, distance fields, global illumination, ray tracing); it changed nothing.
+- **Sol 6.1 review** of the light offset (`Prompts/review_castle_torch_light_sol.md`): *"No defects found in the reviewed diff."*
+- Full smoke (`Smoke-Jam.ps1 -Offscreen`): no LogGB errors, 0 engine errors. Package: `BUILD SUCCESSFUL`, zip 2,024.6 MB. Packaged tour: 42 spots, 0 without floor, the seal's map can be opened, 0 engine errors. Pictures (packaged game): `media/2026-11-14/castle_torch_fix_*.png`.
