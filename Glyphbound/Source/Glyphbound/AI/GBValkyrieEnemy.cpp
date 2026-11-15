@@ -552,7 +552,9 @@ void AGBValkyrieEnemy::TickFightMovement(AActor* Goal, float DeltaSeconds, float
 	if (S(TEXT("ChaseAlways"), 0.f) > 0.5f)
 	{
 		// the final boss: no band, no strafing, no backing off; it runs straight at the player and stays on top of him
-		Point = Player - Dir * FMath::Min(Distance, S(TEXT("ChaseStopDistance"), 120.f));
+		// aimed where the player is going (his velocity times ChaseLead seconds), so circling and backing off do not shake it
+		const FVector Lead = Goal->GetVelocity() * S(TEXT("ChaseLead"), 0.f);
+		Point = Player + FVector(Lead.X, Lead.Y, 0.f) - Dir * FMath::Min(Distance, S(TEXT("ChaseStopDistance"), 120.f));
 		MoveGait = Distance > S(TEXT("ChaseWalkDistance"), 250.f) ? EGBGait::Run : EGBGait::Combat;
 	}
 	else if (Distance > RangeMax)
@@ -1137,6 +1139,12 @@ void AGBValkyrieEnemy::TickDash(AActor* Goal, float DeltaSeconds)
 	}
 	if (DashTimeLeft <= 0.f || Flat.Size() <= V(TEXT("DashStopDistance"), 180.f))
 	{
+		// DashChain: still out of reach when the dash runs out, it dashes again at once, as many times as it takes
+		if (S(TEXT("DashChain"), 0.f) > 0.5f && Flat.Size() > S(TEXT("MeleeRange"), 280.f))
+		{
+			StartDash(Goal, Flat.Size());
+			return;
+		}
 		StopMoving();
 		StartCombo(Goal);
 		return;
@@ -1154,6 +1162,13 @@ void AGBValkyrieEnemy::StartJudgement(AActor* Goal)
 	Act = EAct::Judgement;
 	++JudgementCasts;
 	bMarksSpawned = false;
+	// the circle casts in a row (JudgementRepeatsMin..JudgementRepeats; the lance counters are free during Judgement)
+	{
+		const int32 MaxCasts = FMath::Clamp(FMath::RoundToInt(V(TEXT("JudgementRepeats"), 1.f)), 1, 4);
+		const int32 MinCasts = FMath::Clamp(FMath::RoundToInt(V(TEXT("JudgementRepeatsMin"), float(MaxCasts))), 1, MaxCasts);
+		VolleysDone = 0;
+		VolleysWanted = FMath::RandRange(MinCasts, MaxCasts);
+	}
 	MarksWanted = FMath::Clamp(FMath::RoundToInt(V(TEXT("JudgementCircles"), 3.f)), 1, 8);
 	JudgementTotal = V(TEXT("JudgementRiseTime"), 0.6f) + V(TEXT("JudgementTelegraph"), 1.2f) + (MarksWanted - 1) * V(TEXT("JudgementStagger"), 0.15f)
 		+ V(TEXT("JudgementStrikeTime"), 0.45f) + V(TEXT("JudgementHold"), 0.5f) + V(TEXT("JudgementLowerTime"), 0.4f);
@@ -1200,6 +1215,15 @@ void AGBValkyrieEnemy::TickJudgement(AActor* Goal, float DeltaSeconds)
 	{
 		bMarksSpawned = true;
 		SpawnMarks(Goal);
+		if (++VolleysDone < VolleysWanted)
+		{
+			// another set of circles under the player's new place after JudgementRepeatGap
+			bMarksSpawned = false;
+			ActTime = Rise - V(TEXT("JudgementRepeatGap"), 0.5f);
+			float Unused = 0.f;
+			PlayActionClip(GBValkyrieLocal::ActionClipJudgement, Unused);
+			return;
+		}
 		if (S(TEXT("MoveWhileCasting"), 0.f) > 0.5f)
 		{
 			// the circles strike on their own: it does not wait for them
@@ -1323,7 +1347,10 @@ void AGBValkyrieEnemy::StartLances(AActor* Goal)
 	(void)Goal;
 	Act = EAct::Lances;
 	VolleysDone = 0;
-	VolleysWanted = FMath::Clamp(FMath::RoundToInt(V(TEXT("LanceVolleys"), 1.f)), 1, 4);
+	// a random count between LanceVolleysMin and LanceVolleys (the final boss throws its fan 2 or 3 times in a row)
+	const int32 MaxVolleys = FMath::Clamp(FMath::RoundToInt(V(TEXT("LanceVolleys"), 1.f)), 1, 4);
+	const int32 MinVolleys = FMath::Clamp(FMath::RoundToInt(V(TEXT("LanceVolleysMin"), float(MaxVolleys))), 1, MaxVolleys);
+	VolleysWanted = FMath::RandRange(MinVolleys, MaxVolleys);
 	float Unused = 0.f;
 	PlayActionClip(GBValkyrieLocal::ActionClipLances, Unused);
 }
