@@ -9,7 +9,8 @@ DIR = '/Game/Glyphbound/Castle/Pixel'
 MAP = '/Game/Glyphbound/Maps/PastCastle'
 GROUPS = (('StaticMeshActor_21287', 'StaticMeshActor_21283', 'StaticMeshActor_21290'),
           ('StaticMeshActor_21269', 'StaticMeshActor_21265', 'StaticMeshActor_21272'))
-HAZE_HEIGHT = 70.0
+HAZE_STEP = 200.0
+HAZE = {'velocity': 20.0, 'lifetime': 3.0, 'size': 4.0}
 eal = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 MP = unreal.MaterialProperty
@@ -112,82 +113,25 @@ def lava_master():
     return m
 
 
-def haze_master():
-    m, path, node = new_material('M_PxHeatHaze')
-    m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
-    m.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
-    m.set_editor_property('two_sided', True)
-    try:
-        m.set_editor_property('refraction_method', unreal.RefractionMode.RM_INDEX_OF_REFRACTION)
-    except Exception as e:
-        log.append('haze: refraction_method not set (%s)' % e)
-    wp = node(unreal.MaterialExpressionWorldPosition, -1400, 0)
-    mx = node(unreal.MaterialExpressionComponentMask, -1200, -100, r=True, g=True, b=False, a=False)
-    link(wp, '', mx, '')
-    mz = node(unreal.MaterialExpressionComponentMask, -1200, 100, r=False, g=False, b=True, a=False)
-    link(wp, '', mz, '')
-    # u = x + y (so every wall of the box gets a moving picture), v = z - rising
-    dot = node(unreal.MaterialExpressionDotProduct, -1000, -100)
-    one = node(unreal.MaterialExpressionConstant2Vector, -1200, -250, r=1.0, g=1.0)
-    link(mx, '', dot, 'A')
-    link(one, '', dot, 'B')
-    time = node(unreal.MaterialExpressionTime, -1400, 300)
-    rise = node(unreal.MaterialExpressionScalarParameter, -1400, 400, parameter_name='Rise', default_value=35.0)
-    tr = node(unreal.MaterialExpressionMultiply, -1200, 350)
-    link(time, '', tr, 'A')
-    link(rise, '', tr, 'B')
-    v = node(unreal.MaterialExpressionSubtract, -1000, 150)
-    link(mz, '', v, 'A')
-    link(tr, '', v, 'B')
-    uv = node(unreal.MaterialExpressionAppendVector, -800, 0)
-    link(dot, '', uv, 'A')
-    link(v, '', uv, 'B')
-    size = node(unreal.MaterialExpressionScalarParameter, -1000, 400, parameter_name='WaveSize', default_value=22.0)
-    uvs = node(unreal.MaterialExpressionDivide, -650, 0)
-    link(uv, '', uvs, 'A')
-    link(size, '', uvs, 'B')
-    # A shimmer, not rising blobs (owner): two fast sine ripples bend the normal sideways.
-    uu = node(unreal.MaterialExpressionComponentMask, -500, -150, r=True, g=False, b=False, a=False)
-    vv = node(unreal.MaterialExpressionComponentMask, -500, 50, r=False, g=True, b=False, a=False)
-    link(uvs, '', uu, '')
-    link(uvs, '', vv, '')
-    amp = node(unreal.MaterialExpressionScalarParameter, -350, 500, parameter_name='Amount', default_value=0.2)
-
-    def ripple(y, vmul, umul):
-        v1 = node(unreal.MaterialExpressionMultiply, -350, y, const_b=vmul)
-        link(vv, '', v1, 'A')
-        u1 = node(unreal.MaterialExpressionMultiply, -350, y + 80, const_b=umul)
-        link(uu, '', u1, 'A')
-        ph = node(unreal.MaterialExpressionAdd, -220, y)
-        link(v1, '', ph, 'A')
-        link(u1, '', ph, 'B')
-        sn = node(unreal.MaterialExpressionSine, -100, y, period=1.0)
-        link(ph, '', sn, '')
-        am = node(unreal.MaterialExpressionMultiply, 20, y)
-        link(sn, '', am, 'A')
-        link(amp, '', am, 'B')
-        return am
-    nx = ripple(-200, 1.0, 0.35)
-    ny = ripple(100, 1.7, -0.6)
-    nxy = node(unreal.MaterialExpressionAppendVector, 160, -50)
-    link(nx, '', nxy, 'A')
-    link(ny, '', nxy, 'B')
-    up = node(unreal.MaterialExpressionConstant, 160, 100, r=1.0)
-    ts = node(unreal.MaterialExpressionAppendVector, 300, 0)
-    link(nxy, '', ts, 'A')
-    link(up, '', ts, 'B')
-    ior = node(unreal.MaterialExpressionScalarParameter, -450, 300, parameter_name='IOR', default_value=1.05)
-    op = node(unreal.MaterialExpressionConstant, -450, 400, r=0.0)
-    MEL.connect_material_property(ts, '', MP.MP_NORMAL)
-    MEL.connect_material_property(ior, '', MP.MP_REFRACTION)
-    MEL.connect_material_property(op, '', MP.MP_OPACITY)
-    MEL.recompile_material(m)
-    eal.save_asset(path, only_if_is_dirty=False)
-    return m
-
-
 lava = lava_master()
-haze = haze_master()
+# Heat haze (owner: simple, with Niagara): NS_PxLavaHeat is the MuzzleFlash3D pack's haze emitter alone (a looping
+# refracting sprite), slowed down; one small system every HAZE_STEP cm, just over the lava.
+T = 'NiagaraToolsets.NiagaraToolset_System.'
+NS_PATH = DIR + '/NS_PxLavaHeat'
+if eal.does_asset_exist(DIR + '/M_PxHeatHaze'):
+    eal.delete_asset(DIR + '/M_PxHeatHaze')
+if not eal.does_asset_exist(NS_PATH):
+    eal.duplicate_asset('/Game/MuzzleFlash3D/FX/Modern/NS_MuzzleFlash_Single', NS_PATH)
+    ns0 = unreal.load_asset(NS_PATH)
+    for e in (await call_tool(T + 'GetSystemSummary', system=ns0))['emitters']:
+        if e['emitterName'] != 'NE_Haze':
+            await call_tool(T + 'RemoveEmitter', emitterRef={'system': ns0, 'emitterName': e['emitterName']})
+heat = unreal.load_asset(NS_PATH)
+F = {'refPath': '/Script/Niagara.NiagaraFloat'}
+await call_tool(T + 'AddUserVariables', system=heat, variablesToAdd=[
+    {'name': 'User.' + k, 'type': {'classStructOrEnum': F, 'bIsStatic': False}, 'defaultValue': {'struct': F, 'value': {'value': v}}, 'description': ''}
+    for k, v in (('Haze Velocity', HAZE['velocity']), ('Haze Lifetime', HAZE['lifetime']), ('Haze SpriteSize', HAZE['size']))])
+eal.save_asset(NS_PATH, only_if_is_dirty=False)
 
 actors = eas.get_all_level_actors()
 by_name = {a.get_name(): a for a in actors}
@@ -196,7 +140,7 @@ for a in actors:                                   # a second run replaces its o
     if a.get_actor_label().startswith(('LavaHaze_', 'LavaGlow_')):
         eas.destroy_actor(a)
 
-cube = unreal.load_asset('/Engine/BasicShapes/Cube')
+n_haze = 0
 n_tiles = 0
 n_lights = 0
 for gi, names in enumerate(GROUPS):
@@ -229,20 +173,19 @@ for gi, names in enumerate(GROUPS):
         n_lights += 1
     if lo is None:
         continue
-    top = hi.z
-    sx, sy = hi.x - lo.x, hi.y - lo.y
-    box = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, top + HAZE_HEIGHT / 2 + 2.0))
-    box.set_actor_label('LavaHaze_%d' % gi)
-    box.set_folder_path('Lava')
-    bc = box.static_mesh_component
-    bc.set_static_mesh(cube)
-    bc.set_material(0, haze)
-    bc.set_collision_profile_name('NoCollision')
-    bc.set_editor_property('cast_shadow', False)
-    box.set_actor_scale3d(unreal.Vector(sx / 100.0, sy / 100.0, HAZE_HEIGHT / 100.0))
-    log.append('group %d: floor top z=%.0f, %.0f x %.0f cm' % (gi, top, sx, sy))
+    x = lo.x + HAZE_STEP / 2
+    while x < hi.x:
+        y = lo.y + HAZE_STEP / 2
+        while y < hi.y:
+            h = eas.spawn_actor_from_object(heat, unreal.Vector(x, y, hi.z + 8.0), unreal.Rotator(0, 90, 0))
+            h.set_actor_label('LavaHaze_%d_%d' % (gi, n_haze))
+            h.set_folder_path('Lava')
+            n_haze += 1
+            y += HAZE_STEP
+        x += HAZE_STEP
+    log.append('group %d: floor top z=%.0f, %.0f x %.0f cm' % (gi, hi.z, hi.x - lo.x, hi.y - lo.y))
 
 saved = les.save_current_level()
-log.append('lava on %d tiles, %d lights (ref %s), saved=%s' % (n_tiles, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
+log.append('lava on %d tiles, %d haze systems, %d lights (ref %s), saved=%s' % (n_tiles, n_haze, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
 unreal.log('\n'.join(log))
 '\n'.join(log)
