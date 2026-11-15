@@ -9348,12 +9348,17 @@ namespace GBSmokeRun
 				FirstTime = FMath::Min(FirstTime, Step.Time);
 			}
 			float LastKept = 1.f;
+			// Blocks that run their own state machine and quit the game when it is done (seal, tour, FogVisit; Sol):
+			// for them the quit step stays a far safety net.
+			bool bSelfQuitting = FogVisitRun::bActive;
 			for (FStep& Step : Steps)
 			{
 				Step.Time -= FirstTime - 1.f;
 				if (FCString::Strcmp(Step.Name, TEXT("quit")) != 0)
 				{
 					LastKept = FMath::Max(LastKept, Step.Time);
+					const FString Name(Step.Name);
+					bSelfQuitting |= Name.StartsWith(TEXT("seal"), ESearchCase::IgnoreCase) || Name.StartsWith(TEXT("tour"), ESearchCase::IgnoreCase);
 				}
 			}
 			for (FStep& Step : Steps)
@@ -9364,7 +9369,7 @@ namespace GBSmokeRun
 					// Any other filtered run quits 5 s after its last step, not at the full run's end (the quit step's own
 					// time): a block from the middle of the run used to sit idle until then, a sub-block until the timeout.
 					// Blocks that run a state machine past their last step hold the step clock meanwhile (CastleVisit).
-					Step.Time = FogVisitRun::bActive ? 100000.f : LastKept + 5.f;
+					Step.Time = bSelfQuitting ? 100000.f : LastKept + 5.f;
 				}
 			}
 		}

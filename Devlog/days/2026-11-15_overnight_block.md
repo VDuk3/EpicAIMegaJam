@@ -199,5 +199,11 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   full smoke; `-Visits` adds the three map visits): the uncooked full smoke (the same 559 steps), the separate Game
   build (the package compiles it) and filtered packaged runs the full run covers are no longer repeated. Rules added to
   `CLAUDE.md`.
+- **Sol 6.1 on these changes:** the early quit would have cut the seal and tour blocks short (they run their own state
+  machines and quit the game when done): any filtered run that keeps a seal, tour or FogVisit step keeps the far quit.
+  `Verify-Jam` now needs the stage's exit code 0 as well as its success line (a zip or size failure after UAT's BUILD
+  SUCCESSFUL used to pass) and passes `-Project` to every stage. Its first real run: package 933.9 MB, packaged full
+  smoke, FogVisit, CastleVisit and Enemies3DBase green; the suite (73, 0 failed) showed red only because "0 failed"
+  matched FAILED without case: the check is case-sensitive now. `-Only seal` passes and quits by itself (18 s).
 - The POV hands (owner's question): the other chat's removal (`b377478`) is in the build; the packaged captures show
   the pistol and the rifle with no hands.
