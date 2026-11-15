@@ -1,4 +1,4 @@
-# 2026-11-14, block: the horde chief's arms (shield in the fist, one-handed pistol)
+﻿# 2026-11-14, block: the horde chief's arms (shield in the fist, one-handed pistol)
 
 Architect: Claude Code (Opus 5.5) on CENTRAL. **Exception to the default implementer:** the architect wrote the code
 himself instead of Muse Spark. Reason: hand-written animation math (two-bone IK, quaternion order across three spaces),
@@ -6,7 +6,7 @@ the kind of task where Muse stalled before; small enough to do and check directl
 
 ## What the owner asked
 
-> La postura y las animaciones del jefe orco son muy malas. El escudo es un sinsentido, está por cualquier parte menos en su brazo, y en general las animaciones son extremadamente erráticas.
+> La postura y las animaciones del jefe orco son muy malas. El escudo es un sinsentido, estÃ¡ por cualquier parte menos en su brazo, y en general las animaciones son extremadamente errÃ¡ticas.
 
 Translation: The orc chief's posture and animations are very bad. The shield makes no sense, it is anywhere but on his arm, and overall the animations are extremely erratic.
 
@@ -64,5 +64,41 @@ Prompt `Prompts/chief_arms_review_sol.md`. No quaternion-order or threading defe
 - Not checked: the chief walking and turning, the arm rising during a real aim, the bash in a real fight. A person has to
   play it (PIE is never run by an agent).
 
-Media: `media/2026-11-14/chief_arms_raised_front.png`, `chief_arms_raised_left.png`, `chief_arms_lowered_front.png`
+## Second pass: the fist still left the shield
+
+The owner played it and sent a screenshot (from his left, shield raised):
+
+> aca me parece que el escudo estÃ¡ separado de la mano aun
+
+Translation: here it looks to me like the shield is still apart from the hand.
+
+Measured, not guessed: a temporary log in the smoke printed the left hand's bones in the shield mesh's own space. The IK
+put the **wrist** on the handle and let the clip (a two-handed pistol clip) turn the hand. Raised, the fingers happened to
+lie along the shield's back. Lowered, they pointed away and the fist hung about 20 cm off it. The shield mesh's origin
+was also not where the first pass assumed: the back face sits at x = -3.5, and the spikes reach x = +46.
+
+Fix (`GBShieldEnemy.cpp`, `UpdateArms`): the hand takes one fixed turn in the shield's space. The fingers run along its
+back, toward his body and a little down. The knuckle line runs into the shield (index at the plate, pinky away). The
+**palm's middle**, not the wrist, goes on the handle. The fingers' place is read in the hand bone's own frame, which no
+turn of the hand changes. `ShieldGripBack` is now the palm's distance behind the origin (8).
+
+Review (Sol 6.1, medium; prompt `Prompts/chief_grip_review_sol.md`) of the first version of this fix. That version bent
+the fingers along the forearm's line, measured on last frame's pose. Two findings, both fixed by the design above:
+1. That feedback from one frame to the next can settle into a two-frame wobble of about 15 cm. Sol reproduced it
+   numerically.
+2. Near a pose where the forearm is parallel to the shield's axis, it fell back to the wrist-only grip with a snap.
+
+The final design has neither, because nothing in it depends on the forearm or on the frame before.
+
+Checks: editor build, `-Only Chief -Offscreen` (0 errors; the fist is on the shield's back in the raised, lowered and bash
+closeups) and the game target build all pass. The full `Smoke-Jam.ps1 -Offscreen` passed (387 s, 0 errors) on the first
+version of the fix. The final change touches only the chief's grip, which the Chief steps cover.
+
+Coordination: the Editor was open in the chat rebuilding the castle (Live Coding blocks a build). At the owner's request
+the two chats agreed by message: that chat closed it with `Stop-EditorMcp.ps1`, this one built and ran the smoke, then
+handed it back.
+
+Media: `media/2026-11-14/chief_grip_raised_left.png`, `chief_grip_bash_left.png` (after the fix).
+
+Media (first pass): `media/2026-11-14/chief_arms_raised_front.png`, `chief_arms_raised_left.png`, `chief_arms_lowered_front.png`
 (aiming one-handed), `chief_arms_lowered_left.png`, `chief_arms_bash_front.png`, `chief_arms_bash_left.png`.

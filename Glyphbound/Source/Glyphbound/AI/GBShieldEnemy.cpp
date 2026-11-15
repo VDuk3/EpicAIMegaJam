@@ -133,7 +133,7 @@ void AGBShieldEnemy::UpdateShieldVisuals(float DeltaSeconds)
 			{
 				const float Reach = 0.95f * (FVector::Dist(Body->GetSocketLocation(Upper), Body->GetSocketLocation(Lower)) + FVector::Dist(Body->GetSocketLocation(Lower), Body->GetSocketLocation(Hand)));
 				const FVector Shoulder = GetActorTransform().InverseTransformPosition(Body->GetSocketLocation(Upper));
-				const FVector Grip = ShieldPlace.TransformPosition(FVector(-S(TEXT("ShieldGripBack"), 10.f), 0.f, 0.f));
+				const FVector Grip = ShieldPlace.TransformPosition(FVector(-S(TEXT("ShieldGripBack"), 8.f), 0.f, 0.f));
 				const float Rest2 = FMath::Square(Grip.Y - Shoulder.Y) + FMath::Square(Grip.Z - Shoulder.Z);
 				Allowed = Rest2 < Reach * Reach ? FMath::Clamp(Shoulder.X + FMath::Sqrt(Reach * Reach - Rest2) - Grip.X, 0.f, Push) : 0.f;
 			}
@@ -186,10 +186,50 @@ void AGBShieldEnemy::UpdateArms(float DeltaSeconds)
 	const float Scale = FMath::Max(S(TEXT("MeshScale"), 1.f), 0.1f);
 	auto ToMeshDir = [&MeshRel](const FVector& ActorDir) { return MeshRel.InverseTransformVectorNoScale(ActorDir.GetSafeNormal()); };
 
-	// Left: the wrist a little behind the handle (the fist closes on it), the elbow out to the left and down.
+	// Left: the palm on the shield's handle, the elbow out to the left and down. The clips turn the hand any way (they hold a pistol
+	// two-handed), so the hand takes one fixed turn in the shield's space: the fingers along its back, towards his body and a little
+	// down, the knuckle line into the shield (index at the plate, pinky away). The fingers' place is read in the hand bone's own frame,
+	// which no turn of the hand changes, so nothing here feeds back from one frame to the next.
 	FGBArmIK Left;
 	Left.Alpha = 1.f;
-	Left.Location = MeshRel.InverseTransformPosition(ShieldPlace.TransformPosition(FVector(-S(TEXT("ShieldGripBack"), 10.f), 0.f, 0.f)));
+	const FVector HandleCS = MeshRel.InverseTransformPosition(ShieldPlace.TransformPosition(FVector(-S(TEXT("ShieldGripBack"), 8.f), 0.f, 0.f)));
+	Left.Location = HandleCS;
+	{
+		const TArray<FTransform>& CS = Body->GetComponentSpaceTransforms();
+		auto Bone = [Body, &CS](const TCHAR* Name) -> const FTransform*
+		{
+			const int32 Index = Body->GetBoneIndex(FName(Name));
+			return CS.IsValidIndex(Index) ? &CS[Index] : nullptr;
+		};
+		const FTransform* Hand = Bone(TEXT("hand_l"));
+		const FTransform* Middle = Bone(TEXT("middle_01_l"));
+		const FTransform* Index = Bone(TEXT("index_01_l"));
+		const FTransform* Pinky = Bone(TEXT("pinky_01_l"));
+		const FTransform* Palm = Bone(TEXT("middle_metacarpal_l"));
+		if (Hand && Middle && Index && Pinky && Palm)
+		{
+			// In the hand bone's frame (rotation only: the arm's bones have unit scale).
+			const FQuat HandRot = Hand->GetRotation();
+			const FVector Wrist = Hand->GetLocation();
+			const FVector FingersLocal = HandRot.UnrotateVector(Middle->GetLocation() - Wrist);
+			const FVector AcrossLocal = HandRot.UnrotateVector(Index->GetLocation() - Pinky->GetLocation());
+			const FVector PalmLocal = HandRot.UnrotateVector((Middle->GetLocation() + Palm->GetLocation() + Index->GetLocation() + Pinky->GetLocation()) * 0.25f - Wrist);
+			if (FingersLocal.SizeSquared() > 1.f && AcrossLocal.SizeSquared() > 1.f && !FVector::Coincident(FingersLocal.GetSafeNormal(), AcrossLocal.GetSafeNormal(), 0.99f))
+			{
+				// The wanted hand in the shield's space (measured on the raised grip that looked right), then in component space.
+				const FQuat ShieldCS = MeshRel.GetRotation().Inverse() * ShieldPlace.GetRotation();
+				const FVector FingersWant = ShieldCS.RotateVector(FVector(0.1f, 0.86f, -0.5f));
+				const FVector AcrossWant = ShieldCS.RotateVector(FVector::ForwardVector);
+				const FQuat Local = FRotationMatrix::MakeFromXY(FingersLocal, AcrossLocal).ToQuat();
+				const FQuat Want = FRotationMatrix::MakeFromXY(FingersWant, AcrossWant).ToQuat();
+				const FQuat NewHand = (Want * Local.Inverse()).GetNormalized();
+				Left.bRotation = true;
+				Left.Rotation = NewHand;
+				// The palm's middle (knuckles and middle metacarpal) goes on the handle, not the wrist.
+				Left.Location = HandleCS - NewHand.RotateVector(PalmLocal);
+			}
+		}
+	}
 	Left.Pole = ToMeshDir(FVector(-0.3f, -1.f, -0.8f));
 	AnimInst->SetArmIK(0, Left);
 
