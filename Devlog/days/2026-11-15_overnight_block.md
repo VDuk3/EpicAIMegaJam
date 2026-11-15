@@ -275,3 +275,5 @@ smoke runs between attempts); the map notes stayed in this chat and were prepare
   minute: the scan reads the foot of a wall as a doorway, and the steps came out as grey slabs along the walls. Open
   until the owner says which doorway he saw.
 - **Decision (provisional, GDD §8):** the frost and storm staffs are defined but no chest gives them yet.
+
+- **Dungeon corridor floor turned to lava (owner request, ~19:40 EST).** `Tools/Jam/castle_lava.py` (written directly by the orchestrator: a small data/material change, no time for a Muse round) builds `M_PxLava` (procedural pixel lava: world-space noise snapped to a 12.5 cm pixel grid, five flat heat steps, unlit) and `M_PxHeatHaze` (an invisible refracting two-sided box over the lava whose normal scrolls upward; it samples `T_HeatHaze_Normal` from the MuzzleFlash3D pack already in the project), puts lava on six `SM_Px_FloorCorridor` tiles of PastCastle and an orange point light over each. Torch lights also moved onto the flame (`LightOffset` 0 on all 34 torches, owner: "the light must be exactly in the flame").
