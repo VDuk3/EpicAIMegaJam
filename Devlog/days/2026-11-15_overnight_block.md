@@ -217,3 +217,32 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   matched FAILED without case: the check is case-sensitive now. `-Only seal` passes and quits by itself (18 s).
 - The POV hands (owner's question): the other chat's removal (`b377478`) is in the build; the packaged captures show
   the pistol and the rifle with no hands.
+
+## Owner's castle playtest (afternoon, 11 notes)
+
+The owner played the packaged castle and sent 11 notes with screenshots, asking to use a subagent and to save time.
+Split: the four AI notes went to an **Opus subagent** (Muse exception, noted: time, and the AI fixes needed measured
+smoke runs between attempts); the map notes stayed in this chat and were prepared while the subagent held the machine.
+
+- **AI (subagent, `4dd53fb`; Sol 6.1 review: no bugs).** Castle enemies 35% faster (move, combat and sprite-run speed;
+  patrol speed kept, since raising it made a CastleVisit zone miss the player). Centaurs fire more often (shorter
+  interval and windup, three arrows a burst). Melee enemies already in reach swing at once (the pincer wait and the
+  squad cap of two no longer hold them). The circling near the player had three causes, all fixed: the enemy that
+  had just swung walked back out to the wait ring, the ring's reference attacker flipped every frame, and a waiter at
+  its slot counted as stuck and jittered. Castle, Enemies3D:tactics and CastleVisit green.
+- **Wall at the entrance:** a slit of sky stood between the front curtain wall and the gatehouse on both sides; a stone
+  column fills each.
+- **The moon looked like a sun:** smaller disc glow, a third of the Mie halo, little bloom.
+- **Entrance light:** the point light became the baked FluidFire pixel clip (Niagara Fluids, baked by our plugin) over
+  the fire pit, as an `AGBTorch` with its own light.
+- **Windows:** two pixel panes drawn by script (leaded diamond glass; a stained-glass arch with a gold star), material
+  `M_PxGlass` (lit, a little glow). The window stage's blocking panes are now visible outside the towers: 165 leaded,
+  and 20 stained glass in the keep's tall windows above 23 m; the towers' 250 openings stay bare, as asked.
+- **Stairs:** one stone tile spanned several steps. `M_PxStairs` lays the dressed stone on the treads and a dark course
+  on the risers, by the face normal, on the five stair twins. A first pass picked meshes by name and caught a vaulted
+  ceiling and a corridor wall; their tiles were put back the same minute.
+- **Floor separation between rooms:** `castle_ledges.py` scanned the keep with a 50 cm grid of traces and listed every
+  step between flat floors. The plank floors stood 22 cm apart where a raised square-plank patch met the hall's planks;
+  `castle_floor_level.py` lowers such tiles onto their neighbours (with what stands on them) and runs after the keep
+  stage. Captures before and after. The stone thresholds under the walls stay.
+- **The VSM overflow message:** `r.Shadow.Virtual.AllowScreenOverflowMessages=0` (a debug message, never for players).
