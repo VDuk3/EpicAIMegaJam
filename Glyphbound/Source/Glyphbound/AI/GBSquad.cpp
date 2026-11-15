@@ -47,6 +47,12 @@ namespace GBSquadLocal
 	}
 
 	bool bLogEnabled = false;
+
+	/** A pincer (castle) melee member within its own reach of the player (the same 3D measure the Chase state attacks on). */
+	bool InPincerReach(const AGBEnemyCharacter* Enemy, const FVector& PlayerPos, float Slack = 1.f)
+	{
+		return Enemy && Enemy->StatValue("PincerWait", 0.f) > 0.f && FVector::Dist(Enemy->GetActorLocation(), PlayerPos) <= Enemy->StatValue("AttackRange", 150.f) * Slack;
+	}
 }
 
 bool UGBSquadSubsystem::bLogTactics = false;
@@ -745,7 +751,11 @@ bool UGBSquadSubsystem::TryBeginMeleeAttack(AGBEnemyCharacter* Enemy)
 		Committed += (Member.bMeleeCommitted && Member.Enemy.IsValid()) ? 1 : 0;
 	}
 	const int32 Max = FMath::Max(1, FMath::RoundToInt(GBSquadLocal::Game(this, TEXT("SquadMaxMeleeAttackers"), 2.f)));
-	if (Committed >= Max)
+	// A pincer member already at reach is never kept standing idle by the cap (owner, 2026-11-15: attack as soon as he is in
+	// range); its swing still counts, so the far ones (a lunge from out of reach) give way to it.
+	const AGBPlayerCharacter* CapPlayer = AGBPlayerCharacter::Get(this);
+	const bool bAtReach = CapPlayer && GBSquadLocal::InPincerReach(Enemy, CapPlayer->GetActorLocation());
+	if (Committed >= Max && !bAtReach)
 	{
 		return false;
 	}
@@ -794,6 +804,12 @@ bool UGBSquadSubsystem::MayCommitMelee(AGBEnemyCharacter* Enemy)
 	}
 	const float Time = Now();
 	const FVector PlayerPos = Player->GetActorLocation();
+	// The pincer only delays the approach: one already at reach swings now (owner, 2026-11-15).
+	if (GBSquadLocal::InPincerReach(Enemy, PlayerPos))
+	{
+		Self->bPincerWaiting = false;
+		return true;
+	}
 	const float Window = GBSquadLocal::Game(this, TEXT("SquadPincerWindow"), 0.8f);
 	const float ReachMult = GBSquadLocal::Game(this, TEXT("SquadPincerReach"), 1.3f);
 
@@ -873,6 +889,8 @@ void UGBSquadSubsystem::SortPincerAttackers(const FSquad& Squad, TArray<const AG
 			if (Member.Enemy.Get() == Enemy)
 			{
 				Key.LastCommit = Member.LastCommitTime;
+				// The turns pass the right to close in; one that yields its place while at reach no longer backs out to the ring
+				// (AGBSkeletalEnemy::GetMoveGoalOverride holds it there, and TryBeginMeleeAttack lets it swing).
 				Key.Group = Member.bMeleeCommitted ? 0 : (Key.Distance <= Ring * 1.5f ? 1 : 2);
 				break;
 			}
@@ -1013,7 +1031,16 @@ bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& Ou
 		SortPincerAttackers(*Squad, ByDistance, PlayerPos);
 		bOutMayAttack = Enemy->AlwaysMeleeAttacks() || ByDistance.IndexOfByKey(Enemy) < MaxAttackers;
 		const int32 NumAttackers = FMath::Min(MaxAttackers, ByDistance.Num());
-		const float Base = GBSquadLocal::BearingDegrees(PlayerPos, ByDistance[0]->GetActorLocation());
+		// The ring's reference: the same attacker while it stays one (hysteresis). Taking the nearest each frame flipped the
+		// reference between two attackers at about the same distance, and every slot jumped round the player with it.
+		const AGBEnemyCharacter* Lead = Squad->PincerLead.Get();
+		const int32 LeadIndex = Lead ? ByDistance.IndexOfByKey(Lead) : INDEX_NONE;
+		if (LeadIndex == INDEX_NONE || LeadIndex >= NumAttackers)
+		{
+			Lead = ByDistance[0];
+			Squad->PincerLead = Lead;
+		}
+		const float Base = GBSquadLocal::BearingDegrees(PlayerPos, Lead->GetActorLocation());
 		float Offset = 0.f;
 		const float Corner = Enemy->StatValue("CornerWeight", 0.f);
 		if (Corner > 0.f && EscapeOpen.Num() > 0)
@@ -1023,6 +1050,7 @@ bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& Ou
 			{
 				const float Turn = Step * 20.f;
 				float Score = -FMath::Abs(Turn) / 60.f;   // a short walk round him beats a long one
+				Score += FMath::IsNearlyEqual(Turn, Squad->PincerOffset) ? 0.25f : 0.f;   // hysteresis: keep the turn it has
 				for (int32 K = 0; K < NumAttackers; ++K)
 				{
 					Score += Corner * GetEscapeOpenness(Base + Turn + K * 360.f / NumAttackers);
@@ -1033,6 +1061,7 @@ bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& Ou
 					Offset = Turn;
 				}
 			}
+			Squad->PincerOffset = Offset;
 		}
 		TArray<const AGBEnemyCharacter*> Group;
 		const bool bAttacker = ByDistance.IndexOfByKey(Enemy) < NumAttackers;
@@ -1040,8 +1069,8 @@ bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& Ou
 		{
 			Group.Add(ByDistance[Index]);
 		}
-		// Each takes the slot on its own side: sorted by bearing measured from the nearest attacker.
-		auto Around = [&PlayerPos, Base](const AGBEnemyCharacter* A) { return FRotator::ClampAxis(GBSquadLocal::BearingDegrees(PlayerPos, A->GetActorLocation()) - Base); };
+		// Each takes the slot on its own side: sorted by bearing measured from the reference attacker (who keeps slot 0).
+		auto Around = [&PlayerPos, Base, Lead](const AGBEnemyCharacter* A) { return A == Lead ? -1.f : FRotator::ClampAxis(GBSquadLocal::BearingDegrees(PlayerPos, A->GetActorLocation()) - Base); };
 		Group.Sort([&Around](const AGBEnemyCharacter& A, const AGBEnemyCharacter& B) { return Around(&A) < Around(&B); });
 		const int32 Slot = Group.IndexOfByKey(Enemy);
 		const float Step = 360.f / FMath::Max(Group.Num(), 1);

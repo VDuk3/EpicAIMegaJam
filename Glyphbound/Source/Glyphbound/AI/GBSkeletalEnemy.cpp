@@ -1186,7 +1186,33 @@ bool AGBSkeletalEnemy::GetMoveGoalOverride(FVector& OutPoint)
 	FVector Slot;
 	if (Squad && Squad->GetMeleeSlot(this, Slot, bMayAttack))
 	{
-		(void)bMayAttack;   // the attack permission itself is asked at the windup / lunge start (TryStartMelee)
+		// The attack permission itself is asked at the windup / lunge start (TryStartMelee). The pincer ring (the castle ids) is
+		// for the approach only (owner, 2026-11-15: near him they circled and moved erratically): near the player an attacker
+		// walks straight at him and one at reach holds still facing him (it swings from where it stands); a waiter already
+		// inside the wait ring holds where it is instead of backing out to its slot.
+		const AActor* Goal = Target.Get();
+		if (Goal && S(TEXT("PincerWait"), 0.f) > 0.f)
+		{
+			const float Reach = S(TEXT("AttackRange"), 150.f);
+			const float Ring = FMath::Max(S(TEXT("MeleeWaitRadius"), GetGameValue(FName(TEXT("MeleeWaitRadius")), 450.f)), Reach * 1.5f);
+			const float Distance = FVector::Dist(GetActorLocation(), Goal->GetActorLocation());
+			if (Distance <= Reach && HasLineOfSight(Goal))
+			{
+				OutPoint = GetActorLocation();
+				return true;
+			}
+			if (bMayAttack && Distance <= Reach * 1.5f)
+			{
+				return false;   // the plain chase: straight at him
+			}
+			// A waiter inside the ring, or arrived at its slot (within the move's acceptance: past it the stuck check turned the
+			// arrival into steering with no acceptance, a jitter round the slot), holds.
+			if (!bMayAttack && (Distance < Ring * 0.9f || FVector::Dist2D(Slot, GetActorLocation()) <= Reach * GetGameValue(FName(TEXT("EnemyMeleeAcceptanceFraction")), 0.5f)) && HasLineOfSight(Goal))
+			{
+				OutPoint = GetActorLocation();
+				return true;
+			}
+		}
 		OutPoint = Slot;
 		return true;
 	}

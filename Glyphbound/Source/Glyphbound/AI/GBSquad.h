@@ -144,6 +144,9 @@ private:
 		float NextRoleTime = 0.f;
 		int32 RoleSignature = 0;
 		int32 NextQueryIndex = 0;
+		/** The pincer ring's reference attacker and corner turn, kept while it stays an attacker (hysteresis: slots do not flip). */
+		mutable TWeakObjectPtr<const AGBEnemyCharacter> PincerLead;
+		mutable float PincerOffset = 0.f;
 	};
 
 	FSquad* FindSquadOf(const AGBEnemyCharacter* Enemy);

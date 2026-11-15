@@ -510,6 +510,25 @@ void AGBEnemyCharacter::MoveTowards(AActor* Goal, float DeltaSeconds)
 	// A slot round the player, or a player outside the zone (the enemy stops at the edge): go to a clamped point instead of the actor.
 	FVector SlotPoint;
 	const bool bSlot = GetMoveGoalOverride(SlotPoint);
+	if (bSlot && FVector::DistSquared2D(SlotPoint, GetActorLocation()) < 1.f)
+	{
+		// The override's "hold here": stand still and face him (no move request, so the stuck check does not fire).
+		AAIController* HoldAI = Cast<AAIController>(GetController());
+		if (HoldAI && HoldAI->GetMoveStatus() != EPathFollowingStatus::Idle)
+		{
+			HoldAI->StopMovement();
+		}
+		if (GetVelocity().Size2D() > 10.f)
+		{
+			StopMoving();
+		}
+		const FVector To = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+		if (!To.IsNearlyZero())
+		{
+			TurnYawTowards(To.Rotation().Yaw, DeltaSeconds, StatOr(TEXT("TurnRate"), 420.f));
+		}
+		return;
+	}
 	if (bSlot || (bHasHomeZone && !IsInsideZone(Goal->GetActorLocation())))
 	{
 		const float Acceptance = IsRanged() ? 20.f : Stats->GetStat(GBStat::AttackRange, 0.f) * GetGameValue(GBEnemyKey::MeleeAcceptanceFraction, 0.5f);
