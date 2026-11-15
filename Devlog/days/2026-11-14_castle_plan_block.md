@@ -322,3 +322,56 @@ Translation: the point of pixel art is also that it is light on storage, RAM, GP
 - **Said plainly in the brief:** removing the castle pack will not by itself bring the zip (2,628.8 MB) under the jam's 1 GB. Most of the rest is the future base's kits. That is a separate job.
 - **Model:** Opus, by the owner's choice: an exception to the default implementer (Muse Spark through OpenCode), because the task is design-heavy Editor work driven turn by turn with the owner.
 - Nothing was built in this part. No C++ changed.
+
+---
+
+## Seventh part: the castle rebuilt as pixel art, all of it
+A new chat on Opus took the handoff (`Prompts/castle_pixel_rebuild_handoff.md`) and became the castle's architect. **Model:** Opus 5.5 in Claude Code, by the owner's choice; an exception to the default implementer (Muse Spark through OpenCode) because the work was Editor geometry driven turn by turn with the owner's eye on every picture. All the code below was written by the architect directly.
+
+### What was built
+- **A pixel twin for every one of the 141 castle-pack meshes the map uses** (`SM_Px_<name>` in `/Game/Glyphbound/Castle/Pixel/Meshes`), same pivot and size, so the builder's records of the author's levels place them unchanged.
+- `Tools/Jam/castle_twins_export.py` writes the pack meshes' triangles from the Editor; `Tools/Jam/castle_twins.js` (Node, outside the Editor, 45 s for all 141) rebuilds each one; `Tools/Jam/castle_twins_import.py` makes the assets; `Tools/Jam/castle_twins_preview.js` draws the pack piece and its twin side by side so a twin can be judged without the Editor; `Tools/Jam/castle_twins_cfg.json` holds the few per-piece settings.
+- `Build-PastCastle.py` has a `"look"` setting: `"pack"` builds the old castle, `"pixel"` the new one (the way back the handoff asked for; the pack's folder stays in the project until the owner says otherwise).
+
+### How a twin is made (and why, in the order the owner's notes forced it)
+1. **The pack's walls are shells, not solids.** A wall module is two sculpted faces with nothing at its ends; rays alone read it as empty. The twin fills what the surface encloses, with the module's open ends closed only between its faces.
+2. **Flat faces.** First pass: a 6.25 cm grid with the sculpted lumps snapped onto the piece's real planes, tower walls made in their own 45-degree frame and cut exactly on the miter, openings kept open.
+3. **Owner, on the first pictures:** *"Los muros no están bien ... tienen que ser muros lisos, no pueden tener imperfecciones ... si quieres simplemente elimina esas y creas tú unas, al fin y al cabo son simplemente rectángulos ... Limpia las imperfecciones sin piedad"* (the walls are not right; they must be smooth, with no imperfections; if you like, delete them and make your own, they are just rectangles; clean the imperfections without mercy). And, in between: *"Cuidado con las imperfecciones en las esquinas y otras uniones"* (careful with the imperfections at corners and other joints).
+4. **So the twins became plain blocks.** The fine cells are merged into **25 cm blocks** (12.5 cm on thin pieces), each solid when most of its volume is: nothing smaller than a block can survive on a face. Teeth and notches one block deep and combs of one-block corbels go; every flat face carries one tile (coursed wall on stone walls, dressed stone on stone tops), so two modules no longer stripe a tower. Stairs stay on the fine grid (their step heights are the walks' heights).
+5. **Windows are clean rectangles.** A recess with a pane at the back and a lancet or arrow slit narrower than a block both become a block-wide opening through the wall; the builder's `windows` stage then sets an unseen pane in each.
+6. **What keeps its own faces:** the crypt's set (already plain), the arcades, the spiral stairs, door frames, and small things (cups, candles, tools, the chandelier) that a 25 cm grid would erase. Props of the camp (kegs, barrels, the cart) are on a fine grid.
+7. **Roofs** are plain hulls (a gable, a hip, a 12-sided cone) in place of the pack's shingles.
+8. **Left out:** the author's seam hiders (they hid the joints between sculpted modules; the twins meet on the same planes) and his loose stones and slabs dotted over the keep's faces (in plain blocks they read as faults).
+
+### Faults found on the way (all fixed)
+- **Every wall lit from behind.** A mesh built from a description in Python came out with its faces culled one way and its normals computed the other; one winding showed each wall's far side, the other lit it from behind. The twins' material is two-sided (they are closed solids, so a back face is always hidden) and keeps the winding whose normals are right.
+- **Complex traces fell through the twins' floors** (the walk check found every floor 50 cm low): the twins' complex collision is double-sided. Their simple collision is boxes merged from the solid cells.
+- **A tile breaking into noise far away:** the tiles now have mips (nearest inside each).
+- **A world-aligned tile was tried** to make brick courses run on across modules; on these meshes it striped every wall and was dropped the same hour.
+
+### Checks
+- Builder on the whole castle: `walks: clear on 12 walks`; `windows: 350 wall pieces with a window ... 435 unseen panes set; still open after that: 0`.
+- Scan of the map: 5,034 visible mesh components, **no mesh, material or package dependency on `/Game/CastleTown`**.
+- `Smoke-Jam.ps1 -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 42 spots, 0 without floor`, the seal's map can be opened, no LogGB errors.
+
+### Light, with numbers
+| | Pack castle (before) | Pixel castle (after) |
+|---|---|---|
+| Triangles of the placed pieces | 45.7 M (the pack's own LOD 0 counts, summed over the author's levels as placed) | **1.68 M** |
+| Triangles of the distinct meshes | 141 meshes, most of them Nanite; a plain 4 m wall 50,000 | **134 k for 135 meshes**; a plain 4 m wall 12 |
+| Nanite | 322 of 336 kit meshes | **none** |
+| Materials | the pack's 23 instances on 4096 px virtual textures | **12** (one master, 32 px tiles) |
+| Textures | 4096 px | **32 px**, nine tiles |
+
+Frame time was not measured on both: the pack castle was not rebuilt to measure it again.
+
+### Pictures
+`media/2026-11-14/castle_px_zone1_*.png` (the first zone, the owner's look round), `castle_px_full_*.png` (the whole castle through the game's camera).
+
+### Not done, or left open
+- The bricks of two pieces meet with a step where a piece's own origin is off the 2 m tile (a corner pillar beside a wall).
+- The tower tops' crenellations are 25 cm blocks; a few read ragged from below.
+- Shadowed areas of the wards are dark (the tiles are darker than the pack's stone).
+- Nobody has walked it by hand yet; PIE is for people.
+
+**Tools used in this part:** Claude Code (Opus 5.5), Unreal Editor 5.9 Python over MCP, Node.js; no image or 3D model generator; no third-party asset.
