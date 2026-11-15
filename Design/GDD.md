@@ -630,7 +630,7 @@ The owner asked the architect not to stop for missing design details. Everything
 - **Fireball shockwave:** pushes enemies away from the blast (strength scaled by QTE power).
 - **Player:** 100 health (regenerates 3/s after 6 s without damage), 100 mana (6/s after 1.5 s), speed 750, dash 7 m in 0.18 s every 1.2 s. Health and mana stay at 100 for the whole game (no levels), so every hit reads as a percentage (§19).
 - **QTE:** 4 keys, 1 gesture, 4 s in real time (raised from 3 s by the owner), world at 10% speed.
-- **Staff (owner, 2026-11-15):** every staff hits for the apprentice staff's 12, no mana cost. Apprentice: every 0.35 s, +5% to every damage type while held. Ember: 12 fire every 0.6 s, +15% fire damage while held (spells and burns included), 40% splash in 2 m. Frost: 12 ice every 0.6 s, +15% ice damage, each hit slows 15% for 2 s (refreshed). Storm: 10.2 lightning every 0.51 s (x0.85 both, same DPS), +15% lightning damage, 40% splash in 2 m. Provisional, architect: the 0.6 s intervals were kept, and the 2 m splash radius and 40% fraction were picked.
+- **Staff (owner, 2026-11-15):** every staff hits for the apprentice staff's 12, no mana cost. Apprentice: every 0.35 s, +5% to every damage type while held. Ember: 12 fire every 0.45 s, +15% fire damage while held (spells and burns included), 40% splash in 2 m. Frost: 12 ice every 0.45 s, +15% ice damage, each hit slows 15% for 2 s (refreshed). Storm: 10.2 lightning every 0.38 s (x0.85 both, same DPS), +15% lightning damage, 40% splash in 2 m. Provisional, architect: elemental intervals 0.45 s (owner), and the 2 m splash radius and 40% fraction were picked.
 - **Guns (v0.28):** pistol 20 damage every 0.25 s, 15 rounds, 6 spare magazines; shotgun 8 pellets of 10 every 0.8 s, 6 rounds, 4 spare, strong up close; rifle automatic, 12 damage every 0.1 s, 30 rounds, 5 spare, stronger far away. Headshots: pistol x2, shotgun and rifle x1.5. Elemental sword 50 every 0.5 s. Why: §19.
 - **Enemies:** see the templates in §19 (v0.28).
 - **Status effects:** slow 50% for 4 s (ice floor); health potion 60 over 10 s; injection 35 at once; enchant +25% gun damage for 20 s. Burn, chill and the old shock were removed (v0.22).
@@ -664,9 +664,9 @@ The owner's brief: fights a little long but not too long; a fast shooter where e
 | Weapon | Hit | Sustained damage/s (with reloads) | Role |
 |---|---|---|---|
 | Apprentice staff | 12 every 0.35 s | 34 (+5% all damage held), free | The fallback that never runs out: about half a gun |
-| Ember staff | 12 every 0.6 s, 40% splash 2 m | 23 + splash + Ignite, free | Slower, sets enemies on fire, hits groups |
-| Frost staff | 12 every 0.6 s, slow 15% 2 s | 23, free | Slower, keeps enemies slowed |
-| Storm staff | 10.2 every 0.51 s, 40% splash 2 m | 23 + splash, free | Faster lightning, hits groups |
+| Ember staff | 12 every 0.45 s, 40% splash 2 m | 31 + splash + Ignite, free | Slower, sets enemies on fire, hits groups |
+| Frost staff | 12 every 0.45 s, slow 15% 2 s | 31, free | Slower, keeps enemies slowed |
+| Storm staff | 10.2 every 0.38 s, 40% splash 2 m | 31 + splash, free | Faster lightning, hits groups |
 | Pistol | 20 every 0.25 s, 15 rounds, 6 spare magazines | 61 (121 on the head) | Precision: the best head bonus (x2) |
 | Shotgun | 8 x 10 every 0.8 s, 6 shells, 4 spare | 71 up close, 14 far | Risk: one shell kills a soldier at arm's length |
 | Rifle | 12 every 0.1 s, 30 rounds, 5 spare | 60 near, 86 far | Range and volume; less accurate, weak up close |

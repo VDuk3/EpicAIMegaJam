@@ -35,7 +35,7 @@
 			"bAutomatic": false,
 			"Stats": {
 				"Damage": 12,
-				"FireInterval": 0.6,
+				"FireInterval": 0.45,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
 				"ProjectileGravity": 0,
@@ -63,7 +63,7 @@
 			"bAutomatic": false,
 			"Stats": {
 				"Damage": 12,
-				"FireInterval": 0.6,
+				"FireInterval": 0.45,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
 				"ProjectileGravity": 0,
@@ -90,7 +90,7 @@
 			"bAutomatic": false,
 			"Stats": {
 				"Damage": 10.2,
-				"FireInterval": 0.51,
+				"FireInterval": 0.38,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
 				"ProjectileGravity": 0,
