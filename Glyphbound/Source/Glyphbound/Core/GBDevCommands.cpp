@@ -24,6 +24,11 @@
 #include "AI/GBEntity.h"
 #include "AI/GBSkeletalEnemy.h"
 #include "AI/GBShieldEnemy.h"
+#include "AI/GBSpriteAnimComponent.h"
+#include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
+#include "AI/GBValkyrieEnemy.h"
+#include "Animation/AnimSequence.h"
 #include "World/GBBreakable.h"
 #include "Components/BoxComponent.h"
 #include "Components/PrimitiveComponent.h"
@@ -73,6 +78,7 @@
 #include "World/GBDoor.h"
 #include "World/GBLadder.h"
 #include "World/GBFinalPortal.h"
+#include "World/GBFluidFog.h"
 #include "World/GBPortal.h"
 #include "World/GBCutsceneSubsystem.h"
 #include "World/GBEraBlock.h"
@@ -1320,7 +1326,6 @@ namespace GBSmokeRun
 		FName Id;
 		FVector Start = FVector::ZeroVector;
 		float StartDistance = 0.f;
-		float CorpseTime = 1.5f;
 	};
 	static TArray<FE3DEntry> E3DGroup;
 	static TMap<FName, int32> E3DHits;
@@ -1342,7 +1347,7 @@ namespace GBSmokeRun
 	}
 
 	/** Spawns the listed enemies (id, wanted distance) around the player where the player has a clear view of the spot. */
-	static void E3DSpawnGroup(UWorld* World, AGBPlayerCharacter* Player, const TArray<TPair<FName, float>>& Items)
+	static void E3DSpawnGroup(UWorld* World, AGBPlayerCharacter* Player, const TArray<TPair<FName, float>>& Items, bool bSpreadRing = false)
 	{
 		E3DGroup.Reset();
 		E3DBindHits();
@@ -1368,7 +1373,8 @@ namespace GBSmokeRun
 			{
 				for (int32 K = 0; K < 12 && !Enemy; ++K)
 				{
-					const float Yaw = (K + ItemIndex * 3) * 30.f;
+					// bSpreadRing: each member starts on a bearing of its own, 60 degrees apart (the tactics group: no two start near each other).
+					const float Yaw = bSpreadRing ? (K + ItemIndex) * 60.f : (K + ItemIndex * 3) * 30.f;
 					const FVector At = PlayerLoc + FVector(FMath::Cos(FMath::DegreesToRadians(Yaw)), FMath::Sin(FMath::DegreesToRadians(Yaw)), 0.f) * Item.Value * Scale;
 					bool bTaken = false;
 					for (const FVector& Other : Used)
@@ -1400,7 +1406,6 @@ namespace GBSmokeRun
 				Entry.Id = Item.Key;
 				Entry.Start = Enemy->GetActorLocation();
 				Entry.StartDistance = FVector::Dist2D(Entry.Start, PlayerLoc);
-				Entry.CorpseTime = GBEnemy3D::Stat(Enemy, TEXT("CorpseTime"), 1.5f);
 				E3DGroup.Add(Entry);
 			}
 			else
@@ -1547,10 +1552,18 @@ namespace GBSmokeRun
 				Attacks = Flyer->GetShotCount();
 				Look = Flyer->DescribeFlyer();
 				E3DCheckParts(GroupName, Entry.Id, Flyer);
+				// The hover height is measured from the floor under the flyer. Crossing the edge of a course block moves that floor by
+				// metres in one frame and the flyer needs a moment to climb or sink to its new height (max vertical speed, 2 s at
+				// the slowest): a sample taken in that moment says nothing about the hover. It is judged once the floor held still.
 				const float HeightError = FMath::Abs(Flyer->GetHeightAboveGround() - Flyer->GetWantedHeight());
-				if (HeightError > 150.f)
+				const float SinceGroundChange = Flyer->GetSecondsSinceGroundChange();
+				if (HeightError > 150.f && SinceGroundChange > 3.f)
 				{
-					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s is %.0f cm above the ground, wanted %.0f"), GroupName, *Entry.Id.ToString(), Flyer->GetHeightAboveGround(), Flyer->GetWantedHeight());
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %s is %.0f cm above the ground, wanted %.0f (the floor under it has held still for %.1f s)"), GroupName, *Entry.Id.ToString(), Flyer->GetHeightAboveGround(), Flyer->GetWantedHeight(), SinceGroundChange);
+				}
+				else if (HeightError > 150.f)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: %s is %.0f cm above the ground, wanted %.0f: still settling, the floor under it changed %.1f s ago (an edge it flew over)"), GroupName, *Entry.Id.ToString(), Flyer->GetHeightAboveGround(), Flyer->GetWantedHeight(), SinceGroundChange);
 				}
 			}
 			else
@@ -1582,6 +1595,136 @@ namespace GBSmokeRun
 		E3DLookAtGroup(Player);
 	}
 
+	/** One killed enemy under watch: its death pose is checked while it plays out, and its removal is checked against its own death time. */
+	struct FE3DWatch
+	{
+		TWeakObjectPtr<AGBEnemyCharacter> Enemy;
+		FName Id;
+		float Age = 0.f;               // game seconds since the kill
+		TWeakObjectPtr<UWorld> World;
+		double KilledAt = 0.0;
+		float MinLife = 0.f;           // it must not be gone before this (a pop-out)
+		float MaxLife = 0.f;           // it must be gone by this
+		bool bSkeletal = false;
+		bool bFlyer = false;
+		bool bPoseChecked = false;
+		int32 ExpectedPieces = 1;
+		float WreckHold = 0.f;         // flyers: wreck time plus sinking, counted from the first ground contact
+		// The last look at a flyer's wreck, for the log once the actor is gone.
+		float FallTime = -1.f;
+		int32 Bounces = 0;
+		int32 Pieces = 0;
+		int32 Sparks = 0;
+		bool bDone = false;
+	};
+	static TArray<FE3DWatch> E3DWatches;
+	static FTSTicker::FDelegateHandle E3DWatchTicker;
+
+	static bool E3DWatchTick(float Dt)
+	{
+		bool bAnyLeft = false;
+		for (FE3DWatch& Watch : E3DWatches)
+		{
+			if (Watch.bDone)
+			{
+				continue;
+			}
+			// Game time, not the ticker's: the run may not be in real time.
+			if (const UWorld* WatchWorld = Watch.World.Get())
+			{
+				Watch.Age = static_cast<float>(WatchWorld->GetTimeSeconds() - Watch.KilledAt);
+			}
+			AGBEnemyCharacter* Enemy = Watch.Enemy.Get();
+			if (Enemy)
+			{
+				if (const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
+				{
+					// After the clip: the body lies on the floor (the pelvis near it), not hanging in the air or sunk.
+					if (Watch.bSkeletal && !Watch.bPoseChecked && Skeletal->GetDeathElapsed() >= Skeletal->GetDeathClipLength() + 0.3f)
+					{
+						Watch.bPoseChecked = true;
+						const float Height = Skeletal->GetPelvisHeightAboveFloor();
+						if (Height == AGBSkeletalEnemy::PelvisNoBone)
+						{
+							UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s death pose: no pelvis bone on this skeleton, height not measured"), *Watch.Id.ToString());
+						}
+						else if (Height == AGBSkeletalEnemy::PelvisNoFloor)
+						{
+							UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s has a pelvis bone but no floor was found under it after its death clip (sunk, or over a pit)"), *Watch.Id.ToString());
+						}
+						else
+						{
+							UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s death pose: pelvis %.0f cm over the floor, %.0f cm off the capsule, %.1f s after the kill"), *Watch.Id.ToString(), Height, Skeletal->GetPelvisDistance(), Watch.Age);
+							if (Height > 60.f || Height < -15.f)
+							{
+								UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s lies with its pelvis %.0f cm over the floor after its death clip (wanted -15 to 60)"), *Watch.Id.ToString(), Height);
+							}
+						}
+					}
+				}
+				else if (const AGBFlyerEnemy* Flyer = Cast<AGBFlyerEnemy>(Enemy))
+				{
+					Watch.FallTime = Flyer->GetFallTime();
+					Watch.Bounces = Flyer->GetWreckBounces();
+					Watch.Pieces = Flyer->GetWreckPieces();
+					Watch.Sparks = Flyer->GetSparkBursts();
+				}
+				if (Watch.Age > Watch.MaxLife)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s is still there %.1f s after its death (it should be gone by %.1f s)"), *Watch.Id.ToString(), Watch.Age, Watch.MaxLife);
+					Watch.bDone = true;
+				}
+				bAnyLeft |= !Watch.bDone;
+				continue;
+			}
+
+			// Gone. Not before it should be (a pop-out), and for a flyer: the debris reached the ground and came apart.
+			Watch.bDone = true;
+			if (Watch.bFlyer)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s wreck: fell for %.2f s, bounces=%d, pieces=%d, spark bursts=%d, gone %.1f s after the kill"), *Watch.Id.ToString(),
+					Watch.FallTime, Watch.Bounces, Watch.Pieces, Watch.Sparks, Watch.Age);
+				if (Watch.FallTime < 0.f)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: the wreck of %s never touched the ground (it vanished or fell into a pit)"), *Watch.Id.ToString());
+				}
+				else
+				{
+					if (Watch.Pieces < Watch.ExpectedPieces)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: the wreck of %s has %d pieces, it should have come apart into %d"), *Watch.Id.ToString(), Watch.Pieces, Watch.ExpectedPieces);
+					}
+					if (Watch.Bounces < 1)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: the wreck of %s never bounced"), *Watch.Id.ToString());
+					}
+					if (Watch.Sparks < 1)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: the wreck of %s spat no sparks while it lay there"), *Watch.Id.ToString());
+					}
+					if (Watch.Age < Watch.FallTime + Watch.WreckHold - 0.5f)
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: the wreck of %s was gone %.1f s after the kill, before its wreck time ended (%.1f s)"), *Watch.Id.ToString(), Watch.Age, Watch.FallTime + Watch.WreckHold);
+					}
+				}
+			}
+			else if (Watch.Age < Watch.MinLife)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s was gone %.1f s after its death, before its clip, its lie and its sinking ended (%.1f s): it popped out"), *Watch.Id.ToString(), Watch.Age, Watch.MinLife);
+			}
+			else
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s corpse gone %.1f s after the kill (due %.1f s)"), *Watch.Id.ToString(), Watch.Age, Watch.MinLife);
+			}
+		}
+		if (!bAnyLeft)
+		{
+			E3DWatches.Reset();
+			E3DWatchTicker.Reset();
+		}
+		return bAnyLeft;
+	}
+
 	static void E3DKillGroup(AGBPlayerCharacter* Player)
 	{
 		Player->GetAttributes()->SetInvulnerable(true);
@@ -1589,6 +1732,13 @@ namespace GBSmokeRun
 		{
 			if (AGBEnemyCharacter* Enemy = Entry.Enemy.Get())
 			{
+				// The smoke checks the way a death plays out (clip, lie, sinking, gone), not the seconds in the data: the lie of a
+				// corpse and the time a wreck lies there are shortened for the run.
+				if (UGBStatsComponent* EnemyStats = Enemy->GetStats())
+				{
+					EnemyStats->SetBaseStat(FName(TEXT("CorpseTime")), 0.6f);
+					EnemyStats->SetBaseStat(FName(TEXT("WreckTime")), 1.5f);
+				}
 				FGBDamageInfo Info;
 				Info.Amount = 1000000.f;
 				Info.Instigator = Player;
@@ -1597,38 +1747,60 @@ namespace GBSmokeRun
 				Info.SourceId = TEXT("SmokeEnemies3D");
 				UGBCombatLibrary::DealDamage(Enemy, Info);
 				UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D killed %s: dead=%d"), *Entry.Id.ToString(), Enemy->IsDead() ? 1 : 0);
-				if (const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
-				{
-					// Ragdoll: needs a physics asset on the mesh; without one the death clip plays instead.
-					const bool bPhysicsAsset = Skeletal->GetMesh() && Skeletal->GetMesh()->GetPhysicsAsset();
-					UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s death: physicsAsset=%d ragdoll=%d"), *Entry.Id.ToString(), bPhysicsAsset ? 1 : 0, Skeletal->IsRagdolling() ? 1 : 0);
-					if (bPhysicsAsset && Skeletal->HasSkeletalLook() && !Skeletal->IsRagdolling())
-					{
-						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s has a physics asset but did not ragdoll"), *Entry.Id.ToString());
-					}
-				}
 				if (!Enemy->IsDead())
 				{
 					UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s did not die to 1,000,000 damage"), *Entry.Id.ToString());
+					continue;
 				}
+				FE3DWatch Watch;
+				Watch.Enemy = Enemy;
+				Watch.Id = Entry.Id;
+				Watch.World = Enemy->GetWorld();
+				Watch.KilledAt = Enemy->GetWorld() ? Enemy->GetWorld()->GetTimeSeconds() : 0.0;
+				Watch.MaxLife = 8.f;
+				if (const AGBSkeletalEnemy* Skeletal = Cast<AGBSkeletalEnemy>(Enemy))
+				{
+					// Never a ragdoll: the enemy's own death clip must be playing (a humanoid, the spider, the chief).
+					Watch.bSkeletal = Skeletal->HasSkeletalLook();
+					UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s death: clip length %.2f s, playing=%d, %.1f s until it is gone"), *Entry.Id.ToString(), Skeletal->GetDeathClipLength(),
+						Skeletal->IsDeathClipPlaying() ? 1 : 0, Skeletal->GetDeathTotalSeconds());
+					if (Watch.bSkeletal && !Skeletal->IsDeathClipPlaying())
+					{
+						UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D FAILED: %s has no death clip playing (Anim.Death missing or not loaded)"), *Entry.Id.ToString());
+					}
+					if (Watch.bSkeletal)
+					{
+						Watch.MinLife = Skeletal->GetDeathTotalSeconds() - 0.5f;
+						Watch.MaxLife = Skeletal->GetDeathTotalSeconds() + 1.5f;
+					}
+				}
+				else if (const AGBFlyerEnemy* Flyer = Cast<AGBFlyerEnemy>(Enemy))
+				{
+					Watch.bFlyer = true;
+					Watch.ExpectedPieces = Flyer->HasArtLook() ? (Cast<AGBDroneEnemy>(Flyer) ? 6 : 2) : 1;
+					Watch.WreckHold = GBEnemy3D::Stat(Enemy, TEXT("WreckTime"), 6.f) + GBEnemy3D::Stat(Enemy, TEXT("WreckSinkTime"), 1.f);
+					Watch.MaxLife = Flyer->GetDeathTotalSeconds() + 1.5f;
+				}
+				E3DWatches.Add(Watch);
 			}
 		}
 		Player->GetAttributes()->RestoreAll();
+		E3DLookAtGroup(Player);
+		if (!E3DWatchTicker.IsValid())
+		{
+			E3DWatchTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&E3DWatchTick), 0.1f);
+		}
 	}
 
+	/** The end of a group's wait: a summary only. Each corpse and wreck is checked against its own death time by E3DWatchTick. */
 	static void E3DCheckCorpses(const TCHAR* GroupName)
 	{
 		int32 Left = 0;
 		for (const FE3DEntry& Entry : E3DGroup)
 		{
-			// An enemy with a CorpseTime longer than the check waits (a boss) is allowed to still lie there.
-			Left += (Entry.Enemy.IsValid() && Entry.CorpseTime <= 4.5f) ? 1 : 0;
+			Left += Entry.Enemy.IsValid() ? 1 : 0;
 		}
-		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: corpses left after the corpse time: %d of %d"), GroupName, Left, E3DGroup.Num());
-		if (Left > 0)
-		{
-			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D %s FAILED: %d corpse(s) not removed"), GroupName, Left);
-		}
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D %s: %d of %d still there at the end of the wait (each is checked against its own death time)"), GroupName, Left, E3DGroup.Num());
 		UGBCombatLibrary::OnDamageDealt().Remove(E3DHitHandle);
 	}
 
@@ -1638,6 +1810,9 @@ namespace GBSmokeRun
 	static FVector E3TPlayerSpot = FVector::ZeroVector;
 	static int32 E3TMaxConcurrent = 0;
 	static float E3TMaxClose = 0.f;
+	static FString E3TWorstWhere;
+	static float E3TNavWaited = 0.f;
+	static FTSTicker::FDelegateHandle E3TSpawnTicker;
 	static TMap<uint64, float> E3TClose;
 	static int32 E3TCap = 3;
 
@@ -1682,6 +1857,7 @@ namespace GBSmokeRun
 	{
 		E3TMaxConcurrent = 0;
 		E3TMaxClose = 0.f;
+		E3TWorstWhere.Reset();
 		E3TClose.Reset();
 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
 		const float Max = Data ? Data->GetGameValue(FName(TEXT("SquadMaxShooters")), 2.f) : 2.f;
@@ -1709,6 +1885,14 @@ namespace GBSmokeRun
 					const uint64 Key = (static_cast<uint64>(A) << 32) | static_cast<uint32>(B);
 					float& Time = E3TClose.FindOrAdd(Key);
 					Time = FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()) < 200.f ? Time + Dt : 0.f;
+					if (Time > E3TMaxClose)
+					{
+						// Which pair it was and what each was doing, so a failure can be read from the log.
+						const AGBSkeletalEnemy* SkeletalB = Cast<AGBSkeletalEnemy>(EnemyB);
+						E3TWorstWhere = FString::Printf(TEXT("%s at (%.0f, %.0f) state %d and %s at (%.0f, %.0f) state %d, %.0f cm apart"), *E3DGroup[A].Id.ToString(), EnemyA->GetActorLocation().X, EnemyA->GetActorLocation().Y,
+							static_cast<int32>(EnemyA->GetCombatState()), *E3DGroup[B].Id.ToString(), EnemyB->GetActorLocation().X, EnemyB->GetActorLocation().Y, SkeletalB ? static_cast<int32>(SkeletalB->GetCombatState()) : -1,
+							FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()));
+					}
 					E3TMaxClose = FMath::Max(E3TMaxClose, Time);
 				}
 			}
@@ -1751,8 +1935,8 @@ namespace GBSmokeRun
 			MaxGap = FMath::Max(MaxGap, Next - Bearings[Index]);
 		}
 		const float Span = Bearings.Num() > 1 ? 360.f - MaxGap : 0.f;
-		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: members=%d span=%.0f deg, max concurrent bursts=%d (limit %d), longest time two members within 200 cm=%.1f s, cover time=%.1f s, peek bursts=%d, shots=%d, max pelvis distance=%.0f cm"),
-			Bearings.Num(), Span, E3TMaxConcurrent, E3TCap, E3TMaxClose, CoverTime, PeekBursts, Shots, MaxPelvis);
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: members=%d span=%.0f deg, max concurrent bursts=%d (limit %d), longest time two members within 200 cm=%.1f s (%s), cover time=%.1f s, peek bursts=%d, shots=%d, max pelvis distance=%.0f cm"),
+			Bearings.Num(), Span, E3TMaxConcurrent, E3TCap, E3TMaxClose, E3TWorstWhere.IsEmpty() ? TEXT("never") : *E3TWorstWhere, CoverTime, PeekBursts, Shots, MaxPelvis);
 		if (Bearings.Num() < 6)
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: only %d of 6 members could be spawned"), Bearings.Num());
@@ -1767,7 +1951,7 @@ namespace GBSmokeRun
 		}
 		if (E3TMaxClose > 3.5f)
 		{
-			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: two members stood within 200 cm of each other for %.1f s (limit 3.5)"), E3TMaxClose);
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: two members stood within 200 cm of each other for %.1f s (limit 3.5): %s"), E3TMaxClose, *E3TWorstWhere);
 		}
 		if (E3TBoxes.Num() > 0 && CoverTime < 1.f)
 		{
@@ -3023,6 +3207,319 @@ namespace GBSmokeRun
 			Path += Args[Index];
 		}
 		SetHandOverlayFile(World, Path);
+	}
+
+	// ---- Castle block (gb.Smoke Castle): the castle's pixel-art enemies (sprite sheets) with the squad AI of the future.
+	// One of each castle id (two barghests: a pack) round the tactics boxes; the player stands still and is healed every frame.
+	struct FCastleProjectile
+	{
+		FVector Start = FVector::ZeroVector;
+		float MaxTravel = 0.f;
+		FName Source = NAME_None;
+	};
+	static TMap<TWeakObjectPtr<AActor>, FCastleProjectile> CastleProjectiles;
+	static FTSTicker::FDelegateHandle CastleTicker;
+	/** Hits on the player per enemy ACTOR (two of one id, like the barghests, must each land their own). */
+	static TMap<TWeakObjectPtr<AActor>, int32> CastleHits;
+	static FDelegateHandle CastleHitHandle;
+	static FTSTicker::FDelegateHandle CastleSpawnTicker;
+	static float CastleNavWaited = 0.f;
+	static TMap<FName, float> CastleBestFlight;
+
+	static bool CastleIsCastleId(FName Id)
+	{
+		static const TCHAR* const Ids[] = { TEXT("Orc_Past"), TEXT("Orc_Past_Champion"), TEXT("Orc_Past_Shaman"), TEXT("Orc_Past_Juggernaut"), TEXT("Orc_Past_Brute"), TEXT("Imp_Past"), TEXT("Centaur_Past") };
+		for (const TCHAR* Each : Ids)
+		{
+			if (Id == FName(Each))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The sprite quad's UV direction, read from the engine plane's own vertex data (the editor keeps it): must match the sprite look's assumption. */
+	static void CastlePlaneCheck()
+	{
+		UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+		const FStaticMeshRenderData* Render = Plane ? Plane->GetRenderData() : nullptr;
+		if (!Render || Render->LODResources.Num() == 0)
+		{
+			UE_LOG(LogGB, Display, TEXT("SMOKE Castle plane UVs: no render data, not checked"));
+			return;
+		}
+		const FStaticMeshLODResources& Lod = Render->LODResources[0];
+		const FPositionVertexBuffer& Positions = Lod.VertexBuffers.PositionVertexBuffer;
+		const FStaticMeshVertexBuffer& Uvs = Lod.VertexBuffers.StaticMeshVertexBuffer;
+		if (Positions.GetNumVertices() == 0 || Uvs.GetNumVertices() != Positions.GetNumVertices() || !Positions.GetVertexData() || !Uvs.GetTexCoordData())
+		{
+			UE_LOG(LogGB, Display, TEXT("SMOKE Castle plane UVs: the CPU copy of the vertices is not kept here, not checked"));
+			return;
+		}
+		uint32 MinX = 0, MaxX = 0, MinY = 0, MaxY = 0;
+		for (uint32 Index = 1; Index < Positions.GetNumVertices(); ++Index)
+		{
+			const FVector3f& P = Positions.VertexPosition(Index);
+			MinX = P.X < Positions.VertexPosition(MinX).X ? Index : MinX;
+			MaxX = P.X > Positions.VertexPosition(MaxX).X ? Index : MaxX;
+			MinY = P.Y < Positions.VertexPosition(MinY).Y ? Index : MinY;
+			MaxY = P.Y > Positions.VertexPosition(MaxY).Y ? Index : MaxY;
+		}
+		const bool bUAlongX = Uvs.GetVertexUV(MaxX, 0).X > Uvs.GetVertexUV(MinX, 0).X;
+		const bool bVAlongY = Uvs.GetVertexUV(MaxY, 0).Y > Uvs.GetVertexUV(MinY, 0).Y;
+		UE_LOG(LogGB, Display, TEXT("SMOKE Castle plane UVs: U grows along +X=%d, V grows along +Y=%d (the sprite look assumes U=%d, V=1)"), bUAlongX ? 1 : 0, bVAlongY ? 1 : 0,
+			UGBSpriteAnimComponent::PlaneUGrowsAlongX() ? 1 : 0);
+		if (bUAlongX != UGBSpriteAnimComponent::PlaneUGrowsAlongX() || !bVAlongY)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: the sprite quad would draw the sheets mirrored or upside down (fix GBSpriteAnimLocal::bPlaneUAlongX / the V flip)"));
+		}
+	}
+
+	/** Every frame: the player is healed (eight enemies at once), projectiles of castle enemies are followed. */
+	static void CastleStartTicker(AGBPlayerCharacter* Player)
+	{
+		CastleProjectiles.Reset();
+		CastleBestFlight.Reset();
+		CastleHits.Reset();
+		UGBCombatLibrary::OnDamageDealt().Remove(CastleHitHandle);
+		CastleHitHandle = UGBCombatLibrary::OnDamageDealt().AddLambda([](AActor* Target, const FGBDamageInfo& Info, float Dealt)
+		{
+			AActor* Attacker = Info.Instigator ? Info.Instigator.Get() : Info.Causer.Get();
+			if (Dealt > 0.f && Attacker && Cast<AGBPlayerCharacter>(Target))
+			{
+				CastleHits.FindOrAdd(TWeakObjectPtr<AActor>(Attacker)) += 1;
+			}
+		});
+		FTSTicker::GetCoreTicker().RemoveTicker(CastleTicker);
+		CastleTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakPlayer = TWeakObjectPtr<AGBPlayerCharacter>(Player)](float)
+		{
+			AGBPlayerCharacter* TickPlayer = WeakPlayer.Get();
+			if (!TickPlayer)
+			{
+				return false;
+			}
+			TickPlayer->GetAttributes()->RestoreAll();
+			for (TActorIterator<AGBProjectile> It(TickPlayer->GetWorld()); It; ++It)
+			{
+				const FName Source = It->GetConfig().Damage.SourceId;
+				if (!CastleIsCastleId(Source))
+				{
+					continue;
+				}
+				FCastleProjectile& Seen = CastleProjectiles.FindOrAdd(TWeakObjectPtr<AActor>(*It));
+				if (Seen.Source.IsNone())
+				{
+					Seen.Source = Source;
+					Seen.Start = It->GetActorLocation();
+					const FVector SeenStart = Seen.Start;
+					It->OnImpact.AddLambda([Source, SeenStart](AGBProjectile*, AActor* HitActor, const FVector& Where)
+					{
+						UE_LOG(LogGB, Display, TEXT("SMOKE Castle projectile of %s ended %.0f cm from where it was first seen, on %s (from %s to %s)"), *Source.ToString(),
+							FVector::Dist(SeenStart, Where), HitActor ? *HitActor->GetName() : TEXT("nothing (range or lifetime)"), *SeenStart.ToCompactString(), *Where.ToCompactString());
+					});
+				}
+				Seen.MaxTravel = FMath::Max(Seen.MaxTravel, FVector::Dist(Seen.Start, It->GetActorLocation()));
+				float& Best = CastleBestFlight.FindOrAdd(Source);
+				Best = FMath::Max(Best, Seen.MaxTravel);
+			}
+			return true;
+		}));
+	}
+
+	static void CastleSpawn(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		CastleNavWaited = 0.f;
+		FTSTicker::GetCoreTicker().RemoveTicker(CastleSpawnTicker);
+		CastleSpawnTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakWorld = TWeakObjectPtr<UWorld>(World), WeakPlayer = TWeakObjectPtr<AGBPlayerCharacter>(Player)](float Dt)
+		{
+			UWorld* TickWorld = WeakWorld.Get();
+			AGBPlayerCharacter* TickPlayer = WeakPlayer.Get();
+			if (!TickWorld || !TickPlayer)
+			{
+				return false;
+			}
+			CastleNavWaited += Dt;
+			if (UNavigationSystemV1::IsNavigationBeingBuilt(TickWorld) && CastleNavWaited < 4.f)
+			{
+				return true;
+			}
+			UE_LOG(LogGB, Display, TEXT("SMOKE Castle: the navmesh was ready after %.1f s, spawning one of each castle enemy"), CastleNavWaited);
+			// The sheets may have been baked after the first try of this run: look again.
+			if (UGBSpriteSheetSubsystem* Sheets = UGBSpriteSheetSubsystem::Get(TickWorld))
+			{
+				Sheets->ClearMissing();
+			}
+			if (UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(TickWorld))
+			{
+				Squad->ResetSmokeCounters();
+			}
+			using FItems = TArray<TPair<FName, float>>;
+			const FItems Items = {
+				{ FName(TEXT("Orc_Past")), 1100.f }, { FName(TEXT("Orc_Past_Champion")), 1200.f }, { FName(TEXT("Orc_Past_Shaman")), 1500.f },
+				{ FName(TEXT("Orc_Past_Juggernaut")), 1100.f }, { FName(TEXT("Orc_Past_Brute")), 1300.f }, { FName(TEXT("Imp_Past")), 900.f },
+				{ FName(TEXT("Imp_Past")), 1000.f }, { FName(TEXT("Centaur_Past")), 1400.f } };
+			E3DSpawnGroup(TickWorld, TickPlayer, Items);
+			CastleStartTicker(TickPlayer);
+			for (const FE3DEntry& Entry : E3DGroup)
+			{
+				if (const AGBSkeletalEnemy* Enemy = Cast<AGBSkeletalEnemy>(Entry.Enemy.Get()))
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE Castle spawned %s: %s"), *Entry.Id.ToString(), *Enemy->DescribeLook());
+				}
+				else
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s is not a GBSkeletalEnemy (ActorClass in Enemies.json)"), *Entry.Id.ToString());
+				}
+			}
+			E3DLookAtGroup(TickPlayer);
+			return false;
+		}));
+	}
+
+	/** Each enemy: its sheet (or why not), it moved, it attacked (clip played, hit on the player, a projectile that flew), cover, the pincer. */
+	static void CastleCheck(UWorld* World, AGBPlayerCharacter* Player)
+	{
+		int32 CoveredRanged = 0;
+		int32 Ranged = 0;
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			AGBSkeletalEnemy* Enemy = Cast<AGBSkeletalEnemy>(Entry.Enemy.Get());
+			if (!Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s is gone before the check"), *Entry.Id.ToString());
+				continue;
+			}
+			const FGBEnemyDefinition* Def = Enemy->GetDefinition();
+			const FString SheetId = Def ? Def->Strings.FindRef(FName(TEXT("SpriteSheet"))) : FString();
+			const bool bSheetOnDisk = !SheetId.IsEmpty() && FPaths::FileExists(UGBSpriteSheetSubsystem::SheetDir() / (SheetId + TEXT(".json")));
+			const UGBSpriteAnimComponent* Anim = Enemy->GetSpriteAnim();
+			if (!Enemy->HasSpriteLook())
+			{
+				const FString Why = Anim ? Anim->GetFailure() : FString(TEXT("no sprite component"));
+				if (bSheetOnDisk)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s did not load its sheet %s although it is there: %s"), *Entry.Id.ToString(), *SheetId, *Why);
+				}
+				else
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE Castle %s: sheet %s not baked yet, the static sprite stands in (%s)"), *Entry.Id.ToString(), *SheetId, *Why);
+				}
+			}
+			const float Moved = FVector::Dist2D(Enemy->GetActorLocation(), Entry.Start);
+			const int32 Hits = CastleHits.FindRef(TWeakObjectPtr<AActor>(Enemy));
+			const bool bRanged = Enemy->FiresProjectiles();
+			const float Flight = CastleBestFlight.FindRef(Entry.Id);
+			UE_LOG(LogGB, Display, TEXT("SMOKE Castle %s: moved=%.0f hitsOnPlayer=%d projectiles=%d held(blocked)=%d bestFlight=%.0f swings=%d lunges=%d cover=%d coverTime=%.1f | %s"), *Entry.Id.ToString(), Moved, Hits,
+				Enemy->GetProjectileCount(), Enemy->GetBlockedShots(), Flight, Enemy->GetMeleeSwingCount(), Enemy->GetLungeCount(), Enemy->HasPosition() && Enemy->GetPosition().bCovered ? 1 : 0, Enemy->GetCoverTime(), *Enemy->DescribeLook());
+			if (Moved < 50.f && Hits == 0 && Enemy->GetProjectileCount() == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s neither moved nor attacked"), *Entry.Id.ToString());
+			}
+			if (Enemy->HasSpriteLook() && Anim && Anim->GetActionsPlayed() == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s never played an attack clip"), *Entry.Id.ToString());
+			}
+			if (bRanged)
+			{
+				++Ranged;
+				CoveredRanged += (Enemy->GetCoverTime() > 0.f || (Enemy->HasPosition() && Enemy->GetPosition().bCovered)) ? 1 : 0;
+				if (Enemy->GetProjectileCount() == 0 || Flight < 300.f)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s fired %d projectiles, the longest flew %.0f cm (need one that flies 300)"), *Entry.Id.ToString(), Enemy->GetProjectileCount(), Flight);
+				}
+			}
+			else if (Hits == 0)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s never hit the player"), *Entry.Id.ToString());
+			}
+		}
+		const UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(World);
+		const int32 Pincers = Squad ? Squad->GetPincerCount() : 0;
+		UE_LOG(LogGB, Display, TEXT("SMOKE Castle squad: ranged members with cover %d of %d, pincers (two melee commits within the window from 90+ degrees apart)=%d, widest %.0f degrees"),
+			CoveredRanged, Ranged, Pincers, Squad ? Squad->GetBestPincerAngle() : 0.f);
+		if (Ranged > 0 && CoveredRanged == 0)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: no ranged member took a covered position behind the boxes"));
+		}
+		if (Pincers == 0)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: no two melee members closed in together from different sides"));
+		}
+		(void)Player;
+	}
+
+	/** The sprite-look enemies killed by CastleKill: each must still be there, showing its Death clip, until its hold is checked. */
+	static TArray<TPair<TWeakObjectPtr<AGBSkeletalEnemy>, FName>> CastleSpriteDead;
+
+	static void CastleKill(AGBPlayerCharacter* Player)
+	{
+		CastleSpriteDead.Reset();
+		for (const FE3DEntry& Entry : E3DGroup)
+		{
+			if (AGBSkeletalEnemy* Enemy = Cast<AGBSkeletalEnemy>(Entry.Enemy.Get()))
+			{
+				if (Enemy->HasSpriteLook())
+				{
+					CastleSpriteDead.Emplace(Enemy, Entry.Id);
+				}
+			}
+		}
+		E3DKillGroup(Player);
+	}
+
+	/**
+	 * After the kill: each sprite enemy shows its Death clip (bHold false: playing; bHold true: its LAST frame is on screen, the clip
+	 * over). A sprite corpse that is already gone at either check has popped out before its hold: that fails.
+	 */
+	static void CastleDeathCheck(bool bHold)
+	{
+		const FName DeathClip(TEXT("Death"));
+		for (const TPair<TWeakObjectPtr<AGBSkeletalEnemy>, FName>& Dead : CastleSpriteDead)
+		{
+			const AGBSkeletalEnemy* Enemy = Dead.Key.Get();
+			if (!Enemy)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: the corpse of %s was gone before its death hold was checked"), *Dead.Value.ToString());
+				continue;
+			}
+			const UGBSpriteAnimComponent* Anim = Enemy->GetSpriteAnim();
+			if (!Anim)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s lost its sprite component"), *Dead.Value.ToString());
+				continue;
+			}
+			const int32 LastFrame = Anim->GetClipFrames(DeathClip) - 1;
+			const bool bShowsDeath = Anim->GetCurrentClip() == DeathClip;
+			UE_LOG(LogGB, Display, TEXT("SMOKE Castle %s death: shown clip=%s frame=%d of %d, elapsed=%.2f s, clip=%.2f s | %s"), *Dead.Value.ToString(), *Anim->GetCurrentClip().ToString(),
+				Anim->GetCurrentFrame(), LastFrame, Enemy->GetDeathElapsed(), Enemy->GetDeathClipLength(), *Anim->Describe());
+			if (!bShowsDeath)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s shows %s, not its Death clip"), *Dead.Value.ToString(), *Anim->GetCurrentClip().ToString());
+			}
+			else if (bHold && (Enemy->GetDeathElapsed() < Enemy->GetDeathClipLength() + 0.1f || Anim->GetCurrentFrame() != LastFrame))
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Castle FAILED: %s is not holding the last frame of its Death clip (frame %d of %d, %.2f s after the kill, clip %.2f s)"), *Dead.Value.ToString(),
+					Anim->GetCurrentFrame(), LastFrame, Enemy->GetDeathElapsed(), Enemy->GetDeathClipLength());
+			}
+		}
+	}
+
+	static void CastleClean(AGBPlayerCharacter* Player)
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(CastleTicker);
+		FTSTicker::GetCoreTicker().RemoveTicker(CastleSpawnTicker);
+		CastleTicker.Reset();
+		CastleSpawnTicker.Reset();
+		CastleProjectiles.Reset();
+		UGBCombatLibrary::OnDamageDealt().Remove(CastleHitHandle);
+		CastleHitHandle.Reset();
+		CastleHits.Reset();
+		E3TClean();
+		if (Player)
+		{
+			Player->GetAttributes()->RestoreAll();
+		}
 	}
 
 	static void BuildSteps()
@@ -6509,6 +7006,10 @@ namespace GBSmokeRun
 					Add(T + Group.Check + 0.9f, TEXT("Enemies3D: closeup screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("enemies3d_enforcer_closeup")); });
 				}
 				Add(T + Group.Check + 1.8f, Keep(FString::Printf(TEXT("Enemies3D: %s kill"), Group.Name)), [](UWorld*, AGBPlayerCharacter* Player) { E3DKillGroup(Player); });
+				// Two looks at the deaths: just after the kill (the fall, the first ground contact) and a moment later (the body on the floor, the wreck).
+				Add(T + Group.Check + 2.7f, Keep(FString::Printf(TEXT("Enemies3D: %s death screenshot 1"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter*) { Shot(*FString::Printf(TEXT("enemies3d_%s_death1"), Group.Name)); });
+				Add(T + Group.Check + 3.4f, Keep(FString::Printf(TEXT("Enemies3D: %s death closeup"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter* Player) { E3DCloseup(Player, Group.Spawn[0].Key); });
+				Add(T + Group.Check + 4.0f, Keep(FString::Printf(TEXT("Enemies3D: %s death screenshot 2"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter*) { Shot(*FString::Printf(TEXT("enemies3d_%s_death2"), Group.Name)); });
 				Add(T + Group.Check + 6.2f, Keep(FString::Printf(TEXT("Enemies3D: %s corpses removed"), Group.Name)), [Group](UWorld*, AGBPlayerCharacter*) { E3DCheckCorpses(Group.Name); });
 			}
 		}
@@ -6526,15 +7027,35 @@ namespace GBSmokeRun
 			Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
 			E3TSpawnBoxes(World, Player);
 		});
+		// The boxes cut the navmesh once it has rebuilt, and in a long run that takes longer than a fixed wait: the squad plans its
+		// cover on the navmesh, so it is only spawned when the build is over (at most 4 s of waiting; the wait is logged).
 		Add(E3T + 3.5f, TEXT("Enemies3D: tactics spawn"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
-			using FItems = TArray<TPair<FName, float>>;
-			const FItems Items = {
-				{ FName(TEXT("Robot_Future")), 1500.f }, { FName(TEXT("Robot_Future")), 1700.f }, { FName(TEXT("Robot_Future")), 1300.f }, { FName(TEXT("Robot_Future")), 1600.f },
-				{ FName(TEXT("Orc_Future")), 1500.f }, { FName(TEXT("Orc_Future")), 1400.f } };
-			E3DSpawnGroup(World, Player, Items);
-			Player->GetAttributes()->SetInvulnerable(true);
-			E3TStartSampling(World);
+			E3TNavWaited = 0.f;
+			FTSTicker::GetCoreTicker().RemoveTicker(E3TSpawnTicker);
+			E3TSpawnTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakWorld = TWeakObjectPtr<UWorld>(World), WeakPlayer = TWeakObjectPtr<AGBPlayerCharacter>(Player)](float Dt)
+			{
+				UWorld* TickWorld = WeakWorld.Get();
+				AGBPlayerCharacter* TickPlayer = WeakPlayer.Get();
+				if (!TickWorld || !TickPlayer)
+				{
+					return false;
+				}
+				E3TNavWaited += Dt;
+				if (UNavigationSystemV1::IsNavigationBeingBuilt(TickWorld) && E3TNavWaited < 4.f)
+				{
+					return true;
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: the navmesh was ready after %.1f s (building=%d), spawning the squad"), E3TNavWaited, UNavigationSystemV1::IsNavigationBeingBuilt(TickWorld) ? 1 : 0);
+				using FItems = TArray<TPair<FName, float>>;
+				const FItems Items = {
+					{ FName(TEXT("Robot_Future")), 1500.f }, { FName(TEXT("Robot_Future")), 1700.f }, { FName(TEXT("Robot_Future")), 1300.f }, { FName(TEXT("Robot_Future")), 1600.f },
+					{ FName(TEXT("Orc_Future")), 1500.f }, { FName(TEXT("Orc_Future")), 1400.f } };
+				E3DSpawnGroup(TickWorld, TickPlayer, Items, true);
+				TickPlayer->GetAttributes()->SetInvulnerable(true);
+				E3TStartSampling(TickWorld);
+				return false;
+			}), 0.1f);
 		});
 		Add(E3T + 16.f, TEXT("Enemies3D: tactics check"), [](UWorld* World, AGBPlayerCharacter* Player) { E3TCheck(World, Player); });
 		Add(E3T + 16.2f, TEXT("Enemies3D: tactics fly up"), [](UWorld*, AGBPlayerCharacter* Player) { E3TTop(Player); });
@@ -6708,7 +7229,7 @@ namespace GBSmokeRun
 		}
 		const float E3Tries = 5.f * FMath::Min(E3PoseTries.Num(), 8);
 		Add(E3H + 30.f + E3Tries, TEXT("Chief: kill"), [](UWorld*, AGBPlayerCharacter* Player) { if (AGBShieldEnemy* Chief = E3CFindChief()) { Chief->DebugHold(0); } E3DKillGroup(Player); });
-		Add(E3H + 33.f + E3Tries, TEXT("Chief: done"), [](UWorld*, AGBPlayerCharacter*)
+		Add(E3H + 40.f + E3Tries, TEXT("Chief: done"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			if (bFilteredRun)
 			{
@@ -6716,7 +7237,7 @@ namespace GBSmokeRun
 				FPlatformMisc::RequestExit(false);
 			}
 		});
-		const float E3End = E3H + 34.f + E3Tries;
+		const float E3End = E3H + 41.f + E3Tries;   // the chief's corpse is watched for its clip, its lie and its sinking after the kill
 		// A filtered run (gb.Smoke Enemies3D) has no seal block to end it: it quits here. The full run goes on.
 		Add(E3End, TEXT("Enemies3D: done"), [](UWorld*, AGBPlayerCharacter*)
 		{
@@ -6726,9 +7247,407 @@ namespace GBSmokeRun
 				FPlatformMisc::RequestExit(false);
 			}
 		});
+		// ---- Valkyrie block (gb.Smoke Valkyrie): her fight. Sealed then woken, bursts at range, her own combo, Judgement, lances, phase two, death.
+		// Her own choice is switched off (DebugAutoMask 0) except in the combo step, so every forced action starts when the step says.
+		const float VK = E3End + 0.6f;
+		{
+			static TWeakObjectPtr<AGBValkyrieEnemy> Valk;
+			static int32 Base[9];
+			auto Snapshot = []()
+			{
+				if (const AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Base[0] = Vk->GetSwingCount(); Base[1] = Vk->GetSwingHits(); Base[2] = Vk->GetJudgementCasts(); Base[3] = Vk->GetCirclesMade();
+					Base[4] = Vk->GetCirclesStruck(); Base[5] = Vk->GetCircleHits(); Base[6] = Vk->GetLancesFired(); Base[7] = Vk->GetShotCount(); Base[8] = Vk->GetActionClipsPlayed();
+				}
+			};
+			auto Face = [](AGBPlayerCharacter* Player, float Pitch)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				if (Vk && Player)
+				{
+					FRotator Look = (Vk->GetActorLocation() + FVector(0.f, 0.f, 40.f) - Player->GetAimOrigin()).Rotation();
+					Look.Pitch = Pitch;
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation(Look);
+					}
+				}
+			};
+			Add(VK, TEXT("Valkyrie: spawn sealed"), [Snapshot](UWorld* World, AGBPlayerCharacter* Player)
+			{
+				FVector EnemySpawn;
+				FVector PlayerSpot;
+				AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+				Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+				E3DSpawnGroup(World, Player, { { FName(TEXT("Valkyrie_Future")), 1400.f } });
+				Player->GetAttributes()->SetInvulnerable(true);
+				Valk = nullptr;
+				for (const FE3DEntry& Entry : E3DGroup)
+				{
+					Valk = Cast<AGBValkyrieEnemy>(Entry.Enemy.Get());
+				}
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Vk->DebugAutoMask(0);
+					Vk->SetSealed(true);
+					UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie spawned: class=%s look=%d grip=%d sealed=%d | %s"), *Vk->GetClass()->GetName(), Vk->HasSkeletalLook() ? 1 : 0, Vk->HasGripCurl() ? 1 : 0, Vk->IsSealed() ? 1 : 0, *Vk->DescribeLook());
+					if (const UGBEnemyAnimInstance* Anim = Vk->GetEnemyAnim())
+					{
+						FString Lengths;
+						for (int32 Index = 0; Index < 6; ++Index)
+						{
+							const UAnimSequence* Clip = Anim->GetClip(static_cast<EGBEnemyClip>(static_cast<int32>(EGBEnemyClip::Action0) + Index));
+							Lengths += FString::Printf(TEXT(" Action%d=%.2f"), Index, Clip ? Clip->GetPlayLength() : -1.f);
+							if (!Clip && Index < 5 && Vk->HasSkeletalLook())
+							{
+								UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie FAILED: clip Anim.Action%d did not load (the fight would run with no animation)"), Index);
+							}
+						}
+						UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie action clip lengths (s):%s"), *Lengths);
+					}
+				}
+				else
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie FAILED: Valkyrie_Future did not spawn as an AGBValkyrieEnemy"));
+				}
+				Snapshot();
+			});
+			Add(VK + 0.5f, TEXT("Valkyrie: wake"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					const FVector At = Vk->GetActorLocation() + (Player->GetActorLocation() - Vk->GetActorLocation()).GetSafeNormal2D() * 300.f;
+					FVector Landing = At;
+					Vk->ProjectPointToNavigationForWake(Landing);
+					Vk->BeginWake(Landing);
+					UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie wake: sealed=%d leaping=%d"), Vk->IsSealed() ? 1 : 0, Vk->IsWakeLeaping() ? 1 : 0);
+				}
+			});
+			Add(VK + 0.9f, TEXT("Valkyrie: look at her"), [Face](UWorld*, AGBPlayerCharacter* Player) { Face(Player, 0.f); });
+			Add(VK + 6.5f, TEXT("Valkyrie: far check"), [Snapshot](UWorld*, AGBPlayerCharacter*)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				if (!Vk)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie far FAILED: she is gone"));
+					return;
+				}
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie far: shots=%d bursts=%d aware=%d sealed=%d leaping=%d act=%d | %s"), Vk->GetShotCount(), Vk->GetBurstCount(), Vk->IsAware() ? 1 : 0, Vk->IsSealed() ? 1 : 0, Vk->IsWakeLeaping() ? 1 : 0, static_cast<int32>(Vk->GetAct()), *Vk->DescribeTactics());
+				if (Vk->IsSealed() || Vk->GetShotCount() <= 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie far FAILED: after the wake she never fired her light bolts (sealed=%d shots=%d)"), Vk->IsSealed() ? 1 : 0, Vk->GetShotCount());
+				}
+				Snapshot();
+			});
+			Add(VK + 6.7f, TEXT("Valkyrie: close, her own combo"), [Snapshot](UWorld*, AGBPlayerCharacter* Player)
+			{
+				E3DCloseup(Player, FName(TEXT("Valkyrie_Future")));
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Snapshot();
+					Vk->DebugAutoMask(1 << static_cast<int32>(AGBValkyrieEnemy::EKind::Combo));
+				}
+			});
+			Add(VK + 8.4f, TEXT("Valkyrie: combo screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("valkyrie_combo")); });
+			Add(VK + 11.7f, TEXT("Valkyrie: combo check"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				AGBValkyrieEnemy* Vk = Valk.Get();
+				if (!Vk)
+				{
+					return;
+				}
+				Vk->DebugAutoMask(0);
+				const int32 Swings = Vk->GetSwingCount() - Base[0];
+				const int32 Hits = Vk->GetSwingHits() - Base[1];
+				const int32 Clips = Vk->GetActionClipsPlayed() - Base[8];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie combo: swings=%d hits=%d clips=%d hops=%d dashes=%d | %s"), Swings, Hits, Clips, Vk->GetHopCount(), Vk->GetDashCount(), *Vk->DescribeTactics());
+				if (Swings < 2 || Hits < 1)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie combo FAILED: %d swings and %d hits on a player standing 400 cm from her (wanted 2 and 1, started by her own choice)"), Swings, Hits);
+				}
+				if (Vk->HasSkeletalLook() && Clips < Swings)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie combo FAILED: %d swings but only %d swing clips played"), Swings, Clips);
+				}
+			});
+			Add(VK + 11.9f, TEXT("Valkyrie: hand closeup"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				AGBValkyrieEnemy* Vk = Valk.Get();
+				if (Vk && Vk->GetMesh() && Player)
+				{
+					Vk->DebugFreeze(true);
+					const FVector Hand = Vk->GetMesh()->GetBoneLocation(FName(TEXT("hand_r")), EBoneSpaces::WorldSpace);
+					const FVector Side = (Player->GetActorLocation() - Hand).GetSafeNormal2D();
+					Player->SetActorLocation(Hand + Side * 90.f - FVector(0.f, 0.f, 70.f), false, nullptr, ETeleportType::TeleportPhysics);
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation((Hand - Player->GetAimOrigin()).Rotation());
+					}
+				}
+			});
+			Add(VK + 12.5f, TEXT("Valkyrie: hand screenshot"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				if (const AGBValkyrieEnemy* Held = Valk.Get())
+				{
+					// Aim again at where the hand is now (the pose moved since the closeup step).
+					if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+					{
+						PC->SetControlRotation((Held->GetMesh()->GetBoneLocation(FName(TEXT("hand_r")), EBoneSpaces::WorldSpace) - Player->GetAimOrigin()).Rotation());
+					}
+				}
+				Shot(TEXT("valkyrie_hand"));
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Vk->DebugFreeze(false);
+				}
+			});
+			Add(VK + 12.7f, TEXT("Valkyrie: Judgement"), [Snapshot, Face](UWorld*, AGBPlayerCharacter* Player)
+			{
+				E3DCloseup(Player, FName(TEXT("Valkyrie_Future")));
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Snapshot();
+					Vk->DebugQueue(AGBValkyrieEnemy::EKind::Judgement);
+				}
+				Face(Player, -20.f);
+			});
+			Add(VK + 14.2f, TEXT("Valkyrie: Judgement telegraph screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("valkyrie_judgement_telegraph")); });
+			Add(VK + 14.7f, TEXT("Valkyrie: Judgement strike screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("valkyrie_judgement_strike")); });
+			Add(VK + 16.9f, TEXT("Valkyrie: Judgement check"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				if (!Vk)
+				{
+					return;
+				}
+				const int32 Casts = Vk->GetJudgementCasts() - Base[2];
+				const int32 Made = Vk->GetCirclesMade() - Base[3];
+				const int32 Struck = Vk->GetCirclesStruck() - Base[4];
+				const int32 Hit = Vk->GetCircleHits() - Base[5];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie judgement: casts=%d circles=%d struck=%d on the player=%d live=%d lift=%.0f | %s"), Casts, Made, Struck, Hit, Vk->GetLiveMarks(), Vk->GetLift(), *Vk->DescribeTactics());
+				if (Casts < 1 || Made < 3 || Struck != Made || Hit < 1 || Vk->GetLiveMarks() != 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie judgement FAILED: casts=%d circles=%d struck=%d hit=%d live=%d (wanted 1, 3, all struck, the player's circle hit, none left)"), Casts, Made, Struck, Hit, Vk->GetLiveMarks());
+				}
+			});
+			Add(VK + 17.1f, TEXT("Valkyrie: lances"), [Snapshot, Face](UWorld*, AGBPlayerCharacter* Player)
+			{
+				E3DCloseup(Player, FName(TEXT("Valkyrie_Future")));
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Snapshot();
+					Vk->DebugQueue(AGBValkyrieEnemy::EKind::Lances);
+				}
+				Face(Player, 0.f);
+			});
+			Add(VK + 17.85f, TEXT("Valkyrie: lances screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("valkyrie_lances")); });
+			Add(VK + 19.6f, TEXT("Valkyrie: lances check"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				if (!Vk)
+				{
+					return;
+				}
+				const int32 Fired = Vk->GetLancesFired() - Base[6];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie lances: fired=%d volleys=%d | %s"), Fired, Vk->GetVolleys(), *Vk->DescribeTactics());
+				if (Fired < 5)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie lances FAILED: %d lances fired (wanted at least 5)"), Fired);
+				}
+			});
+			Add(VK + 19.8f, TEXT("Valkyrie: phase two Judgement"), [Snapshot](UWorld*, AGBPlayerCharacter*)
+			{
+				if (AGBValkyrieEnemy* Vk = Valk.Get())
+				{
+					Snapshot();
+					Vk->DebugPhaseTwo();
+					Vk->DebugQueue(AGBValkyrieEnemy::EKind::Judgement);
+				}
+			});
+			Add(VK + 24.1f, TEXT("Valkyrie: phase two check"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				if (!Vk)
+				{
+					return;
+				}
+				const int32 Made = Vk->GetCirclesMade() - Base[3];
+				const int32 Struck = Vk->GetCirclesStruck() - Base[4];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie phase two: phase2=%d circles=%d struck=%d | %s"), Vk->IsPhaseTwo() ? 1 : 0, Made, Struck, *Vk->DescribeTactics());
+				if (!Vk->IsPhaseTwo() || Made < 4 || Struck != Made)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie phase two FAILED: phase2=%d circles=%d struck=%d (wanted phase two, at least 4 circles, all struck)"), Vk->IsPhaseTwo() ? 1 : 0, Made, Struck);
+				}
+			});
+			Add(VK + 24.3f, TEXT("Valkyrie: kill"), [](UWorld*, AGBPlayerCharacter* Player) { E3DKillGroup(Player); });
+			Add(VK + 25.3f, TEXT("Valkyrie: death check"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				const AGBValkyrieEnemy* Vk = Valk.Get();
+				UE_LOG(LogGB, Display, TEXT("SMOKE Valkyrie death: dead=%d marks=%d lift=%.0f"), Vk && Vk->IsDead() ? 1 : 0, Vk ? Vk->GetLiveMarks() : 0, Vk ? Vk->GetLift() : 0.f);
+				if (Vk && (!Vk->IsDead() || Vk->GetLiveMarks() != 0))
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Valkyrie death FAILED: she did not die cleanly"));
+				}
+			});
+			Add(VK + 25.8f, TEXT("Valkyrie: done"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				if (bFilteredRun)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+					FPlatformMisc::RequestExit(false);
+				}
+			});
+		}
+		// ---- Castle block (gb.Smoke Castle): the castle's sprite enemies with the squad AI. See CastleSpawn / CastleCheck.
+		const float CS = VK + 26.4f;
+		{
+			Add(CS, TEXT("Castle: boxes and the sprite quad's UV check"), [](UWorld* World, AGBPlayerCharacter* Player)
+			{
+				if (AGBPlayerController* PC = Cast<AGBPlayerController>(Player->GetController()))
+				{
+					PC->SetControlRotation(FRotator::ZeroRotator);
+				}
+				FVector EnemySpawn;
+				FVector PlayerSpot;
+				AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+				Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+				E3TSpawnBoxes(World, Player);
+				CastlePlaneCheck();
+			});
+			// The boxes cut the navmesh first (the squad plans its cover on it): the spawn waits for the build, at most 4 s.
+			Add(CS + 3.5f, TEXT("Castle: spawn one of each castle enemy"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleSpawn(World, Player); });
+			Add(CS + 9.f, TEXT("Castle: group screenshot"), [](UWorld*, AGBPlayerCharacter* Player) { E3DLookAtGroup(Player); Shot(TEXT("castle_group")); });
+			Add(CS + 21.f, TEXT("Castle: check"), [](UWorld* World, AGBPlayerCharacter* Player) { CastleCheck(World, Player); });
+			Add(CS + 21.2f, TEXT("Castle: fight screenshot"), [](UWorld*, AGBPlayerCharacter* Player) { E3DLookAtGroup(Player); Shot(TEXT("castle_fight")); });
+			Add(CS + 21.5f, TEXT("Castle: fly up"), [](UWorld*, AGBPlayerCharacter* Player) { E3TTop(Player); });
+			Add(CS + 22.2f, TEXT("Castle: top screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_top")); });
+			Add(CS + 22.5f, TEXT("Castle: back down"), [](UWorld*, AGBPlayerCharacter* Player) { E3TBack(Player); });
+			struct FCloseup { const TCHAR* Id; const TCHAR* Shot; };
+			const FCloseup Closeups[] = { { TEXT("Orc_Past"), TEXT("castle_orc") }, { TEXT("Orc_Past_Shaman"), TEXT("castle_shaman") }, { TEXT("Centaur_Past"), TEXT("castle_centaur") },
+				{ TEXT("Imp_Past"), TEXT("castle_barghest") }, { TEXT("Orc_Past_Brute"), TEXT("castle_brute") } };
+			static TArray<TSharedPtr<FString>> CastlePool;
+			auto CastleName = [](const FString& Text) -> const TCHAR* { CastlePool.Add(MakeShared<FString>(Text)); return **CastlePool.Last(); };
+			for (int32 Index = 0; Index < UE_ARRAY_COUNT(Closeups); ++Index)
+			{
+				const FCloseup Each = Closeups[Index];
+				Add(CS + 23.f + Index, CastleName(FString::Printf(TEXT("Castle: closeup of %s"), Each.Id)), [Each](UWorld*, AGBPlayerCharacter* Player) { E3DCloseup(Player, FName(Each.Id)); });
+				Add(CS + 23.6f + Index, CastleName(FString::Printf(TEXT("Castle: closeup screenshot %s"), Each.Shot)), [Each](UWorld*, AGBPlayerCharacter*) { Shot(Each.Shot); });
+			}
+			Add(CS + 28.f, TEXT("Castle: kill"), [](UWorld*, AGBPlayerCharacter* Player) { E3DLookAtGroup(Player); CastleKill(Player); });
+			Add(CS + 28.5f, TEXT("Castle: death clips"), [](UWorld*, AGBPlayerCharacter*) { CastleDeathCheck(false); Shot(TEXT("castle_death1")); });
+			// Clip 0.75 s, lie 0.6 s (shortened by the kill step): at 1.3 s each corpse holds its last frame and has not sunk yet.
+			Add(CS + 29.3f, TEXT("Castle: death hold"), [](UWorld*, AGBPlayerCharacter*) { CastleDeathCheck(true); Shot(TEXT("castle_death2")); });
+			Add(CS + 33.f, TEXT("Castle: corpses removed"), [](UWorld*, AGBPlayerCharacter* Player) { E3DCheckCorpses(TEXT("castle")); CastleClean(Player); });
+			// The castle's boss: Valkyrie_Past is her twin's fight (AGBValkyrieEnemy) on the ValkyriePixel sheet. Sealed, woken, one combo,
+			// one Judgement, killed: her death clip holds and her corpse goes.
+			static TWeakObjectPtr<AGBValkyrieEnemy> CastleValk;
+			static int32 CastleValkBase[4];
+			Add(CS + 34.f, TEXT("Castle: Valkyrie spawn sealed"), [](UWorld* World, AGBPlayerCharacter* Player)
+			{
+				FVector EnemySpawn;
+				FVector PlayerSpot;
+				AGBTestArena::GetPathTestPoints(EnemySpawn, PlayerSpot);
+				Player->SetActorLocation(PlayerSpot, false, nullptr, ETeleportType::TeleportPhysics);
+				E3DSpawnGroup(World, Player, { { FName(TEXT("Valkyrie_Past")), 1400.f } });
+				Player->GetAttributes()->SetInvulnerable(true);
+				CastleValk = E3DGroup.Num() > 0 ? Cast<AGBValkyrieEnemy>(E3DGroup[0].Enemy.Get()) : nullptr;
+				AGBValkyrieEnemy* Vk = CastleValk.Get();
+				if (!Vk)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: Valkyrie_Past did not spawn as an AGBValkyrieEnemy (ActorClass)"));
+					return;
+				}
+				Vk->DebugAutoMask(0);
+				Vk->SetSealed(true);
+				UE_LOG(LogGB, Display, TEXT("SMOKE Castle Valkyrie spawned: class=%s spriteLook=%d sealed=%d | %s"), *Vk->GetClass()->GetName(), Vk->HasSpriteLook() ? 1 : 0, Vk->IsSealed() ? 1 : 0, *Vk->DescribeLook());
+				const bool bSheet = FPaths::FileExists(UGBSpriteSheetSubsystem::SheetDir() / TEXT("ValkyriePixel.json"));
+				if (bSheet && !Vk->HasSpriteLook())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: her sheet is there but did not load"));
+				}
+			});
+			Add(CS + 34.5f, TEXT("Castle: Valkyrie wake"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				if (AGBValkyrieEnemy* Vk = CastleValk.Get())
+				{
+					FVector Landing = Vk->GetActorLocation() + (Player->GetActorLocation() - Vk->GetActorLocation()).GetSafeNormal2D() * 300.f;
+					Vk->ProjectPointToNavigationForWake(Landing);
+					Vk->BeginWake(Landing);
+					E3DLookAtGroup(Player);
+				}
+			});
+			Add(CS + 37.5f, TEXT("Castle: Valkyrie combo"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				E3DCloseup(Player, FName(TEXT("Valkyrie_Past")));
+				if (AGBValkyrieEnemy* Vk = CastleValk.Get())
+				{
+					CastleValkBase[0] = Vk->GetSwingCount();
+					CastleValkBase[1] = Vk->GetActionClipsPlayed();
+					Vk->DebugQueue(AGBValkyrieEnemy::EKind::Combo);
+				}
+			});
+			Add(CS + 38.2f, TEXT("Castle: Valkyrie combo screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_valkyrie_combo")); });
+			Add(CS + 41.f, TEXT("Castle: Valkyrie combo check, Judgement"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				AGBValkyrieEnemy* Vk = CastleValk.Get();
+				if (!Vk)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: she is gone before the combo check"));
+					return;
+				}
+				const int32 Swings = Vk->GetSwingCount() - CastleValkBase[0];
+				const int32 Clips = Vk->GetActionClipsPlayed() - CastleValkBase[1];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Castle Valkyrie combo: swings=%d clips=%d hits=%d sealed=%d | %s"), Swings, Clips, Vk->GetSwingHits(), Vk->IsSealed() ? 1 : 0, *Vk->DescribeLook());
+				if (Swings < 1 || (Vk->HasSpriteLook() && Clips < Swings))
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: combo swings=%d, sprite clips=%d (wanted a swing, a clip per swing)"), Swings, Clips);
+				}
+				CastleValkBase[2] = Vk->GetJudgementCasts();
+				CastleValkBase[3] = Vk->GetCirclesStruck();
+				E3DCloseup(Player, FName(TEXT("Valkyrie_Past")));
+				Vk->DebugQueue(AGBValkyrieEnemy::EKind::Judgement);
+			});
+			Add(CS + 42.5f, TEXT("Castle: Valkyrie Judgement screenshot"), [](UWorld*, AGBPlayerCharacter*) { Shot(TEXT("castle_valkyrie_judgement")); });
+			Add(CS + 45.f, TEXT("Castle: Valkyrie Judgement check, kill"), [](UWorld*, AGBPlayerCharacter* Player)
+			{
+				AGBValkyrieEnemy* Vk = CastleValk.Get();
+				if (!Vk)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: she is gone before the Judgement check"));
+					return;
+				}
+				const int32 Casts = Vk->GetJudgementCasts() - CastleValkBase[2];
+				const int32 Struck = Vk->GetCirclesStruck() - CastleValkBase[3];
+				UE_LOG(LogGB, Display, TEXT("SMOKE Castle Valkyrie judgement: casts=%d struck=%d live=%d lancesFired=%d shots=%d | %s"), Casts, Struck, Vk->GetLiveMarks(), Vk->GetLancesFired(), Vk->GetShotCount(), *Vk->DescribeLook());
+				if (Casts < 1 || Struck < 1)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: Judgement casts=%d circles struck=%d"), Casts, Struck);
+				}
+				CastleKill(Player);
+			});
+			Add(CS + 46.2f, TEXT("Castle: Valkyrie death hold"), [](UWorld*, AGBPlayerCharacter*) { CastleDeathCheck(true); Shot(TEXT("castle_valkyrie_death")); });
+			Add(CS + 50.f, TEXT("Castle: Valkyrie corpse removed"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Castle Valkyrie corpse gone=%d"), CastleValk.IsValid() ? 0 : 1);
+				if (CastleValk.IsValid())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Castle Valkyrie FAILED: her corpse is still there 5 s after the kill"));
+				}
+				E3DCheckCorpses(TEXT("castle valkyrie"));
+			});
+			Add(CS + 50.5f, TEXT("Castle: done"), [](UWorld*, AGBPlayerCharacter*)
+			{
+				if (bFilteredRun)
+				{
+					UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+					FPlatformMisc::RequestExit(false);
+				}
+			});
+		}
 		// ---- Seal block (gb.Smoke seal): a state machine, see SealRun.
 		// It quits the run itself when done; the quit step below is only a far safety net.
-		const float Z = E3End + 0.6f;
+		const float Z = CS + 51.f;
 		Add(Z, TEXT("seal: seal, era block with a real doorway, captions, cancel, gun drop"), SealRun::Start);
 		Add(Z + 0.5f, TEXT("tour: a real map's own review spots (skipped on a map without them)"), TourRun::Start);
 		// ---- Enemies3DBase block: the four builder encounters of FutureBase, only in a filtered run on that map.
@@ -7064,7 +7983,123 @@ namespace GBSmokeRun
 			}
 			Player->GetEquipment()->SwitchTo(EGBHeldSlot::Staff);
 		});
-		Add(Z + 400.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		// ---- Fog block (gb.Smoke Fog): the tunnel smoke. An AGBFluidFog around the player: the system runs, the player and
+		// the shots are written to the data channels, it stops when the player is far. Without the Niagara system asset
+		// the actor only warns and stays idle; the checks that need the simulation are then skipped.
+		static TWeakObjectPtr<AGBFluidFog> SmokeFog;
+		static FVector SmokeFogPlayerHome = FVector::ZeroVector;
+		const float FogT = Z + 401.f;
+		Add(FogT, TEXT("Fog: spawn a fog box around the player"), [](UWorld* World, AGBPlayerCharacter* Player)
+		{
+			SmokeFogPlayerHome = Player->GetActorLocation();
+			FTransform Where(FRotator::ZeroRotator, SmokeFogPlayerHome);
+			AGBFluidFog* Fog = World->SpawnActorDeferred<AGBFluidFog>(AGBFluidFog::StaticClass(), Where);
+			if (!Fog)
+			{
+				UE_LOG(LogGB, Error, TEXT("SMOKE Fog FAILED: could not spawn the fog actor"));
+				return;
+			}
+			Fog->BoxExtent = FVector(600.f, 200.f, 200.f);
+			Fog->FinishSpawning(Where);
+			SmokeFog = Fog;
+			UE_LOG(LogGB, Display, TEXT("SMOKE Fog spawned: system loaded=%d"), Fog->HasSystem() ? 1 : 0);
+		});
+		Add(FogT + 2.5f, TEXT("Fog: running, the player is written, screenshot before the shots"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBFluidFog* Fog = SmokeFog.Get();
+			if (!Fog)
+			{
+				return;
+			}
+			if (Fog->HasSystem())
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Fog running=%d playerEntries=%d collisionEntries=%d"), Fog->IsSimulating() ? 1 : 0, Fog->GetLastPlayerEntries(), Fog->GetLastCollisionEntries());
+				if (!Fog->IsSimulating() || Fog->GetLastPlayerEntries() != 2)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Fog FAILED: with the player inside, the simulation must run and the player must be written as two spheres"));
+				}
+			}
+			else
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Fog: no system asset, simulation checks skipped (running=%d)"), Fog->IsSimulating() ? 1 : 0);
+			}
+			// Walk through it: a velocity the player entries carry.
+			if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+			{
+				Movement->Velocity = FVector(600.f, 0.f, 0.f);
+			}
+			Shot(TEXT("fog_before"));
+		});
+		Add(FogT + 3.2f, TEXT("Fog: three shots through it"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBFluidFog* Fog = SmokeFog.Get();
+			if (!Fog)
+			{
+				return;
+			}
+			const FVector Centre = Fog->GetActorLocation();
+			for (int32 Index = 0; Index < 3; ++Index)
+			{
+				const FVector Offset(0.f, 0.f, -60.f + Index * 60.f);
+				UGBCombatLibrary::OnShotTraced().Broadcast(Centre + Offset + FVector(-900.f, 0.f, 0.f), Centre + Offset + FVector(900.f, 0.f, 0.f), 0.f);
+			}
+		});
+		Add(FogT + 3.7f, TEXT("Fog: the shots were written, screenshot after"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			AGBFluidFog* Fog = SmokeFog.Get();
+			if (!Fog)
+			{
+				return;
+			}
+			if (Fog->HasSystem())
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Fog after shots: shotEntriesTotal=%d playerEntries=%d collisionEntries=%d sourceEntries=%d"),
+					Fog->GetTotalShotEntriesWritten(), Fog->GetLastPlayerEntries(), Fog->GetLastCollisionEntries(), Fog->GetLastSourceEntries());
+				if (Fog->GetTotalShotEntriesWritten() <= 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Fog FAILED: three shots through the box wrote no collision entries"));
+				}
+			}
+			Shot(TEXT("fog_after"));
+		});
+		Add(FogT + 4.5f, TEXT("Fog: far from the box the simulation stops"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBFluidFog* Fog = SmokeFog.Get();
+			if (!Fog)
+			{
+				return;
+			}
+			if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+			{
+				Movement->Velocity = FVector::ZeroVector;
+			}
+			Player->SetActorLocation(SmokeFogPlayerHome + FVector(0.f, 0.f, 20000.f), false, nullptr, ETeleportType::TeleportPhysics);
+		});
+		Add(FogT + 5.2f, TEXT("Fog: stopped, then clean up"), [](UWorld*, AGBPlayerCharacter* Player)
+		{
+			AGBFluidFog* Fog = SmokeFog.Get();
+			if (Fog)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE Fog far away: running=%d"), Fog->IsSimulating() ? 1 : 0);
+				if (Fog->IsSimulating())
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE Fog FAILED: the simulation must be off while the player is far from the box"));
+				}
+				Fog->Destroy();
+			}
+			SmokeFog.Reset();
+			Player->SetActorLocation(SmokeFogPlayerHome, false, nullptr, ETeleportType::TeleportPhysics);
+		});
+		// A filtered run (gb.Smoke Fog) quits here. The full run goes on to the quit step.
+		Add(FogT + 6.f, TEXT("Fog: done"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			if (bFilteredRun)
+			{
+				UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
+				FPlatformMisc::RequestExit(false);
+			}
+		});
+		Add(FogT + 8.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

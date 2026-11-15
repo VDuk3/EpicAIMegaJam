@@ -23,6 +23,12 @@ FGBOnDamageDealt& UGBCombatLibrary::OnDamageDealt()
 	return Event;
 }
 
+FGBOnShotTraced& UGBCombatLibrary::OnShotTraced()
+{
+	static FGBOnShotTraced Event;
+	return Event;
+}
+
 float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bool bAllowFriendlyFire)
 {
 	if (!IsValid(Target))

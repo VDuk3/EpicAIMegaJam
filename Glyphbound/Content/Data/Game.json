@@ -22,6 +22,9 @@
 		"EncounterLoseTargetTime": 10,
 		"EncounterReinforceMaxWait": 6,
 		"EnemyNavRepathInterval": 0.5,
+		"SquadPincerWindow": 0.8,
+		"SquadPincerReach": 1.3,
+		"SquadCornerProbe": 700,
 		"SquadAlertDelayMin": 0.2,
 		"SquadAlertDelayMax": 1.0,
 		"SquadMaxShooters": 2,
@@ -199,12 +202,31 @@
 		"EntityTentacleFlashHit": 0.6,
 		"EntityTentacleFlashFade": 0.3,
 		"EntityCeilingMargin": 40,
-		"EntityCeilingProbeInterval": 0.15
+		"EntityCeilingProbeInterval": 0.15,
+		"FluidFog.Resolution": 192,
+		"FluidFog.ActiveRange": 3000,
+		"FluidFog.WarmupSeconds": 2,
+		"FluidFog.PlayerRadius": 45,
+		"FluidFog.ShotRadius": 12,
+		"FluidFog.ShotPush": 1500,
+		"FluidFog.ShotSpacing": 40,
+		"FluidFog.ShotFrames": 3,
+		"FluidFog.PuffPush": 500,
+		"FluidFog.PuffRadius": 40,
+		"FluidFog.ProjectileRadius": 25,
+		"FluidFog.BlastPush": 1200,
+		"FluidFog.BlastRadius": 90,
+		"FluidFog.EnemyRange": 1500,
+		"FluidFog.MaxEntries": 64,
+		"FluidFog.GridCornered": 0,
+		"FluidFog.FillDensity": 2,
+		"FluidFog.PushDivergence": 1
 	},
 	"Strings": {
 		"ElementalDefault.FireStatusReaction": "Ignite",
 		"ElementalDefault.LightningStatusReaction": "Stun",
 		"ElementalDefault.IceStatusReaction": "Freeze",
-		"EntityMapPath": ""
+		"EntityMapPath": "",
+		"FluidFog.System": "/Game/Glyphbound/FX/NS_TunnelFog.NS_TunnelFog"
 	}
 }

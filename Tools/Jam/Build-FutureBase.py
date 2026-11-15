@@ -223,6 +223,15 @@ def door(stage, path, loc, yaw, slide, centre, distance=450.0, mats=None, flag=N
     return a
 
 
+def fluid_fog(stage, x, y, z):
+    """Smoke that parts around the player and shots (AGBFluidFog) filling the box x, y, z (interior faces, cm)."""
+    centre = ((x[0] + x[1]) / 2, (y[0] + y[1]) / 2, (z[0] + z[1]) / 2)
+    a = eas.spawn_actor_from_class(unreal.GBFluidFog, unreal.Vector(*centre), rot())
+    a.set_editor_property('box_extent', unreal.Vector(abs(x[1] - x[0]) / 2, abs(y[1] - y[0]) / 2, abs(z[1] - z[0]) / 2))
+    tag(a, stage, 'Fog')
+    return a
+
+
 def box(stage, folder, x, y, z, mat=None, visible=True):
     """A plain blocking box from (x0, x1), (y0, y1), (z0, z1): the collision behind what is seen."""
     a = eas.spawn_actor_from_object(asset('/Engine/BasicShapes/Cube'), unreal.Vector((x[0] + x[1]) / 2, (y[0] + y[1]) / 2, (z[0] + z[1]) / 2), rot())
@@ -1273,6 +1282,8 @@ async def stage_deep():
         hall_wall(s, 'N', a, Z, DARK)
     floor_fit(s, DARK[0], DARK[1], DARK[2], DARK[3], Z)
     box(s, 'Ceiling', (DARK[0], DARK[1]), (DARK[2] - 60, DARK[3] + 60), (Z + 350, Z + 372))
+    fluid_fog(s, (DARK[0], DARK[1]), (DARK[2], DARK[3]), (Z, Z + 350))                                    # smoke the whole 25 m, it parts around the player and shots
+    fluid_fog(s, (WORN_X[1] - 1500.0, WORN_X[1]), (-160, 160), (Z, Z + 300))                              # and the last 15 m of the worn corridor
     # ---- the hall of the tentacle boss
     x0, x1, y0, y1 = PIT
     G = Z + 400.0                                                    # its galleries, 4 m up

@@ -1826,6 +1826,7 @@ void AGBGun::FireHitscan(const FGBDamageInfo& BaseInfo, float SpreadDegrees)
 		FHitResult Hit;
 		const bool bHit = World->LineTraceSingleByChannel(Hit, Origin, End, GBWeapon::AimTraceChannel, Params);
 		AActor* Target = bHit ? Hit.GetActor() : nullptr;
+		UGBCombatLibrary::OnShotTraced().Broadcast(Origin, bHit ? FVector(Hit.ImpactPoint) : End, 0.f);
 
 		if (Target && UGBAttributeComponent::Find(Target))
 		{

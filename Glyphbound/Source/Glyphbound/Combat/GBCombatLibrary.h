@@ -9,6 +9,9 @@
 /** One hit that really took health away: who was hit, the final hit (after stats and shields) and the health removed. */
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnDamageDealt, AActor* /*Target*/, const FGBDamageInfo& /*Info*/, float /*DamageDealt*/);
 
+/** One hitscan shot traced (the player's gun or an enemy's): from Start to End (the impact point, or the end of its range), Speed in cm/s (0 = instant). */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FGBOnShotTraced, const FVector& /*Start*/, const FVector& /*End*/, float /*Speed*/);
+
 UCLASS()
 class GLYPHBOUND_API UGBCombatLibrary : public UBlueprintFunctionLibrary
 {
@@ -40,6 +43,9 @@ public:
 	 * numbers; Info.bHeadshot, Info.Element and Info.HitLocation are filled when the source knows them.
 	 */
 	static FGBOnDamageDealt& OnDamageDealt();
+
+	/** Fired by every hitscan shot (global, like OnDamageDealt: whoever binds must unbind). The tunnel fog listens to it. */
+	static FGBOnShotTraced& OnShotTraced();
 
 	static EGBTeam GetTeam(const AActor* Actor);
 

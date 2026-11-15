@@ -122,6 +122,7 @@ FGBEnemyShotResult GBEnemy3D::FireHitscan(AGBEnemyCharacter* Shooter, const FVec
 	}
 
 	Result.End = bHit ? FVector(Hit.ImpactPoint) : End;
+	UGBCombatLibrary::OnShotTraced().Broadcast(Muzzle, Result.End, 0.f);
 	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
 
 	// The player's capsule may not block the Visibility channel (the line of sight test passes through it), so the
