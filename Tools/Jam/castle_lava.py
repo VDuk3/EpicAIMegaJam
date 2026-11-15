@@ -139,6 +139,10 @@ for gi, names in enumerate(GROUPS):
         a.modify()
         for i in range(max(1, c.get_num_materials())):
             c.set_material(i, lava)
+        # The lava's own glow went into the global illumination and came out on the far side of the walls (the cell's
+        # vault was lit with every light off). The tiles stay out of it: the rect lights below are the lava's light.
+        c.set_editor_property('affect_dynamic_indirect_lighting', False)
+        c.set_editor_property('affect_distance_field_lighting', False)
         n_tiles += 1
         o, e = a.get_actor_bounds(False)
         mn = unreal.Vector(o.x - e.x, o.y - e.y, o.z - e.z)
