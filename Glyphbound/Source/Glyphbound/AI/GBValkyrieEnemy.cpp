@@ -1258,6 +1258,8 @@ void AGBValkyrieEnemy::SpawnMarks(AActor* Goal)
 				{
 					Fx->SetVariableFloat(FName(TEXT("Radius")), Radius);
 					Fx->SetVariableFloat(FName(TEXT("Telegraph")), Telegraph + Index * Stagger);
+					// over the arena's black glass floor (translucency sort priority 1), or the glass dims the column
+					Fx->SetTranslucentSortPriority(static_cast<int32>(V(TEXT("CircleFxSortPriority"), 2.f)));
 				}
 				GBReaperFx::AddPulse(World, Spots[Index], V(TEXT("LiquidStrikeStrength"), 90.f), Telegraph + Index * Stagger);
 			}
