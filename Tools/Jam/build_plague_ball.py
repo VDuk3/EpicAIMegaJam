@@ -4,35 +4,35 @@
 # The look (owner, 2026-11-15): a glowing plague-green core (#5CFF7E) with its light, trailing a REAL Niagara Fluids
 # grey smoke: a Grid3D gas sim in world space (Compensate For Actor Motion), so the smoke stays where the ball left it
 # and curls and fades on its own. No hand-made cloud shape.
-#   - SmokeSource (GPU, world space): short-lived source particles spawned along the ball's path (interpolated spawn),
-#     splatted into the grid with streaking so a fast ball does not leave beads. Spawn rate = rate * User.Alive.
-#   - Grid3D_Gas_Master_Emitter: a long box that follows the ball (the ball near its front); reads SmokeSource.
+#   - Grid3D_Gas_Master_Emitter: a long box that follows the ball (the ball near its front). Its own sphere source
+#     sits on the ball and injects density = FillDensity * User.Alive with a forward push (the air the ball drags);
+#     the sim's turbulence and vorticity curl it, and dissipation fades it in about 1.2 s.
+#     (A separate particle source emitter, as in the Grid3D_Gas_SimpleParticleSource template, did not reach the grid
+#     here, and an emitter copied out of another system keeps a private parent and cannot be saved: not used.)
 #   - Core (CPU): green sprite + light; spawns only while User.Alive, killed at once when Alive drops to 0.
 # Code contract (GBValkyrieEnemy FireVolley): on impact the component is detached, User.Alive = 0, no Deactivate,
 # DestroyComponent 1.5 s later. So the smoke source and core stop on Alive = 0 and the grid keeps fading.
-# Idempotent: the source emitter is added only when missing; every value is set each run.
+# Idempotent: every value is set each run; a leftover SmokeSource emitter from an earlier version is removed.
 import json
 
 SAVE = False
 SYS = '/Game/Glyphbound/FX/Reaper/NS_Reaper_PlagueBall.NS_Reaper_PlagueBall'
 GAS = 'Grid3D_Gas_Master_Emitter'
 SRC = 'SmokeSource'
-SRC_TEMPLATE = '/Niagara/DefaultAssets/Templates/Emitters/Minimal.Minimal'
 P = {
     'world_size': (900.0, 200.0, 200.0),   # cm; X is the flight direction (the projectile's rotation follows its velocity)
     'res_max_axis': 128,
-    'pivot': (0.4, 0.0, 0.0),             # unit-space pivot: the ball near the front face of the box
+    'pivot': (-0.4, 0.0, 0.0),            # unit-space pivot: the ball near the front face of the box
     'smoke_color': (0.55, 0.55, 0.55),
     'density_albedo': 0.7,
     'density_range': (0.0, 1.0),
-    'dissipation_density': 2.4,           # per second: about 5 % left after 1.2 s
-    'subtraction_density': 0.02,
-    'src_rate': 400.0,                    # source particles per second (times User.Alive)
-    'src_life': 0.1,
-    'src_radius': 10.0,
-    'src_splat_radius': 14.0,         # radius each source particle writes into the grid
-    'src_velocity': (350.0, 0.0, 0.0),    # local: air dragged forward by the ball, then it slows and curls
-    'src_density': 1.0,
+    'dissipation_density': 4.5,           # per second: the trail is thin by the box's back face and gone ~0.8 s after impact
+    'subtraction_density': 0.05,
+    'turbulence_gain': (2500.0, 3000.0),  # the two curl-noise turbulence forces (shipped 900 / 1200)
+    'vorticity': 4.0,                     # vorticity confinement (shipped 2): keeps the curls alive
+    'src_density': 60.0,                  # sphere source density (times User.Alive)
+    'src_radius': 26.0,                   # cm; > half the ball's step at 30 fps (50 cm) so the trail does not bead
+    'src_velocity': (200.0, 0.0, 0.0),    # local: air dragged forward by the ball, then it slows and curls
     'core_color': (0.171, 1.6, 0.333),    # #5CFF7E in linear (0.107, 1, 0.208), times 1.6 for the glow
 }
 
@@ -74,25 +74,12 @@ def stage_path(emitter, stage_name):
 
 # --- emitters ------------------------------------------------------------------------------------------------
 summary = await S('GetSystemSummary', system=_sys())
-names = [e['emitterName'] for e in summary['emitters']]
-if SRC not in names:
-    # built from the engine's public Minimal emitter: an emitter copied out of another system (e.g. the fluids
-    # template's ParticleSourceEmitter) keeps that system's private emitter as its parent and the asset cannot save
-    await S('AddEmitter', system=_sys(), templateEmitter={'refPath': SRC_TEMPLATE}, emitterName=SRC)
-    log.append('added ' + SRC)
-topo = await S('GetEmitterTopology', emitterRef=ref(SRC))
-have = set(m['moduleName'] for k in ('emitterUpdateScript', 'particleSpawnScript', 'particleUpdateScript') for m in topo[k]['modules'])
-for script, path in (('EmitterUpdateScript', '/Niagara/Modules/Emitter/SpawnRate.SpawnRate'),
-                     ('ParticleSpawnScript', '/Niagara/Modules/Spawn/Location/V2/ShapeLocation.ShapeLocation'),
-                     ('ParticleSpawnScript', '/Niagara/Modules/Spawn/Velocity/AddVelocity.AddVelocity'),
-                     ('ParticleUpdateScript', '/Niagara/Modules/Update/Forces/V2/CurlNoiseForce.CurlNoiseForce'),
-                     ('ParticleUpdateScript', '/Niagara/Modules/Solvers/SolveForcesAndVelocity.SolveForcesAndVelocity'),
-                     ('ParticleUpdateScript', '/NiagaraFluids/Modules/Particles/SetFluidSourceAttributes.SetFluidSourceAttributes')):
-    name = path.split('.')[-1]
-    if name not in have:
-        await S('AddModule', moduleLocationRef=ref(SRC, script), moduleAsset={'refPath': path})
-        log.append('added %s.%s' % (SRC, name))
-await S('SetEmitterData', emitterRef=ref(SRC), emitterData={'propertyValues': json.dumps({'SimTarget': 'GPUComputeSim', 'bLocalSpace': False})})
+if SRC in [e['emitterName'] for e in summary['emitters']]:
+    await S('RemoveEmitter', emitterRef=ref(SRC))
+    log.append('removed ' + SRC)
+
+# the old ball had fixed bounds of +-130 cm: the volume renderer clipped all smoke beyond them
+await S('SetSystemData', system=_sys(), systemData={'propertyValues': json.dumps({'bFixedBounds': True, 'FixedBounds': {'min': {'x': -1000, 'y': -300, 'z': -300}, 'max': {'x': 1000, 'y': 300, 'z': 300}, 'isValid': True}})})
 
 # --- user parameters -----------------------------------------------------------------------------------------
 def uvar(name, value, typ):
@@ -103,20 +90,9 @@ await S('AddUserVariables', system=_sys(), variablesToAdd=[
     uvar('User.WorldSpaceSize', v3(*ws), '/Script/CoreUObject.Vector3f'),
     uvar('User.ResolutionMaxAxis', i32(P['res_max_axis']), '/Script/Niagara.NiagaraInt32'),
     uvar('User.DrawBounds', b(False), '/Script/Niagara.NiagaraBool'),
+    uvar('User.FillDensity', f(P['src_density']), '/Script/Niagara.NiagaraFloat'),
+    uvar('User.FillRadius', f(P['src_radius']), '/Script/Niagara.NiagaraFloat'),
 ])
-
-# --- smoke source particles ----------------------------------------------------------------------------------
-await put(ref(SRC, 'EmitterUpdateScript', 'SpawnRate', ['SpawnRate']), hlsl('%.1f * User.Alive' % P['src_rate']))
-await put(ref(SRC, 'ParticleSpawnScript', 'InitializeParticle', ['Lifetime']), f(P['src_life']))
-await put(ref(SRC, 'ParticleSpawnScript', 'ShapeLocation', ['Sphere Radius']), f(P['src_radius']))
-await put(ref(SRC, 'ParticleSpawnScript', 'AddVelocity', ['Velocity']), v3(*P['src_velocity']))
-await put(ref(SRC, 'ParticleUpdateScript', 'SetFluidSourceAttributes', ['Density']), f(P['src_density']))
-await put(ref(SRC, 'ParticleUpdateScript', 'SetFluidSourceAttributes', ['Temperature']), f(0.0))
-await put(ref(SRC, 'ParticleUpdateScript', 'SetFluidSourceAttributes', ['Radius']), f(P['src_splat_radius']))
-# the source's sprite renderer is only a debug view of the source particles
-r = await S('GetEmitterSummary', emitterRef=ref(SRC))
-for idx, rc in enumerate(r.get('rendererClasses', [])):
-    await S('SetRendererData', rendererRef=dict(ref(SRC), rendererIndex=idx), rendererData={'propertyValues': json.dumps({'bIsEnabled': False})})
 
 # --- gas grid ------------------------------------------------------------------------------------------------
 await put(ref(GAS, 'EmitterUpdateScript', 'Grid3D_Gas_UpdateEmitter', ['Compensate For Actor Motion']), b(True))
@@ -124,14 +100,21 @@ await put(ref(GAS, 'EmitterUpdateScript', 'Grid3D_Gas_UpdateEmitter', ['Local Pi
 await put(ref(GAS, 'EmitterUpdateScript', 'Grid3D_Gas_MaterialControls', ['Smoke Color']), col(*P['smoke_color']))
 await put(ref(GAS, 'EmitterUpdateScript', 'Grid3D_Gas_MaterialControls', ['Density Albedo']), f(P['density_albedo']))
 await put(ref(GAS, 'EmitterUpdateScript', 'Grid3D_Gas_MaterialControls', ['Density Range']), v2(*P['density_range']))
+# no particle source: point the (hidden) reader back at the grid emitter itself, as shipped, then switch it off
 await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Use Emitter Source']), b(True))
-await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Use Streaking']), b(True))
+await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Use Streaking']), b(False))
 await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Particle Reader']),
-          di({'EmitterBinding': {'bindingMode': 'Other', 'emitterName': SRC}}))
-await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Attributes Comp Mode']),
-          enum('/NiagaraFluids/Enums/ENiagaraCompositingMethod.ENiagaraCompositingMethod', 'ENiagaraCompositingMethod::NewEnumerator0'))
+          di({'EmitterBinding': {'bindingMode': 'Other', 'emitterName': GAS}}))
+await put(ref(GAS, 'EmitterSpawnScript', 'Grid3D_Gas_InitializeParticleSource', ['Use Emitter Source']), b(False))
 sourcing = stage_path(GAS, 'Sourcing')
-await S('SetModuleEnabled', moduleRef=ref(GAS, module='Grid3D_Gas_SphereSource', stage=sourcing), bEnabled=False)
+await S('SetModuleEnabled', moduleRef=ref(GAS, module='Grid3D_Gas_SphereSource', stage=sourcing), bEnabled=True)
+await put(ref(GAS, module='Grid3D_Gas_SphereSource', stage=sourcing, inputs=['Density']), hlsl('User.FillDensity * User.Alive'))
+await put(ref(GAS, module='Grid3D_Gas_SphereSource', stage=sourcing, inputs=['Temperature']), f(0.0))
+await put(ref(GAS, module='Grid3D_Gas_SphereSource', stage=sourcing, inputs=['Velocity']), hlsl('float3(%.1f, %.1f, %.1f) * User.Alive' % P['src_velocity']))
+presim = stage_path(GAS, 'Pre Sim Velocity')
+for mod, gain in zip(('Grid3D_Turbulence001', 'Grid3D_Turbulence002'), P['turbulence_gain']):
+    await put(ref(GAS, module=mod, stage=presim, inputs=['Turbulence Gain']), v3(gain, gain, gain))
+await put(ref(GAS, module='Grid3D_VorticityConfinementForce', stage=presim, inputs=['VorticityMult']), f(P['vorticity']))
 advect = stage_path(GAS, 'Advect Scalars')
 await put(ref(GAS, module='Grid3D_Advect_FluidAttribute', stage=advect, inputs=['Dissipation Rate Density']), f(P['dissipation_density']))
 await put(ref(GAS, module='Grid3D_Advect_FluidAttribute', stage=advect, inputs=['Subtraction Amount Density']), f(P['subtraction_density']))
