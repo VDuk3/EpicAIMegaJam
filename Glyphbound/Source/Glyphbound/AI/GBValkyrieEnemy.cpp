@@ -549,7 +549,13 @@ void AGBValkyrieEnemy::TickFightMovement(AActor* Goal, float DeltaSeconds, float
 
 	FVector Point = Me;
 	EGBGait MoveGait = EGBGait::Combat;
-	if (Distance > RangeMax)
+	if (S(TEXT("ChaseAlways"), 0.f) > 0.5f)
+	{
+		// the final boss: no band, no strafing, no backing off; it runs straight at the player and stays on top of him
+		Point = Player - Dir * FMath::Min(Distance, S(TEXT("ChaseStopDistance"), 120.f));
+		MoveGait = Distance > S(TEXT("ChaseWalkDistance"), 250.f) ? EGBGait::Run : EGBGait::Combat;
+	}
+	else if (Distance > RangeMax)
 	{
 		Point = Player - Dir * (RangeMax * 0.8f);
 		MoveGait = Distance > RangeMax * S(TEXT("RunBandMult"), 1.6f) ? EGBGait::Run : EGBGait::Combat;
