@@ -52,7 +52,9 @@ namespace GBBeamStream
 
 	float Hash01(int32 A, int32 B, int32 C)
 	{
-		return float(HashCombineFast(HashCombineFast(GetTypeHash(A), GetTypeHash(B)), GetTypeHash(C)) & 0xFFFF) / 65535.f;
+		uint32 H = uint32(A) * 73856093u ^ uint32(B) * 19349663u ^ uint32(C) * 83492791u;
+		H ^= H >> 16; H *= 0x85ebca6bu; H ^= H >> 13; H *= 0xc2b2ae35u; H ^= H >> 16;
+		return float(H >> 8) / 16777215.f;
 	}
 
 	const FGBPixelVfxClip* FindClip(const UObject* WorldContext, const FString& ClipBase, int32 Variant)
@@ -200,7 +202,12 @@ void AGBSpell_Beam::StartSpell()
 
 	// The flame stream (Strings "StreamVfx"); without its clips, the old look: the sprite drawn several times along the
 	// cone, growing with its width.
-	const bool bStream = GBBeamStream::Build(this, Root, SpellCast.GetString(TEXT("StreamVfx")));
+	const FString StreamClips = SpellCast.GetString(TEXT("StreamVfx"));
+	const bool bStream = GBBeamStream::Build(this, Root, StreamClips);
+	if (!bStream && !StreamClips.IsEmpty())
+	{
+		UE_LOG(LogGB, Warning, TEXT("Beam: the flame stream clips '%s' (A/B/C in Content/Data/Vfx) did not load; the sprite chain is drawn instead"), *StreamClips);
+	}
 	const FName SpriteId = GetSpriteId();
 	UGBPixelSpriteLibrary* Library = UGBPixelSpriteLibrary::Get(this);
 	if (!bStream && !SpriteId.IsNone() && Library)

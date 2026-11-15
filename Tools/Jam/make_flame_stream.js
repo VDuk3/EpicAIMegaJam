@@ -90,7 +90,7 @@ function drawFrame(frame, seed) {
 // Pixel-art cleanup: no stray pixels, no pin holes, no single-pixel colour specks.
 function clean(px) {
   const at = (x, y) => (x < 0 || y < 0 || x >= SIZE || y >= SIZE) ? 0 : px[y * SIZE + x];
-  for (let pass = 0; pass < 3; pass++) {
+  for (let pass = 0; pass < 8; pass++) {
     const src = px.slice();
     const sat = (x, y) => (x < 0 || y < 0 || x >= SIZE || y >= SIZE) ? 0 : src[y * SIZE + x];
     for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
@@ -101,6 +101,27 @@ function clean(px) {
       if (c !== 0 && solid <= 1) { px[y * SIZE + x] = 0; continue; }
       if (c === 0 && solid >= 3) { px[y * SIZE + x] = majority(nb.filter(k => k !== 0)); continue; }
       if (c !== 0 && same === 0) { px[y * SIZE + x] = majority(nb.filter(k => k !== 0)); }
+    }
+  }
+  // Fill enclosed holes smaller than 8 pixels with the colour around them.
+  {
+    const seenHole = new Uint8Array(SIZE * SIZE);
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      if (px[i] !== 0 || seenHole[i]) continue;
+      const stack = [i], hole = [], around = [];
+      let open = false;
+      seenHole[i] = 1;
+      while (stack.length) {
+        const k = stack.pop(); hole.push(k);
+        const x = k % SIZE, y = (k / SIZE) | 0;
+        for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+          if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) { open = true; continue; }
+          const c = px[ny * SIZE + nx];
+          if (c !== 0) around.push(c);
+          else if (!seenHole[ny * SIZE + nx]) { seenHole[ny * SIZE + nx] = 1; stack.push(ny * SIZE + nx); }
+        }
+      }
+      if (!open && hole.length < 8 && around.length) { const fill = majority(around); for (const k of hole) px[k] = fill; }
     }
   }
   // Drop islands smaller than 8 pixels.
@@ -193,7 +214,7 @@ function puffState(i, elapsed) {
 }
 {
   const W = 480, H = 270, S = 2, fps = 24, seconds = 2.5;
-  const muzzle = [40, 17, -9]; // aim space (X forward, Y right, Z up): about where the HUD draws the staff head
+  const muzzle = [40, 15, -12]; // aim space (X forward, Y right, Z up): about where the HUD draws the staff head
   const target = [STREAM.range, 0, 0];
   const dirLen = Math.hypot(target[0] - muzzle[0], target[1] - muzzle[1], target[2] - muzzle[2]);
   const dir = [0, 1, 2].map(k => (target[k] - muzzle[k]) / dirLen);
