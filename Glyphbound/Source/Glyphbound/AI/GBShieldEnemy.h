@@ -61,6 +61,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual bool TickRanged(AActor* Goal, float DeltaSeconds) override;
 	virtual void HandleDeath(const FGBDamageInfo& KillingBlow) override;
+	virtual void OnWeaponDropTime() override;
 
 private:
 	enum class EChiefPhase : uint8 { Approach, Aim, Open, Bash };

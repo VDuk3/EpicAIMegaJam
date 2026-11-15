@@ -23,7 +23,8 @@ namespace GBEnemyAnimLocal
 	constexpr int32 NumSpineBones = UE_ARRAY_COUNT(SpineBones);
 
 	const TCHAR* const ClipNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("StrafeLeft"), TEXT("StrafeRight"), TEXT("WalkBack"), TEXT("Attack"), TEXT("Hit"), TEXT("Death"),
-		TEXT("RelaxedIdle"), TEXT("PatrolWalk"), TEXT("Sprint"), TEXT("CrouchIdle"), TEXT("CrouchWalk") };
+		TEXT("RelaxedIdle"), TEXT("PatrolWalk"), TEXT("Sprint"), TEXT("CrouchIdle"), TEXT("CrouchWalk"),
+		TEXT("Action0"), TEXT("Action1"), TEXT("Action2"), TEXT("Action3"), TEXT("Action4"), TEXT("Action5") };
 	static_assert(UE_ARRAY_COUNT(ClipNames) == GBEnemyAnim::NumClips, "ClipNames must list every EGBEnemyClip");
 
 	/** A rotation given in the actor's frame (pitch up, yaw, roll), turned into the mesh component's frame. */
@@ -79,6 +80,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 				Info[Index] = Instance->GetClipInfo(Resolved);
 			}
 			PoseOffsets = Instance->GetPoseOffsets();
+			GripOffsets = Instance->GetGripOffsets();
 		}
 	}
 
@@ -174,7 +176,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 				Scratch.ResetToRefPose();
 				FAnimationPoseData ScratchData(Scratch);
 				Clip->GetAnimationPose(ScratchData, OverlayContext);
-				if (Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Attack))
+				if (Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Attack) || Frame.OverlayClip >= static_cast<int32>(EGBEnemyClip::Action0))
 				{
 					// The swing's travel stays in the clip's own space: the body is pinned over the capsule (horizontal axes of the travel bone).
 					PinTravelBone(Scratch.Pose, Frame.OverlayClip);
@@ -190,6 +192,8 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			Scratch.ResetToRefPose();
 			FAnimationPoseData ScratchData(Scratch);
 			Clip->GetAnimationPose(ScratchData, FAnimExtractContext(static_cast<double>(FMath::Min(Frame.DeathTime, Clip->GetPlayLength())), false, FDeltaTimeRecord(), false));
+			// The fall plays in place: the pelvis's horizontal travel stays at the clip's first frame (the height still drops), like the swing.
+			PinTravelBone(Scratch.Pose, static_cast<int32>(EGBEnemyClip::Death));
 			BlendOver(Output.Pose, Scratch.Pose, Frame.DeathWeight, false);
 		}
 		else if (!Frame.bDead)
@@ -198,6 +202,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			ApplyPoseLayer(Output.Pose);
 			ApplyArmIK(Output.Pose, 0);
 			ApplyArmIK(Output.Pose, 1);
+			ApplyGrip(Output.Pose);
 		}
 		return true;
 	}
@@ -263,6 +268,25 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 			}
 			const FQuat Delta = FQuat::Slerp(FQuat::Identity, Offset.Delta.Quaternion(), Frame.PoseAlpha);
 			Pose[Index].SetRotation((Pose[Index].GetRotation() * Delta).GetNormalized());
+		}
+	}
+
+	/** The closed right hand: a fixed local rotation on the finger bones, always on (the clips are unarmed and leave the fingers open). */
+	void ApplyGrip(FCompactPose& Pose) const
+	{
+		const FBoneContainer& Bones = Pose.GetBoneContainer();
+		for (const FGBPoseOffset& Offset : GripOffsets)
+		{
+			const int32 MeshIndex = Bones.GetPoseBoneIndexForBoneName(Offset.Bone);
+			if (MeshIndex == INDEX_NONE)
+			{
+				continue;
+			}
+			const FCompactPoseBoneIndex Index = Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
+			if (Index.GetInt() >= 0)
+			{
+				Pose[Index].SetRotation((Pose[Index].GetRotation() * Offset.Delta.Quaternion()).GetNormalized());
+			}
 		}
 	}
 
@@ -436,6 +460,7 @@ struct FGBEnemyAnimProxy : public FAnimInstanceProxy
 
 	TWeakObjectPtr<UGBEnemyAnimInstance> Owner;
 	TArray<FGBPoseOffset> PoseOffsets;
+	TArray<FGBPoseOffset> GripOffsets;
 	FGBEnemyAnimFrame Frame;
 	FGBEnemyAnimTuning Tuning;
 	const UAnimSequence* Clips[GBEnemyAnim::NumClips] = {};
@@ -504,7 +529,7 @@ void UGBEnemyAnimInstance::Configure(const TArray<UAnimSequence*>& InClips, cons
 		Info.BoneStart = First.GetTranslation();
 		Info.Drift = Last.GetTranslation() - First.GetTranslation();
 		// Only the loops that carry travel (locomotion) are corrected by their drift; the Attack clip is pinned instead.
-		const bool bLoop = Index < GBEnemyAnim::NumLocomotion || Index >= static_cast<int32>(EGBEnemyClip::RelaxedIdle);   // the extra posture clips are loops too
+		const bool bLoop = Index < GBEnemyAnim::NumLocomotion || (Index >= static_cast<int32>(EGBEnemyClip::RelaxedIdle) && Index < static_cast<int32>(EGBEnemyClip::Action0));   // the extra posture clips are loops too
 		if (bLoop && Info.Drift.Size() >= Tuning.DriftMin)
 		{
 			Info.bHasDrift = true;
@@ -536,6 +561,34 @@ void UGBEnemyAnimInstance::SetPoseLayer(const FString& Spec)
 		Offset.Bone = FName(*BoneName.TrimStartAndEnd());
 		Offset.Delta = FRotator(FCString::Atof(*Numbers[0]), FCString::Atof(*Numbers[1]), FCString::Atof(*Numbers[2]));
 		PoseOffsets.Add(Offset);
+	}
+}
+
+void UGBEnemyAnimInstance::SetGripCurl(float FingerDegrees, const FVector& FingerAxis, float ThumbDegrees, const FVector& ThumbAxis)
+{
+	GripOffsets.Reset();
+	// Each finger has three joints that curl a little differently; the axis is (pitch, yaw, roll) of the bone's local frame.
+	static const TCHAR* const Fingers[] = { TEXT("index"), TEXT("middle"), TEXT("ring"), TEXT("pinky") };
+	static const float FingerShare[] = { 0.9f, 1.f, 1.05f, 1.1f };
+	static const float JointShare[] = { 1.f, 1.15f, 0.8f };
+	for (int32 Finger = 0; Finger < UE_ARRAY_COUNT(Fingers); ++Finger)
+	{
+		for (int32 Joint = 0; Joint < 3; ++Joint)
+		{
+			FGBPoseOffset Offset;
+			Offset.Bone = FName(*FString::Printf(TEXT("%s_%02d_r"), Fingers[Finger], Joint + 1));
+			const FVector Angles = FingerAxis * FingerDegrees * FingerShare[Finger] * JointShare[Joint];
+			Offset.Delta = FRotator(Angles.X, Angles.Y, Angles.Z);
+			GripOffsets.Add(Offset);
+		}
+	}
+	for (int32 Joint = 0; Joint < 3; ++Joint)
+	{
+		FGBPoseOffset Offset;
+		Offset.Bone = FName(*FString::Printf(TEXT("thumb_%02d_r"), Joint + 1));
+		const FVector Angles = ThumbAxis * ThumbDegrees * JointShare[Joint];
+		Offset.Delta = FRotator(Angles.X, Angles.Y, Angles.Z);
+		GripOffsets.Add(Offset);
 	}
 }
 
@@ -604,8 +657,12 @@ void UGBEnemyAnimInstance::NotifyShot()
 
 void UGBEnemyAnimInstance::NotifyHit(float Side)
 {
-	// A hit never cuts a running Attack / Hit overlay short and a flinch never stacks on one.
-	if (Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Attack) || Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Hit))
+	// A hit never cuts a running Attack / Hit overlay short and a flinch never stacks on one; nothing plays over the death pose.
+	if (Frame.bDead)
+	{
+		return;
+	}
+	if (Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Attack) || Frame.OverlayClip == static_cast<int32>(EGBEnemyClip::Hit) || Frame.OverlayClip >= static_cast<int32>(EGBEnemyClip::Action0))
 	{
 		return;
 	}
@@ -620,8 +677,25 @@ bool UGBEnemyAnimInstance::PlayDeath()
 {
 	Frame.bDead = true;
 	Frame.DeathTime = 0.f;
+	Frame.DeathWeight = 0.f;
 	Frame.OverlayClip = -1;
+	Frame.OverlayWeight = 0.f;
+	// Nothing of the live pose may stay on top of the death clip: no aim, no flinch, no recoil, no raised shield.
+	AimPitchTarget = 0.f;
+	AimYawTarget = 0.f;
+	Frame.AimPitch = 0.f;
+	Frame.AimYaw = 0.f;
+	Frame.FlinchKick = 0.f;
+	Frame.RecoilKick = 0.f;
+	PoseTarget = 0.f;
+	Frame.PoseAlpha = 0.f;
 	return HasClip(EGBEnemyClip::Death);
+}
+
+float UGBEnemyAnimInstance::GetDeathClipLength() const
+{
+	const UAnimSequence* Clip = GetClip(EGBEnemyClip::Death);
+	return Clip ? Clip->GetPlayLength() : 0.f;
 }
 
 FString UGBEnemyAnimInstance::DescribeClips() const

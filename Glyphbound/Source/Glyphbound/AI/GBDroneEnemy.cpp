@@ -5,16 +5,19 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "PhysicsEngine/BodySetup.h"
 
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBExplosionEffect.h"
 #include "Core/GBStatNames.h"
 #include "Stats/GBStatsComponent.h"
 
 namespace GBDroneLocal
 {
 	const FName EyeSocket(TEXT("Eye"));
-	const FName PhysicsActorProfile(TEXT("PhysicsActor"));
+	const FLinearColor ExplosionColor(1.f, 0.55f, 0.15f);   // the flash of the small explosion
+	constexpr float DeathLiftShare = 0.35f;        // upward part of the killing blow's push
+	constexpr float BreakUpShare = 0.9f;           // how much the parts that come off fly up rather than out
+	constexpr float BreakConeDegrees = 30.f;       // their directions are spread this far round that
 	const TCHAR* const RotorKeys[4] = { TEXT("Rotor_0"), TEXT("Rotor_1"), TEXT("Rotor_2"), TEXT("Rotor_3") };
 	const TCHAR* const FallbackGlowParam = TEXT("EmissiveBoost");
 	constexpr float BankInterpSpeed = 6.f;
@@ -105,7 +108,7 @@ FVector AGBDroneEnemy::GetBodyLocation() const
 
 bool AGBDroneEnemy::IsBodySimulating() const
 {
-	return BodyPart && BodyPart->IsSimulatingPhysics();
+	return bFalling && !Debris.AllAtRest();
 }
 
 void AGBDroneEnemy::SetTelegraph(bool bOn)
@@ -125,7 +128,16 @@ void AGBDroneEnemy::UpdateVisuals(float DeltaSeconds, const AActor* Goal, bool b
 	const bool bDead = State == EGBEnemyState::Dead;
 	const float MoveSpeed = FMath::Max(1.f, Stats->GetStat(GBStat::MoveSpeed, 600.f));
 
-	// Rotors: faster while moving, opposite directions on the diagonals, running down after death.
+	// Rotors: faster while moving, opposite directions on the diagonals, running down after death (until they come off).
+	if (bDead && EyeMaterial && !GlowParam.IsNone())
+	{
+		GlowValue = FMath::FInterpTo(GlowValue, 0.f, DeltaSeconds, S(TEXT("GlowFall"), 5.f) * 0.5f);   // the eye goes dark
+		EyeMaterial->SetScalarParameterValue(GlowParam, GlowValue);
+	}
+	if (bBrokenApart)
+	{
+		return;   // the rotors are pieces of the wreck now: the debris field moves them
+	}
 	const FVector Velocity = GetVelocity();
 	const float MoveShare = FMath::Clamp(Velocity.Size2D() / MoveSpeed, 0.f, 1.f);
 	RotorSpin = bDead ? FMath::FInterpTo(RotorSpin, 0.f, DeltaSeconds, 1.5f) : 1.f;
@@ -140,11 +152,7 @@ void AGBDroneEnemy::UpdateVisuals(float DeltaSeconds, const AActor* Goal, bool b
 	}
 	if (bDead)
 	{
-		if (bTumbling)
-		{
-			VisualRoot->AddLocalRotation(FRotator(TumbleRate.X, TumbleRate.Y, TumbleRate.Z) * DeltaSeconds);
-		}
-		return;
+		return;   // the body tumbles as a debris piece
 	}
 
 	// Bank into the motion; the capsule stays upright.
@@ -208,26 +216,56 @@ void AGBDroneEnemy::PerformAttack()
 
 void AGBDroneEnemy::OnDeathFall(const FGBDamageInfo& KillingBlow)
 {
-	UStaticMesh* DeathMesh = BodyPart ? BodyPart->GetStaticMesh() : nullptr;
-	const bool bHasCollision = DeathMesh && DeathMesh->GetBodySetup() && DeathMesh->GetBodySetup()->AggGeom.GetElementCount() > 0;
-	if (bLookBuilt && bHasCollision)
+	if (!bLookBuilt || !BodyPart || !BodyPart->GetStaticMesh())
 	{
-		// The parent switched all collision off, which vetoes a simulated mesh: turn the actor's collision back on and keep only the capsule off.
-		SetActorEnableCollision(true);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		// The body leaves the capsule and falls as a simulated mesh (the rotors and the eye are attached to it).
-		BodyPart->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		BodyPart->SetCollisionProfileName(GBDroneLocal::PhysicsActorProfile);
-		BodyPart->SetSimulatePhysics(true);
-		const FVector Push = KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("DeathImpulse"), 250.f);
-		BodyPart->AddImpulse(Push, NAME_None, true);
-		BodyPart->AddAngularImpulseInDegrees(FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * S(TEXT("DeathSpin"), 400.f), NAME_None, true);
+		Super::OnDeathFall(KillingBlow);   // no art: the placeholder is the one piece
 		return;
 	}
-	// Without art or collision: the capsule drops and the visual root tumbles.
-	StartCapsuleFall();
-	bTumbling = bLookBuilt;
-	TumbleRate = FVector(Random.FRandRange(-240.f, 240.f), Random.FRandRange(-240.f, 240.f), Random.FRandRange(-240.f, 240.f));
+	// The body leaves the visual root and flies on with the drone's own velocity plus the push of the killing blow; the rotors
+	// and the eye stay on it until it hits the ground. It tumbles (DeathSpin) and the rotors run down.
+	const FVector Push = KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("DeathImpulse"), 250.f);
+	const float Spin = S(TEXT("DeathSpin"), 400.f);
+	AddDebrisPiece(BodyPart, DeathVelocity + Push + FVector(0.f, 0.f, Push.Size() * GBDroneLocal::DeathLiftShare),
+		FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * Spin);
+}
+
+USceneComponent* AGBDroneEnemy::GetWreckCentre() const
+{
+	return (bLookBuilt && BodyPart) ? BodyPart.Get() : Super::GetWreckCentre();
+}
+
+void AGBDroneEnemy::OnFirstGroundContact(const FVector& Point, const FVector& Normal)
+{
+	const FRotator Facing = Normal.Rotation();
+	// A burst of sparks, a small explosion with a flash and a short light.
+	SpawnDeathFx(DeathSparksFx, Point, Facing, 1.f);
+	SpawnDeathFx(DeathExplosionFx, Point + Normal * 10.f, Facing, 1.f);
+	AGBExplosionEffect::Spawn(GetWorld(), Point + Normal * 30.f, S(TEXT("DeathExplosionRadius"), 140.f), GBDroneLocal::ExplosionColor, S(TEXT("DeathExplosionTime"), 0.4f));
+	if (!bLookBuilt || bBrokenApart)
+	{
+		return;
+	}
+	// It comes apart: the four rotors and the eye fly off as pieces of their own, outward and up.
+	bBrokenApart = true;
+	const FVector Centre = BodyPart ? BodyPart->GetComponentLocation() : Point;
+	const float Speed = S(TEXT("BreakApartSpeed"), 350.f);
+	UStaticMeshComponent* Parts[NumRotors + 1] = { RotorParts[0], RotorParts[1], RotorParts[2], RotorParts[3], EyePart };
+	for (UStaticMeshComponent* Part : Parts)
+	{
+		if (!Part || !Part->GetStaticMesh())
+		{
+			continue;
+		}
+		FVector Outward = Part->GetComponentLocation() - Centre;
+		Outward.Z = 0.f;
+		if (Outward.IsNearlyZero())
+		{
+			Outward = FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), 0.f);
+		}
+		const FVector Direction = RandomDirectionNear((Outward.GetSafeNormal() + FVector::UpVector * GBDroneLocal::BreakUpShare).GetSafeNormal(), GBDroneLocal::BreakConeDegrees);
+		AddDebrisPiece(Part, Direction * Speed * Random.FRandRange(0.6f, 1.f),
+			FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * S(TEXT("DeathSpin"), 400.f));
+	}
 }
 
 FString AGBDroneEnemy::DescribeFlyer() const

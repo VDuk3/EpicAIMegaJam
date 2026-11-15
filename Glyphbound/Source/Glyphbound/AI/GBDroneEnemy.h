@@ -1,6 +1,6 @@
 // The laser drone of the future base: a static-mesh body with four spinning rotors and an eye that turns to look at the
 // player. It flies (AGBFlyerEnemy), banks into its motion, charges (the eye glows) and fires a short red hitscan laser from
-// the eye. On death the body drops as a simulated mesh, the rotors stop. All parts come from Enemies.json "Strings"
+// the eye. On death the body falls and tumbles as a debris piece (AI/GBDebris), the rotors run down; at the first ground contact it sparks, explodes and the rotors and the eye fly off. All parts come from Enemies.json "Strings"
 // (Body with sockets Rotor_0..Rotor_3 and Eye, Rotor_0..Rotor_3, Eye); a missing body keeps the placeholder look.
 #pragma once
 
@@ -34,6 +34,8 @@ protected:
 	virtual void UpdateVisuals(float DeltaSeconds, const AActor* Goal, bool bWindup) override;
 	virtual void PerformAttack() override;
 	virtual void OnDeathFall(const FGBDamageInfo& KillingBlow) override;
+	virtual void OnFirstGroundContact(const FVector& Point, const FVector& Normal) override;
+	virtual USceneComponent* GetWreckCentre() const override;
 	virtual void SetTelegraph(bool bOn) override;
 
 private:
@@ -51,7 +53,6 @@ private:
 	float EyeYaw = 0.f;
 	float EyePitch = 0.f;
 	FRotator BankRotation = FRotator::ZeroRotator;
-	FVector TumbleRate = FVector::ZeroVector;
-	bool bTumbling = false;
+	bool bBrokenApart = false;      // the rotors and the eye came off at the first ground contact
 	float GlowValue = 1.f;
 };

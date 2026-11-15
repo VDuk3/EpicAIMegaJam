@@ -526,13 +526,22 @@ void AGBShieldEnemy::HandleDeath(const FGBDamageInfo& KillingBlow)
 		AnimInst->SetArmIK(0, FGBArmIK());
 		AnimInst->SetArmIK(1, FGBArmIK());
 	}
-	// The body falls as a ragdoll: the shield goes with the hand that held it instead of staying in the air.
+	// The shield goes with the hand that held it (the death clip moves the hand) instead of staying in the air; a moment into
+	// the clip it falls from the hand when its mesh has collision (OnWeaponDropTime), and stays in it otherwise.
 	if (USkeletalMeshComponent* Body = GetMesh())
 	{
 		const FGBEnemyDefinition* Def = GetDefinition();
 		const FName Socket(Def ? *GBEnemy3D::Str(*Def, FName(TEXT("ShieldSocket")), TEXT("hand_l")) : TEXT("hand_l"));
 		ShieldMesh->AttachToComponent(Body, FAttachmentTransformRules::KeepWorldTransform, Socket);
 	}
+}
+
+void AGBShieldEnemy::OnWeaponDropTime()
+{
+	Super::OnWeaponDropTime();
+	FVector Impulse = DeathHitDirection * S(TEXT("WeaponDropImpulse"), 225.f);
+	Impulse += FVector(Random.FRandRange(-60.f, 60.f), Random.FRandRange(-60.f, 60.f), 80.f);
+	DropStaticPiece(ShieldMesh, Impulse);
 }
 
 FString AGBShieldEnemy::DescribeTactics() const

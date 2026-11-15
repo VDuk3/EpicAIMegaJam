@@ -9,14 +9,21 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 
+#include "Components/BillboardComponent.h"
+#include "GBPixelVfxActor.h"
+
 #include "AI/GBEngage.h"
+#include "AI/GBSpriteAnimComponent.h"
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBProjectile.h"
 #include "Core/GBStatNames.h"
+#include "UI/GBPixelSpriteLibrary.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Data/GBDataSubsystem.h"
 #include "Stats/GBStatsComponent.h"
@@ -30,11 +37,15 @@ namespace GBSkeletalEnemyLocal
 	const TCHAR* const DefaultImpactFx = TEXT("/Game/GunFX/NiagaraSystem/ImpactFX/Concrete/NS_Impact_Concrete_Low");
 	const FName MuzzleSocket(TEXT("Muzzle"));
 	const FName TipSocket(TEXT("Tip"));
-	const FName RagdollProfile(TEXT("Ragdoll"));
+	constexpr float DeathFloorProbe = 300.f;       // cm below the capsule searched for the floor at death (a pit has none)
+	constexpr float DeathFloorTolerance = 1.5f;    // cm: closer to the floor than this and it is already lying on it
+	constexpr float DeathEaseMaxGap = 120.f;       // cm: a bigger drop to the floor falls at gravity instead of easing down
+	constexpr float DeathEaseSeconds = 0.2f;
 	const FName PhysicsActorProfile(TEXT("PhysicsActor"));
 	const TCHAR* const ClipKeys[GBEnemyAnim::NumClips] = { TEXT("Anim.Idle"), TEXT("Anim.Walk"), TEXT("Anim.Run"), TEXT("Anim.StrafeLeft"), TEXT("Anim.StrafeRight"),
 		TEXT("Anim.WalkBack"), TEXT("Anim.Attack"), TEXT("Anim.Hit"), TEXT("Anim.Death"),
-		TEXT("Anim.RelaxedIdle"), TEXT("Anim.PatrolWalk"), TEXT("Anim.Sprint"), TEXT("Anim.CrouchIdle"), TEXT("Anim.CrouchWalk") };
+		TEXT("Anim.RelaxedIdle"), TEXT("Anim.PatrolWalk"), TEXT("Anim.Sprint"), TEXT("Anim.CrouchIdle"), TEXT("Anim.CrouchWalk"),
+		TEXT("Anim.Action0"), TEXT("Anim.Action1"), TEXT("Anim.Action2"), TEXT("Anim.Action3"), TEXT("Anim.Action4"), TEXT("Anim.Action5") };
 	constexpr float SightInterval = 0.1f;          // s between line-of-sight traces
 	constexpr float StrafeReachRadius = 80.f;      // cm: a strafe goal this close counts as reached
 	constexpr float StrafeNavExtentXY = 150.f;
@@ -43,6 +54,17 @@ namespace GBSkeletalEnemyLocal
 	constexpr float RetreatProbe = 250.f;          // cm checked behind a too-close enemy before it backs off
 	constexpr float RetreatStep = 500.f;           // cm of the retreat goal
 	constexpr float MaxAimPitch = 50.f;            // degrees
+	// The sprite look (castle). Visual constants only; the timings and sizes come from Enemies.json.
+	const FName SpriteSheetKey(TEXT("SpriteSheet"));
+	const FName SpriteTintKey(TEXT("SpriteTint"));
+	const FName ShotTypeKey(TEXT("ShotType"));
+	const FName ProjectileVfxKey(TEXT("ProjectileVfx"));
+	const FName SlashSpriteKey(TEXT("SlashSprite"));
+	const FName LeapVfxKey(TEXT("LeapVfx"));
+	const TCHAR* const DefaultSlashSprite = TEXT("fx_slash");
+	const TCHAR* const DefaultArrowSprite = TEXT("enemy_bolt");
+	const FName DormantClip(TEXT("Dormant"));
+	const FName Attack2Clip(TEXT("Attack2"));
 }
 
 AGBSkeletalEnemy::AGBSkeletalEnemy()
@@ -65,6 +87,7 @@ void AGBSkeletalEnemy::InitFromDefinition(const FGBEnemyDefinition& Definition)
 		Move->bOrientRotationToMovement = !IsRanged();
 		Move->RotationRate = FRotator(0.f, FMath::Max(StatOr("TurnRate", 540.f), 1.f), 0.f);
 	}
+	bProjectileShots = GBEnemy3D::Str(Definition, GBSkeletalEnemyLocal::ShotTypeKey).Equals(TEXT("Projectile"), ESearchCase::IgnoreCase);
 }
 
 void AGBSkeletalEnemy::BeginPlay()
@@ -78,8 +101,16 @@ void AGBSkeletalEnemy::BuildLook()
 {
 	const FGBEnemyDefinition* Def = GetDefinition();
 	USkeletalMeshComponent* Body = GetMesh();
-	if (!Def || !Body || bLookBuilt)
+	if (!Def || !Body || bLookBuilt || bSpriteLook)
 	{
+		return;
+	}
+	// The castle's pixel-art characters: a sprite sheet instead of the mesh (no sci-fi shot effects). A sheet that is not
+	// there yet leaves the static text sprite of the base class.
+	if (!GBEnemy3D::Str(*Def, GBSkeletalEnemyLocal::SpriteSheetKey).IsEmpty())
+	{
+		Body->SetVisibility(false);
+		BuildSpriteLook(*Def);
 		return;
 	}
 	GBEnemy3D::LoadShotFx(ShotFx, *Def, EnemyId, GBSkeletalEnemyLocal::DefaultMuzzleFx, GBSkeletalEnemyLocal::DefaultTracerFx, GBSkeletalEnemyLocal::DefaultImpactFx);
@@ -209,15 +240,20 @@ FVector AGBSkeletalEnemy::GetMuzzleLocation() const
 
 FString AGBSkeletalEnemy::DescribeLook() const
 {
+	if (SpriteAnim || bSpriteLook)
+	{
+		return FString::Printf(TEXT("%s spriteLook=%d %s aware=%d shots=%d projectiles=%d swings=%d lunges=%d deathClip=%d | %s"), *EnemyId.ToString(), bSpriteLook ? 1 : 0,
+			SpriteAnim ? *SpriteAnim->Describe() : TEXT("no component"), bAware ? 1 : 0, ShotCount, ProjectileCount, MeleeSwingCount, LungeCount, IsDeathClipPlaying() ? 1 : 0, *DescribeTactics());
+	}
 	FString Speeds;
 	if (AnimInst)
 	{
 		Speeds = FString::Printf(TEXT(" ref[walk=%.0f%s run=%.0f%s]"), AnimInst->GetClipRefSpeed(EGBEnemyClip::Walk), AnimInst->ClipHasDrift(EGBEnemyClip::Walk) ? TEXT("d") : TEXT(""),
 			AnimInst->GetClipRefSpeed(EGBEnemyClip::Run), AnimInst->ClipHasDrift(EGBEnemyClip::Run) ? TEXT("d") : TEXT(""));
 	}
-	return FString::Printf(TEXT("%s look=%d mesh=%s armor=%d weapon=%d muzzleSocket=%d anim[%s]%s aware=%d shots=%d bursts=%d lunges=%d ragdoll=%d maxPelvisDist=%.0f | %s"),
+	return FString::Printf(TEXT("%s look=%d mesh=%s armor=%d weapon=%d muzzleSocket=%d anim[%s]%s aware=%d shots=%d bursts=%d lunges=%d deathClip=%d maxPelvisDist=%.0f | %s"),
 		*EnemyId.ToString(), bLookBuilt ? 1 : 0, MeshName.IsEmpty() ? TEXT("-") : *MeshName, ArmorParts.Num(), WeaponComp ? 1 : 0, bHasMuzzleSocket ? 1 : 0,
-		AnimInst ? *AnimInst->DescribeClips() : TEXT("none"), *Speeds, bAware ? 1 : 0, ShotCount, BurstCount, LungeCount, bRagdoll ? 1 : 0, MaxPelvisDistance, *DescribeTactics());
+		AnimInst ? *AnimInst->DescribeClips() : TEXT("none"), *Speeds, bAware ? 1 : 0, ShotCount, BurstCount, LungeCount, IsDeathClipPlaying() ? 1 : 0, MaxPelvisDistance, *DescribeTactics());
 }
 
 FGBDamageInfo AGBSkeletalEnemy::MakeShotInfo() const
@@ -237,10 +273,287 @@ FGBDamageInfo AGBSkeletalEnemy::MakeShotInfo() const
 
 void AGBSkeletalEnemy::SetTelegraph(bool bOn)
 {
+	// Sprite look: the windup IS the attack clip (the cast, the draw, the raised mace), timed so its hit frame lands when the
+	// AI's windup timer ends; the AI's timers stay the authority (an interrupt cancels the clip).
+	if (bSpriteLook)
+	{
+		if (bOn)
+		{
+			bAttackReleased = false;
+			if (IsRanged() && BurstPhase == EBurstPhase::Telegraph)
+			{
+				LookStartAttack(GetLookClip(TEXT("Clip.Shoot"), TEXT("Shoot")), BurstTimer);
+			}
+			else if (bLungeQueued)
+			{
+				LookStartAttack(GetLookClip(TEXT("Clip.Leap"), TEXT("Leap")), Stats->GetStat(GBStat::AttackWindup, 0.3f));
+			}
+			else
+			{
+				// Two swings when the sheet has them, alternating.
+				FName Clip = GetLookClip(TEXT("Clip.Attack"), TEXT("Attack"));
+				if (SpriteAnim && SpriteAnim->HasClip(GBSkeletalEnemyLocal::Attack2Clip) && bAlternateAttack)
+				{
+					Clip = GBSkeletalEnemyLocal::Attack2Clip;
+				}
+				bAlternateAttack = !bAlternateAttack;
+				LookStartAttack(Clip, Stats->GetStat(GBStat::AttackWindup, 0.4f));
+			}
+		}
+		else if (!bAttackReleased)
+		{
+			LookCancelAttack();
+		}
+		return;
+	}
 	// With the real mesh the aim pose is the telegraph; the tinted placeholder only exists without the art.
 	if (!bLookBuilt)
 	{
 		Super::SetTelegraph(bOn);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The look (skeletal mesh or sprite sheet)
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool AGBSkeletalEnemy::BuildSpriteLook(const FGBEnemyDefinition& Def)
+{
+	using namespace GBSkeletalEnemyLocal;
+	const FName SheetId(*GBEnemy3D::Str(Def, SpriteSheetKey));
+	if (SheetId.IsNone())
+	{
+		return false;
+	}
+	if (!SpriteAnim)
+	{
+		SpriteAnim = NewObject<UGBSpriteAnimComponent>(this, TEXT("SpriteAnim"));
+		SpriteAnim->SetupAttachment(GetCapsuleComponent());
+		SpriteAnim->RegisterComponent();
+	}
+	// The component stands on the ground point: the sheet's pivot is between the feet.
+	SpriteAnim->SetRelativeLocation(FVector(0.f, 0.f, -GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
+	const FLinearColor Tint = UGBDataSubsystem::ParseColor(GBEnemy3D::Str(Def, SpriteTintKey), FLinearColor::White);
+	if (!SpriteAnim->Setup(SheetId, S(TEXT("SpriteScale"), 1.f), Tint, S(TEXT("SpriteGlow"), 0.12f)))
+	{
+		UE_LOG(LogGB, Display, TEXT("CASTLE %s: sprite sheet %s not used (%s), the static sprite stays"), *EnemyId.ToString(), *SheetId.ToString(), *SpriteAnim->GetFailure());
+		return false;
+	}
+	const float MoveSpeed = S(TEXT("MoveSpeed"), 400.f);
+	SpriteAnim->SetLocomotionSpeeds(S(TEXT("SpriteWalkSpeed"), 30.f), S(TEXT("SpriteRunSpeed"), MoveSpeed * 0.8f));
+	Sprite->SetVisibility(false);
+	BodyMesh->SetVisibility(false);
+	bSpriteLook = true;
+
+	// The slash of a melee blow: a sprite of Sprites.json shown for a moment in front of the enemy.
+	if (!SlashSprite && (!IsRanged() || S(TEXT("MeleeRange"), 0.f) > 0.f))
+	{
+		SlashSprite = NewObject<UBillboardComponent>(this, TEXT("SlashSprite"));
+		SlashSprite->SetupAttachment(GetCapsuleComponent());
+		SlashSprite->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SlashSprite->RegisterComponent();
+		if (UGBPixelSpriteLibrary* Library = UGBPixelSpriteLibrary::Get(this))
+		{
+			const FString SlashId = GBEnemy3D::Str(Def, SlashSpriteKey, DefaultSlashSprite);
+			Library->SetupBillboard(SlashSprite, FName(*SlashId), S(TEXT("SlashSize"), 110.f));
+		}
+		SlashSprite->SetVisibility(false);
+	}
+	UE_LOG(LogGB, Display, TEXT("CASTLE %s: sprite look %s"), *EnemyId.ToString(), *SpriteAnim->Describe());
+	return true;
+}
+
+FName AGBSkeletalEnemy::GetLookClip(const TCHAR* Key, const TCHAR* Default) const
+{
+	const FGBEnemyDefinition* Def = GetDefinition();
+	return FName(Def ? *GBEnemy3D::Str(*Def, FName(Key), Default) : Default);
+}
+
+void AGBSkeletalEnemy::LookStartAttack(FName Clip, float HitInSeconds)
+{
+	if (bSpriteLook && SpriteAnim)
+	{
+		SpriteAnim->PlayAction(Clip, HitInSeconds);
+	}
+}
+
+void AGBSkeletalEnemy::LookCancelAttack()
+{
+	if (bSpriteLook && SpriteAnim)
+	{
+		SpriteAnim->CancelAction();
+	}
+}
+
+void AGBSkeletalEnemy::LookAttackNow(FName Clip)
+{
+	if (bSpriteLook)
+	{
+		// The windup already played the clip; without one (a blow with no windup) it plays now.
+		if (SpriteAnim && !SpriteAnim->IsActionPlaying())
+		{
+			SpriteAnim->PlayAction(Clip);
+		}
+		return;
+	}
+	if (AnimInst)
+	{
+		AnimInst->PlayOneShot(EGBEnemyClip::Attack, false);
+	}
+}
+
+void AGBSkeletalEnemy::LookNotifyShot()
+{
+	if (AnimInst)
+	{
+		AnimInst->NotifyShot();
+	}
+}
+
+void AGBSkeletalEnemy::LookNotifyHit(float Side)
+{
+	if (bSpriteLook && SpriteAnim)
+	{
+		SpriteAnim->NotifyHit();
+	}
+	else if (AnimInst)
+	{
+		AnimInst->NotifyHit(Side);
+	}
+}
+
+float AGBSkeletalEnemy::LookPlayDeath()
+{
+	if (SlashSprite)
+	{
+		SlashSprite->SetVisibility(false);
+	}
+	if (bSpriteLook && SpriteAnim)
+	{
+		return SpriteAnim->PlayDeath();
+	}
+	if (AnimInst)
+	{
+		AnimInst->SetAim(0.f, 0.f);
+		AnimInst->PlayDeath();
+		return AnimInst->GetDeathClipLength();
+	}
+	return 0.f;
+}
+
+void AGBSkeletalEnemy::LookSetAim(float PitchDegrees)
+{
+	if (AnimInst)
+	{
+		AnimInst->SetAim(PitchDegrees, 0.f);
+	}
+}
+
+void AGBSkeletalEnemy::ShowSlash(const AActor* Goal)
+{
+	if (!SlashSprite || !Goal)
+	{
+		return;
+	}
+	const FVector To = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+	const float Reach = FMath::Min(Stats->GetStat(GBStat::AttackRange, 150.f) * 0.6f, FVector::Dist2D(Goal->GetActorLocation(), GetActorLocation()) * 0.7f);
+	SlashSprite->SetWorldLocation(GetActorLocation() + To * Reach + FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.35f));
+	SlashSprite->SetVisibility(true);
+	SlashTimer = S(TEXT("SlashTime"), 0.15f);
+}
+
+void AGBSkeletalEnemy::FireProjectile(AActor* Goal, const FVector& AimPoint, float ExtraSpread)
+{
+	using namespace GBSkeletalEnemyLocal;
+	const FGBEnemyDefinition* Def = GetDefinition();
+	UWorld* World = GetWorld();
+	if (!Def || !World)
+	{
+		return;
+	}
+	FGBProjectileConfig Config;
+	Config.Damage = MakeShotInfo();
+	Config.Damage.Causer = nullptr;
+	Config.Speed = Stats->GetStat(GBStat::ProjectileSpeed, Config.Speed);
+	Config.Radius = Stats->GetStat(GBStat::ProjectileRadius, Config.Radius);
+	Config.GravityScale = Stats->GetStat(GBStat::ProjectileGravity, 0.f);
+	Config.MaxRange = Stats->GetStat(GBStat::AggroRange, 3000.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
+	Config.MaxLifetime = GetGameValue(GBProjectileKey::ProjectileMaxLifetime, Config.MaxLifetime);
+	Config.bPixelArt = true;
+	const FString SpriteId = Def->Strings.FindRef(GBString::ProjectileSprite);
+	Config.SpriteId = FName(SpriteId.IsEmpty() ? DefaultArrowSprite : *SpriteId);
+	Config.VisualScale = S(TEXT("ProjectileVisualScale"), 1.f);
+	Config.FlightVfxId = FName(*GBEnemy3D::Str(*Def, ProjectileVfxKey));
+	Config.FlightVfxHeight = S(TEXT("ProjectileVfxHeight"), 70.f);
+
+	// It leaves from the shoot clip's Origin (staff tip, bow), else from the chest ON THE LINE TO THE AIM POINT: that is the line
+	// HasLineOfSight cleared. (Out along the facing instead, a wide body turned from its aim put the arrow inside the cover it peeks from.)
+	const FVector ChestPoint = GetChestLocation();
+	FVector AimDir = (AimPoint - ChestPoint).GetSafeNormal();
+	if (AimDir.IsNearlyZero())
+	{
+		AimDir = GetActorForwardVector();
+	}
+	FVector Origin = ChestPoint + AimDir * (GetCapsuleComponent()->GetScaledCapsuleRadius() + Config.Radius + 10.f);
+	if (SpriteAnim && bSpriteLook)
+	{
+		FVector ClipOrigin;
+		if (SpriteAnim->GetClipOriginWorld(GetLookClip(TEXT("Clip.Shoot"), TEXT("Shoot")), ClipOrigin))
+		{
+			// The drawn bow or staff may stick past the cover it peeks from: then the shot leaves from the chest, whose line the AI checked.
+			FCollisionQueryParams Params(SCENE_QUERY_STAT(GBShotOrigin), false, this);
+			FCollisionResponseParams IgnorePawns;
+			IgnorePawns.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+			const FVector Chest = GetChestLocation();
+			const bool bBlocked = World->LineTraceTestByChannel(Chest, ClipOrigin, ECC_Visibility, Params, IgnorePawns)
+				|| World->LineTraceTestByChannel(ClipOrigin, ClipOrigin + (AimPoint - ClipOrigin).GetSafeNormal() * 300.f, ECC_Visibility, Params, IgnorePawns);
+			if (!bBlocked)
+			{
+				Origin = ClipOrigin;
+			}
+		}
+	}
+	// Leads a moving player by part of his travel during the flight (ProjectileLead 0..1): a strafing player is not free.
+	FVector Aim = AimPoint;
+	if (const ACharacter* PlayerChar = Cast<ACharacter>(Goal))
+	{
+		const float Flight = FVector::Dist(Origin, AimPoint) / FMath::Max(Config.Speed, 1.f);
+		Aim += PlayerChar->GetCharacterMovement()->Velocity * Flight * FMath::Clamp(S(TEXT("ProjectileLead"), 0.5f), 0.f, 1.f);
+	}
+	FVector Direction = (Aim - Origin).GetSafeNormal();
+	if (Direction.IsNearlyZero())
+	{
+		Direction = GetActorForwardVector();
+	}
+	Direction = UGBCombatLibrary::ApplySpread(Direction, S(TEXT("SpreadDegrees"), 2.f) + ExtraSpread, Random);
+	{
+		// The projectile stops on world static: sweep its ball from the chest to the release point and along its first stretch.
+		// Blocked (the box it peeks over, its own cover while it suppresses the last known spot): no arrow into the wall; it
+		// ends the burst and moves to another position.
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBShotClear), false, this);
+		const FCollisionObjectQueryParams Statics(ECC_WorldStatic);
+		const FCollisionShape Ball = FCollisionShape::MakeSphere(FMath::Max(Config.Radius, 4.f));
+		const float Stretch = FMath::Min(FVector::Dist(Origin, Aim) - 50.f, S(TEXT("ShotClearDistance"), 400.f));
+		const FVector Chest = GetChestLocation();
+		const bool bBlocked = World->SweepTestByObjectType(Chest, Origin, FQuat::Identity, Statics, Ball, Params)
+			|| (Stretch > 0.f && World->SweepTestByObjectType(Origin, Origin + Direction * Stretch, FQuat::Identity, Statics, Ball, Params));
+		if (bBlocked)
+		{
+			bShotBlocked = true;
+			++BlockedShots;
+			AbortBurst(0.5f);
+			return;
+		}
+	}
+	if (AGBProjectile::SpawnProjectile(World, Config, Origin, Direction, this))
+	{
+		++ProjectileCount;
+	}
+	++ShotCount;
+	// More shots in this burst (the centaur's second arrow): draw again, released on the next shot.
+	if (bSpriteLook && SpriteAnim && ShotsLeft > 1)
+	{
+		SpriteAnim->PlayAction(GetLookClip(TEXT("Clip.Shoot"), TEXT("Shoot")), S(TEXT("BurstShotInterval"), 0.12f));
 	}
 }
 
@@ -333,6 +646,8 @@ bool AGBSkeletalEnemy::TickMeleeSwing(AActor* Goal, float DeltaSeconds, float Di
 				Info.HitLocation = Goal->GetActorLocation();
 				Info.HitDirection = (Goal->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 				UGBCombatLibrary::DealDamage(Goal, Info);
+				++MeleeSwingCount;
+				ShowSlash(Goal);
 			}
 		}
 		return true;
@@ -344,9 +659,14 @@ bool AGBSkeletalEnemy::TickMeleeSwing(AActor* Goal, float DeltaSeconds, float Di
 			AbortBurst(0.5f);
 		}
 		SwingTimer = S(TEXT("MeleeWindup"), 0.45f);
-		if (AnimInst)
+		// The mesh plays its swing now; the sprite times its swing clip to land when SwingTimer ends.
+		if (bSpriteLook)
 		{
-			AnimInst->PlayOneShot(EGBEnemyClip::Attack, false);
+			LookStartAttack(GetLookClip(TEXT("Clip.Swing"), TEXT("Attack")), SwingTimer);
+		}
+		else
+		{
+			LookAttackNow(GetLookClip(TEXT("Clip.Swing"), TEXT("Attack")));
 		}
 		return true;
 	}
@@ -457,6 +777,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 			NoLineTimer = 0.f;
 		}
 		bRelocate |= NoLineTimer >= S(TEXT("NoLineTime"), 3.f);
+		bRelocate |= bShotBlocked;
 		// Nobody has seen him for a while: everyone but the base of fire advances in bounds to see the last known position.
 		if (!bSight && KnownAge > S(TEXT("SearchDelay"), 4.f) && SquadRole != EGBSquadRole::Suppress && SquadRole != EGBSquadRole::Anchor)
 		{
@@ -477,6 +798,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		CoverCompromisedTimer = 0.f;
 		NoLineTimer = 0.f;
 		SearchTimer = 0.f;
+		bShotBlocked = false;
 		++Relocations;
 	}
 	if (bAwaitingPosition && Squad)
@@ -599,7 +921,10 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		PeekTimer += DeltaSeconds;
 		const float DistFire = FVector::Dist2D(Me, FiringPoint);
 		const bool bSameSpot = FVector::Dist2D(CoverPoint, FiringPoint) < 30.f;
-		const bool bAtFire = DistFire < 45.f || (bSameSpot && bAtCover);
+		// Stat FiringSpotByRadius (the castle ids): a wide body (the centaur) cannot get its centre as close to a spot by the box as
+		// a man can, so its capsule radius counts as arrived. Without the stat: 45 cm, as before.
+		const float FireTolerance = S(TEXT("FiringSpotByRadius"), 0.f) > 0.5f ? FMath::Max(45.f, GetCapsuleComponent()->GetScaledCapsuleRadius()) : 45.f;
+		const bool bAtFire = DistFire < FireTolerance || (bSameSpot && bAtCover);
 		SetGait(EGBGait::Combat);
 		if (BurstPhase == EBurstPhase::Cooldown && !bAtFire)
 		{
@@ -675,6 +1000,7 @@ void AGBSkeletalEnemy::TickBurst(AActor* Goal, float DeltaSeconds, bool bCanAim,
 			{
 				++PeekBursts;
 			}
+			bAttackReleased = true;   // the telegraph ends in the shot: the cast / draw clip plays on
 			SetState(EGBEnemyState::Recover);
 		}
 		break;
@@ -703,6 +1029,11 @@ void AGBSkeletalEnemy::TickBurst(AActor* Goal, float DeltaSeconds, bool bCanAim,
 
 void AGBSkeletalEnemy::FireShot(AActor* Goal, const FVector& AimPoint, float ExtraSpread)
 {
+	if (bProjectileShots)
+	{
+		FireProjectile(Goal, AimPoint, ExtraSpread);
+		return;
+	}
 	const FVector Muzzle = GetMuzzleLocation();
 	FVector Direction = (AimPoint - Muzzle).GetSafeNormal();
 	if (Direction.IsNearlyZero())
@@ -723,10 +1054,7 @@ void AGBSkeletalEnemy::FireShot(AActor* Goal, const FVector& AimPoint, float Ext
 	const float Range = Stats->GetStat(GBStat::AggroRange, 3000.f) * GetGameValue(GBEnemyKey::ProjectileRangeMult, 1.5f);
 	GBEnemy3D::FireHitscan(this, Muzzle, Direction, Range, MakeShotInfo(), ShotFx, Goal);
 	++ShotCount;
-	if (AnimInst)
-	{
-		AnimInst->NotifyShot();
-	}
+	LookNotifyShot();
 }
 
 float AGBSkeletalEnemy::GetPelvisDistance() const
@@ -753,7 +1081,12 @@ void AGBSkeletalEnemy::Tick(float DeltaSeconds)
 			Squad->EndMeleeAttack(this);
 		}
 	}
-	if (State == EGBEnemyState::Dead || !EraComponent->IsPresent())
+	if (State == EGBEnemyState::Dead)
+	{
+		TickDeath(DeltaSeconds);
+		return;
+	}
+	if (!EraComponent->IsPresent())
 	{
 		return;
 	}
@@ -765,7 +1098,30 @@ void AGBSkeletalEnemy::Tick(float DeltaSeconds)
 			AnimInst->SetAim(0.f, 0.f);
 		}
 	}
-	if (bTrackPelvis && bLookBuilt && !bRagdoll)
+	// Stat AwareWithoutZone (the castle's waves): spawned by a wave that gives it no zone and no post, it comes for the player at
+	// once instead of waiting to see him (it may have spawned behind a wall). Encounter enemies with a zone keep their patrols.
+	if (!bAwareOnSpawnChecked)
+	{
+		bAwareOnSpawnChecked = true;
+		if (!bAware && !bHasHomeZone && !Encounter.IsValid() && S(TEXT("AwareWithoutZone"), 0.f) > 0.5f)
+		{
+			BecomeAwareNow();
+		}
+	}
+	if (SpriteAnim && bSpriteLook)
+	{
+		// Asleep (dormant and unaware) it shows its Dormant clip when the sheet has one.
+		SpriteAnim->SetIdleOverride(!bAware && UnawareBehavior == EGBUnawareBehavior::Dormant ? GBSkeletalEnemyLocal::DormantClip : NAME_None);
+	}
+	if (SlashSprite && SlashTimer > 0.f)
+	{
+		SlashTimer -= DeltaSeconds;
+		if (SlashTimer <= 0.f)
+		{
+			SlashSprite->SetVisibility(false);
+		}
+	}
+	if (bTrackPelvis && bLookBuilt)
 	{
 		MaxPelvisDistance = FMath::Max(MaxPelvisDistance, GetPelvisDistance());
 	}
@@ -783,6 +1139,11 @@ bool AGBSkeletalEnemy::TryStartMelee()
 	if (!Squad)
 	{
 		return true;
+	}
+	// The pincer (PincerWait stat): at its slot it waits a moment for the other attackers to reach theirs, then they go together.
+	if (!Squad->MayCommitMelee(this))
+	{
+		return false;
 	}
 	// Asked at the moment of every windup / lunge start; the place is held until the windup and the lunge are over.
 	if (Squad->TryBeginMeleeAttack(this))
@@ -921,14 +1282,30 @@ void AGBSkeletalEnemy::StartLunge(AActor* Goal)
 	LungeTime = 0.f;
 	LungeCooldown = S(TEXT("LungeCooldown"), 2.f);
 	++LungeCount;
+	// The leap leaves a trail of embers (Strings LeapVfx, a baked clip such as FluidFire, small).
+	const FGBEnemyDefinition* Def = GetDefinition();
+	const FString LeapVfx = Def ? GBEnemy3D::Str(*Def, GBSkeletalEnemyLocal::LeapVfxKey) : FString();
+	if (!LeapVfx.IsEmpty())
+	{
+		const FVector Feet = GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		if (AGBPixelVfxActor* Embers = AGBPixelVfxActor::SpawnPixelVfx(this, FName(*LeapVfx), FTransform(Feet), S(TEXT("LeapVfxScale"), 0.25f)))
+		{
+			Embers->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+			Embers->SetLifeSpan(FMath::Max(S(TEXT("LeapVfxTime"), 0.6f), 0.05f));
+		}
+	}
 }
 
 void AGBSkeletalEnemy::PerformAttack()
 {
-	if (AnimInst)
+	bAttackReleased = true;
+	if (!bLungeQueued && bSpriteLook)
 	{
-		AnimInst->PlayOneShot(EGBEnemyClip::Attack, false);
+		// A melee blow at the swing's hit frame: the slash shows where it lands.
+		++MeleeSwingCount;
+		ShowSlash(Target.Get());
 	}
+	LookAttackNow(GetLookClip(bLungeQueued ? TEXT("Clip.Leap") : TEXT("Clip.Attack"), bLungeQueued ? TEXT("Leap") : TEXT("Attack")));
 	if (bLungeQueued)
 	{
 		bLungeQueued = false;
@@ -956,10 +1333,10 @@ void AGBSkeletalEnemy::OnDamagedVisual(const FGBDamageInfo& Info, float ActualDa
 	{
 		GBEnemy3D::SpawnFx(this, ShotFx.HitImpact, Info.HitLocation, (-Info.HitDirection).Rotation());
 	}
-	if (AnimInst && GetWorld() && GetWorld()->GetTimeSeconds() - LastHitReactTime >= S(TEXT("HitReactInterval"), 0.4f))
+	if ((AnimInst || bSpriteLook) && GetWorld() && GetWorld()->GetTimeSeconds() - LastHitReactTime >= S(TEXT("HitReactInterval"), 0.4f))
 	{
 		LastHitReactTime = GetWorld()->GetTimeSeconds();
-		AnimInst->NotifyHit(FVector::DotProduct(Info.HitDirection, GetActorRightVector()));
+		LookNotifyHit(FVector::DotProduct(Info.HitDirection, GetActorRightVector()));
 	}
 }
 
@@ -967,35 +1344,153 @@ void AGBSkeletalEnemy::HandleDeath(const FGBDamageInfo& KillingBlow)
 {
 	const bool bWasDead = State == EGBEnemyState::Dead;
 	Super::HandleDeath(KillingBlow);
-	if (bWasDead || !bLookBuilt)
+	if (bWasDead || (!bLookBuilt && !bSpriteLook))
 	{
 		return;
 	}
 	bLunging = false;
-	// The ragdoll or the death clip needs longer than the default corpse time.
-	if (S(TEXT("CorpseTime"), 0.f) > 0.f)
+	bDying = true;
+	DeathElapsed = 0.f;
+	DeathHitDirection = KillingBlow.HitDirection.GetSafeNormal();
+
+	// The death clip, never a ragdoll: no aim, no hit overlay, no raised shield over it (the anim instance clears them).
+	DeathClipLength = LookPlayDeath();
+
+	// The corpse lies for CorpseTime after the clip, then sinks into the floor and goes. The life span is only the net under it.
+	const float DataCorpse = S(TEXT("CorpseTime"), 0.f);
+	LieTime = DataCorpse > 0.f ? DataCorpse : GetGameValue(GBEnemyKey::CorpseTime, 1.5f);
+	SinkTime = FMath::Max(S(TEXT("CorpseSinkTime"), 1.5f), 0.1f);
+	SinkDepth = S(TEXT("CorpseSinkDepth"), 60.f);
+	SinkElapsed = 0.f;
+	SetLifeSpan(DeathClipLength + LieTime + SinkTime + 3.f);
+
+	// Where is the floor? Killed in the air (mid-lunge, off a step) it comes down to it; over a pit it just falls.
+	DeathFall = EDeathFall::None;
+	bDeathHasFloor = false;
+	if (UWorld* World = GetWorld())
 	{
-		SetLifeSpan(S(TEXT("CorpseTime"), 0.f));
+		const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const FVector Centre = GetActorLocation();
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBDeathFloor), false, this);
+		FHitResult Hit;
+		if (World->LineTraceSingleByObjectType(Hit, Centre, Centre - FVector::UpVector * (HalfHeight + GBSkeletalEnemyLocal::DeathFloorProbe), FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+		{
+			bDeathHasFloor = true;
+			DeathFloorTargetZ = Hit.ImpactPoint.Z + HalfHeight;
+			DeathFallStartZ = Centre.Z;
+			const float Gap = Centre.Z - DeathFloorTargetZ;
+			if (Gap > GBSkeletalEnemyLocal::DeathFloorTolerance)
+			{
+				DeathFall = Gap <= GBSkeletalEnemyLocal::DeathEaseMaxGap ? EDeathFall::Ease : EDeathFall::Gravity;
+			}
+		}
+		else
+		{
+			DeathFall = EDeathFall::Gravity;
+		}
+		DeathFallSpeed = 0.f;
 	}
-	USkeletalMeshComponent* Body = GetMesh();
-	if (Body && Body->GetPhysicsAsset())
+
+	// The weapon falls from the hand a moment into the clip (only when it has something to fall with).
+	WeaponDropTimer = FMath::Max(S(TEXT("WeaponDropTime"), 0.35f), 0.f);
+}
+
+void AGBSkeletalEnemy::TickDeath(float DeltaSeconds)
+{
+	if (!bDying)
 	{
-		StartRagdoll(KillingBlow);
+		return;
 	}
-	else if (AnimInst)
+	DeathElapsed += DeltaSeconds;
+
+	// 1. Down to the floor: a short ease when it is just above it, gravity otherwise (and over a pit).
+	if (DeathFall != EDeathFall::None)
 	{
-		// No physics asset (the spider's skeleton, a mesh without one): the Death clip if there is one; otherwise the corpse stays as the parent leaves it.
-		AnimInst->SetAim(0.f, 0.f);
-		AnimInst->PlayDeath();
+		FVector Location = GetActorLocation();
+		if (DeathFall == EDeathFall::Ease)
+		{
+			const float Alpha = FMath::Clamp(DeathElapsed / GBSkeletalEnemyLocal::DeathEaseSeconds, 0.f, 1.f);
+			Location.Z = FMath::Lerp(DeathFallStartZ, DeathFloorTargetZ, Alpha * Alpha * (3.f - 2.f * Alpha));
+			if (Alpha >= 1.f)
+			{
+				DeathFall = EDeathFall::None;
+			}
+		}
+		else
+		{
+			const float Gravity = FMath::Abs(GetWorld() ? GetWorld()->GetGravityZ() : -980.f);
+			DeathFallSpeed += Gravity * DeltaSeconds;
+			const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			const float FromZ = Location.Z;
+			Location.Z -= DeathFallSpeed * DeltaSeconds;
+			// The floor found at death may be far below (or there was none): the segment fallen this tick is traced, and the first
+			// WorldStatic surface under the capsule's bottom stops the fall (it then lies there).
+			bool bLanded = bDeathHasFloor && Location.Z <= DeathFloorTargetZ;
+			if (bLanded)
+			{
+				Location.Z = DeathFloorTargetZ;
+			}
+			else if (UWorld* World = GetWorld())
+			{
+				FHitResult Hit;
+				FCollisionQueryParams Params(SCENE_QUERY_STAT(GBDeathFall), false, this);
+				const FVector Bottom(Location.X, Location.Y, 0.f);
+				if (World->LineTraceSingleByObjectType(Hit, FVector(Bottom.X, Bottom.Y, FromZ - HalfHeight + 1.f), FVector(Bottom.X, Bottom.Y, Location.Z - HalfHeight), FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+				{
+					Location.Z = Hit.ImpactPoint.Z + HalfHeight;
+					bDeathHasFloor = true;
+					DeathFloorTargetZ = Location.Z;
+					bLanded = true;
+				}
+			}
+			if (bLanded)
+			{
+				DeathFall = EDeathFall::None;
+			}
+		}
+		SetActorLocation(Location, false, nullptr, ETeleportType::TeleportPhysics);
+	}
+
+	// 2. The weapon (and the shield) fall from the hand.
+	if (WeaponDropTimer >= 0.f)
+	{
+		WeaponDropTimer -= DeltaSeconds;
+		if (WeaponDropTimer < 0.f)
+		{
+			OnWeaponDropTime();
+			WeaponDropTimer = -1.f;
+		}
+	}
+
+	// 3. After the clip and the lie it sinks into the floor, then it is gone. No pop-out.
+	if (DeathElapsed > DeathClipLength + LieTime && DeathFall == EDeathFall::None)
+	{
+		const float Step = FMath::Min(DeltaSeconds, SinkTime - SinkElapsed);
+		SinkElapsed += DeltaSeconds;
+		AddActorWorldOffset(FVector(0.f, 0.f, -SinkDepth / SinkTime * FMath::Max(Step, 0.f)), false, nullptr, ETeleportType::TeleportPhysics);
+		if (SinkElapsed >= SinkTime)
+		{
+			Destroy();
+		}
 	}
 }
 
-void AGBSkeletalEnemy::StartRagdoll(const FGBDamageInfo& KillingBlow)
+void AGBSkeletalEnemy::OnWeaponDropTime()
 {
-	USkeletalMeshComponent* Body = GetMesh();
-	bRagdoll = true;
+	FVector Impulse = DeathHitDirection * S(TEXT("WeaponDropImpulse"), 225.f);
+	Impulse += FVector(Random.FRandRange(-60.f, 60.f), Random.FRandRange(-60.f, 60.f), 80.f);
+	DropStaticPiece(WeaponComp, Impulse);
+}
 
-	// The parent switched every collision off; only the mesh (and the weapon) should collide now.
+bool AGBSkeletalEnemy::DropStaticPiece(UStaticMeshComponent* Piece, const FVector& Impulse)
+{
+	const UStaticMesh* PieceMesh = Piece ? Piece->GetStaticMesh() : nullptr;
+	if (!PieceMesh || !PieceMesh->GetBodySetup() || PieceMesh->GetBodySetup()->AggGeom.GetElementCount() == 0)
+	{
+		return false;   // no simple collision: it stays in the hand
+	}
+	// The parent switched every collision off, which vetoes a simulated body: turn the actor's collision back on and keep every
+	// other part (the capsule, the body, the armor) off, so only the piece collides.
 	SetActorEnableCollision(true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	for (USkeletalMeshComponent* Part : ArmorParts)
@@ -1005,28 +1500,36 @@ void AGBSkeletalEnemy::StartRagdoll(const FGBDamageInfo& KillingBlow)
 			Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	}
-	if (AnimInst)
-	{
-		AnimInst->SetAim(0.f, 0.f);
-	}
+	Piece->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	Piece->SetCollisionProfileName(GBSkeletalEnemyLocal::PhysicsActorProfile);
+	Piece->SetSimulatePhysics(true);
+	Piece->AddImpulse(Impulse, NAME_None, true);
+	return true;
+}
 
-	Body->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	Body->SetCollisionProfileName(GBSkeletalEnemyLocal::RagdollProfile);
-	Body->SetAllBodiesSimulatePhysics(true);
-	Body->SetSimulatePhysics(true);
-	Body->WakeAllRigidBodies();
-	Body->bBlendPhysics = true;
-	FVector Impulse = KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("RagdollImpulse"), 450.f);
-	Impulse.Z += S(TEXT("RagdollLift"), 120.f);
-	Body->AddImpulse(Impulse, NAME_None, true);
-
-	// The weapon falls off (only when its mesh has collision to fall with).
-	if (WeaponComp && WeaponComp->GetStaticMesh() && WeaponComp->GetStaticMesh()->GetBodySetup()
-		&& WeaponComp->GetStaticMesh()->GetBodySetup()->AggGeom.GetElementCount() > 0)
+bool AGBSkeletalEnemy::IsDeathClipPlaying() const
+{
+	if (bSpriteLook)
 	{
-		WeaponComp->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		WeaponComp->SetCollisionProfileName(GBSkeletalEnemyLocal::PhysicsActorProfile);
-		WeaponComp->SetSimulatePhysics(true);
-		WeaponComp->AddImpulse(Impulse * 0.5f + FVector(Random.FRandRange(-60.f, 60.f), Random.FRandRange(-60.f, 60.f), 80.f), NAME_None, true);
+		return bDying && SpriteAnim && SpriteAnim->IsDeathPlaying() && DeathClipLength > 0.f;
 	}
+	return bDying && AnimInst && AnimInst->IsDead() && DeathClipLength > 0.f;
+}
+
+float AGBSkeletalEnemy::GetPelvisHeightAboveFloor() const
+{
+	const USkeletalMeshComponent* Body = GetMesh();
+	const FName Pelvis(TEXT("pelvis"));
+	if (!Body || !GetWorld() || !Body->GetSkeletalMeshAsset() || Body->GetBoneIndex(Pelvis) == INDEX_NONE)
+	{
+		return PelvisNoBone;
+	}
+	const FVector Bone = Body->GetBoneLocation(Pelvis, EBoneSpaces::WorldSpace);
+	// The floor the corpse lies on is the one under its capsule: the body was put there by the death fall. A trace down from the
+	// pelvis itself can start inside a wall or a pillar the clip's travel carried the pelvis into, and then reports that start as the "floor".
+	if (bDying && DeathFall == EDeathFall::None && bDeathHasFloor)
+	{
+		return Bone.Z - (GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	}
+	return PelvisNoFloor;
 }

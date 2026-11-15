@@ -7,8 +7,10 @@
 // attack token steps to its firing spot, telegraphs and fires a burst of hitscan shots with spread and Niagara effects.
 // It relocates when the cover is compromised, it stayed too long, it was hurt, the player came too close or its role changed.
 // AttackMode "Melee": the parent's chase and bite (a slot round the player), plus an optional lunge (LungeRange stat).
-// Animation: UGBEnemyAnimInstance (no AnimBlueprint asset). Death: ragdoll if the mesh has a physics asset, else the
-// Death clip, else the parent's behaviour; the weapon falls off.
+// Two looks, chosen by data: the skeletal mesh (UGBEnemyAnimInstance, no AnimBlueprint asset) or, with Strings SpriteSheet,
+// the castle's 8-direction pixel-art sheet (UGBSpriteAnimComponent); the AI is the same, the Look* calls branch between them.
+// Animation of the mesh: UGBEnemyAnimInstance. Death: never a ragdoll. The enemy's own Death clip plays once and holds its
+// last frame, the body is eased down to the floor, the weapon falls from the hand a moment in (when its mesh has collision), the body lies for CorpseTime and sinks into the floor.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,6 +22,8 @@
 
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
+class UBillboardComponent;
+class UGBSpriteAnimComponent;
 
 UCLASS()
 class GLYPHBOUND_API AGBSkeletalEnemy : public AGBEnemyCharacter
@@ -35,6 +39,16 @@ public:
 	/** True when the skeletal mesh loaded and replaced the placeholder. */
 	bool HasSkeletalLook() const { return bLookBuilt; }
 	UGBEnemyAnimInstance* GetEnemyAnim() const { return AnimInst; }
+	/** The sprite look (Strings SpriteSheet, the castle's pixel-art characters): the sheet loaded and replaced the static sprite. */
+	bool HasSpriteLook() const { return bSpriteLook; }
+	UGBSpriteAnimComponent* GetSpriteAnim() const { return SpriteAnim; }
+	/** Strings ShotType "Projectile": ranged shots are visible AGBProjectiles (arrows, arcane bolts), not hitscan. */
+	bool FiresProjectiles() const { return bProjectileShots; }
+	int32 GetProjectileCount() const { return ProjectileCount; }
+	/** Projectile shots held because the world blocked their way. */
+	int32 GetBlockedShots() const { return BlockedShots; }
+	/** Smoke: melee blows that reached the damage check (a swing at its hit frame), and slashes shown. */
+	int32 GetMeleeSwingCount() const { return MeleeSwingCount; }
 	virtual bool UsesAwareness() const override { return true; }
 	virtual EGBSquadClass GetSquadClass() const override { return IsRanged() ? EGBSquadClass::RangedGround : EGBSquadClass::Melee; }
 	virtual bool IsCrouchedPose() const override { return bCrouchPose; }
@@ -42,7 +56,16 @@ public:
 	/** Smoke: a melee enemy in its windup or in a lunge (counted against SquadMaxMeleeAttackers). */
 	bool IsMeleeCommitted() const { return State == EGBEnemyState::Windup || bLunging || bLungeQueued; }
 	virtual bool CanCrouchInCover() const override { return AnimInst && AnimInst->HasClip(EGBEnemyClip::CrouchIdle); }
-	bool IsRagdolling() const { return bRagdoll; }
+	/** Smoke: the death clip is playing or holding its last frame. */
+	bool IsDeathClipPlaying() const;
+	float GetDeathClipLength() const { return DeathClipLength; }
+	float GetDeathElapsed() const { return DeathElapsed; }
+	/** Smoke: seconds from the death to the removal of the corpse: the clip, the lie (CorpseTime), the sinking. */
+	float GetDeathTotalSeconds() const { return DeathClipLength + LieTime + SinkTime; }
+	/** Smoke: height of the pelvis bone over the floor under it (negative = under it). PelvisNoBone without a mesh or a pelvis bone, PelvisNoFloor with the bone but no floor under it. */
+	static constexpr float PelvisNoBone = -10000.f;
+	static constexpr float PelvisNoFloor = -10001.f;
+	float GetPelvisHeightAboveFloor() const;
 	bool HasWeapon() const { return WeaponComp != nullptr; }
 	/** True when the weapon has a Muzzle (or Tip) socket; otherwise the muzzle is the +X end of its bounds. */
 	bool HasMuzzleSocket() const { return bHasMuzzleSocket; }
@@ -113,7 +136,52 @@ protected:
 	void StartLunge(AActor* Goal);
 
 	void UpdateAnimAim(const AActor* Goal, bool bEngaged);
-	void StartRagdoll(const FGBDamageInfo& KillingBlow);
+	/** Death: the fall to the floor, the weapon, the lie and the sinking. Runs from Tick while dead. */
+	void TickDeath(float DeltaSeconds);
+	/** A moment into the death clip: the weapon (and the chief's shield) fall from the hand. */
+	virtual void OnWeaponDropTime();
+	/** Detaches a static mesh piece and lets it fall as a simulated body. False (it stays where it is) when its mesh has no simple collision. */
+	bool DropStaticPiece(UStaticMeshComponent* Piece, const FVector& Impulse);
+
+	// ---- The look: the few calls the AI makes, each branching once between the skeletal mesh (AnimInst) and the sprite sheet
+	// (SpriteAnim). Protected so subclasses (the Valkyrie) drive their look the same way. Clip names are the sheet's.
+	/** Builds the sprite look from Strings SpriteSheet. False when there is none or it failed (the static sprite stays). */
+	bool BuildSpriteLook(const FGBEnemyDefinition& Def);
+	/** A windup started: the attack clip is timed so its hit frame lands HitInSeconds from now (sprite); nothing on the mesh (it plays at the blow). */
+	void LookStartAttack(FName Clip, float HitInSeconds);
+	/** The windup ended without the blow (an interrupt, a lost line): the clip stops. */
+	void LookCancelAttack();
+	/** The blow lands now (melee damage check, a lunge, the swing of a ranged enemy). Clip: the mesh's one-shot / the sprite's fallback when no windup played it. */
+	void LookAttackNow(FName Clip);
+	void LookNotifyShot();
+	void LookNotifyHit(float Side);
+	/** Plays the death clip; returns its length (0 without one). */
+	float LookPlayDeath();
+	void LookSetAim(float PitchDegrees);
+	/** The clip names of this enemy's attacks (Strings Clip.Attack / Clip.Shoot / Clip.Leap / Clip.Swing). */
+	FName GetLookClip(const TCHAR* Key, const TCHAR* Default) const;
+	/**
+	 * A visible projectile shot (ShotType Projectile) from the shoot clip's Origin. It is not loosed when the world blocks its
+	 * first stretch (a box it peeks over, its own cover while it suppresses): then bShotBlocked asks for a new position.
+	 */
+	void FireProjectile(AActor* Goal, const FVector& AimPoint, float ExtraSpread);
+	/** The short pixel slash of a melee blow, in front of the enemy towards Goal. */
+	void ShowSlash(const AActor* Goal);
+
+	UPROPERTY() TObjectPtr<UGBSpriteAnimComponent> SpriteAnim;
+	UPROPERTY() TObjectPtr<UBillboardComponent> SlashSprite;
+	bool bSpriteLook = false;
+	bool bProjectileShots = false;
+	/** The windup's blow was released (the clip is not cancelled when the windup ends). */
+	bool bAttackReleased = false;
+	bool bAlternateAttack = false;
+	bool bAwareOnSpawnChecked = false;
+	/** A projectile shot was held because the world blocked it: relocate (cleared when the new position is asked for). */
+	bool bShotBlocked = false;
+	float SlashTimer = 0.f;
+	int32 ProjectileCount = 0;
+	int32 BlockedShots = 0;
+	int32 MeleeSwingCount = 0;
 
 	UPROPERTY() TArray<TObjectPtr<USkeletalMeshComponent>> ArmorParts;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> WeaponComp;
@@ -121,7 +189,6 @@ protected:
 	UPROPERTY() FGBEnemyShotFx ShotFx;
 
 	bool bLookBuilt = false;
-	bool bRagdoll = false;
 	bool bHasMuzzleSocket = false;
 	FName MuzzleSocketName = NAME_None;
 	FString MeshName;
@@ -176,4 +243,21 @@ protected:
 	int32 LungeCount = 0;
 
 	float LastHitReactTime = -10.f;
+
+	// Death
+	enum class EDeathFall : uint8 { None, Ease, Gravity };
+	bool bDying = false;
+	EDeathFall DeathFall = EDeathFall::None;
+	FVector DeathHitDirection = FVector::ForwardVector;
+	float DeathElapsed = 0.f;
+	float DeathClipLength = 0.f;
+	float LieTime = 0.f;
+	float SinkTime = 0.f;
+	float SinkDepth = 0.f;
+	float SinkElapsed = 0.f;
+	float DeathFloorTargetZ = 0.f;     // actor Z with the capsule's bottom on the floor
+	float DeathFallStartZ = 0.f;
+	float DeathFallSpeed = 0.f;
+	bool bDeathHasFloor = false;
+	float WeaponDropTimer = -1.f;      // seconds until the weapon falls; < 0 = nothing pending
 };

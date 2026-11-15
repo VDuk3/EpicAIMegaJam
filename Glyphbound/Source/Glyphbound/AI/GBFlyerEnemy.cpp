@@ -6,6 +6,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 #include "AI/GBSquad.h"
 #include "AI/GBTactics.h"
@@ -28,6 +30,13 @@ namespace GBFlyerLocal
 	constexpr float LostSightAbort = 0.3f;         // s without a line before a charge is dropped
 	const TCHAR* const DefaultMuzzleFx = TEXT("");
 	const TCHAR* const DefaultImpactFx = TEXT("/Game/GunFX/NiagaraSystem/ImpactFX/Concrete/NS_Impact_Concrete_Low");
+	const TCHAR* const DefaultDeathSparksFx = TEXT("/Game/GunFX/NiagaraSystem/ImpactFX/Electric/NS_Impact_Electric_Med");
+	const TCHAR* const DefaultDeathExplosionFx = TEXT("/Game/SciFi_Impacts/FX/NS_Technology_Impact_3");
+	constexpr float GroundJumpCm = 40.f;           // a change of the floor under the flyer bigger than this (an edge, a step) is a jump
+	constexpr float SparkScale = 0.5f;             // the sparks a wreck spits while it lies there (visual only)
+	constexpr float WreckSparkMin = 0.4f;          // s between those sparks
+	constexpr float WreckSparkMax = 1.0f;
+	constexpr float DeathLiftShare = 0.35f;        // upward part of the killing blow's push, so the wreck does not just slide
 }
 
 AGBFlyerEnemy::AGBFlyerEnemy()
@@ -86,6 +95,8 @@ void AGBFlyerEnemy::BeginPlay()
 	if (const FGBEnemyDefinition* Def = GetDefinition())
 	{
 		GBEnemy3D::LoadShotFx(ShotFx, *Def, EnemyId, GBFlyerLocal::DefaultMuzzleFx, TEXT("/Game/SciFi_Impacts/FX/NS_Tracer_Red"), GBFlyerLocal::DefaultImpactFx);
+		DeathSparksFx = GBEnemy3D::LoadAsset<UNiagaraSystem>(GBEnemy3D::Str(*Def, GBDebrisKey::FxDeathSparks, GBFlyerLocal::DefaultDeathSparksFx), EnemyId);
+		DeathExplosionFx = GBEnemy3D::LoadAsset<UNiagaraSystem>(GBEnemy3D::Str(*Def, GBDebrisKey::FxDeathExplosion, GBFlyerLocal::DefaultDeathExplosionFx), EnemyId);
 		bLookBuilt = BuildLook(*Def);
 		if (bLookBuilt)
 		{
@@ -218,6 +229,11 @@ void AGBFlyerEnemy::UpdateHeight(float DeltaSeconds)
 	FHitResult Hit;
 	if (World->LineTraceSingleByObjectType(Hit, Loc, Loc - FVector::UpVector * GBFlyerLocal::GroundProbeDepth, Objects, Params))
 	{
+		// An edge or a step under it moves the floor it measures from; the hover height is only judged once it has settled again.
+		if (!bGroundKnown || FMath::Abs(Hit.ImpactPoint.Z - GroundZ) > GBFlyerLocal::GroundJumpCm)
+		{
+			GroundChangeTime = FlightTime;
+		}
 		GroundZ = Hit.ImpactPoint.Z;
 		bGroundKnown = true;
 	}
@@ -489,6 +505,13 @@ void AGBFlyerEnemy::Tick(float DeltaSeconds)
 	{
 		UpdateHeight(DeltaSeconds);
 	}
+	if (State == EGBEnemyState::Dead)
+	{
+		if (TickDeath(DeltaSeconds))
+		{
+			return;   // the wreck is gone and so is the actor
+		}
+	}
 	UpdateVisuals(DeltaSeconds, Target.Get(), State == EGBEnemyState::Windup);
 }
 
@@ -518,34 +541,150 @@ void AGBFlyerEnemy::OnDamagedVisual(const FGBDamageInfo& Info, float ActualDamag
 void AGBFlyerEnemy::HandleDeath(const FGBDamageInfo& KillingBlow)
 {
 	const bool bWasDead = State == EGBEnemyState::Dead;
+	// What it was doing: the parent stops the movement, which would zero the velocity read afterwards.
+	const FVector VelocityAtDeath = GetVelocity() + FVector(0.f, 0.f, VerticalVelocity);
 	Super::HandleDeath(KillingBlow);
 	if (!bWasDead)
 	{
 		bFalling = true;
+		DeathVelocity = VelocityAtDeath;
+		DeathElapsed = 0.f;
+		// The wreck destroys the actor itself when it has sunk; this is only the net under it.
+		SetLifeSpan(S(TEXT("DeathMaxFall"), 4.f) + S(TEXT("WreckTime"), 6.f) + S(TEXT("WreckSinkTime"), 1.f) + 4.f);
 		OnDeathFall(KillingBlow);
 	}
 }
 
-void AGBFlyerEnemy::OnDeathFall(const FGBDamageInfo& KillingBlow)
+FGBDebrisParams AGBFlyerEnemy::MakeDebrisParams() const
 {
-	(void)KillingBlow;
-	StartCapsuleFall();
+	FGBDebrisParams Params;
+	Params.Gravity = FMath::Abs(GetWorld() ? GetWorld()->GetGravityZ() : -980.f);
+	Params.Restitution = FMath::Clamp(S(TEXT("DebrisRestitution"), Params.Restitution), 0.f, 0.95f);
+	Params.Friction = FMath::Clamp(S(TEXT("DebrisFriction"), Params.Friction), 0.f, 1.f);
+	Params.SpinDamping = FMath::Clamp(S(TEXT("DebrisSpinDamping"), Params.SpinDamping), 0.f, 1.f);
+	Params.RestSpeed = FMath::Max(S(TEXT("DebrisRestSpeed"), Params.RestSpeed), 1.f);
+	return Params;
 }
 
-void AGBFlyerEnemy::StartCapsuleFall()
+FVector AGBFlyerEnemy::RandomDirectionNear(const FVector& Direction, float ConeDegrees)
 {
-	// The parent switched collision and movement off; let the capsule drop to the floor and stay there until the corpse is removed.
-	UCapsuleComponent* Capsule = GetCapsuleComponent();
-	SetActorEnableCollision(true);
-	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	Capsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+	const FVector Base = Direction.GetSafeNormal();
+	return Random.VRandCone(Base.IsNearlyZero() ? FVector::UpVector : Base, FMath::DegreesToRadians(ConeDegrees));
+}
+
+FGBDebrisPiece* AGBFlyerEnemy::AddDebrisPiece(USceneComponent* Component, const FVector& Velocity, const FVector& SpinDegrees)
+{
+	if (!Component)
 	{
-		Move->GravityScale = 1.5f;
-		Move->SetMovementMode(MOVE_Falling);
+		return nullptr;
 	}
+	return &Debris.Add(Component, Velocity, SpinDegrees, FGBDebrisField::RadiusOf(Component), MakeDebrisParams());
+}
+
+void AGBFlyerEnemy::SpawnDeathFx(UNiagaraSystem* System, const FVector& Location, const FRotator& Rotation, float Scale) const
+{
+	if (System && GetWorld())
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), System, Location, Rotation, FVector(Scale), true, true);
+	}
+}
+
+USceneComponent* AGBFlyerEnemy::GetWreckCentre() const
+{
+	return BodyMesh;
+}
+
+void AGBFlyerEnemy::OnDeathFall(const FGBDamageInfo& KillingBlow)
+{
+	// Without art the placeholder shape is the one piece: it falls, bounces and sinks like the real parts would.
+	const FVector Push = KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("DeathImpulse"), 250.f);
+	const float Spin = S(TEXT("DeathSpin"), 400.f);
+	AddDebrisPiece(BodyMesh, DeathVelocity + Push + FVector(0.f, 0.f, Push.Size() * GBFlyerLocal::DeathLiftShare),
+		FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * Spin);
+}
+
+void AGBFlyerEnemy::OnFirstGroundContact(const FVector& Point, const FVector& Normal)
+{
+	(void)Point;
+	(void)Normal;
+}
+
+bool AGBFlyerEnemy::TickDeath(float DeltaSeconds)
+{
+	UWorld* World = GetWorld();
+	if (!bFalling || !World)
+	{
+		return false;
+	}
+	DeathElapsed += DeltaSeconds;
+	if (!bSinking)
+	{
+		Debris.Tick(World, this, DeltaSeconds);
+	}
+
+	if (!bLanded)
+	{
+		if (Debris.ConsumeGroundContact())
+		{
+			bLanded = true;
+			ContactTime = DeathElapsed;
+			WreckElapsed = 0.f;
+			SparkTimer = Random.FRandRange(GBFlyerLocal::WreckSparkMin, GBFlyerLocal::WreckSparkMax);
+			OnFirstGroundContact(Debris.GetGroundContactPoint(), Debris.GetGroundContactNormal());
+		}
+		else if (DeathElapsed >= S(TEXT("DeathMaxFall"), 4.f))
+		{
+			Destroy();   // it fell into a pit: no ground to break on
+			return true;
+		}
+		return false;
+	}
+
+	WreckElapsed += DeltaSeconds;
+	if (!bSinking)
+	{
+		// A few small sparks while it lies there.
+		SparkTimer -= DeltaSeconds;
+		if (SparkTimer <= 0.f)
+		{
+			SparkTimer = Random.FRandRange(GBFlyerLocal::WreckSparkMin, GBFlyerLocal::WreckSparkMax);
+			const USceneComponent* Centre = GetWreckCentre();
+			SpawnDeathFx(DeathSparksFx, Centre ? Centre->GetComponentLocation() : GetActorLocation(), FRotator(90.f, 0.f, 0.f), GBFlyerLocal::SparkScale);
+			++SparkBursts;
+		}
+		if (WreckElapsed >= S(TEXT("WreckTime"), 6.f))
+		{
+			bSinking = true;
+			Debris.Freeze();
+		}
+		return false;
+	}
+
+	// Every piece goes down into the floor, then the actor is gone. No pop-out.
+	const float SinkTime = FMath::Max(S(TEXT("WreckSinkTime"), 1.f), 0.05f);
+	const float Step = FMath::Min(DeltaSeconds, SinkTime - SinkElapsed);
+	SinkElapsed += DeltaSeconds;
+	for (int32 Index = 0; Index < Debris.NumPieces(); ++Index)
+	{
+		if (const FGBDebrisPiece* Piece = Debris.GetPiece(Index))
+		{
+			if (USceneComponent* Component = Piece->Component.Get())
+			{
+				Component->AddWorldOffset(FVector(0.f, 0.f, -S(TEXT("WreckSinkDepth"), 30.f) / SinkTime * Step));
+			}
+		}
+	}
+	if (SinkElapsed >= SinkTime)
+	{
+		Destroy();
+		return true;
+	}
+	return false;
+}
+
+float AGBFlyerEnemy::GetDeathTotalSeconds() const
+{
+	return S(TEXT("DeathMaxFall"), 4.f) + S(TEXT("WreckTime"), 6.f) + S(TEXT("WreckSinkTime"), 1.f);
 }
 
 FString AGBFlyerEnemy::DescribeFlyer() const

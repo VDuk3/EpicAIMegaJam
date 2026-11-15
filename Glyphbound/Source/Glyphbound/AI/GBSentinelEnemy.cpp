@@ -6,9 +6,9 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "PhysicsEngine/BodySetup.h"
 
 #include "Combat/GBCombatLibrary.h"
+#include "Combat/GBExplosionEffect.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
 #include "Stats/GBStatsComponent.h"
@@ -16,7 +16,10 @@
 namespace GBSentinelLocal
 {
 	const FName CoreSocket(TEXT("Core"));
-	const FName PhysicsActorProfile(TEXT("PhysicsActor"));
+	const FLinearColor ExplosionColor(0.3f, 0.6f, 1.f);   // the flash of the energy burst
+	constexpr float DeathLiftShare = 0.35f;        // upward part of the killing blow's push
+	constexpr float PopUpShare = 1.2f;             // how much the core pops up rather than out
+	constexpr float PopConeDegrees = 25.f;
 	const TCHAR* const DefaultTracerFx = TEXT("/Game/SciFi_Impacts/FX/NS_Tracer_Blue");
 	const TCHAR* const DefaultImpactFx = TEXT("/Game/SciFi_Impacts/FX/NS_Energy_Impact_1");
 	const TCHAR* const FallbackGlowParam = TEXT("EmissiveBoost");
@@ -193,6 +196,13 @@ void AGBSentinelEnemy::UpdateVisuals(float DeltaSeconds, const AActor* Goal, boo
 	if (bDead)
 	{
 		UpdateAimLine(FVector::ZeroVector, FVector::ZeroVector, false);
+		if (bCoreReleased && CoreMaterial && !GlowParam.IsNone())
+		{
+			// The core's glow dies down to nothing after it came out of the shell.
+			CoreDimElapsed += DeltaSeconds;
+			const float Alpha = FMath::Clamp(CoreDimElapsed / FMath::Max(S(TEXT("CoreDimTime"), 1.5f), 0.05f), 0.f, 1.f);
+			CoreMaterial->SetScalarParameterValue(GlowParam, PulseValue * (1.f - Alpha));
+		}
 		return;
 	}
 
@@ -288,20 +298,43 @@ void AGBSentinelEnemy::PerformAttack()
 
 void AGBSentinelEnemy::OnDeathFall(const FGBDamageInfo& KillingBlow)
 {
-	UStaticMesh* DeathMesh = ShellPart ? ShellPart->GetStaticMesh() : nullptr;
-	const bool bHasCollision = DeathMesh && DeathMesh->GetBodySetup() && DeathMesh->GetBodySetup()->AggGeom.GetElementCount() > 0;
-	if (bLookBuilt && bHasCollision)
+	if (!bLookBuilt || !ShellPart || !ShellPart->GetStaticMesh())
 	{
-		// The parent switched all collision off, which vetoes a simulated mesh: turn the actor's collision back on and keep only the capsule off.
-		SetActorEnableCollision(true);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ShellPart->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		ShellPart->SetCollisionProfileName(GBSentinelLocal::PhysicsActorProfile);
-		ShellPart->SetSimulatePhysics(true);
-		ShellPart->AddImpulse(KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("DeathImpulse"), 200.f), NAME_None, true);
+		Super::OnDeathFall(KillingBlow);   // no art: the placeholder is the one piece
 		return;
 	}
-	StartCapsuleFall();
+	// The shell leaves the visual root and falls with the sentinel's own velocity plus the killing blow's push; the core stays in it
+	// (and keeps its glow) until the shell hits the ground.
+	const FVector Push = KillingBlow.HitDirection.GetSafeNormal() * S(TEXT("DeathImpulse"), 200.f);
+	const float Spin = S(TEXT("DeathSpin"), 200.f);
+	AddDebrisPiece(ShellPart, DeathVelocity + Push + FVector(0.f, 0.f, Push.Size() * GBSentinelLocal::DeathLiftShare),
+		FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * Spin);
+}
+
+USceneComponent* AGBSentinelEnemy::GetWreckCentre() const
+{
+	return (bLookBuilt && ShellPart) ? ShellPart.Get() : Super::GetWreckCentre();
+}
+
+void AGBSentinelEnemy::OnFirstGroundContact(const FVector& Point, const FVector& Normal)
+{
+	const FRotator Facing = Normal.Rotation();
+	// Sparks and an energy burst where it hit.
+	SpawnDeathFx(DeathSparksFx, Point, Facing, 1.f);
+	SpawnDeathFx(DeathExplosionFx, Point + Normal * 10.f, Facing, 1.f);
+	AGBExplosionEffect::Spawn(GetWorld(), Point + Normal * 40.f, S(TEXT("DeathExplosionRadius"), 180.f), GBSentinelLocal::ExplosionColor, S(TEXT("DeathExplosionTime"), 0.45f));
+	if (!bLookBuilt || bCoreReleased || !CorePart || !CorePart->GetStaticMesh())
+	{
+		return;
+	}
+	// The shell cracks open: the core pops out and rolls away while its glow dies down.
+	bCoreReleased = true;
+	CoreDimElapsed = 0.f;
+	FVector Outward(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), 0.f);
+	Outward = Outward.GetSafeNormal() + Normal * GBSentinelLocal::PopUpShare;
+	const FVector Direction = RandomDirectionNear(Outward, GBSentinelLocal::PopConeDegrees);
+	AddDebrisPiece(CorePart, Direction * S(TEXT("BreakApartSpeed"), 350.f),
+		FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * S(TEXT("DeathSpin"), 200.f) * 2.f);
 }
 
 FString AGBSentinelEnemy::DescribeFlyer() const

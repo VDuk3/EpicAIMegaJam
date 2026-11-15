@@ -1,7 +1,7 @@
 // The sentinel: a floating sphere turret with a blue eye. The shell turns slowly towards the player; the core (the eye,
 // in the shell's front opening) turns faster inside it, clamped to the opening, so the eye visibly tracks him, and
 // pulses. The attack is a charge with a thin aiming line that follows the player with a lag (moving dodges it), then one
-// heavy hitscan beam. The core is the weak point. Parts: Enemies.json "Strings" Shell (front +X, socket Core) and Core
+// heavy hitscan beam. The core is the weak point. On death the shell falls as a debris piece and, at the first ground contact, cracks open: the core pops out and its glow dies. Parts: Enemies.json "Strings" Shell (front +X, socket Core) and Core
 // (pivot at its centre); without them the placeholder stays.
 #pragma once
 
@@ -37,6 +37,8 @@ protected:
 	virtual void OnWindupChanged(bool bStarted) override;
 	virtual float GetBodyTurnRate() const override;
 	virtual void OnDeathFall(const FGBDamageInfo& KillingBlow) override;
+	virtual void OnFirstGroundContact(const FVector& Point, const FVector& Normal) override;
+	virtual USceneComponent* GetWreckCentre() const override;
 	virtual void SetTelegraph(bool bOn) override;
 
 private:
@@ -53,5 +55,7 @@ private:
 	float PulseValue = 1.f;
 	FVector AimPoint = FVector::ZeroVector;
 	bool bAimPointValid = false;
+	bool bCoreReleased = false;     // the core came out of the shell at the first ground contact
+	float CoreDimElapsed = 0.f;
 	FVector LockedAimPoint = FVector::ZeroVector;
 };

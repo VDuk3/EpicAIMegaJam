@@ -29,6 +29,13 @@ enum class EGBEnemyClip : uint8
 	Sprint,
 	CrouchIdle,
 	CrouchWalk,
+	// Full-body one-shot actions of a boss (Enemies.json Anim.Action0 .. Anim.Action5): played with PlayOneShot, never cut by a hit reaction.
+	Action0,
+	Action1,
+	Action2,
+	Action3,
+	Action4,
+	Action5,
 	Count
 };
 
@@ -141,6 +148,12 @@ public:
 	void SetArmIK(int32 Side, const FGBArmIK& Goal) { if (Side == 0 || Side == 1) { Frame.Arm[Side] = Goal; } }
 	bool HasArmIK() const { return Frame.Arm[0].Alpha > 0.f || Frame.Arm[1].Alpha > 0.f; }
 	const TArray<FGBPoseOffset>& GetPoseOffsets() const { return PoseOffsets; }
+	/** Closes the right hand's fingers round a held weapon: a fixed curl (degrees about the given pitch/yaw/roll axis of each bone) on the finger and thumb bones. */
+	void SetGripCurl(float FingerDegrees, const FVector& FingerAxis, float ThumbDegrees, const FVector& ThumbAxis);
+	const TArray<FGBPoseOffset>& GetGripOffsets() const { return GripOffsets; }
+	bool HasGrip() const { return GripOffsets.Num() > 0; }
+	/** Smoke: the index of the running one-shot clip (EGBEnemyClip value) or -1. */
+	int32 GetOverlayClipIndex() const { return Frame.OverlayClip; }
 	/** The slot a locomotion slot currently plays (posture and sprint substitutes). */
 	int32 ResolveSlot(int32 Slot) const;
 	int32 GetClipCount() const;
@@ -156,6 +169,10 @@ public:
 	void NotifyHit(float Side);
 	/** Death pose: the Death clip, played once and held. Returns false when there is no clip (nothing changes). */
 	bool PlayDeath();
+	/** Smoke / death timing: the death pose is on, the length of the Death clip (0 without one), seconds since it started. */
+	bool IsDead() const { return Frame.bDead; }
+	float GetDeathClipLength() const;
+	float GetDeathTime() const { return Frame.DeathTime; }
 
 	/** Smoke: the dominant locomotion clip right now, the running overlay (or "-"), as one line. */
 	FString DescribeClips() const;
@@ -183,6 +200,7 @@ private:
 	bool bCrouched = false;
 	bool bUseSprint = false;
 	TArray<FGBPoseOffset> PoseOffsets;
+	TArray<FGBPoseOffset> GripOffsets;
 	float PoseTarget = 0.f;
 	float PoseBlend = 0.3f;
 
