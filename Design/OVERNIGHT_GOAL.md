@@ -72,9 +72,9 @@ Fuera el ragdoll en **todos** los enemigos 3D. Cada uno tiene su animación de m
 
 | # | Punto | Estado | Evidencia (commit, captura, smoke) |
 |---|-------|--------|-------------------------------------|
-| 1 | Valquiria cyberpunk: alas, socket, IA | pendiente | |
-| 2 | Muerte del dron y del centinela | pendiente | |
-| 3 | Animaciones de muerte de los 3D | pendiente | |
+| 1 | Valquiria cyberpunk: alas, socket, IA | hecho | alas rígidas en la espalda (commit b65ae01, renders en siete clips); espada en la mano con agarre cerrado (captura valkyrie_hand del juego empaquetado); IA cerca y lejos con Juicio y lanzas, fase dos (commit ec56b69; smoke Valkyrie en verde, también empaquetado) |
+| 2 | Muerte del dron y del centinela | hecho | commit 5490c4d: caen, al tocar el suelo chispean y explotan, sueltan piezas (rotores, ojo, núcleo), se hunden; smoke Enemies3D 3 de 3 en verde ("Drone_Future wreck: fell 0.78 s, bounces=13, pieces=6, spark bursts=3") |
+| 3 | Animaciones de muerte de los 3D | hecho | commit 5490c4d: sin ragdoll; caídas completas del ARPG Pack (Fab) reasignadas, una distinta por tipo de orco, robot y Valquiria; pelvis a 12-25 cm del suelo en el smoke; renders en Saved/Review/deaths |
 | 4 | Humo con Niagara Fluids en los túneles | pendiente | |
 | 5 | Enemigos pixel art y boss Valquiria | pendiente | |
 | 6 | IA de grupo en el castillo | pendiente | |
