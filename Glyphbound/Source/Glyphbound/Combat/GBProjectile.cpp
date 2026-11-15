@@ -591,54 +591,51 @@ void AGBProjectile::Tick(float DeltaSeconds)
 		{
 			Params.AddIgnoredActor(Caster);
 		}
-		// The world blocks it (what the flying projectile's collision blocks on); characters and dynamic things are hit
-		// along the way up to there, nearest first, through the same HitTarget a flying one uses.
-		FHitResult WorldHit;
-		const bool bWorldHit = World && World->SweepSingleByObjectType(WorldHit, Start, Stop, FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldStatic), Shape, Params);
-		if (bWorldHit)
-		{
-			Stop = WorldHit.bStartPenetrating ? Start : FVector(WorldHit.Location);
-		}
-		FVector ArcEnd = bWorldHit ? FVector(WorldHit.ImpactPoint) : Stop;
+		// One sweep with the flying projectile's own collision responses (overlaps characters and dynamic things, blocks
+		// on the static world), nearest first, through the same HitTarget a flying one uses; the blocking hit is handled
+		// like OnCollisionHit (a damageable blocker is hit, otherwise the bolt ends there).
+		FVector ArcEnd = Stop;
 		TArray<FVector, TInlineAllocator<4>> HitPoints;
+		TArray<FHitResult> Hits;
 		if (World)
 		{
-			FCollisionObjectQueryParams Targets;
-			Targets.AddObjectTypesToQuery(ECC_Pawn);
-			Targets.AddObjectTypesToQuery(ECC_WorldDynamic);
-			TArray<FHitResult> Hits;
-			World->SweepMultiByObjectType(Hits, Start, Stop, FQuat::Identity, Targets, Shape, Params);
-			Hits.Sort([](const FHitResult& A, const FHitResult& B) { return A.Distance < B.Distance; });
-			for (const FHitResult& Hit : Hits)
+			World->SweepMultiByChannel(Hits, Start, Stop, FQuat::Identity, ECC_WorldDynamic, Shape, Params,
+				FCollisionResponseParams(Collision->GetCollisionResponseToChannels()));
+		}
+		for (const FHitResult& Hit : Hits)
+		{
+			if (bFinished)
 			{
-				AActor* Other = Hit.GetActor();
-				if (bFinished)
-				{
-					break;
-				}
-				if (!IsValidTarget(Other))
-				{
-					continue;
-				}
-				const FVector Point = Hit.bStartPenetrating ? FMath::ClosestPointOnSegment(Other->GetActorLocation(), Start, Stop) : FVector(Hit.ImpactPoint);
+				break;
+			}
+			AActor* Other = Hit.GetActor();
+			const FVector Point = (Hit.bStartPenetrating && Other) ? FMath::ClosestPointOnSegment(Other->GetActorLocation(), Start, Stop) : FVector(Hit.ImpactPoint);
+			if (IsValidTarget(Other))
+			{
 				HitPoints.Add(Point);
 				ArcEnd = Point;
 				HitTarget(Other, Point);
 			}
+			if (Hit.bBlockingHit && !bFinished)
+			{
+				ArcEnd = Hit.bStartPenetrating ? Start : FVector(Hit.ImpactPoint);
+				HitPoints.AddUnique(ArcEnd);
+				if (Config.ExplosionRadius > 0.f)
+				{
+					Explode(ArcEnd);
+				}
+				Finish(Other, ArcEnd);
+			}
 		}
 		if (!bFinished)
 		{
-			// A piercing bolt (or a miss) ends on the world or at its range.
-			ArcEnd = bWorldHit ? FVector(WorldHit.ImpactPoint) : Stop;
-			if (bWorldHit)
-			{
-				HitPoints.Add(ArcEnd);
-			}
+			// A miss ends at its range, in the air.
+			ArcEnd = Stop;
 			if (Config.ExplosionRadius > 0.f)
 			{
 				Explode(ArcEnd);
 			}
-			Finish(bWorldHit ? WorldHit.GetActor() : nullptr, ArcEnd);
+			Finish(nullptr, ArcEnd);
 		}
 		const float HeightPer100 = FMath::Max(Config.FlightVfxHeight, 1.f);
 		const bool bBig = HeightPer100 >= GBLightningFx::BigHeightPer100;
