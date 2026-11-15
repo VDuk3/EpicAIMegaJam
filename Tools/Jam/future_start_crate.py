@@ -8,7 +8,7 @@ import unreal
 LABEL = 'KatanaCrate'
 CRATE = '/Game/High_Tech_Base/Models/SM_Prop_02.SM_Prop_02'   # the bay's cover crate, scaled down to a small box
 SCALE = 0.4                                                     # 184 cm -> about 74 cm
-LOCATION = unreal.Vector(-940.0, 1100.0 - 0.5 * 200.0 * SCALE - 8.0, 10.0)
+LOCATION = unreal.Vector(-940.0, 1100.0 - 0.5 * 200.0 * SCALE - 8.0, 0.0)   # floor traced at z = 0
 
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
