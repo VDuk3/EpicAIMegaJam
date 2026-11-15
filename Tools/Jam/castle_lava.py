@@ -1,4 +1,4 @@
-# castle_lava.py - owner, 2026-11-15: the dungeon corridor's floor becomes lava, with heat haze in the air over it.
+# castle_lava.py - owner, 2026-11-15: the dungeon corridor's floor becomes lava, glowing orange.
 #  - M_PxLava: procedural pixel lava (world-space noise snapped to a pixel grid, three colour steps, slowly churning), unlit.
 #  - M_PxHeatHaze: an invisible refracting volume (a two-sided box over the lava) whose normal scrolls upward.
 #  - An orange point light over every lava tile (same units as the map's own point lights).
@@ -9,8 +9,6 @@ DIR = '/Game/Glyphbound/Castle/Pixel'
 MAP = '/Game/Glyphbound/Maps/PastCastle'
 GROUPS = (('StaticMeshActor_21287', 'StaticMeshActor_21283', 'StaticMeshActor_21290'),
           ('StaticMeshActor_21269', 'StaticMeshActor_21265', 'StaticMeshActor_21272'))
-HAZE_STEP = 200.0
-HAZE = {'velocity': 20.0, 'lifetime': 3.0, 'size': 4.0}
 eal = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 MP = unreal.MaterialProperty
@@ -114,24 +112,10 @@ def lava_master():
 
 
 lava = lava_master()
-# Heat haze (owner: simple, with Niagara): NS_PxLavaHeat is the MuzzleFlash3D pack's haze emitter alone (a looping
-# refracting sprite), slowed down; one small system every HAZE_STEP cm, just over the lava.
-T = 'NiagaraToolsets.NiagaraToolset_System.'
-NS_PATH = DIR + '/NS_PxLavaHeat'
-if eal.does_asset_exist(DIR + '/M_PxHeatHaze'):
-    eal.delete_asset(DIR + '/M_PxHeatHaze')
-if not eal.does_asset_exist(NS_PATH):
-    eal.duplicate_asset('/Game/MuzzleFlash3D/FX/Modern/NS_MuzzleFlash_Single', NS_PATH)
-    ns0 = unreal.load_asset(NS_PATH)
-    for e in (await call_tool(T + 'GetSystemSummary', system=ns0))['emitters']:
-        if e['emitterName'] != 'NE_Haze':
-            await call_tool(T + 'RemoveEmitter', emitterRef={'system': ns0, 'emitterName': e['emitterName']})
-heat = unreal.load_asset(NS_PATH)
-F = {'refPath': '/Script/Niagara.NiagaraFloat'}
-await call_tool(T + 'AddUserVariables', system=heat, variablesToAdd=[
-    {'name': 'User.' + k, 'type': {'classStructOrEnum': F, 'bIsStatic': False}, 'defaultValue': {'struct': F, 'value': {'value': v}}, 'description': ''}
-    for k, v in (('Haze Velocity', HAZE['velocity']), ('Haze Lifetime', HAZE['lifetime']), ('Haze SpriteSize', HAZE['size']))])
-eal.save_asset(NS_PATH, only_if_is_dirty=False)
+# No heat haze: the owner rejected every try (refracting box, Niagara haze sprites). Their assets are removed.
+for old in ('M_PxHeatHaze', 'M_PxHeatSprite', 'NS_PxLavaHeat'):
+    if eal.does_asset_exist(DIR + '/' + old):
+        eal.delete_asset(DIR + '/' + old)
 
 actors = eas.get_all_level_actors()
 by_name = {a.get_name(): a for a in actors}
@@ -140,7 +124,6 @@ for a in actors:                                   # a second run replaces its o
     if a.get_actor_label().startswith(('LavaHaze_', 'LavaGlow_')):
         eas.destroy_actor(a)
 
-n_haze = 0
 n_tiles = 0
 n_lights = 0
 for gi, names in enumerate(GROUPS):
@@ -168,24 +151,14 @@ for gi, names in enumerate(GROUPS):
             lc.set_editor_property('intensity_units', ref_light.point_light_component.get_editor_property('intensity_units'))
             lc.set_editor_property('intensity', ref_light.point_light_component.get_editor_property('intensity') * 1.5)
         lc.set_editor_property('light_color', unreal.Color(r=255, g=96, b=20, a=255))
-        lc.set_editor_property('attenuation_radius', 900.0)
-        lc.set_editor_property('cast_shadows', False)
+        lc.set_editor_property('attenuation_radius', 520.0)   # the corridor is 8 m wide: the glow stops at its walls
+        lc.set_editor_property('cast_shadows', True)   # without shadows the glow went through the walls (owner)
         n_lights += 1
     if lo is None:
         continue
-    x = lo.x + HAZE_STEP / 2
-    while x < hi.x:
-        y = lo.y + HAZE_STEP / 2
-        while y < hi.y:
-            h = eas.spawn_actor_from_object(heat, unreal.Vector(x, y, hi.z + 8.0), unreal.Rotator(0, 90, 0))
-            h.set_actor_label('LavaHaze_%d_%d' % (gi, n_haze))
-            h.set_folder_path('Lava')
-            n_haze += 1
-            y += HAZE_STEP
-        x += HAZE_STEP
     log.append('group %d: floor top z=%.0f, %.0f x %.0f cm' % (gi, hi.z, hi.x - lo.x, hi.y - lo.y))
 
 saved = les.save_current_level()
-log.append('lava on %d tiles, %d haze systems, %d lights (ref %s), saved=%s' % (n_tiles, n_haze, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
+log.append('lava on %d tiles, %d lights (ref %s), saved=%s' % (n_tiles, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
 unreal.log('\n'.join(log))
 '\n'.join(log)
