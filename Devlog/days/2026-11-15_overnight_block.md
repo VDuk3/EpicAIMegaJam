@@ -150,6 +150,16 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   the squad for a new position, which keeps 350 cm from every mate. The Sol review of the first version: the crowd test
   counted melee mates the position search ignores (an endless relocation); fixed by counting the same members. The
   check's failure line now also prints both speeds.
+- **A second Sol review of the final rule:** in a narrow corridor where no spot keeps 350 cm from every mate, the search
+  answers "nothing" and the enemy would ask again every cooldown, forever. Now a search that finds nothing rests the
+  crowd rule for 6 s.
+- **The advisor's final review caught a check never run since the Valkyrie's new fight:** `Enemies3DBase` on FutureBase
+  (her tube in the lab). It went red once in two runs: 3.5 s after waking she was casting Judgement 2.1 m from where she
+  lay, raised 70 cm (flying), and the check, written for yesterday's Valkyrie who ran straight at the player, wanted her
+  on the ground and 2.5 m out. Her wake leap lands on the navmesh past the glass at about 2.15 m; the check now takes her
+  as out when, at some frame between waking and the check (sampled every frame), she stood more than 1.5 m from where
+  she lay, inside her zone, on the floor or raised by Judgement: a single instant was not enough, since the packaged run
+  caught her 4.6 m out but in the air in a hop. It still fails if she stays in the tube (Sol: no defects).
 - **CastleVisit's stricter wave check (Sol):** a later wave of melee-only enemies stays in its zone; if the player stood
   outside it after the first wave, they could never reach him. The visit now steps the player in after 8 s without an
   attack, as it already did for the first wave, before it fails a wave.

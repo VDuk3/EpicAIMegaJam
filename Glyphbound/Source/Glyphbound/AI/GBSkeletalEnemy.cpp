@@ -707,6 +707,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 	}
 	BurstCooldown = FMath::Max(0.f, BurstCooldown - DeltaSeconds);
 	RelocateCooldown = FMath::Max(0.f, RelocateCooldown - DeltaSeconds);
+	CrowdRetryTimer = FMath::Max(0.f, CrowdRetryTimer - DeltaSeconds);
 
 	if (TickMeleeSwing(Goal, DeltaSeconds, Distance))
 	{
@@ -792,7 +793,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 	// Shoulder to shoulder with a ranged squad mate outside a peek, holding or on the way (its path ran into him, two routes
 	// that run together, both stopped short at the same spot): a new position (the search keeps SquadSpacing from every
 	// mate) instead of standing or walking there until the stay or the move timeout runs out.
-	if (Squad && bHasPosition && CState != ECombatState::Peek && Squad->NearestRangedMateDistance(this) < S(TEXT("CrowdDistance"), 220.f))
+	if (Squad && bHasPosition && CState != ECombatState::Peek && CrowdRetryTimer <= 0.f && Squad->NearestRangedMateDistance(this) < S(TEXT("CrowdDistance"), 220.f))
 	{
 		CrowdTimer += DeltaSeconds;
 	}
@@ -832,7 +833,9 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 			}
 			else
 			{
-				// Nothing passed: hold in place and fire from the open.
+				// Nothing passed: hold in place and fire from the open. Where no spot keeps its distance from the mates (a narrow
+				// corridor), the crowd rule rests a while instead of asking for the same nothing every cooldown.
+				CrowdRetryTimer = S(TEXT("CrowdRetryDelay"), 6.f);
 				Position = TempPosition;
 				Position.Cover = GetActorLocation();
 				Position.FiringSpot = Position.Cover;

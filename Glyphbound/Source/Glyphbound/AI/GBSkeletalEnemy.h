@@ -217,6 +217,8 @@ protected:
 	float CoverCompromisedTimer = 0.f;
 	/** Seconds spent shoulder to shoulder with a squad mate outside a peek (a blocked path, two picks that met). */
 	float CrowdTimer = 0.f;
+	/** Seconds the crowd rule stays off after a search found no spaced position (a narrow corridor): no endless retries. */
+	float CrowdRetryTimer = 0.f;
 	float NoLineTimer = 0.f;
 	float SearchTimer = 0.f;
 	float RelocateCooldown = 0.f;

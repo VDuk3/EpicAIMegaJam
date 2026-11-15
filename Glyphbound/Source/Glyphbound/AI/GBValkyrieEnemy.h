@@ -88,6 +88,8 @@ public:
 	// ---- Smoke ----
 	EAct GetAct() const { return Act; }
 	bool IsPhaseTwo() const { return bPhaseTwo; }
+	/** Raised off the floor by Judgement (flying while she casts). */
+	bool IsLifted() const { return bLifted; }
 	int32 GetSwingCount() const { return SwingCount; }
 	int32 GetSwingHits() const { return SwingHits; }
 	int32 GetComboCount() const { return ComboCount; }

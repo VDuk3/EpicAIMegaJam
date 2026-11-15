@@ -3152,6 +3152,10 @@ namespace GBSmokeRun
 
 	// ---- The Valkyrie in her tube: sealed while the glass stands (WakeFlag), wakes and comes out when it breaks.
 	static FVector E3VSpawn = FVector::ZeroVector;
+	/** Between "woke" and "left the tube": she stood out of the tube at least once (her fight keeps her in the air at times: hops, dashes). */
+	static bool bE3VStoodOut = false;
+	static float E3VBestAway = 0.f;
+	static FTSTicker::FDelegateHandle E3VTicker;
 	static float E3VHealth0 = 0.f;
 	static const TCHAR* const E3VWakeFlag = TEXT("ValkyrieTubeBroken");
 
@@ -3290,18 +3294,53 @@ namespace GBSmokeRun
 		const float Away = FVector::Dist2D(Valkyrie->GetActorLocation(), E3VSpawn);
 		const bool bGround = Valkyrie->GetCharacterMovement()->IsMovingOnGround();
 		const bool bInside = Encounter->GetZone().ExpandBy(120.f).IsInside(Valkyrie->GetActorLocation());
-		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase Valkyrie (%s): aware=%d sealed=%d leaping=%d state=%d away from her spawn=%.0f cm onGround=%d insideZone=%d"), bLeft ? TEXT("left the tube") : TEXT("woke"), Valkyrie->IsAware() ? 1 : 0,
-			Valkyrie->IsSealed() ? 1 : 0, Valkyrie->IsWakeLeaping() ? 1 : 0, static_cast<int32>(Encounter->GetState()), Away, bGround ? 1 : 0, bInside ? 1 : 0);
+		const AGBValkyrieEnemy* Fighter = Cast<AGBValkyrieEnemy>(Valkyrie);
+		const bool bLifted = Fighter && Fighter->IsLifted();
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase Valkyrie (%s): aware=%d sealed=%d leaping=%d state=%d away from her spawn=%.0f cm onGround=%d insideZone=%d lifted=%d judgements=%d"), bLeft ? TEXT("left the tube") : TEXT("woke"), Valkyrie->IsAware() ? 1 : 0,
+			Valkyrie->IsSealed() ? 1 : 0, Valkyrie->IsWakeLeaping() ? 1 : 0, static_cast<int32>(Encounter->GetState()), Away, bGround ? 1 : 0, bInside ? 1 : 0, bLifted ? 1 : 0, Fighter ? Fighter->GetJudgementCasts() : -1);
+		Shot(bLeft ? TEXT("enemies3dbase_valkyrie_left") : TEXT("enemies3dbase_valkyrie_woke"));
 		if (!bLeft)
 		{
+			// Sample every frame until "left the tube": out of where she lay, inside her zone, on the floor or raised by Judgement.
+			FTSTicker::GetCoreTicker().RemoveTicker(E3VTicker);
+			bE3VStoodOut = false;
+			E3VBestAway = 0.f;
+			TWeakObjectPtr<UWorld> WeakWorld(World);
+			E3VTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakWorld](float)
+			{
+				UWorld* W = WeakWorld.Get();
+				const AGBEncounter* Enc = W ? E3BFindEncounter(W, E3BId) : nullptr;
+				const AGBEnemyCharacter* Valk = W ? E3VFind(W) : nullptr;
+				if (!Enc || !Valk)
+				{
+					return W != nullptr;
+				}
+				const float Out = FVector::Dist2D(Valk->GetActorLocation(), E3VSpawn);
+				const AGBValkyrieEnemy* Fight = Cast<AGBValkyrieEnemy>(Valk);
+				const bool bStanding = Valk->GetCharacterMovement()->IsMovingOnGround() || (Fight && Fight->IsLifted());
+				if (Out > 150.f && bStanding && !Valk->IsSealed() && Enc->GetZone().ExpandBy(120.f).IsInside(Valk->GetActorLocation()))
+				{
+					bE3VStoodOut = true;
+					E3VBestAway = FMath::Max(E3VBestAway, Out);
+				}
+				return true;
+			}));
 			if (!Valkyrie->IsAware() || Valkyrie->IsSealed() || Encounter->GetState() != EGBEncounterState::Active)
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase Valkyrie FAILED: 1.5 s after the flag she is not awake and the encounter not Active (aware %d, sealed %d, state %d)"), Valkyrie->IsAware() ? 1 : 0, Valkyrie->IsSealed() ? 1 : 0, static_cast<int32>(Encounter->GetState()));
 			}
 		}
-		else if (Away <= 250.f || !bGround || !bInside || Encounter->GetState() != EGBEncounterState::Active)
+		// Out of the tube: her wake leap lands on the navmesh past the glass (about 2 m from where she lay). From there her fight
+		// may have her casting Judgement (raised 70 cm, flying), hopping or dashing at any given moment, so the frames since she
+		// woke are sampled: she must have stood (on the floor or raised by Judgement) more than 1.5 m out, inside her zone.
+		else
 		{
-			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase Valkyrie FAILED: she did not come out (away %.0f cm, onGround %d, insideZone %d)"), Away, bGround ? 1 : 0, bInside ? 1 : 0);
+			FTSTicker::GetCoreTicker().RemoveTicker(E3VTicker);
+			UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3DBase Valkyrie: stood out of the tube since she woke=%d (farthest %.0f cm)"), bE3VStoodOut ? 1 : 0, E3VBestAway);
+		}
+		if (bLeft && (!bE3VStoodOut || !bInside || Encounter->GetState() != EGBEncounterState::Active))
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3DBase Valkyrie FAILED: she did not come out (away %.0f cm, onGround %d, lifted %d, insideZone %d)"), Away, bGround ? 1 : 0, bLifted ? 1 : 0, bInside ? 1 : 0);
 		}
 	}
 
