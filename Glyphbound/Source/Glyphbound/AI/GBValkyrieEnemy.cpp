@@ -693,6 +693,12 @@ void AGBValkyrieEnemy::StartEmpower(AActor* Goal)
 void AGBValkyrieEnemy::TickEmpower(AActor* Goal, float DeltaSeconds)
 {
 	ActTime += DeltaSeconds;
+	if (S(TEXT("MoveWhileCasting"), 0.f) > 0.5f)
+	{
+		// the final boss never stands to cast: it keeps chasing while the spell goes out
+		TickFightMovement(Goal, DeltaSeconds, FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation()));
+	}
+
 	TurnTowards(Goal, DeltaSeconds);
 	// the blade lights up partway through the flourish, and the buff lasts EmpowerTime from then
 	if (EmpowerTimeLeft <= 0.f && ActTime >= EmpowerClipLength * V(TEXT("EmpowerLightFrac"), 0.45f))
@@ -1166,6 +1172,12 @@ void AGBValkyrieEnemy::StartJudgement(AActor* Goal)
 void AGBValkyrieEnemy::TickJudgement(AActor* Goal, float DeltaSeconds)
 {
 	ActTime += DeltaSeconds;
+	if (S(TEXT("MoveWhileCasting"), 0.f) > 0.5f)
+	{
+		// the final boss never stands to cast: it keeps chasing while the spell goes out
+		TickFightMovement(Goal, DeltaSeconds, FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation()));
+	}
+
 	const FVector Flat(Goal->GetActorLocation().X - GetActorLocation().X, Goal->GetActorLocation().Y - GetActorLocation().Y, 0.f);
 	if (!Flat.IsNearlyZero())
 	{
@@ -1188,6 +1200,13 @@ void AGBValkyrieEnemy::TickJudgement(AActor* Goal, float DeltaSeconds)
 	{
 		bMarksSpawned = true;
 		SpawnMarks(Goal);
+		if (S(TEXT("MoveWhileCasting"), 0.f) > 0.5f)
+		{
+			// the circles strike on their own: it does not wait for them
+			SpellCooldown = V(TEXT("SpellCooldown"), 11.f);
+			FinishAction(0.f);
+			return;
+		}
 	}
 	if (ActTime >= JudgementTotal)
 	{
@@ -1312,6 +1331,12 @@ void AGBValkyrieEnemy::StartLances(AActor* Goal)
 void AGBValkyrieEnemy::TickLances(AActor* Goal, float DeltaSeconds)
 {
 	ActTime += DeltaSeconds;
+	if (S(TEXT("MoveWhileCasting"), 0.f) > 0.5f)
+	{
+		// the final boss never stands to cast: it keeps chasing while the spell goes out
+		TickFightMovement(Goal, DeltaSeconds, FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation()));
+	}
+
 	const FVector Flat(Goal->GetActorLocation().X - GetActorLocation().X, Goal->GetActorLocation().Y - GetActorLocation().Y, 0.f);
 	if (!Flat.IsNearlyZero())
 	{
