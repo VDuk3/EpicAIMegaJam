@@ -152,7 +152,13 @@ void AGBHeldItem::OnUnequipped()
 
 EGBHudSkin AGBHeldItem::GetHudSkin() const
 {
-	return Slot == EGBHeldSlot::Gun ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
+	if (Slot == EGBHeldSlot::Gun)
+	{
+		return EGBHudSkin::Cyberpunk;
+	}
+	// A sword with a 3D view model (the Crimson Katana, from the future) wears the future's HUD like the guns.
+	const FGBWeaponDefinition* Def = GetDefinition();
+	return (Def && Def->Strings.Contains(FName(TEXT("ViewMesh")))) ? EGBHudSkin::Cyberpunk : EGBHudSkin::Rpg90s;
 }
 
 float AGBHeldItem::GetTimeSinceLastAttack() const

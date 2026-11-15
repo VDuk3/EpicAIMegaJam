@@ -688,7 +688,8 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		// Guns are shown alone, without hands (owner, 2026-11-14): the 3D model and its own animations (kick, reload,
 		// pump) are drawn by the world; nothing is drawn here.
 	}
-	else if (Item && Slot == EGBHeldSlot::Sword && WeaponDef && WeaponDef->Strings.Contains(FName(TEXT("ViewMesh"))))
+	else if (Item && Slot == EGBHeldSlot::Sword && WeaponDef && WeaponDef->Strings.Contains(FName(TEXT("ViewMesh")))
+		&& [Item]() { for (const UActorComponent* C : Item->GetComponents()) { if (C && C->GetFName() == FName(TEXT("ViewModel"))) { return true; } } return false; }())
 	{
 		// A sword with a 3D view model (the katana) is drawn by the world, like the guns: nothing here.
 	}
