@@ -286,9 +286,18 @@
   "specks": 4
  },
  "SM_DoorFrame_A_02": {
+  "keep": true,
   "tile": "dressed"
  },
  "SM_Lantern": {
   "keep": true
+ },
+ "SM_DoorFrame_B_02": {
+  "keep": true,
+  "tile": "dressed"
+ },
+ "SM_DoorFrame_A_01": {
+  "keep": true,
+  "tile": "dressed"
  }
 }

@@ -187,7 +187,8 @@ function voxelize(src, opt, base) {
   const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < V.length; i += 3) for (let a = 0; a < 3; a++) { mn[a] = Math.min(mn[a], V[i + a]); mx[a] = Math.max(mx[a], V[i + a]); }
   // the grid is fixed to the pivot: cell k covers [k g, (k + 1) g]
-  const lo = mn.map((x) => Math.floor(x / g - 0.001) * g - g), hi = mx.map((x) => Math.ceil(x / g + 0.001) * g + g);
+  const A = g * (opt.coarse || 1);       // the grid is aligned to the coarse cell, so the coarse cells fall on round numbers
+  const lo = mn.map((x) => Math.floor(x / A - 0.001) * A - A), hi = mx.map((x) => Math.ceil(x / A + 0.001) * A + A);
   const n = lo.map((x, a) => Math.round((hi[a] - x) / g));
   const N = n[0] * n[1] * n[2];
   const idx = (x, y, z) => (x * n[1] + y) * n[2] + z;
@@ -372,7 +373,8 @@ function snapFaces(vx, opt) {
 }
 
 // Step 3: a cell that at least five of its six neighbours disagree with is flipped (a lone lump or pit).
-function cleanLone(vx, passes) {
+function cleanLone(vx, passes, limit) {
+  limit = limit || 5;
   const { solid, n, idx } = vx;
   let changed = 0;
   for (let p = 0; p < passes; p++) {
@@ -385,7 +387,7 @@ function cleanLone(vx, passes) {
         const t = X < 0 || Y < 0 || Z < 0 || X >= n[0] || Y >= n[1] || Z >= n[2] ? 0 : solid[idx(X, Y, Z)];
         if (t !== s) dis++;
       }
-      if (dis >= 5) flip.push(idx(x, y, z));
+      if (dis >= limit) flip.push(idx(x, y, z));
     }
     for (const i of flip) solid[i] ^= 1;
     changed += flip.length;
@@ -429,6 +431,21 @@ function cleanSpecks(vx, passes) {
   return changed;
 }
 
+// A comb: a row of teeth one block wide standing out of a face (the corbels under a parapet, read on a 25 cm grid).
+// A cell one block wide along one horizontal axis that also stands free along the other is taken away.
+function cleanCombs(vx) {
+  const { solid, n, idx } = vx;
+  const at = (x, y, z) => (x < 0 || y < 0 || z < 0 || x >= n[0] || y >= n[1] || z >= n[2] ? 0 : solid[idx(x, y, z)]);
+  const flip = [];
+  for (let x = 0; x < n[0]; x++) for (let y = 0; y < n[1]; y++) for (let z = 0; z < n[2]; z++) {
+    if (!solid[idx(x, y, z)]) continue;
+    const xs = at(x - 1, y, z) + at(x + 1, y, z), ys = at(x, y - 1, z) + at(x, y + 1, z);
+    if ((xs === 0 && ys === 1) || (ys === 0 && xs === 1)) flip.push(idx(x, y, z));
+  }
+  for (const i of flip) solid[i] = 0;
+  return flip.length;
+}
+
 // Step 4: exposed faces, their material, merged into rectangles.
 function faces(vx, src, opt) {
   const { solid, n, lo, g, idx, hitsBy } = vx;
@@ -466,7 +483,7 @@ function faces(vx, src, opt) {
             while (b < W - 1 && mask[(b + 1) * Hh + j] === kd) b++;
             while (c > 0 && mask[i * Hh + c - 1] === kd) c--;
             while (d < Hh - 1 && mask[i * Hh + d + 1] === kd) d++;
-            if (Math.min(b - a + 1, d - c + 1) >= 3) continue;
+            if (Math.min(b - a + 1, d - c + 1) >= (g >= 20 ? 2 : 3)) continue;
             const cnt = {};
             for (let p = -2; p <= 2; p++) for (let q = -2; q <= 2; q++) {
               const x = i + p, y = j + q;
@@ -478,6 +495,33 @@ function faces(vx, src, opt) {
             if (best && best[1] >= 6) next[i * Hh + j] = best[0];
           }
           for (let q = 0; q < mask.length; q++) mask[q] = next[q];
+        }
+        // On plain blocks a face is one tile, whole: each connected flat region takes the tile most of it has.
+        if (g >= 20) {
+          // stone walls are one coursed wall, stone tops one dressed paving: no stripes where two modules meet
+          for (let q = 0; q < mask.length; q++) {
+            if (!mask[q]) continue;
+            if (axis !== 2 && (mask[q] === 'dressed' || mask[q] === 'dark')) mask[q] = 'wall';
+            if (axis === 2 && (mask[q] === 'wall' || mask[q] === 'dark')) mask[q] = 'dressed';
+          }
+          const W = n[ua], Hh = n[va], seen = new Uint8Array(W * Hh);
+          for (let st = 0; st < W * Hh; st++) {
+            if (!mask[st] || seen[st]) continue;
+            const comp = [st], cnt = {};
+            seen[st] = 1;
+            for (let q = 0; q < comp.length; q++) {
+              const c = comp[q], i = Math.floor(c / Hh), j = c % Hh;
+              cnt[mask[c]] = (cnt[mask[c]] || 0) + 1;
+              for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const x = i + di, y = j + dj;
+                if (x < 0 || y < 0 || x >= W || y >= Hh) continue;
+                const o = x * Hh + y;
+                if (mask[o] && !seen[o]) { seen[o] = 1; comp.push(o); }
+              }
+            }
+            const best = Object.entries(cnt).sort((u, v) => v[1] - u[1])[0][0];
+            for (const c of comp) mask[c] = best;
+          }
         }
         // greedy rectangles
         for (let i = 0; i < n[ua]; i++) for (let j = 0; j < n[va]; j++) {
@@ -533,7 +577,10 @@ function build(name) {
   let src = load(name);
   // Props (kegs, barrels, sacks, the cart) are rounded things, not walls: a finer grid and no snapping to faces.
   const prop = src.path.includes('/Props/') || src.path.includes('/Rock_Kit/');
-  const opt = Object.assign({}, DEF, prop ? { grid: 3.125, snap: 0, specks: 0 } : {}, CFG[name] || {});
+  const stair = /Stair/.test(name);
+  // a thin piece (a coping, an edging, a door frame) on 12.5 cm blocks, so it keeps its shape
+  const minExt = Math.min(...[0, 1, 2].map((q) => src.bounds[1][q] - src.bounds[0][q]));
+  const opt = Object.assign({}, DEF, prop ? { grid: 3.125, snap: 0, specks: 0 } : stair ? {} : { coarse: minExt < 80 ? 2 : 4 }, CFG[name] || {});
   // A kit module is usually two sculpted faces with nothing at its ends: its thinnest axis is its thickness, and the
   // four sides across it are closed for the fill (only between the faces).
   if (!prop && !opt.seal && !opt.box) {
@@ -623,6 +670,32 @@ function build(name) {
           const fz = vx.lo[2] + (z + 0.5) * vx.g;
           if (outXY || fz < nb[0][2] || fz > nb[1][2]) vx.solid[vx.idx(x, y, z)] = 0;
         }
+      }
+    }
+    // Plain blocks (owner, 2026-11-14: "muros lisos ... rectangulos"): the fine cells are merged into coarse ones
+    // (25 cm), each solid when most of its volume is. Nothing smaller than a coarse cell survives on a face.
+    if (po.coarse && po.coarse > 1) {
+      const F = po.coarse, nC = vx.n.map((x) => Math.round(x / F)), G = vx.g * F;
+      const idxC = (x, y, z) => (x * nC[1] + y) * nC[2] + z;
+      const sc = new Uint8Array(nC[0] * nC[1] * nC[2]);
+      for (let x = 0; x < nC[0]; x++) for (let y = 0; y < nC[1]; y++) for (let z = 0; z < nC[2]; z++) {
+        let c = 0;
+        for (let a = 0; a < F; a++) for (let b = 0; b < F; b++) for (let d = 0; d < F; d++) {
+          const X = x * F + a, Y = y * F + b, Z = z * F + d;
+          if (X < vx.n[0] && Y < vx.n[1] && Z < vx.n[2]) c += vx.solid[vx.idx(X, Y, Z)];
+        }
+        if (c * 2 >= F * F * F) sc[idxC(x, y, z)] = 1;
+      }
+      const hitsBy = [0, 1, 2].map((axis) => castAxis(vx.V, s.t, s.m, axis, G, vx.lo, nC));
+      Object.assign(vx, { solid: sc, n: nC, g: G, idx: idxC, hitsBy });
+      // a notch or a tooth one block deep (four of its six neighbours disagree) goes too
+      if (F >= 4) {          // on the thin pieces' finer blocks these would cut the piece itself
+        lone += cleanLone(vx, 3, 4);
+        lone += cleanSpecks(vx, 1);
+        lone += cleanCombs(vx);
+        lone += cleanLone(vx, 1, 4);
+      } else {
+        lone += cleanLone(vx, 2);
       }
     }
     // The faces of a part are cut by its planes exactly (as polygons), so two parts meet on the plane itself; its cells
