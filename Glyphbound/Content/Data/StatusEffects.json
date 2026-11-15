@@ -13,6 +13,18 @@
 			"Strings": { "Color": "#8C8C8C" }
 		},
 		{
+			"Id": "FrostStaffChill",
+			"DisplayName": "Chilled",
+			"Duration": 2.0,
+			"Element": "Ice",
+			"Modifiers": [
+				{ "Stat": "MoveSpeed", "Op": "MultiplyMin", "Value": 0.85 }
+			],
+			"bRefreshOnReapply": true,
+			"MaxStacks": 1,
+			"Strings": { "Color": "#80D0FF" }
+		},
+		{
 			"Id": "Ignite",
 			"DisplayName": "Ignited",
 			"Duration": 4.0,

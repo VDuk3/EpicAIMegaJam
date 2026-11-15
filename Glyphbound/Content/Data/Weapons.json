@@ -17,7 +17,8 @@
 				"Range": 6000,
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
-				"SpritePixelScale": 0.5
+				"SpritePixelScale": 0.5,
+				"AllDamageBonus": 0.05
 			},
 			"Strings": {
 				"Sprite": "staff_basic",
@@ -33,7 +34,7 @@
 			"FireMode": "Projectile",
 			"bAutomatic": false,
 			"Stats": {
-				"Damage": 22,
+				"Damage": 12,
 				"FireInterval": 0.6,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
@@ -42,7 +43,10 @@
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
 				"FireBuildUp": 18,
-				"SpritePixelScale": 0.5
+				"SpritePixelScale": 0.5,
+				"ElementDamageBonus": 0.15,
+				"SplashRadius": 200,
+				"SplashDamageFraction": 0.4
 			},
 			"Strings": {
 				"Sprite": "staff_fire",
@@ -58,7 +62,7 @@
 			"FireMode": "Projectile",
 			"bAutomatic": false,
 			"Stats": {
-				"Damage": 22,
+				"Damage": 12,
 				"FireInterval": 0.6,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
@@ -67,9 +71,11 @@
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
 				"SpritePixelScale": 0.5,
-				"IceBuildUp": 18
+				"IceBuildUp": 18,
+				"ElementDamageBonus": 0.15
 			},
 			"Strings": {
+				"OnHitEffect": "FrostStaffChill",
 				"Sprite": "staff_ice",
 				"ProjectileSprite": "bolt_arcane"
 			}
@@ -83,8 +89,8 @@
 			"FireMode": "Projectile",
 			"bAutomatic": false,
 			"Stats": {
-				"Damage": 22,
-				"FireInterval": 0.6,
+				"Damage": 10.2,
+				"FireInterval": 0.51,
 				"ProjectileSpeed": 2800,
 				"ProjectileRadius": 14,
 				"ProjectileGravity": 0,
@@ -92,7 +98,10 @@
 				"ManaCost": 0,
 				"HeadshotMult": 1.5,
 				"SpritePixelScale": 0.5,
-				"LightningBuildUp": 18
+				"LightningBuildUp": 18,
+				"ElementDamageBonus": 0.15,
+				"SplashRadius": 200,
+				"SplashDamageFraction": 0.4
 			},
 			"Strings": {
 				"Sprite": "staff_storm",

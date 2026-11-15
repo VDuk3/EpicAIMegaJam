@@ -4,6 +4,9 @@
 #include "Combat/GBElementalStatusComponent.h"
 #include "Combat/GBStatusEffectComponent.h"
 #include "Core/GBStatNames.h"
+#include "Player/GBPlayerCharacter.h"
+#include "Weapons/GBEquipmentComponent.h"
+#include "Weapons/GBHeldItem.h"
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "Engine/Engine.h"
@@ -15,6 +18,32 @@ namespace GBCombatLocal
 {
 	/** The obstruction trace starts this far above the explosion origin, so the floor under it does not block it. */
 	constexpr float RadialTraceLiftCm = 5.f;
+
+	/** Weapons.json staff stats (fractions): bonus to every hit of the staff's own element / to every hit of any element. */
+	const FName StaffElementDamageBonus(TEXT("ElementDamageBonus"));
+	const FName StaffAllDamageBonus(TEXT("AllDamageBonus"));
+
+	/**
+	 * Damage multiplier from the staff the player is holding right now (active item in the Staff slot):
+	 * (1 + AllDamageBonus) * (1 + ElementDamageBonus if the hit's element is the staff's element).
+	 * Covers everything that goes through DealDamage while it is held: bolts, splashes, spells, effects over time.
+	 */
+	float HeldStaffDamageMult(const AActor* Instigator, EGBElement HitElement)
+	{
+		const AGBPlayerCharacter* Player = Cast<AGBPlayerCharacter>(Instigator);
+		const UGBEquipmentComponent* Equipment = Player ? Player->GetEquipment() : nullptr;
+		const AGBHeldItem* Item = Equipment ? Equipment->GetActiveItem() : nullptr;
+		if (!Item || Item->GetSlot() != EGBHeldSlot::Staff)
+		{
+			return 1.f;
+		}
+		float Mult = 1.f + FMath::Max(0.f, Item->GetStat(StaffAllDamageBonus, 0.f));
+		if (HitElement == Item->GetElement())
+		{
+			Mult *= 1.f + FMath::Max(0.f, Item->GetStat(StaffElementDamageBonus, 0.f));
+		}
+		return Mult;
+	}
 }
 
 FGBOnDamageDealt& UGBCombatLibrary::OnDamageDealt()
@@ -64,6 +93,10 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 		if (const UGBStatsComponent* InstigatorStats = UGBStatsComponent::Find(DamageInstigator))
 		{
 			FinalInfo.Amount *= InstigatorStats->GetStat(GBStat::DamageDealt, 1.f);
+		}
+		if (Target != DamageInstigator)
+		{
+			FinalInfo.Amount *= GBCombatLocal::HeldStaffDamageMult(DamageInstigator, FinalInfo.Element);
 		}
 	}
 
