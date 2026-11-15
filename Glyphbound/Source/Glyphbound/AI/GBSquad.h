@@ -83,6 +83,9 @@ public:
 	float GetEscapeOpenness(float BearingDegrees) const;
 	/** The flyers of the member's own squad (alive, present in the current era), for their separation. */
 	void GetFlyerNeighbours(const AGBEnemyCharacter* Enemy, TArray<const AGBEnemyCharacter*>& Out) const;
+	/** 2D distance to the nearest living, present ranged ground member of the enemy's own squad (a large number when none);
+	 * the same members the position search keeps SquadSpacing from. */
+	float NearestRangedMateDistance(const AGBEnemyCharacter* Enemy) const;
 	/** Melee slot round the player: the point to go to, and whether it may attack now (otherwise it waits at the wait radius). */
 	bool GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& OutPoint, bool& bOutMayAttack) const;
 	/** Orbit slot of a flyer: a point round the player at the radius. */

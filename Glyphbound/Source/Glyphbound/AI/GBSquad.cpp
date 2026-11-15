@@ -958,6 +958,25 @@ void UGBSquadSubsystem::GetFlyerNeighbours(const AGBEnemyCharacter* Enemy, TArra
 	}
 }
 
+float UGBSquadSubsystem::NearestRangedMateDistance(const AGBEnemyCharacter* Enemy) const
+{
+	float Best = 1.0e9f;
+	const FSquad* Squad = FindSquadOf(Enemy);
+	if (!Squad || !Enemy)
+	{
+		return Best;
+	}
+	for (const FMember& Member : Squad->Members)
+	{
+		const AGBEnemyCharacter* Other = Member.Enemy.Get();
+		if (Other && Other != Enemy && !Other->IsDead() && Other->GetSquadClass() == EGBSquadClass::RangedGround && Other->GetEraComponent()->IsPresent())
+		{
+			Best = FMath::Min(Best, float(FVector::Dist2D(Other->GetActorLocation(), Enemy->GetActorLocation())));
+		}
+	}
+	return Best;
+}
+
 bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& OutPoint, bool& bOutMayAttack) const
 {
 	const FSquad* Squad = FindSquadOf(Enemy);

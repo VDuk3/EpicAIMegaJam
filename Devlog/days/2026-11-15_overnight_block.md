@@ -75,6 +75,19 @@ on the legs. A plan only: what exists and what it needs is listed in the section
   So the moving bodies are written into the gas channel as velocity sources with outward divergence (the gas is pushed
   out of the sphere and dragged along), and the source reader is switched on. Velocity is composited by adding.
 - Placed by `Build-FutureBase.py` (stage deep only): the whole dark corridor and the last 15 m of the worn corridor.
+- **Tuned on the real map (architect, `8c67581`, `2d1fc75`).** First passes looked wrong in the captures, in order:
+  the test box sat half under the floor; then the gas filled the box like a wall; then a standing player blew the whole
+  box full (a constant outward push every frame); then the worn corridor was opaque. Fixes: the gas hangs low (density
+  buoyancy, gentler turbulence with no sideways bias, less small-scale force); a body pushes in proportion to its speed;
+  stronger, shorter shot pushes; at render, density range 0-5 with gain 0.1, so 15 m of it reads as layered smoke over
+  the floor. The dark corridor showed nothing at all: unlit smoke cannot be seen, so three dim cold emergency lights now
+  sit low on its walls, one flickering (provisional: the owner had asked for that corridor fully dark).
+- **Checked on the map, not only in the arena:** `gb.Smoke FogVisit` on FutureBase stands the player in each fog box and
+  checks that the gas simulates there, that a blob written by the game reaches the GPU simulation, that three shots and a
+  blast write into its channel (312 and 264 entries), and compares the frame time with the gas forced off: about 0.8 ms
+  (dark corridor) and 1.4 ms (worn corridor) offscreen on the RTX 4080 Laptop. The Sol review of this smoke found that it
+  passed even with no gas at all and that it compared two different lightings; both fixed (it now fails, and the lamp it
+  adds for the captures is gone before the gas-off sample).
 
 ## Point 5: one fight in every open zone of the castle (architect)
 - Measured the keep with traces in the Editor (`castle_probe2.py` in the scratchpad: a floor counts when 2 m above it are
@@ -86,6 +99,23 @@ on the legs. A plan only: what exists and what it needs is listed in the section
   (long sight lines: ranged at the far tower, barghests from behind), the King's Hall, the Side Hall, and the past
   Valkyrie alone in the Top Level's highest room, with a new navmesh volume for the Top Level. The first wave of each
   stands in its zone (patrol or guard) and the ranged enemies take the far spots.
+- **Checked on the map (`2d1fc75`):** `gb.Smoke CastleVisit` on PastCastle walks the player into each of the eight
+  fights in turn: every prespawned enemy stands on the floor inside its zone, notices the player, attacks; every later
+  wave comes, attacks and is killed; the fight ends Cleared. The past Valkyrie is awake on arrival, takes damage, combos,
+  casts Judgement and dies. What it found and what was fixed: two spawn points inside wall meshes (moved); the wall
+  walk's first point inside the corner tower (2.1 m of headroom, moved out); a builder check now traces 270 cm (the brute)
+  over every one of the 54 spawn points; wide archers that stalled near their firing spot never fired (they now fire from
+  where they stand); an enemy projectile's flight clip filled the screen when it hit the camera (hidden within 1.5 m); the
+  barghest and the brute were too dark at night (more sprite glow). The Sol review found that a wave that never attacked
+  only gave a warning; it now fails the run (all eight fights: waves engaged = waves that came).
+
+## Point 6: the castle's squad AI (block C, Opus subagent, audited by the architect, `9b49578`)
+- The castle's sprites run the future's squad AI through one "look" abstraction in `AGBSkeletalEnemy`: the same zones,
+  distance bands by style (shamans and centaurs far, orcs near, the brute through the middle), cover, attack tokens and
+  flanking. New opt-in tactics for the castle squads: a **pincer** (two attackers from opposite sides of the player),
+  **turns** between attackers, and **cornering** (they move to close the player's open sides, probing with traces).
+- Checked in the arena (`gb.Smoke Castle`, 3 of 3 green: tactics, ranged, waves) and on the map (CastleVisit's TACTICS
+  lines per squad: roles, cover, relocations).
 
 ## Assets brought in tonight (third party, Fab, from the owner's library)
 | Pack | Seller | Licence | Used for |
@@ -109,6 +139,23 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   hand-drawn `valki` sprite (the owner's, 75 x 93 px) sets the pixel Valkyrie's colours and scale.
 - **One AI for both eras:** the castle enemies use the future enemies' squad AI (`AGBSkeletalEnemy`) with a second,
   sprite "look", instead of a parallel pixel AI.
-- **The tunnel smoke is a real Grid 3D gas simulation** (Niagara Fluids), fed every frame through the plugin's two
-  global data channels (`NDC_Grid3D_Gas` sources, `NDC_FluidCollision` moving spheres) with the player, the shots and
-  the blasts, so it parts and swirls around them.
+- **The tunnel smoke is a real Grid 3D gas simulation** (Niagara Fluids), fed every frame through the plugin's gas data
+  channel (`NDC_Grid3D_Gas`; the collision channel has no reader, see point 4) with the player, the shots and the blasts,
+  so it parts and swirls around them.
+- **A flaky red in the final full smoke, fixed at its cause, not retried away:** the Enemies3D tactics check failed in
+  both full runs (two members within 200 cm for 4.5 s, then 6.1 s; limit 3.5) and passed in the filtered runs; before
+  tonight the full runs measured 0 to 2.1 s at the same spots. First case: an orc whose path ran into a robot at its
+  cover gave up moving and held there; second: a robot and an orc on their way to their positions walked together.
+  Now a ranged enemy that stays within 220 cm of a ranged squad mate for 1.5 s outside a peek (holding or moving) asks
+  the squad for a new position, which keeps 350 cm from every mate. The Sol review of the first version: the crowd test
+  counted melee mates the position search ignores (an endless relocation); fixed by counting the same members. The
+  check's failure line now also prints both speeds.
+- **CastleVisit's stricter wave check (Sol):** a later wave of melee-only enemies stays in its zone; if the player stood
+  outside it after the first wave, they could never reach him. The visit now steps the player in after 8 s without an
+  attack, as it already did for the first wave, before it fails a wave.
+- **Code reviews (Sol 6.1, Codex CLI, logged wrapper):** `Prompts/review_overnight_valkyrie_fog_sol.md`,
+  `review_overnight_castle_sol.md`, `review_overnight_visits_sol.md`. Every finding was fixed before the commit that
+  followed it.
+- **Tools used tonight** (for the submission's "Tools you used"): Unreal Engine 5.9 (Niagara, Niagara Fluids, IK
+  Retargeter, Editor MCP), Blender (the sprite baker), Fab (the packs above), Claude Code (Opus 5.5, Sonnet, Fable 5.2 as
+  advisor), Codex CLI (GPT-6.1 Sol for reviews).

@@ -1463,6 +1463,10 @@ namespace GBSmokeRun
 				RunningOn = Fog->IsSimulating();
 				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: running=%d hasSystem=%d extent=%s frameMs(on, last 2 s)=%.2f playerEntries=%d"),
 					Index, Fog->IsSimulating() ? 1 : 0, Fog->HasSystem() ? 1 : 0, *Fog->BoxExtent.ToString(), FrameOn, Fog->GetLastPlayerEntries());
+				if (!Fog->HasSystem() || !RunningOn)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit %d FAILED: the gas is not simulating with the player inside its box (hasSystem=%d running=%d)"), Index, Fog->HasSystem() ? 1 : 0, RunningOn ? 1 : 0);
+				}
 				Shot(*ShotName(TEXT("plain")));
 				break;
 			case 2:
@@ -1477,6 +1481,10 @@ namespace GBSmokeRun
 				break;
 			case 5:
 				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: blob step, most source entries written in the last second=%d"), Index, MaxSources);
+				if (MaxSources <= 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit %d FAILED: the injected blob wrote no source entry into the gas channel"), Index);
+				}
 				Shot(*ShotName(TEXT("blob")));
 				break;
 			case 6:
@@ -1495,6 +1503,12 @@ namespace GBSmokeRun
 				break;
 			case 8:
 				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: push step: shotEntriesTotal=%d sourceEntries=%d maxSources=%d"), Index, Fog->GetTotalShotEntriesWritten(), Fog->GetLastSourceEntries(), MaxSources);
+				if (Fog->GetTotalShotEntriesWritten() <= 0)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE FogVisit %d FAILED: the three shots through the gas wrote no entry into its channel"), Index);
+				}
+				// The off sample must see the same lighting as the on sample (taken before the lamp came).
+				SetLight(World, false);
 				Shot(*ShotName(TEXT("after")));
 				break;
 			case 9:
@@ -1506,7 +1520,6 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Display, TEXT("SMOKE FogVisit %d: running=%d extent=%s frameMs on=%.2f off=%.2f (running while off=%d)"),
 					Index, RunningOn ? 1 : 0, *Fog->BoxExtent.ToString(), FrameOn, FrameOff, Fog->IsSimulating() ? 1 : 0);
 				Fog->DebugForceOff(false);
-				SetLight(World, false);
 				++Index;
 				if (Index >= Fogs.Num())
 				{
@@ -2135,9 +2148,9 @@ namespace GBSmokeRun
 					{
 						// Which pair it was and what each was doing, so a failure can be read from the log.
 						const AGBSkeletalEnemy* SkeletalB = Cast<AGBSkeletalEnemy>(EnemyB);
-						E3TWorstWhere = FString::Printf(TEXT("%s at (%.0f, %.0f) state %d and %s at (%.0f, %.0f) state %d, %.0f cm apart"), *E3DGroup[A].Id.ToString(), EnemyA->GetActorLocation().X, EnemyA->GetActorLocation().Y,
-							static_cast<int32>(EnemyA->GetCombatState()), *E3DGroup[B].Id.ToString(), EnemyB->GetActorLocation().X, EnemyB->GetActorLocation().Y, SkeletalB ? static_cast<int32>(SkeletalB->GetCombatState()) : -1,
-							FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()));
+						E3TWorstWhere = FString::Printf(TEXT("%s at (%.0f, %.0f) state %d speed %.0f and %s at (%.0f, %.0f) state %d speed %.0f, %.0f cm apart"), *E3DGroup[A].Id.ToString(), EnemyA->GetActorLocation().X, EnemyA->GetActorLocation().Y,
+							static_cast<int32>(EnemyA->GetCombatState()), EnemyA->GetVelocity().Size2D(), *E3DGroup[B].Id.ToString(), EnemyB->GetActorLocation().X, EnemyB->GetActorLocation().Y, SkeletalB ? static_cast<int32>(SkeletalB->GetCombatState()) : -1,
+							EnemyB->GetVelocity().Size2D(), FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()));
 					}
 					E3TMaxClose = FMath::Max(E3TMaxClose, Time);
 				}
@@ -3820,6 +3833,7 @@ namespace GBSmokeRun
 		static TMap<TWeakObjectPtr<AGBEnemyCharacter>, int32> ProjBy;
 		static int32 WaveProjBase = 0;
 		static bool bWaveEngaged = false;
+		static bool bWaveSteppedIn = false;
 		static bool bWaveFloorChecked = false;
 		static TWeakObjectPtr<AGBValkyrieEnemy> Valk;
 		static float ValkHealthBefore = 0.f;
@@ -4234,6 +4248,30 @@ namespace GBSmokeRun
 			SetPhase(World, EPhase::Notice);
 		}
 
+		/** Melee members never leave their zone: a player standing outside it steps in, 5 m from the nearest living member. */
+		static void StepInside(UWorld* World, const AGBEncounter* Encounter, AGBPlayerCharacter* Player, const TCHAR* Why)
+		{
+			TArray<AGBEnemyCharacter*> Alive;
+			Living(Encounter, Alive);
+			if (Alive.Num() > 0)
+			{
+				const AGBEnemyCharacter* Nearest = Alive[0];
+				for (const AGBEnemyCharacter* Enemy : Alive)
+				{
+					Nearest = FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation()) < FVector::Dist(Nearest->GetActorLocation(), Player->GetActorLocation()) ? Enemy : Nearest;
+				}
+				FNavLocation Projected;
+				UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+				const FVector Toward = FootOf(Nearest) + (Player->GetActorLocation() - Nearest->GetActorLocation()).GetSafeNormal2D() * 500.f;
+				if (Nav && Nav->ProjectPointToNavigation(Toward, Projected, FVector(150.f, 150.f, 250.f)))
+				{
+					E3BTeleport(Player, Projected.Location, false);
+					Face(Player, Nearest->GetActorLocation());
+					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: %s with the player outside the zone: he steps in, 5 m from %s"), *IdOf(Encounter), Why, *Nearest->GetEnemyId().ToString());
+				}
+			}
+		}
+
 		static void FinishEncounter(UWorld* World)
 		{
 			const AGBEncounter* Encounter = Current();
@@ -4253,6 +4291,10 @@ namespace GBSmokeRun
 				UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: prespawned=%d inZone=%d onFloor=%d awareAfter=%.1fs hits=%d projectiles=%d held=%d attacks=%d cover=%d waves=%d/%d engaged=%d cleared=%d"),
 					*IdOf(Encounter), Entry ? Entry->Prespawned : -1, Entry ? Entry->InZone : -1, Entry ? Entry->OnFloor : -1, AwareAt >= 0.0 ? AwareAt - EncStart : -1.0, Hits, TotalProjectiles(),
 					Held, TotalAttacks(), Covered.Num(), WavesSeen, Encounter->GetNumWaves(), WavesEngaged, bCleared ? 1 : 0);
+				if (WavesEngaged < WavesSeen)
+				{
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: only %d of the %d waves that came attacked the player"), *IdOf(Encounter), WavesEngaged, WavesSeen);
+				}
 				if (!bCleared)
 				{
 					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: not Cleared after its waves were killed (state %d, wave %d of %d)"), *IdOf(Encounter), static_cast<int32>(Encounter->GetState()),
@@ -4380,25 +4422,7 @@ namespace GBSmokeRun
 				if (!bSteppedIn && InPhase > 6.0 && FirstAttackAt < 0.0 && Encounter && !Encounter->GetZone().IsInsideXY(Player->GetActorLocation()))
 				{
 					bSteppedIn = true;
-					TArray<AGBEnemyCharacter*> Alive;
-					Living(Encounter, Alive);
-					if (Alive.Num() > 0)
-					{
-						const AGBEnemyCharacter* Nearest = Alive[0];
-						for (const AGBEnemyCharacter* Enemy : Alive)
-						{
-							Nearest = FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation()) < FVector::Dist(Nearest->GetActorLocation(), Player->GetActorLocation()) ? Enemy : Nearest;
-						}
-						FNavLocation Projected;
-						UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-						const FVector Toward = FootOf(Nearest) + (Player->GetActorLocation() - Nearest->GetActorLocation()).GetSafeNormal2D() * 500.f;
-						if (Nav && Nav->ProjectPointToNavigation(Toward, Projected, FVector(150.f, 150.f, 250.f)))
-						{
-							E3BTeleport(Player, Projected.Location, false);
-							Face(Player, Nearest->GetActorLocation());
-							UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: no attack in 6 s with the player outside the zone: he steps in, 5 m from %s"), *IdOf(Encounter), *Nearest->GetEnemyId().ToString());
-						}
-					}
+					StepInside(World, Encounter, Player, TEXT("no attack in 6 s"));
 				}
 				if (!bShot && T - AwareAt > 4.0)
 				{
@@ -4457,6 +4481,7 @@ namespace GBSmokeRun
 					WaveProjBase = TotalProjectiles();
 					bWaveEngaged = false;
 					bWaveFloorChecked = false;
+					bWaveSteppedIn = false;
 					UE_LOG(LogGB, Display, TEXT("SMOKE CastleVisit %s: wave %d of %d came: %d enemies, %d in the player's view, wait ran out=%d"), *IdOf(Encounter), LastWave + 1, Encounter->GetNumWaves(),
 						Alive.Num(), Encounter->GetLastReinforceVisible(), Encounter->DidLastReinforceWaitRunOut() ? 1 : 0);
 					SetPhase(World, EPhase::WaveFight);
@@ -4515,6 +4540,11 @@ namespace GBSmokeRun
 						SetPhase(World, EPhase::Kill);
 					}
 				}
+				else if (!bWaveSteppedIn && InPhase > 8.0 && Alive.Num() > 0 && !Encounter->GetZone().IsInsideXY(Player->GetActorLocation()))
+				{
+					bWaveSteppedIn = true;
+					StepInside(World, Encounter, Player, *FString::Printf(TEXT("wave %d: no attack in 8 s"), LastWave + 1));
+				}
 				else if (InPhase > 16.0 || Alive.Num() == 0)
 				{
 					FString Where;
@@ -4522,7 +4552,7 @@ namespace GBSmokeRun
 					{
 						Where += FString::Printf(TEXT(" %s(%.0f cm, aware=%d)"), *Enemy->GetEnemyId().ToString(), FVector::Dist(Enemy->GetActorLocation(), Player->GetActorLocation()), Enemy->IsAware() ? 1 : 0);
 					}
-					UE_LOG(LogGB, Warning, TEXT("SMOKE CastleVisit %s: wave %d did not attack within 16 s:%s"), *IdOf(Encounter), LastWave + 1, *Where);
+					UE_LOG(LogGB, Error, TEXT("SMOKE CastleVisit %s FAILED: wave %d did not attack within 16 s:%s"), *IdOf(Encounter), LastWave + 1, *Where);
 					SetPhase(World, EPhase::Kill);
 				}
 				break;

@@ -789,6 +789,18 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 			SearchTimer = 0.f;
 		}
 	}
+	// Shoulder to shoulder with a ranged squad mate outside a peek, holding or on the way (its path ran into him, two routes
+	// that run together, both stopped short at the same spot): a new position (the search keeps SquadSpacing from every
+	// mate) instead of standing or walking there until the stay or the move timeout runs out.
+	if (Squad && bHasPosition && CState != ECombatState::Peek && Squad->NearestRangedMateDistance(this) < S(TEXT("CrowdDistance"), 220.f))
+	{
+		CrowdTimer += DeltaSeconds;
+	}
+	else
+	{
+		CrowdTimer = 0.f;
+	}
+	bRelocate |= CrowdTimer >= S(TEXT("CrowdTime"), 1.5f);
 	if (bRelocate && !bAwaitingPosition && RelocateCooldown <= 0.f && BurstPhase == EBurstPhase::Cooldown && Squad)
 	{
 		Squad->ReleaseToken(this);
@@ -796,6 +808,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 		bAwaitingPosition = true;
 		RelocateCooldown = S(TEXT("RelocateCooldown"), 1.5f);
 		CoverCompromisedTimer = 0.f;
+		CrowdTimer = 0.f;
 		NoLineTimer = 0.f;
 		SearchTimer = 0.f;
 		bShotBlocked = false;
