@@ -593,6 +593,12 @@ function build(name) {
     }
   }
   if (opt.box) { src = boxMesh(opt.box, src, opt.tile || 'stone'); opt.snap = 0; }
+  // Pieces that are already plain (the crypt's set, the arcades, the spiral stairs) and small things (cups, candles,
+  // tools, a chandelier: the grid would lose them) keep their own triangles with the tiles.
+  const maxExt = Math.max(...[0, 1, 2].map((q) => src.bounds[1][q] - src.bounds[0][q]));
+  if (opt.keep === undefined && (src.path.includes('/Candle/') || /Arch_Walkway|Spiral_Stairs|Chandelier|ChainLink/.test(name) || (prop && maxExt < 60))) opt.keep = true;
+  if (/Window/.test(name) && (CFG[name] || {}).close === undefined) opt.close = 0;   // a lancet is narrower than the fill's closing
+  if (opt.hull) return hullTwin(name, src, opt);
   if (opt.keep) return keepSource(name, src, opt);
   // A window's iron lattice fills its opening: it is left out (the map's builder sets an unseen pane in every opening).
   const drop = opt.drop || (/Window/.test(name) ? ['iron', 'glass'] : ['glass']);
@@ -635,6 +641,19 @@ function build(name) {
         const thin = [0, 1, 2].reduce((m, a) => (ext[a] < ext[m] ? a : m), 0);
         if ([0, 1, 2].every((a) => a === thin || ext[thin] < 0.5 * ext[a])) ax = thin;
       }
+      vx.throughAxis = ax;
+      if (ax !== undefined && ax !== null && /Window/.test(name) && po.windowsOpen !== false) {
+        // a window here is a recess with a pane at the back; in plain blocks it is a real opening (the map's builder
+        // sets an unseen pane in it): a column much thinner than the wall is emptied
+        const ua = (ax + 1) % 3, va = (ax + 2) % 3, hist = {};
+        const cnt = (i, j) => { let c = 0; for (let k = 0; k < vx.n[ax]; k++) { const cc = [0, 0, 0]; cc[ax] = k; cc[ua] = i; cc[va] = j; c += vx.solid[vx.idx(cc[0], cc[1], cc[2])]; } return c; };
+        for (let i = 0; i < vx.n[ua]; i++) for (let j = 0; j < vx.n[va]; j++) { const c = cnt(i, j); if (c) hist[c] = (hist[c] || 0) + 1; }
+        const T = +Object.entries(hist).sort((a, b) => b[1] - a[1])[0][0];
+        for (let i = 0; i < vx.n[ua]; i++) for (let j = 0; j < vx.n[va]; j++) {
+          const c = cnt(i, j);
+          if (c > 0 && c < 0.65 * T) for (let k = 0; k < vx.n[ax]; k++) { const cc = [0, 0, 0]; cc[ax] = k; cc[ua] = i; cc[va] = j; vx.solid[vx.idx(cc[0], cc[1], cc[2])] = 0; }
+        }
+      }
       if (ax !== undefined && ax !== null) {
         const ua = (ax + 1) % 3, va = (ax + 2) % 3, hits = vx.hitsBy[ax];
         const ya = ((po.yaw || 0) * Math.PI) / 180, c = Math.cos(ya), sn = Math.sin(ya);
@@ -676,6 +695,25 @@ function build(name) {
     // (25 cm), each solid when most of its volume is. Nothing smaller than a coarse cell survives on a face.
     if (po.coarse && po.coarse > 1) {
       const F = po.coarse, nC = vx.n.map((x) => Math.round(x / F)), G = vx.g * F;
+      // a fine column the wall's thickness leaves empty is an opening (a lancet window 30 cm wide is narrower than two
+      // blocks): a block a third of whose columns are open stays open
+      let openCol = null;
+      const tax = vx.throughAxis;
+      if (tax !== undefined && tax !== null) {
+        const ua = (tax + 1) % 3, va = (tax + 2) % 3;
+        openCol = new Uint8Array(vx.n[ua] * vx.n[va]);
+        let anyAt = new Uint8Array(vx.n[ua] * vx.n[va]);
+        for (let i = 0; i < vx.n[ua]; i++) for (let j = 0; j < vx.n[va]; j++) {
+          let c = 0;
+          for (let k = 0; k < vx.n[tax]; k++) { const cc = [0, 0, 0]; cc[tax] = k; cc[ua] = i; cc[va] = j; c += vx.solid[vx.idx(cc[0], cc[1], cc[2])]; }
+          openCol[i * vx.n[va] + j] = c === 0 ? 1 : 0;
+        }
+        // only openings inside the piece count: an empty column outside its outline is not a window
+        const W = vx.n[ua], Hh = vx.n[va], inside = new Uint8Array(W * Hh);
+        for (let i = 0; i < W; i++) { let a = -1, b = -1; for (let j = 0; j < Hh; j++) if (!openCol[i * Hh + j]) { if (a < 0) a = j; b = j; } for (let j = a; j >= 0 && j <= b; j++) inside[i * Hh + j]++; }
+        for (let j = 0; j < Hh; j++) { let a = -1, b = -1; for (let i = 0; i < W; i++) if (!openCol[i * Hh + j]) { if (a < 0) a = i; b = i; } for (let i = a; i >= 0 && i <= b; i++) inside[i * Hh + j]++; }
+        for (let q = 0; q < W * Hh; q++) openCol[q] = openCol[q] && inside[q] === 2 ? 1 : 0;
+      }
       const idxC = (x, y, z) => (x * nC[1] + y) * nC[2] + z;
       const sc = new Uint8Array(nC[0] * nC[1] * nC[2]);
       for (let x = 0; x < nC[0]; x++) for (let y = 0; y < nC[1]; y++) for (let z = 0; z < nC[2]; z++) {
@@ -685,6 +723,44 @@ function build(name) {
           if (X < vx.n[0] && Y < vx.n[1] && Z < vx.n[2]) c += vx.solid[vx.idx(X, Y, Z)];
         }
         if (c * 2 >= F * F * F) sc[idxC(x, y, z)] = 1;
+        if (openCol && sc[idxC(x, y, z)]) {
+          const ua = (tax + 1) % 3, va = (tax + 2) % 3, cc = [x, y, z];
+          let o = 0;
+          for (let a = 0; a < F; a++) for (let b = 0; b < F; b++) {
+            const i = cc[ua] * F + a, j = cc[va] * F + b;
+            if (i < vx.n[ua] && j < vx.n[va]) o += openCol[i * vx.n[va] + j];
+          }
+          if (o * 8 >= F * F) sc[idxC(x, y, z)] = 0;      // an arrow slit 10-15 cm wide becomes a block-wide opening
+        }
+      }
+      // a window is a clean rectangle: each opening through the wall is cut to its whole bounding box
+      if (openCol && /Window/.test(name)) {
+        const ua = (tax + 1) % 3, va = (tax + 2) % 3, W = nC[ua], Hh = nC[va];
+        const at = (i, j, k) => { const c = [0, 0, 0]; c[tax] = k; c[ua] = i; c[va] = j; return idxC(c[0], c[1], c[2]); };
+        const col = new Uint8Array(W * Hh), has = new Uint8Array(W * Hh);
+        for (let i = 0; i < W; i++) for (let j = 0; j < Hh; j++) { let c = 0; for (let k = 0; k < nC[tax]; k++) c += sc[at(i, j, k)]; has[i * Hh + j] = c ? 1 : 0; }
+        // empty columns inside the outline (solid somewhere left and right, and above and below)
+        for (let i = 0; i < W; i++) for (let j = 0; j < Hh; j++) {
+          if (has[i * Hh + j]) continue;
+          let l = 0, r = 0, d = 0, u = 0;
+          for (let q = 0; q < i; q++) l |= has[q * Hh + j];
+          for (let q = i + 1; q < W; q++) r |= has[q * Hh + j];
+          for (let q = 0; q < j; q++) d |= has[i * Hh + q];
+          for (let q = j + 1; q < Hh; q++) u |= has[i * Hh + q];
+          col[i * Hh + j] = l && r && d && u ? 1 : 0;
+        }
+        const seen = new Uint8Array(W * Hh);
+        for (let st = 0; st < W * Hh; st++) {
+          if (!col[st] || seen[st]) continue;
+          const comp = [st]; seen[st] = 1;
+          let i0 = 1e9, i1 = -1, j0 = 1e9, j1 = -1;
+          for (let q = 0; q < comp.length; q++) {
+            const c = comp[q], i = Math.floor(c / Hh), j = c % Hh;
+            i0 = Math.min(i0, i); i1 = Math.max(i1, i); j0 = Math.min(j0, j); j1 = Math.max(j1, j);
+            for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + di, y = j + dj; if (x >= 0 && y >= 0 && x < W && y < Hh && col[x * Hh + y] && !seen[x * Hh + y]) { seen[x * Hh + y] = 1; comp.push(x * Hh + y); } }
+          }
+          for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) for (let k = 0; k < nC[tax]; k++) sc[at(i, j, k)] = 0;
+        }
       }
       const hitsBy = [0, 1, 2].map((axis) => castAxis(vx.V, s.t, s.m, axis, G, vx.lo, nC));
       Object.assign(vx, { solid: sc, n: nC, g: G, idx: idxC, hitsBy });
@@ -766,11 +842,61 @@ function build(name) {
   // too many boxes for simple collision: the importer uses the twin's own faces (few, flat) instead
   const out = { name, path: src.path, grid: opt.grid, sections, boxes: boxList.length <= opt.maxBoxes ? boxList : null, nboxes: boxList.length, tris };
   fs.writeFileSync(path.join(OUT, name + '.json'), JSON.stringify(out));
-  return { name, srcTris: src.t.length / 3, tris, cells, snapped, lone, boxes: boxList.length, kinds: Object.keys(sections).join('+') };
+  return { name, srcTris: src.t.length / 3, tris, cells, snapped, lone, boxes: boxList.length, kinds: Object.keys(sections).join('+'), coarse: opt.coarse };
 }
 
 // A piece that is already plain and light (the crypt's vaults, the spiral stairs: a few hundred smooth triangles) keeps
 // its own triangles; it only gets the tiles, laid on each triangle by the axis it faces most.
+// A roof is a plain solid: the convex hull of a few points (a gable, a hip, a cone), in place of the pack's shingles.
+// hull = [[x, y, z], ...] or {"cone": [cx, cy, z0, radius, z1, sides]}.
+function hullTwin(name, src, opt) {
+  let P = opt.hull;
+  if (P.cone) {
+    const [cx, cy, z0, r, z1, n] = P.cone;
+    P = [[cx, cy, z1]];
+    for (let i = 0; i < n; i++) { const a = (i + 0.5) / n * 2 * Math.PI; P.push([cx + r * Math.cos(a), cy + r * Math.sin(a), z0]); }
+  }
+  const kind = opt.tile || 'roof';
+  const sec = { v: [], n: [], uv: [], t: [] };
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const planes = [];
+  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) for (let k = j + 1; k < P.length; k++) {
+    let nr = cross(sub(P[j], P[i]), sub(P[k], P[i]));
+    const ln = Math.hypot(...nr);
+    if (ln < 1e-6) continue;
+    nr = nr.map((x) => x / ln);
+    let pos = 0, neg = 0;
+    for (const q of P) { const d = dot(nr, sub(q, P[i])); if (d > 0.5) pos++; else if (d < -0.5) neg++; }
+    if (pos && neg) continue;
+    if (pos) nr = nr.map((x) => -x);
+    const d = dot(nr, P[i]);
+    if (planes.some((p) => dot(p[0], nr) > 0.9999 && Math.abs(p[1] - d) < 0.5)) continue;
+    planes.push([nr, d]);
+  }
+  for (const [nr, d] of planes) {
+    const on = P.filter((q) => Math.abs(dot(nr, q) - d) < 0.5);
+    const c = on.reduce((a, q) => a.map((x, i) => x + q[i] / on.length), [0, 0, 0]);
+    const u0 = sub(on[0], c), u = u0.map((x) => x / Math.hypot(...u0)), w = cross(nr, u);
+    on.sort((a, b) => Math.atan2(dot(sub(a, c), w), dot(sub(a, c), u)) - Math.atan2(dot(sub(b, c), w), dot(sub(b, c), u)));
+    // tile laid on the face's own plane: across along its horizontal, down its slope
+    let hx = cross([0, 0, 1], nr); if (Math.hypot(...hx) < 1e-3) hx = [1, 0, 0]; hx = hx.map((x) => x / Math.hypot(...hx));
+    const dn = cross(nr, hx);
+    const base = sec.v.length / 3;
+    for (const q of on) {
+      sec.v.push(...q.map((x) => Math.round(x * 1000) / 1000));
+      sec.uv.push(Math.round(dot(q, hx) / 100 * 10000) / 10000, Math.round(-dot(q, dn) / 100 * 10000) / 10000);
+      sec.n.push(...nr);
+    }
+    for (let q = 1; q + 1 < on.length; q++) sec.t.push(base, base + q, base + q + 1);
+  }
+  const sections = { [kind]: sec };
+  const tris = sec.t.length / 3;
+  fs.writeFileSync(path.join(OUT, name + '.json'), JSON.stringify({ name, path: src.path, grid: 0, sections, boxes: null, nboxes: 0, tris }));
+  return { name, srcTris: src.t.length / 3, tris, cells: 0, snapped: 0, lone: 0, boxes: 0, kinds: kind + ' (hull)' };
+}
+
 function keepSource(name, src, opt) {
   const kinds = src.mats.map((m) => (opt.tiles && opt.tiles[m]) || opt.tile || tileFor(m));
   const sections = {};
@@ -806,7 +932,8 @@ for (const name of names) {
   try {
     let r = build(name);
     // nothing gained: a plain piece of the pack that the grid would only make heavier keeps its own triangles
-    if (!r.kinds.includes('(kept)') && r.tris > r.srcTris && r.srcTris <= 3000 && !(CFG[name] && (CFG[name].voxel || CFG[name].box))) {
+    if (!r.tris && !(CFG[name] && CFG[name].box)) r = keepSource(name, load(name), Object.assign({}, DEF, CFG[name] || {}));   // too thin for the grid (a lid, a floor tile): its own faces
+    if (!r.kinds.includes('(kept)') && !r.coarse && r.tris > r.srcTris && r.srcTris <= 3000 && !(CFG[name] && (CFG[name].voxel || CFG[name].box))) {
       r = keepSource(name, load(name), Object.assign({}, DEF, CFG[name] || {}));
     }
     console.log(`${r.name.padEnd(44)} ${String(r.srcTris).padStart(7)} -> ${String(r.tris).padStart(5)} tris  boxes ${String(r.boxes).padStart(4)}  snapped ${r.snapped} lone ${r.lone}  ${r.kinds}  ${Date.now() - t0} ms`);

@@ -96,9 +96,82 @@ def master():
     ok = [MEL.connect_material_expressions(sample, 'RGB', col, 'A'), MEL.connect_material_expressions(rgb, '', col, 'B')]
     if not all(ok):
         log.append('M_PxTile: a connection failed %s' % ok)
+    # Two pieces of the author's that overlap on one plane would fight for the pixel (the keep's corner pillars inside its
+    # walls). Each piece is moved toward the camera by its own fraction of a centimetre, drawn from its position: the
+    # faces separate, nothing visible moves.
+    opos = node(unreal.MaterialExpressionObjectPositionWS, -1100, 400)
+    seed = node(unreal.MaterialExpressionDotProduct, -950, 400)
+    seedc = node(unreal.MaterialExpressionConstant3Vector, -1100, 500, constant=unreal.LinearColor(0.1291, 0.7823, 0.3772, 0))
+    MEL.connect_material_expressions(opos, '', seed, 'A')
+    MEL.connect_material_expressions(seedc, '', seed, 'B')
+    sn = node(unreal.MaterialExpressionSine, -800, 400)
+    MEL.connect_material_expressions(seed, '', sn, '')
+    big = node(unreal.MaterialExpressionMultiply, -700, 400, const_b=43758.5453)
+    MEL.connect_material_expressions(sn, '', big, 'A')
+    fr = node(unreal.MaterialExpressionFrac, -600, 400)
+    MEL.connect_material_expressions(big, '', fr, '')
+    amt = node(unreal.MaterialExpressionMultiply, -500, 400, const_b=0.8)
+    MEL.connect_material_expressions(fr, '', amt, 'A')
+    # toward the camera (the camera vector node is not allowed in the vertex shader): normalize(camera - position)
+    cpos = node(unreal.MaterialExpressionCameraPositionWS, -800, 550)
+    wpos = node(unreal.MaterialExpressionWorldPosition, -800, 650)
+    tocam = node(unreal.MaterialExpressionSubtract, -650, 600)
+    MEL.connect_material_expressions(cpos, '', tocam, 'A')
+    MEL.connect_material_expressions(wpos, '', tocam, 'B')
+    cam = node(unreal.MaterialExpressionNormalize, -500, 550)
+    MEL.connect_material_expressions(tocam, '', cam, '')
+    wpo = node(unreal.MaterialExpressionMultiply, -350, 450)
+    MEL.connect_material_expressions(cam, '', wpo, 'A')
+    MEL.connect_material_expressions(amt, '', wpo, 'B')
+    MEL.connect_material_property(wpo, '', unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
     rough = node(unreal.MaterialExpressionConstant, -300, 100, r=0.92)
     MEL.connect_material_property(col, '', unreal.MaterialProperty.MP_BASE_COLOR)
     MEL.connect_material_property(rough, '', unreal.MaterialProperty.MP_ROUGHNESS)
+    MEL.recompile_material(m)
+    eal.save_asset(path, only_if_is_dirty=False)
+    return m
+
+
+def master_world():
+    """The twins' material: the game's own world-aligned pixel surface (M_PixelSurface: the tile laid on the world by
+    the face's dominant axis, nearest filter), copied, drawn two-sided and with the per-piece depth nudge. Courses run on
+    from one module to the next and round a corner without a step."""
+    path = DIR + '/M_PxWorld'
+    if eal.does_asset_exist(path):
+        eal.delete_asset(path)
+    m = eal.duplicate_asset('/Game/Glyphbound/Materials/M_PixelSurface', path)
+    m.set_editor_property('two_sided', True)
+
+    def node(cls, x, y, **props):
+        e = MEL.create_material_expression(m, cls, x, y)
+        for k, v in props.items():
+            e.set_editor_property(k, v)
+        return e
+    opos = node(unreal.MaterialExpressionObjectPositionWS, -1100, 700)
+    seedc = node(unreal.MaterialExpressionConstant3Vector, -1100, 800, constant=unreal.LinearColor(0.1291, 0.7823, 0.3772, 0))
+    seed = node(unreal.MaterialExpressionDotProduct, -950, 700)
+    MEL.connect_material_expressions(opos, '', seed, 'A')
+    MEL.connect_material_expressions(seedc, '', seed, 'B')
+    sn = node(unreal.MaterialExpressionSine, -800, 700)
+    MEL.connect_material_expressions(seed, '', sn, '')
+    big = node(unreal.MaterialExpressionMultiply, -700, 700, const_b=43758.5453)
+    MEL.connect_material_expressions(sn, '', big, 'A')
+    fr = node(unreal.MaterialExpressionFrac, -600, 700)
+    MEL.connect_material_expressions(big, '', fr, '')
+    amt = node(unreal.MaterialExpressionMultiply, -500, 700, const_b=0.8)
+    MEL.connect_material_expressions(fr, '', amt, 'A')
+    cpos = node(unreal.MaterialExpressionCameraPositionWS, -800, 850)
+    wpos = node(unreal.MaterialExpressionWorldPosition, -800, 950)
+    tocam = node(unreal.MaterialExpressionSubtract, -650, 900)
+    MEL.connect_material_expressions(cpos, '', tocam, 'A')
+    MEL.connect_material_expressions(wpos, '', tocam, 'B')
+    cam = node(unreal.MaterialExpressionNormalize, -500, 900)
+    MEL.connect_material_expressions(tocam, '', cam, '')
+    wpo = node(unreal.MaterialExpressionMultiply, -350, 800)
+    MEL.connect_material_expressions(cam, '', wpo, 'A')
+    MEL.connect_material_expressions(amt, '', wpo, 'B')
+    MEL.connect_material_property(wpo, '', unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    # (the tile follows the nudge by under a centimetre: an eighth of a texel)
     MEL.recompile_material(m)
     eal.save_asset(path, only_if_is_dirty=False)
     return m
@@ -129,7 +202,7 @@ def materials():
         eal.make_directory(DIR + '/Tiles')
     for pic, _ in set(KINDS.values()) | set((v[0], v[1]) for v in EXTRA.values()):
         import_tile(pic)
-    parent = master()
+    parent = master()         # (master_world, the world-aligned copy, striped these meshes: their normals do not pick the plane well)
     out = {}
     world = unreal.load_asset('/Game/Glyphbound/Materials/M_PixelSurface')
     for kind, (pic, cm) in list(KINDS.items()) + [(k, (v[0], float(v[1]))) for k, v in EXTRA.items()]:

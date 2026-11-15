@@ -55,6 +55,10 @@ PX = '/Game/Glyphbound/Castle/Pixel/'
 _twins = {}
 
 
+# The author's loose dressed stones, bricks and slabs, dotted over the keep's faces; the builder's own thresholds use
+# SM_BlockC, which stays.
+PIXEL_DROP = ('SM_BlockA', 'SM_BlockB', 'SM_BrickA', 'SM_SlabA', 'SM_SlabB')
+
 def pixel(stage):
     return LOOK == 'pixel' and (PIXEL_STAGES is None or stage in PIXEL_STAGES)
 
@@ -130,6 +134,8 @@ def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=Tr
     if pixel(stage) and path.startswith(CT):
         if 'SeamHider' in path:
             return None             # it hides the joint between two sculpted modules; the flat twins meet on the same planes
+        if path.split('/')[-1] in PIXEL_DROP:
+            return None             # the author's loose stones and slabs on the towers' faces: in plain blocks they read as faults
         tw = twin(path)
         if tw:
             # an override that gives the whole piece one material (the terraces paved in stone instead of the author's
@@ -590,7 +596,7 @@ async def stage_crypt():
     log.append('crypt: stair of four flights from the Main Hall, three cells, the seal\'s hall at Z %d' % CRYPT_Z)
 
 
-WINDOW_KEY = 'SM_CastleTower_Window_A_'
+WINDOW_KEY = 'CastleTower_Window_A_'     # the pack's walls with a window and their pixel twins (SM_Px_...)
 _wall_axes = {}
 
 
