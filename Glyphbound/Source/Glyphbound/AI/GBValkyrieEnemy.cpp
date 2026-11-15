@@ -1451,8 +1451,23 @@ void AGBValkyrieEnemy::FireVolley(AActor* Goal)
 				{
 					Shape->SetVisibility(false);
 				}
-				UNiagaraFunctionLibrary::SpawnSystemAttached(BallFx, Shot->GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator,
-					EAttachLocation::KeepRelativeOffset, true);
+				UNiagaraComponent* BallComp = UNiagaraFunctionLibrary::SpawnSystemAttached(BallFx, Shot->GetRootComponent(), NAME_None,
+					FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+				if (BallComp)
+				{
+					// on impact the ball is gone, but its smoke is not cut: the system is left in the world, stops emitting
+					// (Deactivate) and its smoke fades on its own before the component auto-destroys
+					TWeakObjectPtr<UNiagaraComponent> WeakBall(BallComp);
+					Shot->OnImpact.AddLambda([WeakBall](AGBProjectile*, AActor*, const FVector&)
+					{
+						if (UNiagaraComponent* Ball = WeakBall.Get())
+						{
+							Ball->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+							Ball->SetVariableFloat(FName(TEXT("Alive")), 0.f);
+							Ball->Deactivate();
+						}
+					});
+				}
 			}
 			if (BurstFx)
 			{
