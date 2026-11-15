@@ -162,6 +162,17 @@ AGBEntity::AGBEntity()
 	}
 }
 
+// The tentacle boss (owner, 2026-11-15: the machine at the end of the base's deep wing). Opt-in by the stat TentacleBoss = 1:
+// it alternates hunting the player (TB_ChaseTime s, closing to TB_ChaseKeep cm) with keeping away (TB_RangeTime s, out to
+// TB_RangeKeep cm); its attack is a tentacle lash when the player is within TB_WhipReach of the shell (TB_WhipDamage), else a
+// fan of TB_FanCount bolts over TB_FanDeg from several tentacle tips (chance TB_FanChance, cooldown TB_FanCooldown), else one
+// bolt. File-local state: no header change.
+namespace GBTentacleBoss
+{
+	struct FState { bool bChasing = true; float ModeLeft = 0.f; float FanCooldown = 0.f; };
+	static TMap<TWeakObjectPtr<const AGBEntity>, FState> States;
+}
+
 void AGBEntity::BeginPlay()
 {
 	Super::BeginPlay();
@@ -598,6 +609,54 @@ void AGBEntity::PerformAttack()
 		return;
 	}
 
+	if (StatOr(TEXT("TentacleBoss"), 0.f) > 0.5f)
+	{
+		GBTentacleBoss::FState& Boss = GBTentacleBoss::States.FindOrAdd(this);
+		const FVector Shell = GetShellCentreWorld();
+		const FVector GoalPos = Goal->GetActorLocation();
+		if (FVector::Dist2D(Shell, GoalPos) <= StatOr(TEXT("TB_WhipReach"), 600.f))
+		{
+			// the lash: the nearest tentacle has reached for the player through the windup; now it strikes
+			FGBDamageInfo Info;
+			Info.Amount = StatOr(TEXT("TB_WhipDamage"), 25.f);
+			Info.Element = Def->Element;
+			Info.Instigator = this;
+			Info.Causer = this;
+			Info.SourceId = EnemyId;
+			Info.HitLocation = GoalPos;
+			Info.HitDirection = (GoalPos - Shell).GetSafeNormal2D();
+			UGBCombatLibrary::DealDamage(Goal, Info);
+			FlashTentacles(Tuning.TentacleFlashShot);
+			if (TentacleRig)
+			{
+				TentacleRig->ClearReach();
+				TentacleRig->AddRipple(GetGameValue(GBEntityTentacle::RippleStrength, GBEntityTentacle::RippleStrengthDefault));
+			}
+			return;
+		}
+		if (Boss.FanCooldown <= 0.f && FMath::FRand() < StatOr(TEXT("TB_FanChance"), 0.4f))
+		{
+			// the fan: several tentacle tips fire at once, spread around the line to the player
+			const int32 Count = FMath::Clamp(FMath::RoundToInt(StatOr(TEXT("TB_FanCount"), 5.f)), 2, 12);
+			const float Fan = StatOr(TEXT("TB_FanDeg"), 40.f);
+			const int32 Chains = TentacleRig && TentacleRig->IsReady() ? TentacleRig->GetChainCount() : 0;
+			const int32 First = Chains > 0 ? FMath::RandRange(0, Chains - 1) : 0;
+			for (int32 Index = 0; Index < Count; ++Index)
+			{
+				const FVector Origin = Chains > 0 ? TentacleRig->GetChainTipWorldPosition((First + Index * 3) % Chains) : GetChestLocation();
+				FVector Direction = GoalPos - Origin;
+				if (Direction.IsNearlyZero())
+				{
+					Direction = GetActorForwardVector();
+				}
+				const float Yaw = FMath::Lerp(-Fan * 0.5f, Fan * 0.5f, static_cast<float>(Index) / (Count - 1));
+				FireBolt(Goal, Origin, Direction.RotateAngleAxis(Yaw, FVector::UpVector), 0.f);
+			}
+			Boss.FanCooldown = StatOr(TEXT("TB_FanCooldown"), 4.f);
+			return;
+		}
+	}
+
 	const FVector Origin = GetAttackOrigin(Goal);
 	FVector Direction = Goal->GetActorLocation() - Origin;
 	if (Direction.IsNearlyZero())
@@ -1023,7 +1082,39 @@ void AGBEntity::Tick(float DeltaSeconds)
 	{
 		ForcedStrafeTime -= DeltaSeconds;
 	}
-	if (bActive)
+	bool bBossChasing = false;
+	if (bActive && StatOr(TEXT("TentacleBoss"), 0.f) > 0.5f)
+	{
+		GBTentacleBoss::FState& Boss = GBTentacleBoss::States.FindOrAdd(this);
+		Boss.FanCooldown = FMath::Max(0.f, Boss.FanCooldown - DeltaSeconds);
+		Boss.ModeLeft -= DeltaSeconds;
+		if (Boss.ModeLeft <= 0.f)
+		{
+			Boss.bChasing = !Boss.bChasing;
+			Boss.ModeLeft = Boss.bChasing ? StatOr(TEXT("TB_ChaseTime"), 6.f) : StatOr(TEXT("TB_RangeTime"), 3.f);
+		}
+		FVector ToGoal = Goal->GetActorLocation() - GetActorLocation();
+		ToGoal.Z = 0.f;
+		const float Distance = ToGoal.Size();
+		const FVector Dir = ToGoal.GetSafeNormal();
+		if (Boss.bChasing)
+		{
+			// hunting: straight at the player, through windups and recoveries too
+			bBossChasing = true;
+			if (Distance > StatOr(TEXT("TB_ChaseKeep"), 350.f))
+			{
+				AddMovementInput(Dir, 1.f);
+				bStrafingLastTick = true;
+			}
+		}
+		else if (Distance < StatOr(TEXT("TB_RangeKeep"), 1600.f) && !IsDirectionBlocked(-Dir, Tuning.StrafeProbe * Tuning.Scale, Goal))
+		{
+			// keeping away for a while: it backs off and shoots (the strafe below circles meanwhile)
+			AddMovementInput(-Dir, 1.f);
+			bStrafingLastTick = true;
+		}
+	}
+	if (bActive && !bBossChasing)
 	{
 		const float AttackRange = Stats->GetStat(GBStat::AttackRange, 0.f);
 		const bool bFighting = !bAttackSuppressed && AttackRange > 0.f

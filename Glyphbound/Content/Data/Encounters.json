@@ -1110,6 +1110,36 @@
 			"Rewards": []
 		},
 		{
+			"Comment": "The tentacle boss (owner, 2026-11-15): the machine (Entity_Phase1) in the deep wing's last hall, at the end of the dark corridor. Prespawned, waiting in the hall. Two objects as the reward (owner: two items; which ones are provisional). Its cleared flag opens P3 under the shaft of light.",
+			"Id": "Boss_Tentacle",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Entity_Phase1",
+							"Count": 1,
+							"Behavior": "Guard"
+						}
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": [
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 1
+				}
+			]
+		},
+		{
 			"Comment": "Provisional (site code needs): mini-boss, the Herald. 3 skill points, the rifle as a crate reward.",
 			"Id": "MiniBoss_Herald",
 			"Waves": [
