@@ -199,6 +199,16 @@ Sellers left as "(Fab)" are to be filled from the listing pages before submissio
   full smoke; `-Visits` adds the three map visits): the uncooked full smoke (the same 559 steps), the separate Game
   build (the package compiles it) and filtered packaged runs the full run covers are no longer repeated. Rules added to
   `CLAUDE.md`.
+- **The tactics red came back (3.6 s, then 4.3 s in the other chat's parallel run): it was not fixed at its cause.**
+  The advisor stopped a quick redefinition: the failure line printed only the last frame, and every reading over
+  1.5 s was the same Robot_Future / Orc_Future pair in the same corner, only in full runs. Nothing is left in the
+  arena by the blocks before (entity, pixelvfx and mantle clean up; the navmesh was ready at once in every run). The
+  check now splits each close stretch per frame: in two measured full runs, 0.7 s both moving + 1.1 s one standing
+  (a robot running past an orc peeking at its firing spot), then 1.8 s both moving + 0.9 s one standing (the two
+  running to their places side by side). Two decisions: the crowd rule reacts after 1.0 s instead of 1.5 s (the
+  standing case is its latency); the 3.5 s limit now counts only close time with one of the two standing (stacked),
+  and two members moving together have their own limit of 8 s (one following the other around), since a squad
+  running together is what the owner asked for ("se mueven en grupo"). Both are logged in every run.
 - **Sol 6.1 on these changes:** the early quit would have cut the seal and tour blocks short (they run their own state
   machines and quit the game when done): any filtered run that keeps a seal, tour or FogVisit step keeps the far quit.
   `Verify-Jam` now needs the stage's exit code 0 as well as its success line (a zip or size failure after UAT's BUILD

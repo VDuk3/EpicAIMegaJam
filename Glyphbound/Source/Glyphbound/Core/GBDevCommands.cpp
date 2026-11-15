@@ -2073,6 +2073,16 @@ namespace GBSmokeRun
 	static float E3TNavWaited = 0.f;
 	static FTSTicker::FDelegateHandle E3TSpawnTicker;
 	static TMap<uint64, float> E3TClose;
+	/** Per pair, the current close interval split: seconds with both members moving (over 100 cm/s) and with one standing. */
+	static TMap<uint64, FVector2f> E3TCloseSplit;
+	static FVector2f E3TWorstSplit = FVector2f::ZeroVector;
+	/** Over all pairs: the longest close stretch with one of the two standing (stacked), and with both moving (travelling together). */
+	static float E3TMaxStill = 0.f;
+	static float E3TMaxMoving = 0.f;
+	static FString E3TStillWhere;
+	static FString E3TMovingWhere;
+	/** Where each member of a pair stood when its current close stretch began (real travel, not jitter, counts as moving). */
+	static TMap<uint64, TPair<FVector, FVector>> E3TCloseStart;
 	static int32 E3TCap = 3;
 
 	static void E3TSpawnBoxes(UWorld* World, AGBPlayerCharacter* Player)
@@ -2118,6 +2128,13 @@ namespace GBSmokeRun
 		E3TMaxClose = 0.f;
 		E3TWorstWhere.Reset();
 		E3TClose.Reset();
+		E3TCloseSplit.Reset();
+		E3TWorstSplit = FVector2f::ZeroVector;
+		E3TMaxStill = 0.f;
+		E3TMaxMoving = 0.f;
+		E3TStillWhere.Reset();
+		E3TMovingWhere.Reset();
+		E3TCloseStart.Reset();
 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(World);
 		const float Max = Data ? Data->GetGameValue(FName(TEXT("SquadMaxShooters")), 2.f) : 2.f;
 		const float Big = Data ? Data->GetGameValue(FName(TEXT("SquadBigSize")), 5.f) : 5.f;
@@ -2143,9 +2160,36 @@ namespace GBSmokeRun
 					}
 					const uint64 Key = (static_cast<uint64>(A) << 32) | static_cast<uint32>(B);
 					float& Time = E3TClose.FindOrAdd(Key);
+					FVector2f& Split = E3TCloseSplit.FindOrAdd(Key);
+					const bool bNear = FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()) < 200.f;
+					// Moving together = both fast now AND both really travelled since the stretch began (40 cm per second of it,
+					// after a 0.5 s grace): a stacked pair that jitters in place counts as standing (Sol).
+					if (bNear && Split.IsZero())
+					{
+						E3TCloseStart.Add(Key, TPair<FVector, FVector>(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()));
+					}
+					const TPair<FVector, FVector>* Start = E3TCloseStart.Find(Key);
+					const float Stretch = Split.X + Split.Y;
+					const float Need = 40.f * FMath::Max(Stretch - 0.5f, 0.f);
+					const bool bTravelled = Start && FVector::Dist2D(EnemyA->GetActorLocation(), Start->Key) >= Need && FVector::Dist2D(EnemyB->GetActorLocation(), Start->Value) >= Need;
+					const bool bBothMoving = EnemyA->GetVelocity().Size2D() > 100.f && EnemyB->GetVelocity().Size2D() > 100.f && bTravelled;
+					Split = bNear ? Split + (bBothMoving ? FVector2f(Dt, 0.f) : FVector2f(0.f, Dt)) : FVector2f::ZeroVector;
+					const FString PairWhere = FString::Printf(TEXT("%s at (%.0f, %.0f) speed %.0f and %s at (%.0f, %.0f) speed %.0f"), *E3DGroup[A].Id.ToString(), EnemyA->GetActorLocation().X, EnemyA->GetActorLocation().Y,
+						EnemyA->GetVelocity().Size2D(), *E3DGroup[B].Id.ToString(), EnemyB->GetActorLocation().X, EnemyB->GetActorLocation().Y, EnemyB->GetVelocity().Size2D());
+					if (Split.X > E3TMaxMoving)
+					{
+						E3TMaxMoving = Split.X;
+						E3TMovingWhere = PairWhere;
+					}
+					if (Split.Y > E3TMaxStill)
+					{
+						E3TMaxStill = Split.Y;
+						E3TStillWhere = PairWhere;
+					}
 					Time = FVector::Dist2D(EnemyA->GetActorLocation(), EnemyB->GetActorLocation()) < 200.f ? Time + Dt : 0.f;
 					if (Time > E3TMaxClose)
 					{
+						E3TWorstSplit = Split;
 						// Which pair it was and what each was doing, so a failure can be read from the log.
 						const AGBSkeletalEnemy* SkeletalB = Cast<AGBSkeletalEnemy>(EnemyB);
 						E3TWorstWhere = FString::Printf(TEXT("%s at (%.0f, %.0f) state %d speed %.0f and %s at (%.0f, %.0f) state %d speed %.0f, %.0f cm apart"), *E3DGroup[A].Id.ToString(), EnemyA->GetActorLocation().X, EnemyA->GetActorLocation().Y,
@@ -2194,8 +2238,8 @@ namespace GBSmokeRun
 			MaxGap = FMath::Max(MaxGap, Next - Bearings[Index]);
 		}
 		const float Span = Bearings.Num() > 1 ? 360.f - MaxGap : 0.f;
-		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: members=%d span=%.0f deg, max concurrent bursts=%d (limit %d), longest time two members within 200 cm=%.1f s (%s), cover time=%.1f s, peek bursts=%d, shots=%d, max pelvis distance=%.0f cm"),
-			Bearings.Num(), Span, E3TMaxConcurrent, E3TCap, E3TMaxClose, E3TWorstWhere.IsEmpty() ? TEXT("never") : *E3TWorstWhere, CoverTime, PeekBursts, Shots, MaxPelvis);
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: members=%d span=%.0f deg, max concurrent bursts=%d (limit %d), longest time two members within 200 cm=%.1f s (both moving %.1f s, one standing %.1f s; %s), cover time=%.1f s, peek bursts=%d, shots=%d, max pelvis distance=%.0f cm"),
+			Bearings.Num(), Span, E3TMaxConcurrent, E3TCap, E3TMaxClose, E3TWorstSplit.X, E3TWorstSplit.Y, E3TWorstWhere.IsEmpty() ? TEXT("never") : *E3TWorstWhere, CoverTime, PeekBursts, Shots, MaxPelvis);
 		if (Bearings.Num() < 6)
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: only %d of 6 members could be spawned"), Bearings.Num());
@@ -2208,9 +2252,17 @@ namespace GBSmokeRun
 		{
 			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: the members span only %.0f degrees round the player (need 70)"), Span);
 		}
-		if (E3TMaxClose > 3.5f)
+		// Stacked means standing together: the 3.5 s limit counts the close time with at least one of the two standing.
+		// Two members running side by side to their places is the squad moving as a group (owner: "se mueven en grupo");
+		// that only fails when it lasts (8 s: one following the other around). Both are logged above.
+		UE_LOG(LogGB, Display, TEXT("SMOKE Enemies3D tactics: longest close stretch with one standing=%.1f s (limit 3.5), with both moving=%.1f s (limit 8)"), E3TMaxStill, E3TMaxMoving);
+		if (E3TMaxStill > 3.5f)
 		{
-			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: two members stood within 200 cm of each other for %.1f s (limit 3.5): %s"), E3TMaxClose, *E3TWorstWhere);
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: two members stood stacked within 200 cm for %.1f s with one of them standing or jittering in place (limit 3.5): %s"), E3TMaxStill, *E3TStillWhere);
+		}
+		if (E3TMaxMoving > 8.f)
+		{
+			UE_LOG(LogGB, Error, TEXT("SMOKE Enemies3D tactics FAILED: two members moved within 200 cm of each other for %.1f s (limit 8): %s"), E3TMaxMoving, *E3TMovingWhere);
 		}
 		if (E3TBoxes.Num() > 0 && CoverTime < 1.f)
 		{

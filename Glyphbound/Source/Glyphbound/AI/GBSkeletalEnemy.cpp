@@ -801,7 +801,7 @@ bool AGBSkeletalEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 	{
 		CrowdTimer = 0.f;
 	}
-	bRelocate |= CrowdTimer >= S(TEXT("CrowdTime"), 1.5f);
+	bRelocate |= CrowdTimer >= S(TEXT("CrowdTime"), 1.f);
 	if (bRelocate && !bAwaitingPosition && RelocateCooldown <= 0.f && BurstPhase == EBurstPhase::Cooldown && Squad)
 	{
 		Squad->ReleaseToken(this);
