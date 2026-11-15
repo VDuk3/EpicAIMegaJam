@@ -2,7 +2,8 @@
 # with an instance per tile kind, and a static mesh per twin (SM_Px_<pack name>).
 # Run in the Editor: node Tools/Jam/mcp_call.js py Tools/Jam/castle_twins_import.py
 # Settings (optional): <Saved>/castle_twins.json {"only": [names], "skip_meshes": false, "tile_cm": {"wall": 200, ...}}
-# Everything goes under /Game/Glyphbound/Castle/Pixel: Tiles/T_px_<kind>, M_PxTile, MI_Px_<kind>, Meshes/SM_Px_<name>.
+# Everything goes under /Game/Glyphbound/Castle/Pixel: Tiles/T_px_<kind>, M_PxTile, MI_Px_<kind>, Twins/SM_Px_<name>
+# (each imported from the OBJ castle_twins_obj.js writes, which carries the faces' normals).
 # A twin's materials: one slot per tile kind, named after it. Its collision: the boxes castle_twins.js merged from its
 # cells (simple collision), or, when there are too many, its own faces (few and flat).
 import json
@@ -17,6 +18,7 @@ CFG = json.load(open(CFG_PATH)) if os.path.exists(CFG_PATH) else {}
 DIR = '/Game/Glyphbound/Castle/Pixel'
 TILES_SRC = 'C:/GameJam/Glyphbound/SourceArt/PixelArt/CastleTiles/'
 eal = unreal.EditorAssetLibrary
+unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.OBJ false')   # the classic importer
 MEL = unreal.MaterialEditingLibrary
 tools = unreal.AssetToolsHelpers.get_asset_tools()
 log = []
@@ -226,36 +228,41 @@ def twin_name(pack_name):
 
 def build_mesh(d, mats):
     name = twin_name(d['name'])
-    pkg = DIR + '/Meshes'
+    pkg = DIR + '/Twins'      # (imported from OBJ; the first twins, built in Python without normals, were in /Meshes)
     path = pkg + '/' + name
-    if eal.does_asset_exist(path):
-        sm = unreal.load_asset(path)
-    else:
-        sm = tools.create_asset(name, pkg, unreal.StaticMesh, None)
-    desc = sm.create_static_mesh_description()
-    kinds = sorted(d['sections'])
+    # The mesh comes from the twin's OBJ (castle_twins_obj.js) through the Editor's FBX/OBJ importer: built from a
+    # description in Python it had no normals at all (all zero), and its lighting depended on the view.
+    obj = os.path.join(SRC, d['name'] + '.obj')
+    ui = unreal.FbxImportUI()
+    ui.set_editor_property('import_mesh', True)
+    ui.set_editor_property('import_as_skeletal', False)
+    ui.set_editor_property('import_materials', False)
+    ui.set_editor_property('import_textures', False)
+    ui.set_editor_property('mesh_type_to_import', unreal.FBXImportType.FBXIT_STATIC_MESH)
+    sd = ui.get_editor_property('static_mesh_import_data')
+    sd.set_editor_property('combine_meshes', True)
+    sd.set_editor_property('generate_lightmap_u_vs', False)
+    sd.set_editor_property('auto_generate_collision', False)
+    sd.set_editor_property('normal_import_method', unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+    t = unreal.AssetImportTask()
+    t.filename = obj.replace(chr(92), '/')
+    t.destination_path = pkg
+    t.destination_name = name
+    t.automated = True
+    t.replace_existing = True
+    t.save = False
+    t.options = ui
+    tools.import_asset_tasks([t])
+    sm = unreal.load_asset(path)
+    if not sm:
+        raise RuntimeError('import of %s failed' % obj)
     slots = []
-    for kind in kinds:
-        sec = d['sections'][kind]
-        pg = desc.create_polygon_group()
-        desc.set_polygon_group_material_slot_name(pg, kind)
+    for sl in sm.static_materials:
+        kind = str(sl.material_slot_name)
+        if kind.endswith('Mat'):
+            kind = kind[:-3]
         slots.append(unreal.StaticMaterial(material_interface=mats.get(kind), material_slot_name=kind))
-        v, uv, t = sec['v'], sec['uv'], sec['t']
-        vids = []
-        for i in range(len(v) // 3):
-            vid = desc.create_vertex()
-            desc.set_vertex_position(vid, unreal.Vector(v[i * 3], v[i * 3 + 1], v[i * 3 + 2]))
-            vids.append(vid)
-        for k in range(len(t) // 3):
-            tri = []
-            for q in (0, 1, 2):           # castle_twins.js winds them as Unreal's front faces want (checked in the game: the other way showed each wall's far side)
-                i = t[k * 3 + q]
-                vi = desc.create_vertex_instance(vids[i])
-                desc.set_vertex_instance_uv(vi, unreal.Vector2D(uv[i * 2], uv[i * 2 + 1]), 0)
-                tri.append(vi)
-            desc.create_triangle(pg, tri)
     sm.set_editor_property('static_materials', slots)
-    sm.build_from_static_mesh_descriptions([desc])
     # light and plain: no Nanite, no lightmap UV of its own (the game is lit by Lumen), flat normals
     ns = sm.get_editor_property('nanite_settings')
     ns.set_editor_property('enabled', False)

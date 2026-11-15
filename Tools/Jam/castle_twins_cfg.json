@@ -380,5 +380,32 @@
     12
    ]
   }
+ },
+ "SM_FloorCorridor": {
+  "box": [
+   0,
+   -800,
+   -19,
+   800,
+   0,
+   6.25
+  ],
+  "tile": "dressed"
+ },
+ "SM_FloorCorridorStair_01": {
+  "field": "floor",
+  "tile": "dressed"
+ },
+ "SM_CeilingVaultedStair_01": {
+  "field": "ceiling",
+  "coarse": 2
+ },
+ "SM_CeilingVaulted_01": {
+  "field": "ceiling",
+  "coarse": 2
+ },
+ "SM_CorridorCellBars_01": {
+  "keep": true,
+  "tile": "iron"
  }
 }

@@ -258,6 +258,25 @@ function voxelize(src, opt, base) {
   const seal = new Uint8Array(N);
   const outside = floodOutside(surf, n, idx, opt.close, seal);
   const solid = new Uint8Array(N);
+  if (opt.field) {
+    // A sheet with nothing under it (a floor, a stair's treads) or over it (a vault): solid below the highest surface
+    // of each column, down to the piece's bottom; or above the lowest, up to its top.
+    const hz = hitsBy[2], b = src.bounds;
+    // (a column the surface crosses keeps at least its end cell inside the piece's nominal box, the one the clamp below
+    // cuts to: a stair's last treads, a few cm above its bottom, were cut away, and each flight ended in a hole 75 cm long)
+    const nom = (x) => (b[1][2] - b[0][2] >= 60 && Math.abs(Math.round(x / 25) * 25 - x) <= 8 ? Math.round(x / 25) * 25 : x);
+    const zb = nom(b[0][2]), zt = nom(b[1][2]);
+    for (let x = 0; x < n[0]; x++) for (let y = 0; y < n[1]; y++) {
+      const h = hz[x * n[1] + y];
+      if (!h || !h.length) continue;
+      const top = Math.max(h[h.length - 1][0], zb + g / 2), bot = Math.min(h[0][0], zt - g / 2);
+      for (let z = 0; z < n[2]; z++) {
+        const cz = lo[2] + (z + 0.5) * g;
+        if (opt.field === 'floor' ? (cz <= top && cz >= b[0][2] - g / 2) : (cz >= bot && cz <= b[1][2] + g / 2)) solid[idx(x, y, z)] = 1;
+      }
+    }
+    return { solid, n, lo, g, idx, hitsBy, V };
+  }
   for (let x = 0; x < n[0]; x++) for (let y = 0; y < n[1]; y++) for (let z = 0; z < n[2]; z++) {
     const i = idx(x, y, z);
     if (votes[i] >= 2 || thin[i]) { solid[i] = 1; continue; }
@@ -596,7 +615,7 @@ function build(name) {
   // Pieces that are already plain (the crypt's set, the arcades, the spiral stairs) and small things (cups, candles,
   // tools, a chandelier: the grid would lose them) keep their own triangles with the tiles.
   const maxExt = Math.max(...[0, 1, 2].map((q) => src.bounds[1][q] - src.bounds[0][q]));
-  if (opt.keep === undefined && (src.path.includes('/Candle/') || /Arch_Walkway|Spiral_Stairs|Chandelier|ChainLink/.test(name) || (prop && maxExt < 60))) opt.keep = true;
+  if (opt.keep === undefined && (/Spiral_Stairs|Chandelier|ChainLink/.test(name) || (prop && maxExt < 60))) opt.keep = true;   // (the crypt's set and the arcades are plain blocks too: their own faces lit wrongly)
   if (/Window/.test(name) && (CFG[name] || {}).close === undefined) opt.close = 0;   // a lancet is narrower than the fill's closing
   if (opt.hull) return hullTwin(name, src, opt);
   if (opt.keep) return keepSource(name, src, opt);
@@ -679,7 +698,8 @@ function build(name) {
     // twins that overlap would show two coplanar faces fighting. Bounds within 8 cm of a multiple of 25 cm are that
     // multiple; nothing of the twin is left beyond them.
     {
-      const nb = src.bounds.map((v) => v.map((x) => { const r = Math.round(x / 25) * 25; return Math.abs(r - x) <= 8 ? r : x; }));
+      // (only along an axis the piece is long on: a floor 8 cm thick keeps its own thickness)
+      const nb = src.bounds.map((v) => v.map((x, q) => { if (src.bounds[1][q] - src.bounds[0][q] < 60) return x + (v === src.bounds[0] ? -po.grid : po.grid); const r = Math.round(x / 25) * 25; return Math.abs(r - x) <= 8 ? r : x; }));
       const ya = ((po.yaw || 0) * Math.PI) / 180, c = Math.cos(ya), sn = Math.sin(ya);
       for (let x = 0; x < vx.n[0]; x++) for (let y = 0; y < vx.n[1]; y++) {
         const fx = vx.lo[0] + (x + 0.5) * vx.g, fy = vx.lo[1] + (y + 0.5) * vx.g;
@@ -987,7 +1007,7 @@ for (const name of names) {
     let r = build(name);
     // nothing gained: a plain piece of the pack that the grid would only make heavier keeps its own triangles
     if (!r.tris && !(CFG[name] && CFG[name].box)) r = keepSource(name, load(name), Object.assign({}, DEF, CFG[name] || {}));   // too thin for the grid (a lid, a floor tile): its own faces
-    if (!r.kinds.includes('(kept)') && !r.coarse && r.tris > r.srcTris && r.srcTris <= 3000 && !(CFG[name] && (CFG[name].voxel || CFG[name].box))) {
+    if (!r.kinds.includes('(kept)') && !r.coarse && r.tris > r.srcTris && r.srcTris <= 3000 && !(CFG[name] && (CFG[name].voxel || CFG[name].box || CFG[name].field))) {
       r = keepSource(name, load(name), Object.assign({}, DEF, CFG[name] || {}));
     }
     console.log(`${r.name.padEnd(44)} ${String(r.srcTris).padStart(7)} -> ${String(r.tris).padStart(5)} tris  boxes ${String(r.boxes).padStart(4)}  snapped ${r.snapped} lone ${r.lone}  ${r.kinds}  ${Date.now() - t0} ms`);

@@ -70,7 +70,7 @@ def twin(path):
     """The pixel twin of a pack mesh, or None while it has none."""
     if path not in _twins:
         name = path.split('/')[-1].split('.')[0]
-        t = PX + 'Meshes/SM_Px_' + (name[3:] if name.startswith('SM_') else name)
+        t = PX + 'Twins/SM_Px_' + (name[3:] if name.startswith('SM_') else name)
         _twins[path] = t if eal.does_asset_exist(t) else None
         if not _twins[path]:
             log.append('NO TWIN for ' + path)
@@ -840,6 +840,17 @@ TOUR = [('01_start', -2300, 0, 0, 0), ('02_gate_passage', -700, 0, 0, 0), ('03_w
         ('37d_in_keep_end_tower', 7300, -2816, 1203, 180), ('38_entrance_right', 5380, 950, 210, 35),
         ('39_door_side', 5050, -700, 210, 25), ('39b_door_side_right', 5050, 700, 210, -25)]
 
+
+def walk_flight(x, y, z, dx, dy):
+    """The points a walk takes down one 8 m flight of the crypt stair from its top edge at (x, y, z) along (dx, dy). The
+    pack's piece is an even slope; its pixel twin keeps the piece's own landings: 1.2 m flat at the top, the treads, and
+    1.5 m at the bottom, 13 cm above the next flight (measured with traces)."""
+    at = lambda d, zz: (x + dx * d, y + dy * d, zz)
+    if LOOK != 'pixel':
+        return [at(0, z), at(790, z - 300)]
+    return [at(0, z), at(120, z), at(640, z - 287), at(790, z - 300)]
+
+
 WALKS = [('road through the gate into the ward', [(-2300, 0, 0), (2300, 0, 0)]),
          ('up the wide stair to the keep\'s door', [(2300, -200, 0), (2505, -200, 0), (2712, -200, 210), (4900, -200, 210), (5200, 0, 210)]),
          ('up the breach', [(2200, 2000, 0), (2800, 2000, 210), (3200, 2000, 210)]),
@@ -849,9 +860,9 @@ WALKS = [('road through the gate into the ward', [(-2300, 0, 0), (2300, 0, 0)]),
          ('along the wall walk on the other side, tower to tower', [(7300, 2816, 1203), (-640, 2816, 1203)]),
          ('from the wall stair\'s landing through the opening onto the wall walk', [(STAIR_X - 275, -2500, 1212), (STAIR_X - 275, -2690, 1212), (STAIR_X - 275, -2816, 1203)]),
          ('across the terrace in front of the keep, wall to wall', [(4700, -2400, 210), (4700, 2400, 210)]),
-         ('Main Hall down the crypt stair to the landing', [(8900, -600, 236), (9295, -600, 236), (10085, -600, -64), (10885, -600, -364), (11290, -600, -364)]),
-         ('landing down to the cells and into the seal\'s hall', [(11290, -600, -364), (11290, -1005, -364), (11290, -1795, -664), (11290, -2595, -964), (11290, -6800, -964)]),
-         ('back up from the seal\'s hall to the Main Hall', [(11290, -6800, -964), (11290, -2595, -964), (11290, -1795, -664), (11290, -1005, -364), (11290, -600, -364), (10885, -600, -364), (10085, -600, -64), (9295, -600, 236), (8900, -600, 236)])]
+         ('Main Hall down the crypt stair to the landing', [(8900, -600, 236)] + walk_flight(9295, -600, 236, 1, 0) + walk_flight(10085, -600, -64, 1, 0) + [(11290, -600, -364)]),
+         ('landing down to the cells and into the seal\'s hall', [(11290, -600, -364)] + walk_flight(11290, -1005, -364, 0, -1) + walk_flight(11290, -1795, -664, 0, -1) + [(11290, -6800, -964)]),
+         ('back up from the seal\'s hall to the Main Hall', [(11290, -6800, -964)] + walk_flight(11290, -1795, -664, 0, -1)[::-1] + walk_flight(11290, -1005, -364, 0, -1)[::-1] + [(11290, -600, -364)] + walk_flight(10085, -600, -64, 1, 0)[::-1] + walk_flight(9295, -600, 236, 1, 0)[::-1] + [(8900, -600, 236)])]
 
 
 async def stage_gameplay():

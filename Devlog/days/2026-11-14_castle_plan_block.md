@@ -421,3 +421,32 @@ Taken one cause at a time, each tested through the game's tour:
 - Tried and taken back: keeping the flame's quad out of every occlusion effect (contact shadows, distance fields, global illumination, ray tracing); it changed nothing.
 - **Sol 6.1 review** of the light offset (`Prompts/review_castle_torch_light_sol.md`): *"No defects found in the reviewed diff."*
 - Full smoke (`Smoke-Jam.ps1 -Offscreen`): 0 engine errors, one LogGB error outside the castle (`Enemies3D flyers: Drone_Future is 2 cm above the ground, wanted 235`); run again alone (`-Only Enemies3D`) it passed with no errors, and it passed in the full smoke an hour earlier: a flaky step of the future base's drones, not touched here. Package: `BUILD SUCCESSFUL`, zip 2,024.6 MB. Packaged tour: 42 spots, 0 without floor, the seal's map can be opened, 0 engine errors. Pictures (packaged game): `media/2026-11-14/castle_torch_fix_*.png`.
+
+---
+
+## Ninth part (night of Nov 14 to 15): the real cause of the bad light was zero normals
+The owner looked again at two of the pictures above (Spanish):
+
+> *"Verifica la 2da y 3ra imagen que mandaste, yo sigo viendo problemas con la luz ahí"* (Check the 2nd and 3rd pictures you sent; I still see problems with the light there.)
+
+and then: *"Si no das con la respuesta. Consulta al advisor"* (if you can't find the answer, consult the advisor), with the advisor being Fable 5.2. In the end the cause was found by measurement before the advisor was needed.
+
+### Cause
+- The cell corridor still had soft dark bands, and the Front Hall had a hard vertical edge in its lighting that moved with the camera. None of the earlier fixes (shadows off, faces turned outward, the light 1.5 m from the wall) explained a band that **moves with the view**.
+- We read every twin's vertex normals back from the Editor (`ProceduralMeshLibrary.get_section_from_static_mesh`). **Every normal of every twin was (0, 0, 0).** The static meshes were built in Editor Python from a `MeshDescription`, and that path left the normals empty whatever the build settings were (`fast_build` on or off). The renderer then shaded each face from garbage, so the light depended on where you looked from. That was also behind the earlier diagonal line, which the earlier fixes only reduced.
+
+### Fix
+- **`Tools/Jam/castle_twins_obj.js`** (new) writes each twin as a Wavefront OBJ with its normals and UVs. The Editor's OBJ importer reads right-handed coordinates and negates Y, so the writer negates Y and reverses each triangle. The imported mesh then has the twin's own coordinates (checked on a test asset: bounds and stored normals as expected) and Unreal's winding.
+- **`castle_twins_import.py`** imports those OBJ files with the classic importer (`Interchange.FeatureFlags.Import.OBJ false`, `FbxImportUI` with `FBXNIM_IMPORT_NORMALS`) into a new folder, `/Game/Glyphbound/Castle/Pixel/Twins`. A reimport over the old assets opened one modal "Select Source File" dialog per mesh, which is why the folder is new. Slots, tile materials, no Nanite and the collision are as before. The builder now looks up twins there. The 142 old assets (`/Pixel/Meshes` and a test) had no remaining referencers and were deleted.
+- Normals read back after the import: correct on all 141 twins. Four small kept props (hammer, horseshoe, jar, sack) have smoothed normals from their source, as expected.
+
+### A hole at the foot of the crypt stair, found on the way
+- With the new twins, the builder's walk check failed on the crypt stair. Traces showed **no floor for the last ~75 cm of every flight**. The generator's "field" mode (a floor or vault as a height field) gave a column with a surface at least its cell, but the later clamp to the piece's nominal box (bounds within 8 cm of a 25 cm multiple are snapped) cut the stair's lowest treads, which sit a few cm above the piece's bottom. Field mode now keeps the end cell inside that same nominal box (`castle_twins.js`, `nom`).
+- The twin keeps the pack stair's real profile: 1.2 m flat at the top, the treads, and 1.5 m flat at the bottom. The walk check compared it with an even slope (±40 cm). `walk_flight` in `Build-PastCastle.py` now gives the crypt walks that profile in the pixel look (the plain slope in the pack look). Builder: `walks: clear on 12 walks`.
+
+### Checks
+- Tour (Editor build), pictures looked at close: the cell corridor and the Front Hall are lit evenly, with no bands and no edges that move with the view. A dark triangle at the foot of the first flight (tour 20) was checked with an unlit capture and a trace: it is the third flight going down to the left (geometry), not a shadow.
+- **Sol 6.1 review** (medium, read-only, Codex CLI through the logged wrapper; prompt `Prompts/review_castle_twin_normals_sol.md`): it checked OBJ coordinates, normals, winding and UVs across all 141 twins, rebuilt the changed pieces in memory and checked the walk points: *"No concrete defects found in the reviewed changes."*
+- Full smoke (`Smoke-Jam.ps1 -Offscreen`): 0 LogGB errors, 0 engine errors (393 s). Package: `BUILD SUCCESSFUL`, zip **2,023 MB**, still over the jam's 1 GB limit (separate work). Packaged tour: 42 spots, 0 without floor, the seal's map can be opened, 0 engine errors.
+- Pictures (packaged game): `media/2026-11-15/castle_normals_23_cells.png`, `media/2026-11-15/castle_normals_13_front_hall.png`; the whole tour on one sheet (Editor build): `media/2026-11-15/castle_normals_tour_sheet.jpg`.
+- Implementer: the architect (Opus) directly, as for the rest of the castle rebuild. This is a diagnosis inside the architect's own tool chain, where handing off would have cost more than it saved.
