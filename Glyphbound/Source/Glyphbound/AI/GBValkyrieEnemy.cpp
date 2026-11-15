@@ -24,6 +24,7 @@
 #include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "NiagaraFunctionLibrary.h"
@@ -38,14 +39,16 @@
 //                                              seconds until that circle strikes); the mark's own shapes are hidden.
 //   Fx.LiquidTag                               actors with this tag hold the arena's floor liquid (a Niagara component); while
 //                                              she fights, the player, she, her swings, impacts and circle strikes stir it
-//                                              (user Vector4 array Fx.LiquidParam, default "Disturbers": xyz world, w strength).
+//                                              (user Vector4 array Fx.LiquidParam, default "Disturbers": xyz world, w radius in cm).
 namespace GBReaperFx
 {
 	struct FPulse { FVector Location; float Strength; double At; };
 	static TArray<FPulse> Pulses;
 	static TArray<TStrongObjectPtr<UNiagaraSystem>> Keep;
-	constexpr double PulseLife = 0.6;
-	constexpr int32 MaxDisturbers = 8;
+	constexpr double PulseLife = 0.12;          // a hit is a short push (the liquid's contract: 4 to 6 frames)
+	constexpr int32 MaxDisturbers = 8;          // the floor wants exactly 8 entries every time
+	constexpr int32 MaxPulses = 32;
+	const FVector4 Parked(0.0, 0.0, -100000.0, 0.0);   // an unused slot: far under the floor, radius 0
 
 	UNiagaraSystem* Load(const FGBEnemyDefinition& Def, const TCHAR* Key, FName Owner)
 	{
@@ -64,7 +67,7 @@ namespace GBReaperFx
 
 	void AddPulse(const UWorld* World, const FVector& Location, float Strength, float Delay = 0.f)
 	{
-		if (World)
+		if (World && Pulses.Num() < MaxPulses)
 		{
 			Pulses.Add({ Location, Strength, World->GetTimeSeconds() + Delay });
 		}
@@ -90,8 +93,9 @@ namespace GBReaperFx
 		}
 		while (Values.Num() < MaxDisturbers)
 		{
-			Values.Add(FVector4(0.f, 0.f, 0.f, 0.f));
+			Values.Add(Parked);
 		}
+		Values.SetNum(MaxDisturbers);
 		for (TActorIterator<AActor> It(World); It; ++It)
 		{
 			if (It->ActorHasTag(Tag))
@@ -419,8 +423,8 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 			const float MySpeed = FMath::Min(GetVelocity().Size2D() / 600.f, 1.f);
 			const float TheirSpeed = FMath::Min(Goal->GetVelocity().Size2D() / 600.f, 1.f);
 			GBReaperFx::Feed(GetWorld(), FName(*Tag), FName(*GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidParam")), TEXT("Disturbers"))),
-				{ FVector4(Me.X, Me.Y, Me.Z, V(TEXT("LiquidBossStrength"), 140.f) * (0.35f + MySpeed)),
-				  FVector4(Them.X, Them.Y, Them.Z, V(TEXT("LiquidPlayerStrength"), 70.f) * (0.35f + TheirSpeed)) });
+				{ FVector4(Me.X, Me.Y, Me.Z, V(TEXT("LiquidBossStrength"), 55.f) * (0.35f + MySpeed)),
+				  FVector4(Them.X, Them.Y, Them.Z, V(TEXT("LiquidPlayerStrength"), 45.f) * (0.35f + TheirSpeed)) });
 		}
 	}
 	if (!bFightInit)
@@ -808,11 +812,22 @@ void AGBValkyrieEnemy::HandleDeath(const FGBDamageInfo& KillingBlow)
 		const FString Tag = GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidTag")));
 		if (!Tag.IsEmpty())
 		{
-			// her fall is the last splash; afterwards nobody feeds the floor and it settles
+			// her fall is the last splash: one short push, then every slot parked so the floor settles
 			GBReaperFx::Pulses.Reset();
-			const FVector At = GetActorLocation();
-			GBReaperFx::Feed(GetWorld(), FName(*Tag), FName(*GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidParam")), TEXT("Disturbers"))),
-				{ FVector4(At.X, At.Y, At.Z, V(TEXT("LiquidDeathStrength"), 400.f)) });
+			const FVector At = GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+			const FName LiquidTag(*Tag);
+			const FName Param(*GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidParam")), TEXT("Disturbers")));
+			GBReaperFx::Feed(GetWorld(), LiquidTag, Param, { FVector4(At.X, At.Y, At.Z, V(TEXT("LiquidDeathStrength"), 90.f)) });
+			if (UWorld* World = GetWorld())
+			{
+				TWeakObjectPtr<UWorld> WeakWorld(World);
+				FTimerHandle Calm;
+				World->GetTimerManager().SetTimer(Calm, FTimerDelegate::CreateLambda([WeakWorld, LiquidTag, Param]()
+				{
+					GBReaperFx::Pulses.Reset();
+					GBReaperFx::Feed(WeakWorld.Get(), LiquidTag, Param, {});
+				}), 0.1f, false);
+			}
 		}
 	}
 	ResetFightState();
@@ -963,9 +978,12 @@ void AGBValkyrieEnemy::SwingHit(AActor* Goal)
 	const float Reach = V(TEXT("SwingReach"), S(TEXT("MeleeRange"), 280.f) * 1.1f);
 	const float ConeCosine = FMath::Cos(FMath::DegreesToRadians(V(TEXT("SwingConeDeg"), 70.f)));
 	const bool bIn = FlatDistance <= Reach && Cosine >= ConeCosine && FMath::Abs(Player.Z - Me.Z) <= V(TEXT("SwingHeight"), 220.f);
-	// the scythe's sweep cuts the floor liquid in front of her (only where an arena liquid is fed)
-	GBReaperFx::AddPulse(GetWorld(), Me + Forward * Reach * 0.7f - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),
-		V(TEXT("LiquidSwingStrength"), 220.f));
+	// the scythe's sweep cuts the floor liquid in front of her (only for a fighter that feeds an arena liquid)
+	if (const FGBEnemyDefinition* LiquidDef = GetDefinition(); LiquidDef && !GBEnemy3D::Str(*LiquidDef, FName(TEXT("Fx.LiquidTag"))).IsEmpty())
+	{
+		GBReaperFx::AddPulse(GetWorld(), Me + Forward * Reach * 0.7f - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),
+			V(TEXT("LiquidSwingStrength"), 80.f));
+	}
 	if (!bIn)
 	{
 		return;
@@ -1241,7 +1259,7 @@ void AGBValkyrieEnemy::SpawnMarks(AActor* Goal)
 					Fx->SetVariableFloat(FName(TEXT("Radius")), Radius);
 					Fx->SetVariableFloat(FName(TEXT("Telegraph")), Telegraph + Index * Stagger);
 				}
-				GBReaperFx::AddPulse(World, Spots[Index], V(TEXT("LiquidStrikeStrength"), 350.f), Telegraph + Index * Stagger);
+				GBReaperFx::AddPulse(World, Spots[Index], V(TEXT("LiquidStrikeStrength"), 90.f), Telegraph + Index * Stagger);
 			}
 			Marks.Add(Mark);
 			++CirclesMade;
@@ -1334,7 +1352,7 @@ void AGBValkyrieEnemy::FireVolley(AActor* Goal)
 	}
 	UNiagaraSystem* BallFx = GBReaperFx::Load(*Def, TEXT("Fx.LanceNiagara"), EnemyId);
 	UNiagaraSystem* BurstFx = GBReaperFx::Load(*Def, TEXT("Fx.LanceImpactNiagara"), EnemyId);
-	const float ImpactStrength = V(TEXT("LiquidImpactStrength"), 250.f);
+	const float ImpactStrength = V(TEXT("LiquidImpactStrength"), 80.f);
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
 		const float Alpha = Count > 1 ? static_cast<float>(Index) / (Count - 1) : 0.5f;

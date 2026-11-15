@@ -68,7 +68,8 @@ namespace GBFinalPortalLocal
 		FGBPlayerSnapshot Snapshot = Progress->GetCheckpoint();
 		Snapshot.Transform = Player->GetActorTransform();
 		Snapshot.ControlRotation = Player->GetActorRotation();
-		Player->RespawnAt(Snapshot);
+		// the whole state (weapons, ammo, spells, items, skills), not only place and resources as a death respawn does
+		Player->LoadFromSnapshot(Snapshot);
 		Progress->SaveCheckpoint(Player);
 		UE_LOG(LogGB, Log, TEXT("FinalPortal: player state handed over to %s."), *World->GetMapName());
 	}
