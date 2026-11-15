@@ -369,7 +369,9 @@ EGBCastFailReason UGBSpellbookComponent::CanCast(FName SpellId) const
 		return EGBCastFailReason::NotKnown;
 	}
 	const UGBEquipmentComponent* Equipment = GetOwnerEquipment();
-	const bool bRightItem = Equipment && (Definition->bRequiresGun ? Equipment->IsHoldingGun() : Equipment->IsHoldingStaff());
+	// A gun spell (the enchant) also works with a sword in hand (owner, 2026-11-15).
+	const bool bSwordInHand = Equipment && Equipment->GetActiveSlot() == EGBHeldSlot::Sword && Equipment->GetActiveItem();
+	const bool bRightItem = Equipment && (Definition->bRequiresGun ? (Equipment->IsHoldingGun() || bSwordInHand) : Equipment->IsHoldingStaff());
 	if (!bRightItem)
 	{
 		return EGBCastFailReason::WrongHeldItem;

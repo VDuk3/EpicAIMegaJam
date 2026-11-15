@@ -68,7 +68,8 @@
 			"Duration": 20.0,
 			"Element": "Fire",
 			"Modifiers": [
-				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 },
+				{ "Stat": "Weapon.Sword.Damage", "Op": "Multiply", "Value": 1.25 }
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
@@ -80,7 +81,8 @@
 			"Duration": 20.0,
 			"Element": "Lightning",
 			"Modifiers": [
-				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 },
+				{ "Stat": "Weapon.Sword.Damage", "Op": "Multiply", "Value": 1.25 }
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,
@@ -92,7 +94,8 @@
 			"Duration": 20.0,
 			"Element": "Ice",
 			"Modifiers": [
-				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 }
+				{ "Stat": "Weapon.Gun.Damage", "Op": "Multiply", "Value": 1.25 },
+				{ "Stat": "Weapon.Sword.Damage", "Op": "Multiply", "Value": 1.25 }
 			],
 			"bRefreshOnReapply": true,
 			"MaxStacks": 1,

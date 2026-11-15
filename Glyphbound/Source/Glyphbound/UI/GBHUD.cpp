@@ -383,7 +383,7 @@ void AGBHUD::HandleCastFailed(FName SpellId, EGBCastFailReason Reason)
 	{
 		const UGBDataSubsystem* Data = UGBDataSubsystem::Get(this);
 		const FGBSpellDefinition* Def = Data ? Data->FindSpell(SpellId) : nullptr;
-		Text = (Def && Def->bRequiresGun) ? TEXT("Need a gun in hand") : TEXT("Need the staff in hand");
+		Text = (Def && Def->bRequiresGun) ? TEXT("Need a gun or sword in hand") : TEXT("Need the staff in hand");
 		break;
 	}
 	default:
@@ -688,6 +688,10 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		// Guns are shown alone, without hands (owner, 2026-11-14): the 3D model and its own animations (kick, reload,
 		// pump) are drawn by the world; nothing is drawn here.
 	}
+	else if (Item && Slot == EGBHeldSlot::Sword && WeaponDef && WeaponDef->Strings.Contains(FName(TEXT("ViewMesh"))))
+	{
+		// A sword with a 3D view model (the katana) is drawn by the world, like the guns: nothing here.
+	}
 	else if (Item && Slot == EGBHeldSlot::Sword)
 	{
 		FName BladeId(TEXT("sword_blade"));
@@ -700,7 +704,11 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		}
 		UTexture2D* Blade = Sprites->GetSprite(BladeId);
 		const FVector2D BladeSize = SizeOf(Blade);
-		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(Item->GetElement()), 0.5f);
+		// The weapon enchant tints the blade while it lasts (owner, 2026-11-15: swords take the enchant).
+		EGBElement BladeElement = Item->GetElement();
+		FName EnchantEffect = NAME_None;
+		Item->GetActiveEnchant(BladeElement, EnchantEffect);
+		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(BladeElement), 0.5f);
 		// The swing moves the sword to the left.
 		const float CenterX = W * 0.70f + Bob.X - Kick01 * 12.f * P;
 		// Where the (no longer drawn) hand held the hilt: the blade rises from the same place.

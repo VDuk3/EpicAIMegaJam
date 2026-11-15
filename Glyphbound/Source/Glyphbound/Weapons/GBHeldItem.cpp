@@ -229,11 +229,12 @@ FGBDamageInfo AGBHeldItem::MakeDamageInfo() const
 		}
 	}
 
-	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" modifier.
+	// The enchant's damage multiplier arrives by itself through its "Weapon.Gun.Damage" / "Weapon.Sword.Damage" modifiers.
+	// Swords take the enchant too (owner, 2026-11-15); it replaces the sword's own element while it lasts.
 	bool bElementFromEnchant = false;
 	EGBElement EnchantElement = EGBElement::Physical;
 	FName EnchantEffect = NAME_None;
-	if (AcceptsEnchant() && GetActiveEnchant(EnchantElement, EnchantEffect))
+	if ((AcceptsEnchant() || Slot == EGBHeldSlot::Sword) && GetActiveEnchant(EnchantElement, EnchantEffect))
 	{
 		Info.Element = EnchantElement;
 		if (!EnchantEffect.IsNone())

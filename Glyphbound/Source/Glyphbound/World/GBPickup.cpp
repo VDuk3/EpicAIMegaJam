@@ -1,6 +1,8 @@
 #include "World/GBPickup.h"
 
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Core/GBPlaceholder.h"
 #include "Core/GBStatNames.h"
@@ -285,7 +287,21 @@ void AGBPickup::ApplyLook()
 	if (!Drop.WeaponId.IsNone())
 	{
 		const FGBWeaponDefinition* Def = Data ? Data->FindWeapon(Drop.WeaponId) : nullptr;
-		if (Def && Def->Slot != EGBHeldSlot::Gun)
+		const FString* ViewMeshPath = Def ? Def->Strings.Find(FName(TEXT("ViewMesh"))) : nullptr;
+		UStaticMesh* ViewMesh = ViewMeshPath ? LoadObject<UStaticMesh>(nullptr, **ViewMeshPath, nullptr, LOAD_NoWarn | LOAD_Quiet) : nullptr;
+		if (ViewMesh && Mesh)
+		{
+			// A weapon with its own 3D model (the katana) lies on the floor as itself, not as a placeholder.
+			SetPlaceholderLook(false, NAME_None, FLinearColor::White, GBPickupLocal::GunBoxSize);
+			Mesh->SetStaticMesh(ViewMesh);
+			Mesh->EmptyOverrideMaterials();
+			const float Scale = Def->Stats.FindRef(FName(TEXT("PickupScale")), 0.2f);
+			Mesh->SetRelativeScale3D(FVector(Scale));
+			Mesh->SetRelativeRotation(FRotator(0.f, 30.f, 90.f));
+			Mesh->SetRelativeLocation(FVector(0.f, 0.f, 15.f));
+			Mesh->SetCastShadow(true);
+		}
+		else if (Def && Def->Slot != EGBHeldSlot::Gun)
 		{
 			SetPlaceholderLook(true, GBPickupLocal::SpriteFromStrings(Def->Strings, GBPickupLocal::StaffSpriteId), FLinearColor::White, GBPickupLocal::StaffSpriteSize);
 		}

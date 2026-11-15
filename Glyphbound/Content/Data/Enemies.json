@@ -850,6 +850,11 @@
 					"Count": 1,
 					"Chance": 1,
 					"FlagOnPickup": "GotFirstGun"
+				},
+				{
+					"WeaponId": "CrimsonKatana",
+					"Count": 1,
+					"Chance": 1
 				}
 			]
 		},

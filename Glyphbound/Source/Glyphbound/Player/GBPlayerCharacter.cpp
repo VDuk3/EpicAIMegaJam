@@ -2406,10 +2406,12 @@ void AGBPlayerCharacter::InputSpellSlot(int32 Slot)
 
 void AGBPlayerCharacter::InputEnchant()
 {
-	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || bMantling || !Equipment->IsHoldingGun())
+	if (!CanUseGameplayInput() || IsQTEActive() || IsBlocking() || bMantling
+		|| !(Equipment->IsHoldingGun() || (Equipment->GetActiveSlot() == EGBHeldSlot::Sword && Equipment->GetActiveItem())))
 	{
 		return;
 	}
+	// Guns and swords take the enchant (owner, 2026-11-15: the swords can be enchanted like the pistol).
 	Spellbook->TryCastEnchant();
 }
 

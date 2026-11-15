@@ -2440,7 +2440,7 @@ void AGBHUD::DrawSpellsPage(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 	{
 		DY += UiWrapped(Skin, EGBTextSize::Body, EGBTextTone::Normal, Def->Description, DX + Inner, DY, DW - 2.f * Inner) + (bCyber ? 12.f * S : 4.f * P);
 	}
-	DY += UiWrapped(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("Only with a gun in hand (T). Enchants the gun with the chosen element."), DX + Inner, DY, DW - 2.f * Inner) + (bCyber ? 16.f * S : 5.f * P);
+	DY += UiWrapped(Skin, EGBTextSize::Small, EGBTextTone::Muted, TEXT("Only with a gun or sword in hand (T). Enchants the weapon with the chosen element."), DX + Inner, DY, DW - 2.f * Inner) + (bCyber ? 16.f * S : 5.f * P);
 	// The three elements as swatches, the chosen one lit.
 	const EGBElement Choices[3] = { EGBElement::Fire, EGBElement::Lightning, EGBElement::Ice };
 	float SX = DX + Inner;
