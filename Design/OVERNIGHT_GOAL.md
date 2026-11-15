@@ -94,6 +94,7 @@ Capturas nuevas del juego empaquetado sobre 77b4d40, en `Devlog/media/2026-11-15
 - **(3)** Orco y robot tendidos en el suelo con su propia animación de muerte.
 - **(4)** El gas bajo y en capas en el pasillo gastado, sin formas de nube.
 - **(2)** Smoke empaquetado Enemies3D:flyers en verde (`Devlog/media/2026-11-15_final_point_2_wrecks.png`): el dron cae y explota al tocar el suelo, y sus restos quedan humeando en el suelo. El log dice: Drone_Future cae 0,74 s, 13 rebotes, 6 piezas; Sentinel_Future cae 0,65 s, 5 rebotes, 2 piezas.
+- **(6)** CastleVisit empaquetado en verde, 8 de 8 combates despejados (`Devlog/media/2026-11-15_final_point_6_castle_fights.png`). Se ve a los orcos cerrando al jugador por los dos lados con el chamán lanzando hechizos detrás, y al centauro arquero a distancia en el adarve.
 - **(7)** Releído en el GDD §4 "Portals and the route between the eras": P0 a P4 en el mismo sitio en las dos épocas; seis tramos que alternan, cada uno termina en un callejón sin salida que solo se pasa por un portal; el adarve, la Sala del Rey, la cripta inferior, los pisos altos de la Sala Lateral y el Top Level solo se alcanzan desde el futuro; tres tramos cortos por época.
 
 ## Al terminar todo
