@@ -1,6 +1,7 @@
 #include "Progression/GBSkillTreeComponent.h"
 
 #include "Data/GBDataSubsystem.h"
+#include "Stats/GBAttributeComponent.h"
 #include "Stats/GBStatsComponent.h"
 #include "World/GBProgressSubsystem.h"
 
@@ -90,7 +91,18 @@ EGBSkillUnlockResult UGBSkillTreeComponent::Unlock(FName NodeId)
 	Points -= FMath::Max(0, Node->Cost);
 	PointsSpent += FMath::Max(0, Node->Cost);
 	Ranks.FindOrAdd(NodeId) += 1;
+
+	// A perk that raises max health / mana (Vitality, Deep Reserves) also fills the new part of the bar,
+	// so the bar grows instead of showing a sudden empty slice.
+	UGBAttributeComponent* Attributes = UGBAttributeComponent::Find(GetOwner());
+	const float OldMaxHealth = Attributes ? Attributes->GetMaxHealth() : 0.f;
+	const float OldMaxMana = Attributes ? Attributes->GetMaxMana() : 0.f;
 	ApplyNodeModifiers(NodeId);
+	if (Attributes)
+	{
+		Attributes->Heal(Attributes->GetMaxHealth() - OldMaxHealth);
+		Attributes->RestoreMana(Attributes->GetMaxMana() - OldMaxMana);
+	}
 	OnSkillsChanged.Broadcast();
 	return EGBSkillUnlockResult::Ok;
 }

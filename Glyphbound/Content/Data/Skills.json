@@ -362,6 +362,28 @@
 			"ModifiersPerRank": [ { "Stat": "Spell.IceFloor.EffectStrength", "Op": "Add", "Value": 0.1 } ],
 			"Column": 2,
 			"Row": 2
+		},
+		{
+			"Id": "Spell_MaxHealth",
+			"Tree": "Spell",
+			"DisplayName": "Vitality",
+			"Description": "+33% max health per rank (x2 at rank 3).",
+			"Cost": 2,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "MaxHealth", "Op": "Multiply", "Value": 1.3333334 } ],
+			"Column": 4,
+			"Row": 0
+		},
+		{
+			"Id": "Spell_MaxMana",
+			"Tree": "Spell",
+			"DisplayName": "Deep Reserves",
+			"Description": "+33% max mana per rank (x2 at rank 3).",
+			"Cost": 2,
+			"MaxRank": 3,
+			"ModifiersPerRank": [ { "Stat": "MaxMana", "Op": "Multiply", "Value": 1.3333334 } ],
+			"Column": 4,
+			"Row": 1
 		}
 	]
 }
