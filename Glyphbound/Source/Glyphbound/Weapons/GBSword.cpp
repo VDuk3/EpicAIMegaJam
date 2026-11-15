@@ -278,11 +278,18 @@ void AGBSword::Tick(float DeltaSeconds)
 			Light->SetVisibility(bEnchanted);
 			if (bEnchanted)
 			{
-				// Halfway up the blade (mesh space: the blade runs along +X from the guard).
-				Light->SetRelativeLocation(FVector(80.f, 0.f, 0.f));
+				// A tube of light along the whole blade (owner: "the light spread evenly along the katana, not a bulb in the
+				// middle"). Mesh space: the blade runs along +X from the guard (about -100) to the tip (about +270); the
+				// tube lies along the light's own X, so the light sits at the blade's middle with no rotation and its
+				// source length covers the blade in world cm (the mesh's scale shrinks the blade, not the light's length).
+				const float BladeScale = Grip->GetRelativeScale3D().X;
+				Light->SetRelativeLocationAndRotation(FVector(85.f, 0.f, 0.f), FRotator::ZeroRotator);
+				Light->SetSourceLength(340.f * BladeScale);
+				Light->SetSourceRadius(1.f);
+				Light->SetAttenuationRadius(350.f);
 				Light->SetLightColor(GBPlaceholder::ElementColor(static_cast<uint8>(EnchantElement)));
 				const float Time = GetWorld() ? (float)GetWorld()->GetTimeSeconds() : 0.f;
-				Light->SetIntensity(8.f * (0.85f + 0.15f * FMath::Sin(Time * 9.f)));
+				Light->SetIntensity(10.f * (0.9f + 0.1f * FMath::Sin(Time * 9.f)));
 			}
 		}
 		Super::Tick(DeltaSeconds);
