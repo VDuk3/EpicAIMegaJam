@@ -66,7 +66,9 @@ namespace
 		const FKatanaKey ComboKeys[3][2] = {
 			{ { FRotator(40.f, -20.f, 10.f), FVector(0.f, 8.f, -8.f) }, { FRotator(-30.f, -40.f, -40.f), FVector(4.f, 0.f, 8.f) } },
 			{ { FRotator(10.f, -50.f, -30.f), FVector(0.f, 0.f, 0.f) }, { FRotator(-10.f, 10.f, 90.f), FVector(4.f, 0.f, 8.f) } },
-			{ { FRotator(30.f, 10.f, 100.f), FVector(0.f, 0.f, 8.f) }, { FRotator(0.f, -30.f, -70.f), FVector(4.f, -10.f, 8.f) } },
+			// Third cut (owner): the blade lies flat and the cut is level: the end is the wind-up turned only about the
+			// vertical axis (yaw), so the blade stays horizontal, a little above the screen centre, all the way across.
+			{ { FRotator(25.f, 10.f, 120.f), FVector(0.f, 4.f, 12.f) }, { FRotator(25.f, -70.f, 120.f), FVector(4.f, -4.f, 12.f) } },
 		};
 		// Phase lengths in seconds at SwingTime 0.5 (scaled by SwingTime / 0.5).
 		constexpr float WindupTime = 0.10f;
