@@ -38,6 +38,7 @@ Juego para la Epic AI MegaJam 2026, en **Unreal Engine 5.9.0** (CL 60351404). La
 - El tiempo manda: entre dos opciones correctas, gana la que antes deja un build jugable.
 
 ## Tiempo de iteración (el tiempo premia en este proyecto)
+- **PREVALECE SOBRE TODO LO DE ABAJO (dueño, 2026-11-15, recta final):** ya **no se corren smokes, tests automáticos ni `Verify-Jam.ps1`**, ni filtrados ni completos. Cuestan demasiado tiempo y no han evitado tener que corregir a mano. Verificar ahora es: compila limpio (Live Coding o build) + revisión visual propia del trabajo; luego un humano lo prueba en PIE. Empaquetar sigue siendo obligatorio. Todo encargo a un implementador incluye esta regla en lugar de la del smoke.
 - **Plugins:** el proyecto se crea con los plugins que ya trae el motor por defecto **desactivados si no se usan**, porque alargan el arranque y la compilación. Se dejan solo los que el juego o el flujo necesitan (el MCP, Enhanced Input, el de DLSS si se usa, Paper2D si se usa para sprites, etc.). Se mide el arranque del Editor antes y después.
 - **Compilar poco:** cambios solo en `.cpp` con Live Coding; build completo solo cuando cambian cabeceras, `UPROPERTY`/`UFUNCTION` o módulos. Una compilación o corrida a la vez por máquina.
 - **No correr la suite entera en cada cambio:** en cada cambio, solo el filtro anclado de lo que se tocó. La suite completa (por debajo de 30 s) una vez antes de empaquetar al final del día.
