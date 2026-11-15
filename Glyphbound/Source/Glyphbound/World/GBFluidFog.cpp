@@ -169,6 +169,24 @@ void AGBFluidFog::LoadSettings()
 	bGridCornered = Value(TEXT("FluidFog.GridCornered"), 0.f) > 0.5f;
 	FillDensity = Value(TEXT("FluidFog.FillDensity"), 2.f);
 	PushDivergence = Value(TEXT("FluidFog.PushDivergence"), 1.f);
+	// Per-box overrides from the actor's tags (Tools/Jam/future_smoke.py): "FogDensity=<multiplier of the fill density>",
+	// "FogResolution=<grid cells on the longest axis>" (a big, dense room gets a coarser grid to stay cheap).
+	for (const FName& Tag : Tags)
+	{
+		const FString Text = Tag.ToString();
+		FString Key, Number;
+		if (Text.Split(TEXT("="), &Key, &Number))
+		{
+			if (Key == TEXT("FogDensity"))
+			{
+				FillDensity *= FMath::Max(0.f, FCString::Atof(*Number));
+			}
+			else if (Key == TEXT("FogResolution"))
+			{
+				Resolution = FMath::Max(8, FCString::Atoi(*Number));
+			}
+		}
+	}
 }
 
 void AGBFluidFog::ApplyBox()
