@@ -313,37 +313,85 @@ def place_level(stage, folder, name, to, yaw=0.0, drop=None, keep=None, inside=N
 
 
 # ---------------------------------------------------------------------------------------------------------------
+# The castle at night under a full moon (owner, 2026-11-15: "Haz que sea noche de luna llena en el mapa de castillo
+# medieval y cubre de niebla impenetrable los alrededores"). Provisional values, tuned on the tour's pictures.
+MOON = dict(pitch=-27.0, yaw=200.0, lux=0.9, color=(165, 185, 255), disk_deg=2.2)   # seen above the keep from the road
+NIGHT_EXPOSURE = dict(bias=-1.0, min=-0.5, max=1.5)        # the eye adapts to the moonlight (min 0.3 left the halls black)
+# The fog: a bank of curtains around the site, beyond what the player can reach; invisible walls stop the player a few
+# metres into its edge. SITE = the open ground inside the bank (x0, x1, y0, y1). (The engine's local fog volumes were
+# tried first: they drew nothing in this project.)
+SITE = (-4500.0, 13500.0, -4800.0, 4800.0)
+FOG_LAYERS = (400.0, 1100.0, 1800.0, 2600.0)   # each curtain's distance outside SITE; MI_NightFog_0..3, the last opaque
+FOG_BOTTOM, FOG_TOP = -50.0, 5500.0            # the material fades the bank out from 25 m up to FOG_TOP
+FOG_WALL_IN = 700.0       # the walls stand this far outside SITE: past the first curtain, before the second
+
+
 async def stage_world():
     s = 'world'
-    sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 6000), rot(pitch=-38, yaw=-62))
-    c = sun.light_component
+    moon = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 6000), rot(pitch=MOON['pitch'], yaw=MOON['yaw']))
+    c = moon.light_component
     c.set_mobility(unreal.ComponentMobility.MOVABLE)
-    c.set_editor_property('intensity', 6.0)
-    c.set_editor_property('light_color', unreal.Color(r=255, g=232, b=205, a=255))
-    c.set_editor_property('atmosphere_sun_light', True)
-    tag(sun, s, 'Light')
-    for cls in (unreal.SkyAtmosphere, unreal.ExponentialHeightFog):
-        tag(eas.spawn_actor_from_class(cls, unreal.Vector(0, 0, 3000), rot()), s, 'Light')
+    c.set_editor_property('intensity', MOON['lux'])
+    r, g, b = MOON['color']
+    c.set_editor_property('light_color', unreal.Color(r=r, g=g, b=b, a=255))
+    c.set_editor_property('atmosphere_sun_light', True)          # the sky atmosphere draws its disc: the moon
+    c.set_editor_property('light_source_angle', MOON['disk_deg'])
+    try:
+        c.set_editor_property('atmosphere_sun_disk_color_scale', unreal.LinearColor(12.0, 12.0, 12.0, 1.0))
+    except Exception as e:
+        log.append('moon disc colour scale not set: %s' % e)
+    tag(moon, s, 'Light')
+    tag(eas.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 3000), rot()), s, 'Light')
+    hf = eas.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 0), rot())
+    fc = hf.get_component_by_class(unreal.ExponentialHeightFogComponent)
+    fc.set_editor_property('fog_density', 0.035)
+    fc.set_editor_property('fog_height_falloff', 0.35)
+    fc.set_editor_property('fog_inscattering_luminance', unreal.LinearColor(0.012, 0.018, 0.035, 1.0))
+    tag(hf, s, 'Light')
     sky = eas.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 6000), rot())
     sky.light_component.set_mobility(unreal.ComponentMobility.MOVABLE)
     sky.light_component.set_editor_property('real_time_capture', True)
-    sky.light_component.set_editor_property('intensity', 1.0)
+    sky.light_component.set_editor_property('intensity', 2.0)
     tag(sky, s, 'Light')
     ppv = eas.spawn_actor_from_class(unreal.PostProcessVolume, unreal.Vector(0, 0, 0), rot())
     ppv.set_editor_property('unbound', True)
     st = ppv.get_editor_property('settings')
-    # Daylight outside, firelight inside: the eye adapts, within limits, so a hall is dim after the ward and never black.
-    for name, value in (('auto_exposure_method', unreal.AutoExposureMethod.AEM_HISTOGRAM), ('auto_exposure_bias', 0.0),
-                        ('auto_exposure_min_brightness', 0.12), ('auto_exposure_max_brightness', 3.0),
+    # Moonlight outside, firelight inside: the eye adapts, within limits, so the ward stays a night and a hall is never black.
+    for name, value in (('auto_exposure_method', unreal.AutoExposureMethod.AEM_HISTOGRAM), ('auto_exposure_bias', NIGHT_EXPOSURE['bias']),
+                        ('auto_exposure_min_brightness', NIGHT_EXPOSURE['min']), ('auto_exposure_max_brightness', NIGHT_EXPOSURE['max']),
                         ('auto_exposure_speed_up', 2.0), ('auto_exposure_speed_down', 1.5), ('bloom_intensity', 0.4)):
         st.set_editor_property('override_' + name, True)
         st.set_editor_property(name, value)
     ppv.set_editor_property('settings', st)
     tag(ppv, s, 'Light')
+    # The fog around the site: FOG_LAYERS curtains on each side of SITE, each a vertical plane with the fog bank's
+    # material (Tools/Jam/make_night_fog.py; the outer one opaque); and the walls that keep the player out of it.
+    x0, x1, y0, y1 = SITE
+    plane = asset('/Engine/BasicShapes/Plane')            # 100 x 100 cm in its own x and y
+    zc, hz = (FOG_BOTTOM + FOG_TOP) / 2.0, FOG_TOP - FOG_BOTTOM
+    n = 0
+    for i, d in enumerate(FOG_LAYERS):
+        mi = asset('/Game/Glyphbound/Castle/MI_NightFog_%d' % i)
+        lx, ly = x1 - x0 + 2 * d + 400.0, y1 - y0 + 2 * d + 400.0    # each side runs past the corners
+        sides = ((((x0 + x1) / 2.0, y0 - d), 0.0, lx), (((x0 + x1) / 2.0, y1 + d), 0.0, lx),
+                 ((x0 - d, (y0 + y1) / 2.0), 90.0, ly), ((x1 + d, (y0 + y1) / 2.0), 90.0, ly))
+        for loc, yaw, length in sides:
+            a = eas.spawn_actor_from_object(plane, unreal.Vector(loc[0], loc[1], zc), rot(yaw=yaw, roll=90.0))
+            a.set_actor_scale3d(unreal.Vector(length / 100.0, hz / 100.0, 1.0))
+            c = a.static_mesh_component
+            c.set_material(0, mi)
+            c.set_cast_shadow(False)
+            c.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+            tag(a, s, 'Fog')
+            n += 1
+    w = FOG_WALL_IN
+    for xr, yr in (((x0 - w, x1 + w), (y0 - w - 100, y0 - w)), ((x0 - w, x1 + w), (y1 + w, y1 + w + 100)),
+                   ((x0 - w - 100, x0 - w), (y0 - w, y1 + w)), ((x1 + w, x1 + w + 100), (y0 - w, y1 + w))):
+        box(s, 'FogWall', xr, yr, (-20, 4000), visible=False)
+    log.append('world: moon, sky, night fog, exposure, %d fog curtains around the site and its walls, player start' % n)
     ps = eas.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(-2300, 0, 110), rot(yaw=0))
     tag(ps, s, 'Gameplay')
     ues.get_editor_world().get_world_settings().set_editor_property('kill_z', -4000.0)
-    log.append('world: sun, sky, fog, exposure, player start')
 
 
 async def stage_ground():
@@ -799,7 +847,7 @@ async def stage_camp():
     # The orcs' camp in the lower ward: a fire in the middle, their stores stacked as barricades between it and the
     # gate and across the way to the stair, a cart left where it was unloaded. No line runs clear from gate to stair.
     mesh(s, 'Camp', PROPS + 'SM_FirePit_01', (1400.0, 0.0, 0.0), scale=(1.6, 1.6, 1.6))
-    fire = point_light(s, 'Camp', (1400.0, 0.0, 90.0), (255, 150, 70), 260.0, 1900.0, shadow=True)
+    fire = point_light(s, 'Camp', (1400.0, 0.0, 90.0), (255, 150, 70), 60.0, 1900.0, shadow=True)   # (a quarter for the night: at 260 cd the eye, adapted to the dark, saw the paving white)
     fire.light_component.set_editor_property('light_function_material', asset('/Game/Glyphbound/Materials/M_GB_LightFlicker'))
     barricade(s, 820.0, -1340.0, 0.0, 'KKCK')
     barricade(s, 1880.0, 780.0, 90.0, 'KBKK')
