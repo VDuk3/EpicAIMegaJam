@@ -195,7 +195,7 @@
 			},
 			"Strings": {
 				"Sprite": "fire_wall",
-				"FlameVfx": "FireWall",
+				"FlameVfx": "FireCurtain",
 				"Color": "#FF5A1A"
 			}
 		},

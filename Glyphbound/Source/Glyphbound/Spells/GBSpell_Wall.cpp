@@ -27,25 +27,26 @@ namespace
 	constexpr float WallCasterGapCm = 10.f;
 }
 
-// The fire wall's flames (owner, 2026-11-15: animated pixel art like the flamethrower, not one picture repeated).
-// Tall looping flame columns (GBPixelVfx clips, Strings "FlameVfx" + A/B/C, drawn by Tools/Jam/make_fire_wall.js)
-// stand side by side in two rows across the wall, each at its own phase and size. They rise out of the ground when
-// the wall appears and sink in its last moments; one unshadowed light flickers with them.
-// The same numbers are in make_fire_wall.js (WALL), which renders the preview.
+// The fire wall's flames (owner, 2026-11-15: animated pixel art like the flamethrower; then, from his reference, ONE
+// curtain of fire along a line on the ground, not a row of columns). GBPixelVfx clips drawn by
+// Tools/Jam/make_fire_wall.js, Strings "FlameVfx" = their common name:
+//   <name>A, <name>B    the sheet: two quads along the wall line, one behind the other, each with its own shapes
+//   <name>Rib           narrow pieces of the same sheet stood across the wall, so it never vanishes seen end-on
+//   <name>Seam          the white-hot line, flat on the floor
+//   <name>Sparks        sparks spitting from the seam (camera-facing)
+// The sheets rise out of the floor when the wall appears and sink back into it in its last moments; one unshadowed
+// light flickers with them. The same layout is in make_fire_wall.js (WALL), which renders the previews.
 namespace GBWallFlames
 {
-	const TCHAR* const VariantSuffixes[] = { TEXT("A"), TEXT("B"), TEXT("C") };
 	const FName LightName(TEXT("FireWallLight"));
-	/** A column is this much taller than the wall, so the tongues lick over its top. */
-	constexpr float HeightShare = 1.15f;
-	/** Distance between columns of one row, as a share of a column's width (they overlap). */
-	constexpr float SpacingShare = 0.5f;
-	constexpr int32 MaxColumnsPerRow = 10;
-	/** The row away from the caster is a little lower. */
-	constexpr float BackRowScale = 0.85f;
-	constexpr float RiseSeconds = 0.35f;
-	constexpr float SinkSeconds = 0.4f;
-	constexpr float MinScale = 0.12f;
+	/** The sheet is drawn for a wall this wide (cm); everything scales with the wall's real width. */
+	constexpr float DrawnForWidth = 400.f;
+	/** The two sheets stand this share of the wall's thickness in front of and behind its middle. */
+	constexpr float SheetOffsetShare = 0.18f;
+	constexpr int32 RibCount = 3;
+	constexpr int32 SparkCount = 8;
+	constexpr float RiseSeconds = 0.4f;
+	constexpr float SinkSeconds = 0.45f;
 	constexpr float LightCandelas = 40.f;
 	constexpr float LightRadius = 1000.f;
 
@@ -56,71 +57,93 @@ namespace GBWallFlames
 		return float(H >> 8) / 16777215.f;
 	}
 
-	const FGBPixelVfxClip* FindClip(const UObject* WorldContext, const FString& ClipBase, int32 Variant)
+	const FGBPixelVfxClip* FindClip(const UObject* WorldContext, const FString& ClipName)
 	{
-		if (ClipBase.IsEmpty())
-		{
-			return nullptr;
-		}
 		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 		const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
 		const UGBPixelVfxSubsystem* Vfx = GameInstance ? GameInstance->GetSubsystem<UGBPixelVfxSubsystem>() : nullptr;
-		return Vfx ? Vfx->FindClip(FName(*(ClipBase + VariantSuffixes[Variant % UE_ARRAY_COUNT(VariantSuffixes)]))) : nullptr;
+		return Vfx ? Vfx->FindClip(FName(*ClipName)) : nullptr;
 	}
 
-	/** Rise at the start, full while it burns, sink at the end. */
-	float ScaleAt(float Elapsed, float Duration)
+	/** How much of the fire is out of the floor: rises at the start, 1 while it burns, sinks at the end. */
+	float ShownAt(float Elapsed, float Duration)
 	{
 		const float Rise = FMath::Clamp(Elapsed / RiseSeconds, 0.f, 1.f);
 		const float Up = 1.f - FMath::Square(1.f - Rise);
 		const float Left = Duration - Elapsed;
 		const float Down = (Duration > 0.f && Left < SinkSeconds) ? FMath::Max(0.f, Left / SinkSeconds) : 1.f;
-		return FMath::Max(MinScale, Up * Down);
+		return Up * Down;
 	}
 
-	/** Builds the columns and the light, and starts their rise. False (nothing built) when the clips are missing. */
+	/** One piece of the fire. Risers move up out of the floor; the others (seam, sparks) grow in place. */
+	struct FPiece
+	{
+		TWeakObjectPtr<UGBPixelVfxComponent> Clip;
+		FVector Location = FVector::ZeroVector;
+		bool bRiser = false;
+	};
+
+	/** Builds the curtain and the light, and starts their rise. False (nothing built) when the sheet clip is missing. */
 	bool Build(AActor* Wall, USceneComponent* Root, const FString& ClipBase, float Width, float Height, float Thickness, float Duration)
 	{
-		const FGBPixelVfxClip* First = FindClip(Wall, ClipBase, 0);
 		UWorld* World = Wall ? Wall->GetWorld() : nullptr;
-		if (!World || !First || First->WorldHeightCm <= 0.f || First->WorldWidthCm <= 0.f || First->Fps <= 0 || First->FrameCount <= 0)
+		const FGBPixelVfxClip* Sheet = ClipBase.IsEmpty() ? nullptr : FindClip(Wall, ClipBase + TEXT("A"));
+		if (!World || !Sheet || Sheet->WorldHeightCm <= 0.f || Sheet->Fps <= 0 || Sheet->FrameCount <= 0)
 		{
 			return false;
 		}
-		const FName FirstId = First->Id;
-		const float BaseScale = Height * HeightShare / First->WorldHeightCm;
-		const float ColumnWidth = First->WorldWidthCm * BaseScale;
-		const float ClipSeconds = float(First->FrameCount) / float(First->Fps);
-		const int32 Count = FMath::Clamp(FMath::RoundToInt(Width / (ColumnWidth * SpacingShare)), 2, MaxColumnsPerRow);
-		TArray<TPair<TWeakObjectPtr<UGBPixelVfxComponent>, float>> Columns;
-		for (int32 Row = 0; Row < 2; ++Row)
+		const float Scale = Width / DrawnForWidth;
+		const float SheetHeight = Sheet->WorldHeightCm * Scale;
+		const float ClipSeconds = float(Sheet->FrameCount) / float(Sheet->Fps);
+		// The actor stands at half the wall's height: the floor is half a height below it.
+		const float Floor = -Height * 0.5f;
+		TArray<FPiece> Pieces;
+		// Quad axes in the wall's frame (X = away from the caster, Y = along the wall, Z = up): the clip's right and up.
+		auto Add = [&](const TCHAR* Suffix, const FVector& Location, const FVector& Right, const FVector& Up, float TimeOffset, bool bRiser)
 		{
-			const int32 InRow = Row == 0 ? Count : Count - 1;
-			for (int32 Index = 0; Index < InRow; ++Index)
+			const FString ClipName = ClipBase + Suffix;
+			if (!FindClip(Wall, ClipName))
 			{
-				const int32 Serial = Columns.Num();
-				const FGBPixelVfxClip* Variant = FindClip(Wall, ClipBase, Serial);
-				const float Scale = BaseScale * (Row == 0 ? 1.f : BackRowScale) * (0.92f + 0.16f * Hash01(Serial, 7));
-				UGBPixelVfxComponent* Column = NewObject<UGBPixelVfxComponent>(Wall, NAME_None, RF_Transient);
-				Column->bEnableLight = false;
-				Column->SizeScale = Scale * MinScale;
-				Column->StartTimeOffset = Hash01(Serial, 3) * ClipSeconds;
-				Column->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
-				// On the ground (the actor stands at half the wall's height); -X is the caster's side.
-				Column->SetRelativeLocation(FVector((Row == 0 ? -0.25f : 0.25f) * Thickness,
-					-Width * 0.5f + (Index + 0.5f + Row * 0.5f) * Width / Count, -Height * 0.5f));
-				Column->RegisterComponent();
-				if (Column->Play(Variant ? Variant->Id : FirstId))
-				{
-					Columns.Emplace(Column, Scale);
-				}
-				else
-				{
-					Column->DestroyComponent();
-				}
+				return;
 			}
+			UGBPixelVfxComponent* Clip = NewObject<UGBPixelVfxComponent>(Wall, NAME_None, RF_Transient);
+			Clip->bEnableLight = false;
+			Clip->SizeScale = bRiser ? Scale : Scale * 0.02f;
+			Clip->StartTimeOffset = TimeOffset;
+			Clip->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+			Clip->SetRelativeLocationAndRotation(Location + (bRiser ? FVector(0.f, 0.f, -SheetHeight) : FVector::ZeroVector),
+				FMatrix(Right, Up, FVector::CrossProduct(Right, Up), FVector::ZeroVector).Rotator());
+			Clip->RegisterComponent();
+			if (Clip->Play(FName(*ClipName)))
+			{
+				FPiece& Piece = Pieces.AddDefaulted_GetRef();
+				Piece.Clip = Clip;
+				Piece.Location = Location;
+				Piece.bRiser = bRiser;
+			}
+			else
+			{
+				Clip->DestroyComponent();
+			}
+		};
+		const FVector Along = FVector::RightVector;
+		const FVector Across = FVector::ForwardVector;
+		const FVector Upward = FVector::UpVector;
+		const float SheetX = SheetOffsetShare * Thickness;
+		Add(TEXT("A"), FVector(-SheetX, 0.f, Floor), Along, Upward, 0.f, true);
+		Add(TEXT("B"), FVector(SheetX, 0.f, Floor), -Along, Upward, 0.55f, true);
+		for (int32 Index = 0; Index < RibCount; ++Index)
+		{
+			Add(TEXT("Rib"), FVector(0.f, -Width * 0.5f + (Index + 0.5f) * Width / RibCount, Floor), Across, Upward, 0.3f + Index * 0.37f, true);
 		}
-		if (Columns.Num() == 0)
+		// The seam lies on the floor (its clip faces the ground and follows this yaw), a little above it.
+		Add(TEXT("Seam"), FVector(0.f, 0.f, Floor + 2.f), Along, -Across, 0.2f, false);
+		for (int32 Index = 0; Index < SparkCount; ++Index)
+		{
+			Add(TEXT("Sparks"), FVector((Index % 2 ? 1.f : -1.f) * (SheetX + 12.f), -Width * 0.5f + (Index + 0.5f) * Width / SparkCount, Floor),
+				Along, Upward, Hash01(Index, 5) * ClipSeconds, false);
+		}
+		if (Pieces.Num() == 0)
 		{
 			return false;
 		}
@@ -132,6 +155,7 @@ namespace GBWallFlames
 		Light->SetCastShadows(false);
 		Light->SetIntensity(0.f);
 		Light->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+		Light->SetRelativeLocation(FVector(0.f, 0.f, Floor + SheetHeight * 0.3f));
 		Light->RegisterComponent();
 
 		// The wall actor does not tick: a timer drives the rise, the sink and the light's flicker (in steps, like the
@@ -139,7 +163,7 @@ namespace GBWallFlames
 		const double StartTime = World->GetTimeSeconds();
 		const TWeakObjectPtr<UPointLightComponent> WeakLight(Light);
 		FTimerHandle Handle;
-		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(Wall, [Wall, Columns, WeakLight, StartTime, Duration]()
+		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(Wall, [Wall, Pieces, WeakLight, StartTime, Duration, Scale, SheetHeight]()
 		{
 			const UWorld* TimerWorld = Wall->GetWorld();
 			if (!TimerWorld)
@@ -147,20 +171,29 @@ namespace GBWallFlames
 				return;
 			}
 			const float Elapsed = static_cast<float>(TimerWorld->GetTimeSeconds() - StartTime);
-			const float Scale = ScaleAt(Elapsed, Duration);
-			for (const TPair<TWeakObjectPtr<UGBPixelVfxComponent>, float>& Column : Columns)
+			const float Shown = ShownAt(Elapsed, Duration);
+			for (const FPiece& Piece : Pieces)
 			{
-				if (UGBPixelVfxComponent* Flame = Column.Key.Get())
+				UGBPixelVfxComponent* Clip = Piece.Clip.Get();
+				if (!Clip)
 				{
-					Flame->SizeScale = Column.Value * Scale;
+					continue;
+				}
+				if (Piece.bRiser)
+				{
+					Clip->SetRelativeLocation(Piece.Location - FVector(0.f, 0.f, (1.f - Shown) * SheetHeight));
+				}
+				else
+				{
+					Clip->SizeScale = Scale * FMath::Max(0.02f, Shown);
 				}
 			}
 			if (UPointLightComponent* FlameLight = WeakLight.Get())
 			{
-				FlameLight->SetIntensity(LightCandelas * Scale * (0.75f + 0.25f * Hash01(FMath::FloorToInt(Elapsed * 12.f), 11)));
+				FlameLight->SetIntensity(LightCandelas * Shown * (0.75f + 0.25f * Hash01(FMath::FloorToInt(Elapsed * 12.f), 11)));
 			}
 		}), 1.f / 30.f, true, 0.f);
-		UE_LOG(LogGB, Display, TEXT("Wall: flames '%s' with %d columns"), *ClipBase, Columns.Num());
+		UE_LOG(LogGB, Display, TEXT("Wall: fire curtain '%s' with %d pieces"), *ClipBase, Pieces.Num());
 		return true;
 	}
 }
@@ -258,7 +291,7 @@ void AGBSpell_Wall::StartSpell()
 	}
 	else if (!FlameClips.IsEmpty())
 	{
-		UE_LOG(LogGB, Warning, TEXT("Wall: the flame clips '%s' (A/B/C in Content/Data/Vfx) did not load; the sprite row is drawn instead"), *FlameClips);
+		UE_LOG(LogGB, Warning, TEXT("Wall: the flame clips '%s' did not load (the sheet is <name>A in Content/Data/Vfx); the sprite row is drawn instead"), *FlameClips);
 	}
 
 	if (!bFlames && TextureId.IsEmpty() && !GetSpriteId().IsNone())
