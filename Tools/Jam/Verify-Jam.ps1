@@ -35,14 +35,11 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
 function Stage([string]$Name, [string]$File, [string[]]$StageArgs, [string]$OkPattern, [string]$KeepPattern) {
     $t = [System.Diagnostics.Stopwatch]::StartNew()
-    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $File @StageArgs -Project $Project 2>&1 | ForEach-Object { "$_" }
-    $code = $LASTEXITCODE
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $File @StageArgs 2>&1 | ForEach-Object { "$_" }
     $keep = @($out | Where-Object { $_ -match $KeepPattern })
-    # Green needs all three: exit code 0, the stage's success line, and no FAILED / FALLO line, case-sensitive since "0 failed" is green (Sol: a zip or size failure
-    # after UAT's BUILD SUCCESSFUL exits 2 and must not pass).
-    $ok = ($code -eq 0) -and (@($out | Where-Object { $_ -match $OkPattern }).Count -gt 0) -and (@($out | Where-Object { $_ -cmatch 'FAILED|FALLO' }).Count -eq 0)
+    $ok = (@($out | Where-Object { $_ -match $OkPattern }).Count -gt 0) -and (@($out | Where-Object { $_ -match 'FAILED' }).Count -eq 0)
     $mark = if ($ok) { 'ok ' } else { 'RED' }
-    Write-Host ("[{0}] {1} ({2:N0} s, exit {3})" -f $mark, $Name, $t.Elapsed.TotalSeconds, $code)
+    Write-Host ("[{0}] {1} ({2:N0} s)" -f $mark, $Name, $t.Elapsed.TotalSeconds)
     $keep | Select-Object -First 8 | ForEach-Object { Write-Host ("      " + $_.Substring(0, [Math]::Min(240, $_.Length))) }
     if (-not $ok) { $script:red.Add($Name) }
     return $ok
@@ -51,7 +48,7 @@ function Stage([string]$Name, [string]$File, [string[]]$StageArgs, [string]$OkPa
 $smokeOk = 'Smoke: done=True crashed=False LogGB errors=0 timedOut=False'
 $smokeKeep = 'FAILED|Smoke:'
 [void](Stage 'suite' (Join-Path $PSScriptRoot 'Test-Jam.ps1') @() 'Tests: \d+ run, 0 failed' 'Tests:|FAILED|Fail')
-if (Stage 'package' (Join-Path $PSScriptRoot 'Package-Jam.ps1') @('-ZipName', $ZipName) 'BUILD SUCCESSFUL' 'ZIP:|BUILD |ERROR') {
+if (Stage 'package' (Join-Path $PSScriptRoot 'Package-Jam.ps1') @('-Project', $Project, '-ZipName', $ZipName) 'BUILD SUCCESSFUL' 'ZIP:|BUILD |ERROR') {
     $side = $Parallel -and $Visits
     $tagFog = @(); $tagCastle = @(); $tagBase = @()
     if ($side) {

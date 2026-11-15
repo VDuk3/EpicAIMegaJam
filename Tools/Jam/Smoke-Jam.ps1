@@ -17,6 +17,9 @@ param(
     [string]$Only = '',      # filtered run: only the steps whose name starts with this (for example Entity), then quit
     [switch]$Offscreen,        # adds -RenderOffscreen: no window pops up
     [switch]$FailFast,         # while iterating: stop the game at the first LogGB error or crash line instead of running to the end
+    # Packaged runs side by side (Verify-Jam -Parallel): each run writes its own log smoke_<LogTag>.log next to the
+    # packaged game's log, and leaves the shared screenshot folder alone (the caller empties it once).
+    [string]$LogTag = '',
     [string]$Project = (Join-Path $PSScriptRoot '..\..\Glyphbound\Glyphbound.uproject'),
     [string]$EngineDir = 'C:\Program Files\Epic Games\UE_5.9',
     [int]$TimeoutSeconds = 540,   # the full run takes about 350 s since the tactics and vault blocks (2026-11-14); the FutureBase tour about 320 s
@@ -38,13 +41,18 @@ if ($Packaged) {
     $shotDir = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Screenshots\Smoke'
     $log = Join-Path $projDir 'Build\Windows\Glyphbound\Saved\Logs\Glyphbound.log'
     $argList = @($Map) + $common
+    if ($LogTag) {
+        $log = Join-Path $projDir "Build\Windows\Glyphbound\Saved\Logs\smoke_$LogTag.log"
+        Remove-Item $log -Force -ErrorAction SilentlyContinue
+        $argList += "-abslog=`"$log`""
+    }
 } else {
     $exe = Join-Path $EngineDir 'Engine\Binaries\Win64\UnrealEditor.exe'
     $shotDir = Join-Path $projDir 'Saved\Screenshots\Smoke'
     $log = Join-Path $projDir "Saved\Logs\smoke_$stamp.log"
     $argList = @("`"$Project`"", $Map, '-game', "-abslog=`"$log`"") + $common
 }
-if (Test-Path $shotDir) { Remove-Item (Join-Path $shotDir '*.png') -Force -ErrorAction SilentlyContinue }
+if (-not $LogTag -and (Test-Path $shotDir)) { Remove-Item (Join-Path $shotDir '*.png') -Force -ErrorAction SilentlyContinue }
 $sw = [Diagnostics.Stopwatch]::StartNew()
 $startUtc = [DateTime]::UtcNow
 $p = Start-Process -FilePath $exe -ArgumentList $argList -PassThru
