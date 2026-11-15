@@ -2,6 +2,7 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/CollisionProfile.h"
 #include "Materials/MaterialInterface.h"
 #include "Core/GBPlaceholder.h"
@@ -29,6 +30,25 @@ namespace GBChestLocal
 	constexpr float LeftoverForward = 140.f;
 	constexpr float LeftoverSpacing = 60.f;
 	constexpr float ChestInteractRadius = 150.f;
+
+	/**
+	 * A chest can wear a mesh from the map instead of the pixel chest (owner, 2026-11-15: a small sci-fi crate at the
+	 * future base's start that holds the katana). Set on the placed actor's Tags: "ChestMesh=<static mesh path>" and
+	 * optionally "ChestScale=<uniform scale>". The mesh stands on the actor's origin; no lid, no lock.
+	 */
+	FString TagValue(const AActor* Actor, const TCHAR* Key)
+	{
+		const FString Prefix = FString(Key) + TEXT("=");
+		for (const FName& Tag : Actor->Tags)
+		{
+			const FString Text = Tag.ToString();
+			if (Text.StartsWith(Prefix))
+			{
+				return Text.Mid(Prefix.Len());
+			}
+		}
+		return FString();
+	}
 }
 
 AGBChest::AGBChest()
@@ -75,8 +95,31 @@ void AGBChest::BeginPlay()
 		Lid->SetMaterial(0, LidArt);
 	}
 
+	// Crate look: the map's mesh replaces the body, and there is no lid or lock.
+	const FString CratePath = GBChestLocal::TagValue(this, TEXT("ChestMesh"));
+	UStaticMesh* CrateMesh = CratePath.IsEmpty() ? nullptr : LoadObject<UStaticMesh>(nullptr, *CratePath, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	if (!CratePath.IsEmpty() && !CrateMesh)
+	{
+		UE_LOG(LogGB, Warning, TEXT("%s: ChestMesh '%s' not found; showing the plain chest."), *GetName(), *CratePath);
+	}
+	if (CrateMesh)
+	{
+		const FString ScaleText = GBChestLocal::TagValue(this, TEXT("ChestScale"));
+		const float Scale = ScaleText.IsEmpty() ? 1.f : FMath::Max(0.01f, FCString::Atof(*ScaleText));
+		Mesh->SetStaticMesh(CrateMesh);
+		Mesh->EmptyOverrideMaterials();
+		Mesh->SetRelativeScale3D(FVector(Scale));
+		const FBox Bounds = CrateMesh->GetBoundingBox();
+		Mesh->SetRelativeLocation(FVector(0.f, 0.f, -Bounds.Min.Z * Scale));
+		Mesh->SetVisibility(true);
+		Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+		Mesh->SetCastShadow(true);
+		Lid->SetVisibility(false);
+		InteractVolume->SetRelativeLocation(FVector(0.f, 0.f, Bounds.GetSize().Z * Scale * 0.5f));
+	}
+
 	// The lock: a brass plate on the front face (+Y), under the lid's edge. On the body, not on the lid (owner).
-	if (UMaterialInterface* LockArt = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Castle/Pixel/MI_Px_chest_lock.MI_Px_chest_lock"), FStringView(), LOAD_NoWarn | LOAD_Quiet))
+	if (UMaterialInterface* LockArt = CrateMesh ? nullptr : LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Glyphbound/Castle/Pixel/MI_Px_chest_lock.MI_Px_chest_lock"), FStringView(), LOAD_NoWarn | LOAD_Quiet))
 	{
 		UStaticMeshComponent* Lock = NewObject<UStaticMeshComponent>(this, TEXT("Lock"));
 		Lock->SetupAttachment(Root);
@@ -100,9 +143,12 @@ FName AGBChest::GetOpenedFlag() const
 void AGBChest::SetOpenLook(bool bInOpen)
 {
 	bOpen = bInOpen;
-	Lid->SetRelativeLocationAndRotation(bInOpen ? GBChestLocal::LidOpenLocation : GBChestLocal::LidClosedLocation, bInOpen ? GBChestLocal::LidOpenRotation : FRotator::ZeroRotator);
-	GBPlaceholder::SetShapeColor(Mesh, bInOpen ? GBChestLocal::OpenBodyColor : GBChestLocal::BodyColor);
-	GBPlaceholder::SetShapeColor(Lid, bInOpen ? GBChestLocal::OpenLidColor : GBChestLocal::LidColor);
+	if (GBChestLocal::TagValue(this, TEXT("ChestMesh")).IsEmpty())
+	{
+		Lid->SetRelativeLocationAndRotation(bInOpen ? GBChestLocal::LidOpenLocation : GBChestLocal::LidClosedLocation, bInOpen ? GBChestLocal::LidOpenRotation : FRotator::ZeroRotator);
+		GBPlaceholder::SetShapeColor(Mesh, bInOpen ? GBChestLocal::OpenBodyColor : GBChestLocal::BodyColor);
+		GBPlaceholder::SetShapeColor(Lid, bInOpen ? GBChestLocal::OpenLidColor : GBChestLocal::LidColor);
+	}
 	InteractVolume->SetCollisionEnabled(bInOpen ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
 }
 
@@ -113,7 +159,7 @@ bool AGBChest::CanInteract(const AGBPlayerCharacter* Player) const
 
 FString AGBChest::GetInteractPrompt(const AGBPlayerCharacter* Player) const
 {
-	return TEXT("Open chest");
+	return GBChestLocal::TagValue(this, TEXT("ChestMesh")).IsEmpty() ? TEXT("Open chest") : TEXT("Open crate");
 }
 
 void AGBChest::Interact(AGBPlayerCharacter* Player)
