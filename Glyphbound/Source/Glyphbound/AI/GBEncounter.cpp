@@ -14,6 +14,64 @@
 #include "World/GBEraSubsystem.h"
 #include "World/GBPickup.h"
 #include "World/GBProgressSubsystem.h"
+#include "EngineUtils.h"
+#include "NiagaraComponent.h"
+
+// Arena seal (owner, 2026-11-15, the tentacle boss): actors tagged "EncounterBarrier" plus the encounter's id (an invisible
+// blocking wall, a smoke system) are off until the fight is on and the player is inside the trigger box; then the wall
+// blocks and the smoke runs, so the player cannot leave. Cleared or reset (the player died): off again.
+// File-local state, no header change.
+namespace GBEncounterBarrier
+{
+	static TSet<TWeakObjectPtr<const AGBEncounter>> Sealed;
+
+	static void Set(const AGBEncounter* Encounter, bool bOn)
+	{
+		UWorld* World = Encounter ? Encounter->GetWorld() : nullptr;
+		if (!World || Encounter->EncounterId.IsNone())
+		{
+			return;
+		}
+		const FName BarrierTag(TEXT("EncounterBarrier"));
+		for (TActorIterator<AActor> It(World); It; ++It)
+		{
+			AActor* Actor = *It;
+			if (!Actor->ActorHasTag(BarrierTag) || !Actor->ActorHasTag(Encounter->EncounterId))
+			{
+				continue;
+			}
+			TInlineComponentArray<UPrimitiveComponent*> Prims(Actor);
+			for (UPrimitiveComponent* Prim : Prims)
+			{
+				if (!Prim->IsA<UNiagaraComponent>())
+				{
+					Prim->SetCollisionEnabled(bOn ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+				}
+			}
+			TInlineComponentArray<UNiagaraComponent*> Fx(Actor);
+			for (UNiagaraComponent* Smoke : Fx)
+			{
+				if (bOn)
+				{
+					Smoke->SetVisibility(true);
+					Smoke->Activate(true);
+				}
+				else
+				{
+					Smoke->Deactivate();
+				}
+			}
+		}
+		if (bOn)
+		{
+			Sealed.Add(Encounter);
+		}
+		else
+		{
+			Sealed.Remove(Encounter);
+		}
+	}
+}
 
 AGBEncounter::AGBEncounter()
 {
@@ -40,6 +98,7 @@ void AGBEncounter::OnConstruction(const FTransform& Transform)
 void AGBEncounter::BeginPlay()
 {
 	Super::BeginPlay();
+	GBEncounterBarrier::Set(this, false);
 
 	Trigger->SetBoxExtent(TriggerExtent);
 	Trigger->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGBEncounter::HandleTriggerOverlap);
@@ -450,6 +509,16 @@ void AGBEncounter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	if (State == EGBEncounterState::Active && !GBEncounterBarrier::Sealed.Contains(this))
+	{
+		// seal only once the player is inside: an encounter woken from outside must not shut him out
+		const APawn* PlayerPawn = GetWorld() && GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr;
+		if (PlayerPawn && Trigger && Trigger->Bounds.GetBox().IsInsideOrOn(PlayerPawn->GetActorLocation()))
+		{
+			GBEncounterBarrier::Set(this, true);
+		}
+	}
+
 	switch (State)
 	{
 	case EGBEncounterState::Waiting:
@@ -515,6 +584,7 @@ void AGBEncounter::Clear()
 
 	State = EGBEncounterState::Cleared;
 	NextWaveTimer = -1.f;
+	GBEncounterBarrier::Set(this, false);
 
 	const FGBEncounterDefinition* Def = FindDefinition();
 	const int32 Points = Def ? FMath::Max(0, Def->SkillPoints) : 0;
@@ -574,6 +644,7 @@ void AGBEncounter::ResetEncounter()
 	}
 	AliveEnemies.Reset();
 	bEnemiesSealed = false;
+	GBEncounterBarrier::Set(this, false);
 
 	State = EGBEncounterState::Waiting;
 	CurrentWave = -1;
