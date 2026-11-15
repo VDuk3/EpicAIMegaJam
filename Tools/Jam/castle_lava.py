@@ -125,6 +125,7 @@ for a in actors:                                   # a second run replaces its o
         eas.destroy_actor(a)
 
 n_tiles = 0
+boxes = []
 n_lights = 0
 for gi, names in enumerate(GROUPS):
     lo = hi = None
@@ -152,12 +153,27 @@ for gi, names in enumerate(GROUPS):
             lc.set_editor_property('intensity', ref_light.point_light_component.get_editor_property('intensity') * 1.5)
         lc.set_editor_property('light_color', unreal.Color(r=255, g=96, b=20, a=255))
         lc.set_editor_property('attenuation_radius', 520.0)   # the corridor is 8 m wide: the glow stops at its walls
+        lc.set_lighting_channels(False, True, False)   # only the corridor's own pieces take this light (below)
         lc.set_editor_property('cast_shadows', True)   # without shadows the glow went through the walls (owner)
         n_lights += 1
     if lo is None:
         continue
+    boxes.append((lo, hi))
     log.append('group %d: floor top z=%.0f, %.0f x %.0f cm' % (gi, hi.z, hi.x - lo.x, hi.y - lo.y))
 
+# The glow lit the cell behind the barred wall (owner: "the lava's light goes through the jail wall"). The lava lights
+# are on lighting channel 1, and only the pieces standing over the lava (its walls, vault and pillars) are on it.
+n_ch = 0
+for a in eas.get_all_level_actors():
+    if not isinstance(a, unreal.StaticMeshActor):
+        continue
+    o, e = a.get_actor_bounds(False)
+    c = a.static_mesh_component
+    inside = any(lo.x - 80 <= o.x <= hi.x + 80 and lo.y - 80 <= o.y <= hi.y + 80 and lo.z - 100 <= o.z <= hi.z + 900 for lo, hi in boxes)
+    if inside:
+        c.set_lighting_channels(True, True, False)
+        n_ch += 1
+log.append('%d pieces of the lava corridor take the lava light' % n_ch)
 saved = les.save_current_level()
 log.append('lava on %d tiles, %d lights (ref %s), saved=%s' % (n_tiles, n_lights, ref_light.get_actor_label() if ref_light else None, saved))
 unreal.log('\n'.join(log))
