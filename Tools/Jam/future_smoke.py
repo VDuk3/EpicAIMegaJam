@@ -107,7 +107,7 @@ def planes(eas, plane, mi, name, box, along_x, spacing, first):
 
 CARPET_MAT = SMOKE_DIR + '/M_GB_SmokeCarpet'
 NOISE = '/Engine/EngineMaterials/Good64x64TilingNoiseHighFreq'
-LAYERS = 12   # horizontal slices of the carpet, floor to top
+LAYERS = 20   # horizontal slices of the carpet, floor to top
 
 
 def carpet_material():
@@ -147,34 +147,28 @@ def carpet_material():
     def scalar(name, v, x, y):
         return node(unreal.MaterialExpressionScalarParameter, x, y, parameter_name=name, default_value=v)
 
-    tex = unreal.load_asset(NOISE)
+    # Procedural gradient noise in world space (no texture texels: smooth at any distance), two octaves of billows
+    # about 1.6 m wide with finer ones on top, drifting slowly along the floor.
     wp = node(unreal.MaterialExpressionWorldPosition, -1800, 0)
     xy = node(unreal.MaterialExpressionComponentMask, -1600, 0, r=True, g=True, b=False, a=False)
     link(wp, xy, '')
     wz = node(unreal.MaterialExpressionComponentMask, -1600, 300, r=False, g=False, b=True, a=False)
     link(wp, wz, '')
-
-    def layer(scale_cm, sx, sy, y):
-        d = op(unreal.MaterialExpressionDivide, xy, const(scale_cm, -1400, y + 60), -1300, y)
-        p = node(unreal.MaterialExpressionPanner, -1150, y, speed_x=sx, speed_y=sy)
-        link(d, p, 'Coordinate')
-        t = node(unreal.MaterialExpressionTextureSample, -950, y, texture=tex)
-        link(p, t, 'UVs')
-        m = node(unreal.MaterialExpressionComponentMask, -750, y, r=True, g=False, b=False, a=False)
-        link(t, m, '')
-        return m
-
-    big = layer(9000.0, 0.010, 0.004, -300)       # billows of about 1.5 m
-    fine = layer(2600.0, -0.022, 0.012, -100)     # wisps of about 40 cm drifting the other way
-    n = op(unreal.MaterialExpressionLinearInterpolate, big, fine, -550, -200)
-    link(const(0.3, -700, -150), n, 'Alpha')
+    tm = node(unreal.MaterialExpressionTime, -1800, -200)
+    drift = op(unreal.MaterialExpressionMultiply, tm, node(unreal.MaterialExpressionConstant2Vector, -1800, -120, r=14.0, g=6.0), -1600, -160)
+    pos2 = op(unreal.MaterialExpressionAdd, xy, drift, -1450, -60)
+    pos3 = op(unreal.MaterialExpressionAppendVector, pos2, op(unreal.MaterialExpressionMultiply, tm, const(9.0, -1600, -260), -1450, -220), -1300, -100)
+    fn = [m for m in dir(unreal.NoiseFunction) if m.startswith('NOISEFUNCTION_GRADIENT_TEX') and not m.endswith('3D')]
+    n = node(unreal.MaterialExpressionNoise, -1100, -100, scale=0.0065, levels=4, level_scale=2.3, output_min=0.0, output_max=1.0,
+             quality=2, turbulence=False, noise_function=getattr(unreal.NoiseFunction, fn[0] if fn else 'NOISEFUNCTION_GRADIENT_ALU'))
+    link(pos3, n, 'Position')
     base = scalar('Base', -600.0, -1400, 300)
     height = scalar('Height', 60.0, -1400, 380)
     t = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, wz, base, -1200, 300), height, -1050, 320)
     ts = node(unreal.MaterialExpressionSaturate, -900, 320)
     link(t, ts, '')
     cut = op(unreal.MaterialExpressionMultiply, ts, scalar('CutMax', 0.85, -900, 420), -750, 360)
-    soft = scalar('Soft', 0.12, -750, 460)
+    soft = scalar('Soft', 0.2, -750, 460)
     a = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, n, cut, -550, 300), soft, -400, 340)
     asat = node(unreal.MaterialExpressionSaturate, -250, 340)
     link(a, asat, '')
