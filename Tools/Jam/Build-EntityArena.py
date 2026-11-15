@@ -117,6 +117,13 @@ if eal.does_asset_exist(LIQUID):
 else:
     log.append('NO LIQUID YET (%s missing)' % LIQUID)
 
+# a soft light from above for the fighters only (owner: the fight was too dark); walls and floor are Unlit, so they stay black
+dl = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000), unreal.Rotator(0, -60, 30))
+dl.set_actor_label('Arena_FighterLight')
+dl.tags = [unreal.Name('EntityArena')]
+dl.light_component.set_intensity(4.0)
+dl.light_component.set_light_color(unreal.LinearColor(0.85, 0.9, 1.0, 1))
+dl.light_component.set_editor_property('cast_shadows', False)
 ues.get_editor_world().get_world_settings().set_editor_property('kill_z', -2000.0)
 les.save_current_level()
 log.append('arena built: floor, %d wall segments, post process, player start, encounter Entity, nav' % WALL_SEGMENTS)
