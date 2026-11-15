@@ -1,9 +1,9 @@
 {
   "Id": "OrcBrute",
-  "CellWidth": 232,
-  "CellHeight": 208,
-  "PivotX": 116,
-  "PivotY": 188,
+  "CellWidth": 256,
+  "CellHeight": 216,
+  "PivotX": 128,
+  "PivotY": 190,
   "PixelsPerMeter": 44,
   "Columns": 8,
   "Clips": {

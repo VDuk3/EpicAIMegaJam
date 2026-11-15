@@ -219,7 +219,7 @@
 		"FluidFog.EnemyRange": 1500,
 		"FluidFog.MaxEntries": 64,
 		"FluidFog.GridCornered": 0,
-		"FluidFog.FillDensity": 2,
+		"FluidFog.FillDensity": 0.7,
 		"FluidFog.PushDivergence": 1
 	},
 	"Strings": {

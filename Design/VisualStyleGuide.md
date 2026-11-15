@@ -113,6 +113,17 @@ A skin shadow tone is missing. Add a warm, slightly pink one, around `#C88A6A`.
 
 About **50 colors** in total, against 81 today, each with a clear role. Save them as the project's own palette in Pixelorama and stop using DawnBringer 32 as the reference palette, since it is not the one actually in use.
 
+### Creature ramps (2026-11-15, from the castle enemies' pre-rendered sheets)
+Added by the sprite baker (`Tools/Blender/sprite_bake.py`) for the castle's 8-direction enemies; everything else on those sheets comes from the ramps above.
+- Orc skin green: `#1B2E2A #2B4A30 #3F6B35 #5E8F3E #8DB552`
+- Brute, darker orc green: `#16241F #22392A #31502F #476B36 #628A40`
+- Leather (orc vest and boots, centaur gear): `#2A1A1C #4A2F22 #6E4A2C #946A3A`
+- Shaman robe purple: `#1E1428 #2E1E3C #45305A #5E4677`
+- Barghest fur black: `#0E0C12 #1C1720 #2C2430 #40343F #5A4A55`; its ember-brown hide: `#2A1212 #4B1A16 #73291C #9C3F22`
+- Horse chestnut (the centaur): `#2A1410 #4A2416 #6E3A1E #94542A #B8743A`
+- Skin shadows: `#C88A6A`, and `#8E5B48` (the centaur)
+- The Valkyrie's armour gets a deeper shadow `#0A0B3D` before its ramp; her wings use three tones `#A19D4F #E2DE9C #F5F3CF`
+
 ### Color budget per sprite
 - Weapons and items: up to 16 colors.
 - Characters: up to 24 colors.

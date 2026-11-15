@@ -7989,22 +7989,34 @@ namespace GBSmokeRun
 		static TWeakObjectPtr<AGBFluidFog> SmokeFog;
 		static FVector SmokeFogPlayerHome = FVector::ZeroVector;
 		const float FogT = Z + 401.f;
-		Add(FogT, TEXT("Fog: spawn a fog box around the player"), [](UWorld* World, AGBPlayerCharacter* Player)
+		Add(FogT, TEXT("Fog: spawn a tunnel-sized fog box in front of the player"), [](UWorld* World, AGBPlayerCharacter* Player)
 		{
 			SmokeFogPlayerHome = Player->GetActorLocation();
-			FTransform Where(FRotator::ZeroRotator, SmokeFogPlayerHome);
+			// Like the dark corridor: 18 m long, 4.4 m wide, 3.5 m high, its floor on the player's floor, the player inside
+			// near one end looking along it (the box is axis-aligned: its long axis is the one nearest the player's facing).
+			const FVector Fwd = Player->GetActorForwardVector();
+			const bool bAlongX = FMath::Abs(Fwd.X) >= FMath::Abs(Fwd.Y);
+			const FVector Axis = bAlongX ? FVector(FMath::Sign(Fwd.X), 0.f, 0.f) : FVector(0.f, FMath::Sign(Fwd.Y), 0.f);
+			const float HalfHeight = Player->GetCapsuleComponent() ? Player->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 90.f;
+			const FVector Centre = SmokeFogPlayerHome + Axis * 700.f + FVector(0.f, 0.f, 175.f - HalfHeight);
+			Player->SetActorRotation(Axis.Rotation());
+			if (AController* Controller = Player->GetController())
+			{
+				Controller->SetControlRotation(Axis.Rotation() + FRotator(-8.f, 0.f, 0.f));
+			}
+			FTransform Where(FRotator::ZeroRotator, Centre);
 			AGBFluidFog* Fog = World->SpawnActorDeferred<AGBFluidFog>(AGBFluidFog::StaticClass(), Where);
 			if (!Fog)
 			{
 				UE_LOG(LogGB, Error, TEXT("SMOKE Fog FAILED: could not spawn the fog actor"));
 				return;
 			}
-			Fog->BoxExtent = FVector(600.f, 200.f, 200.f);
+			Fog->BoxExtent = bAlongX ? FVector(900.f, 220.f, 175.f) : FVector(220.f, 900.f, 175.f);
 			Fog->FinishSpawning(Where);
 			SmokeFog = Fog;
 			UE_LOG(LogGB, Display, TEXT("SMOKE Fog spawned: system loaded=%d"), Fog->HasSystem() ? 1 : 0);
 		});
-		Add(FogT + 2.5f, TEXT("Fog: running, the player is written, screenshot before the shots"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(FogT + 8.f, TEXT("Fog: running (8 s to spread), the player is written, screenshot before the shots"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBFluidFog* Fog = SmokeFog.Get();
 			if (!Fog)
@@ -8030,21 +8042,23 @@ namespace GBSmokeRun
 			}
 			Shot(TEXT("fog_before"));
 		});
-		Add(FogT + 3.2f, TEXT("Fog: three shots through it"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(FogT + 8.7f, TEXT("Fog: three shots through it"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBFluidFog* Fog = SmokeFog.Get();
 			if (!Fog)
 			{
 				return;
 			}
-			const FVector Centre = Fog->GetActorLocation();
+			// Along the tunnel from the player's eyes, low and level: the holes they tear show in the next screenshot.
+			const FVector Eye = Player->GetActorLocation() + FVector(0.f, 0.f, 50.f);
+			const FVector Along = Player->GetActorForwardVector().GetSafeNormal2D();
 			for (int32 Index = 0; Index < 3; ++Index)
 			{
-				const FVector Offset(0.f, 0.f, -60.f + Index * 60.f);
-				UGBCombatLibrary::OnShotTraced().Broadcast(Centre + Offset + FVector(-900.f, 0.f, 0.f), Centre + Offset + FVector(900.f, 0.f, 0.f), 0.f);
+				const FVector Side = FVector::CrossProduct(Along, FVector::UpVector) * (-80.f + Index * 80.f);
+				UGBCombatLibrary::OnShotTraced().Broadcast(Eye + Side - FVector(0.f, 0.f, 60.f), Eye + Side - FVector(0.f, 0.f, 60.f) + Along * 1800.f, 0.f);
 			}
 		});
-		Add(FogT + 3.7f, TEXT("Fog: the shots were written, screenshot after"), [](UWorld*, AGBPlayerCharacter*)
+		Add(FogT + 9.2f, TEXT("Fog: the shots were written, screenshot after"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			AGBFluidFog* Fog = SmokeFog.Get();
 			if (!Fog)
@@ -8062,7 +8076,11 @@ namespace GBSmokeRun
 			}
 			Shot(TEXT("fog_after"));
 		});
-		Add(FogT + 4.5f, TEXT("Fog: far from the box the simulation stops"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(FogT + 11.f, TEXT("Fog: two seconds later (the holes close), screenshot"), [](UWorld*, AGBPlayerCharacter*)
+		{
+			Shot(TEXT("fog_later"));
+		});
+		Add(FogT + 11.5f, TEXT("Fog: far from the box the simulation stops"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBFluidFog* Fog = SmokeFog.Get();
 			if (!Fog)
@@ -8075,7 +8093,7 @@ namespace GBSmokeRun
 			}
 			Player->SetActorLocation(SmokeFogPlayerHome + FVector(0.f, 0.f, 20000.f), false, nullptr, ETeleportType::TeleportPhysics);
 		});
-		Add(FogT + 5.2f, TEXT("Fog: stopped, then clean up"), [](UWorld*, AGBPlayerCharacter* Player)
+		Add(FogT + 12.2f, TEXT("Fog: stopped, then clean up"), [](UWorld*, AGBPlayerCharacter* Player)
 		{
 			AGBFluidFog* Fog = SmokeFog.Get();
 			if (Fog)
@@ -8091,7 +8109,7 @@ namespace GBSmokeRun
 			Player->SetActorLocation(SmokeFogPlayerHome, false, nullptr, ETeleportType::TeleportPhysics);
 		});
 		// A filtered run (gb.Smoke Fog) quits here. The full run goes on to the quit step.
-		Add(FogT + 6.f, TEXT("Fog: done"), [](UWorld*, AGBPlayerCharacter*)
+		Add(FogT + 13.f, TEXT("Fog: done"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			if (bFilteredRun)
 			{
@@ -8099,7 +8117,7 @@ namespace GBSmokeRun
 				FPlatformMisc::RequestExit(false);
 			}
 		});
-		Add(FogT + 8.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
+		Add(FogT + 15.f, TEXT("quit"), [](UWorld*, AGBPlayerCharacter*)
 		{
 			UE_LOG(LogGB, Display, TEXT("SMOKE DONE"));
 			FPlatformMisc::RequestExit(false);

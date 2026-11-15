@@ -41,32 +41,32 @@
     },
     "Cast": {
       "Row": 30,
-      "Frames": 5,
-      "Fps": 6,
+      "Frames": 6,
+      "Fps": 8,
       "Loop": false,
-      "HitFrame": 3
+      "HitFrame": 4
     },
     "Leap": {
-      "Row": 35,
+      "Row": 36,
       "Frames": 6,
       "Fps": 8,
       "Loop": false,
       "HitFrame": 4
     },
     "Hurt": {
-      "Row": 41,
+      "Row": 42,
       "Frames": 2,
       "Fps": 8,
       "Loop": false
     },
     "Death": {
-      "Row": 43,
+      "Row": 44,
       "Frames": 6,
       "Fps": 8,
       "Loop": false
     },
     "Dormant": {
-      "Row": 49,
+      "Row": 50,
       "Frames": 1,
       "Fps": 1,
       "Loop": false
