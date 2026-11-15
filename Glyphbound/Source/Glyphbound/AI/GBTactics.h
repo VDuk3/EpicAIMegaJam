@@ -87,6 +87,8 @@ namespace GBTactics
 		float ViewCone = 20.f;
 		/** Angle (degrees) at which two members stop counting as bunched up. */
 		float SpreadFullAngle = 60.f;
+		/** Reward for standing on a side where the player has room to escape (pushes him to the walls). 0 = off. */
+		float Corner = 0.f;
 	};
 	struct FPositionInput
 	{
@@ -104,6 +106,8 @@ namespace GBTactics
 		float PathLength = 0.f;
 		bool bCrossesFireLine = false;
 		bool bInViewCone = false;
+		/** 0..1: how open the player's escape is in the direction of this point (1 = nothing blocks him that way). */
+		float EscapeOpenness = 0.f;
 	};
 	/** Higher is better. A point nearer than RangeMin * 0.5 to the player is never acceptable (very negative). */
 	GLYPHBOUND_API float ScorePosition(const FPositionInput& In, const FPositionWeights& W);

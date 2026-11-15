@@ -73,6 +73,14 @@ public:
 	 */
 	bool TryBeginMeleeAttack(AGBEnemyCharacter* Enemy);
 	void EndMeleeAttack(AGBEnemyCharacter* Enemy);
+	/**
+	 * The pincer (members with the stat PincerWait > 0, the castle's melee): an attacker at its slot waits for the other attackers
+	 * of the squad to reach theirs, so they close in together from different sides; it goes at once when a partner has just
+	 * committed (the other jaw), when it is the only attacker, or after PincerWait seconds. Members without the stat: always true.
+	 */
+	bool MayCommitMelee(AGBEnemyCharacter* Enemy);
+	/** 0..1: how open the player's escape is towards a bearing (degrees) from him; 1 = nothing blocks him that way (also before the first sample). */
+	float GetEscapeOpenness(float BearingDegrees) const;
 	/** The flyers of the member's own squad (alive, present in the current era), for their separation. */
 	void GetFlyerNeighbours(const AGBEnemyCharacter* Enemy, TArray<const AGBEnemyCharacter*>& Out) const;
 	/** Melee slot round the player: the point to go to, and whether it may attack now (otherwise it waits at the wait radius). */
@@ -89,7 +97,11 @@ public:
 	void LogTactics(const TCHAR* Prefix);
 	int32 GetMaxConcurrentShooters() const { return MaxShootersSeen; }
 	int32 GetShootersNow() const;
-	void ResetSmokeCounters() { MaxShootersSeen = 0; }
+	void ResetSmokeCounters() { MaxShootersSeen = 0; PincerCount = 0; }
+	/** Two melee members that committed within the pincer window from at least 90 degrees apart round the player. */
+	int32 GetPincerCount() const { return PincerCount; }
+	/** The widest angle (degrees, round the player) seen between two such commits. */
+	float GetBestPincerAngle() const { return BestPincerAngle; }
 
 private:
 	struct FMember
@@ -111,6 +123,11 @@ private:
 		FGBTacticalPosition Assigned;
 		FVector Reserved = FVector::ZeroVector;
 		bool bHasReserved = false;
+		// Pincer
+		float PincerWaitStart = 0.f;
+		bool bPincerWaiting = false;
+		float LastCommitTime = -1000.f;
+		float CommitBearing = 0.f;
 	};
 	struct FSquad
 	{
@@ -136,8 +153,21 @@ private:
 	bool FindPosition(FSquad& Squad, FMember& Member, FGBTacticalPosition& Out);
 	float Now() const;
 
+	/** Samples how far the player could run in 12 directions (every squad tick). */
+	void UpdateEscape();
+	/**
+	 * The pincer squad's order of attack, a round robin: first the members swinging now (nearest first), then those at the
+	 * waiting ring or closer, the one whose last attack is OLDEST first (never attacked = oldest; ties: nearest), then the ones
+	 * still far out (nearest first). A member keeps its turn while it walks in, so a slow orc is not pushed back by the barghests
+	 * the moment they have rested (a distance penalty that ran out did exactly that: the Champion never got a turn).
+	 */
+	void SortPincerAttackers(const FSquad& Squad, TArray<const AGBEnemyCharacter*>& InOut, const FVector& PlayerPos) const;
+
 	TMap<TWeakObjectPtr<AGBEncounter>, FSquad> Squads;
 	float TickAccumulator = 0.f;
 	float LogAccumulator = 0.f;
 	int32 MaxShootersSeen = 0;
+	int32 PincerCount = 0;
+	float BestPincerAngle = 0.f;
+	TArray<float> EscapeOpen;
 };

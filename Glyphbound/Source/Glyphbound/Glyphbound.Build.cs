@@ -18,5 +18,7 @@ public class Glyphbound : ModuleRules
 
 		// Baked pixel VFX clips (Plugins/GBPixelVfx, Runtime module): the flame and the explosion of the Fireball.
 		PrivateDependencyModuleNames.Add("GBPixelVfx");
+		// The castle's sprite sheets are PNG files read at runtime into transient textures (FImage).
+		PrivateDependencyModuleNames.Add("ImageCore");
 	}
 }

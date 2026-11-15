@@ -1,0 +1,304 @@
+{
+ "Id": "Barghest",
+ "SourceText": "SK_BARGHEST + SK_BARGHEST_MANE + SK_BARGHEST_TAIL (scaled 0.75) with clips BARGHEST_*; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art",
+ "Parts": [
+  {
+   "fbx": "Barghest/SK_BARGHEST.fbx",
+   "textures": {
+    "M_BARGHEST": "Barghest/BARGHEST_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Barghest/SK_BARGHEST_MANE.fbx",
+   "textures": {
+    "M_HAIR": "Barghest/BARGHEST_HAIR.png"
+   }
+  },
+  {
+   "fbx": "Barghest/SK_BARGHEST_TAIL.fbx",
+   "textures": {
+    "M_HAIR": "Barghest/BARGHEST_HAIR.png"
+   }
+  }
+ ],
+ "Scale": 0.75,
+ "Forward": [
+  0,
+  -1,
+  0
+ ],
+ "PelvisBone": "BARGHEST_ Pelvis",
+ "Cell": [
+  208,
+  136
+ ],
+ "Pivot": [
+  104,
+  114
+ ],
+ "PixelsPerMeter": 44,
+ "PitchDeg": 12,
+ "Supersample": 4,
+ "Hysteresis": 0.3,
+ "Light": {
+  "dir": [
+   -0.55,
+   0.65,
+   0.5
+  ],
+  "ambient": 0.35,
+  "wrap": 0.15
+ },
+ "Ramps": {
+  "fur": [
+   "#0E0C12",
+   "#1C1720",
+   "#2C2430",
+   "#40343F",
+   "#5A4A55"
+  ],
+  "hide": [
+   "#2A1212",
+   "#4B1A16",
+   "#73291C",
+   "#9C3F22"
+  ],
+  "fire": [
+   "#BC2A12",
+   "#F03416",
+   "#F3610B"
+  ],
+  "bone": [
+   "#A19D4F",
+   "#E2DE9C"
+  ]
+ },
+ "Regions": [
+  {
+   "name": "eye",
+   "ramp": "fire",
+   "range": [
+    0.2,
+    0.6
+   ],
+   "weight": 8,
+   "min_cov": 0.1,
+   "keep_single": true,
+   "inner_outline": false
+  },
+  {
+   "name": "mouth",
+   "ramp": "fire",
+   "range": [
+    0.3,
+    1.2
+   ],
+   "weight": 2,
+   "min_cov": 0.15,
+   "inner_outline": false
+  },
+  {
+   "name": "bone",
+   "ramp": "bone",
+   "range": [
+    0.4,
+    0.9
+   ],
+   "weight": 3,
+   "min_cov": 0.15,
+   "keep_single": true,
+   "inner_outline": false
+  },
+  {
+   "name": "fur",
+   "ramp": "fur",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "blur": 1,
+   "mode_passes": 1,
+   "min_band": 5
+  },
+  {
+   "name": "hide",
+   "ramp": "hide",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "mode_passes": 1,
+   "min_band": 4
+  }
+ ],
+ "Rules": [
+  {
+   "region": "fur",
+   "material": "M_HAIR"
+  },
+  {
+   "region": "eye",
+   "bone": [
+    "head"
+   ],
+   "hue": [
+    320,
+    30
+   ],
+   "sat": [
+    0.45,
+    2
+   ],
+   "lum": [
+    0.35,
+    2
+   ]
+  },
+  {
+   "region": "mouth",
+   "hue": [
+    340,
+    25
+   ],
+   "sat": [
+    0.5,
+    2
+   ],
+   "lum": [
+    0.2,
+    2
+   ]
+  },
+  {
+   "region": "bone",
+   "hue": [
+    38,
+    70
+   ],
+   "sat": [
+    0.3,
+    2
+   ],
+   "lum": [
+    0.45,
+    2
+   ]
+  },
+  {
+   "region": "fur",
+   "lum": [
+    0,
+    0.28
+   ]
+  },
+  {
+   "region": "hide"
+  }
+ ],
+ "BoneRegions": [
+  [
+   "head",
+   [
+    "BARGHEST_ Head"
+   ]
+  ]
+ ],
+ "Clips": [
+  {
+   "name": "Idle",
+   "src": "Barghest/BARGHEST_idleAggressive.fbx",
+   "frames": 6,
+   "fps": 6,
+   "loop": true
+  },
+  {
+   "name": "Walk",
+   "src": "Barghest/BARGHEST_walk.fbx",
+   "frames": 8,
+   "fps": 10,
+   "loop": true,
+   "root": "linear",
+   "range": [
+    1,
+    31
+   ]
+  },
+  {
+   "name": "Run",
+   "src": "Barghest/BARGHEST_run.fbx",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "root": "linear",
+   "range": [
+    1,
+    19
+   ]
+  },
+  {
+   "name": "Attack",
+   "src": "Barghest/BARGHEST_biteAggressive.fbx",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hit": 3,
+   "root": "cancel",
+   "keys": [
+    1,
+    4,
+    7,
+    10,
+    14,
+    20
+   ]
+  },
+  {
+   "name": "Leap",
+   "src": "Barghest/BARGHEST_jumpBiteAggressive.fbx",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hit": 3,
+   "root": "partial",
+   "root_factor": 0.6,
+   "keys": [
+    1,
+    5,
+    9,
+    12,
+    16,
+    22,
+    30
+   ]
+  },
+  {
+   "name": "Hurt",
+   "src": "Barghest/BARGHEST_getHitAggressive.fbx",
+   "frames": 2,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "keys": [
+    5,
+    9
+   ]
+  },
+  {
+   "name": "Death",
+   "src": "Barghest/BARGHEST_deathAggressive.fbx",
+   "frames": 7,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "keys": [
+    1,
+    15,
+    29,
+    36,
+    43,
+    50,
+    64
+   ]
+  }
+ ]
+}

@@ -1,0 +1,56 @@
+{
+  "Id": "Barghest",
+  "CellWidth": 208,
+  "CellHeight": 136,
+  "PivotX": 104,
+  "PivotY": 114,
+  "PixelsPerMeter": 44,
+  "Columns": 8,
+  "Clips": {
+    "Idle": {
+      "Row": 0,
+      "Frames": 6,
+      "Fps": 6,
+      "Loop": true
+    },
+    "Walk": {
+      "Row": 6,
+      "Frames": 8,
+      "Fps": 10,
+      "Loop": true
+    },
+    "Run": {
+      "Row": 14,
+      "Frames": 6,
+      "Fps": 12,
+      "Loop": true
+    },
+    "Attack": {
+      "Row": 20,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Leap": {
+      "Row": 26,
+      "Frames": 7,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Hurt": {
+      "Row": 33,
+      "Frames": 2,
+      "Fps": 8,
+      "Loop": false
+    },
+    "Death": {
+      "Row": 35,
+      "Frames": 7,
+      "Fps": 8,
+      "Loop": false
+    }
+  },
+  "Source": "SK_BARGHEST + SK_BARGHEST_MANE + SK_BARGHEST_TAIL (scaled 0.75) with clips BARGHEST_*; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art"
+}

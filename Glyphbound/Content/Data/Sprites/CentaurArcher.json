@@ -1,0 +1,60 @@
+{
+  "Id": "CentaurArcher",
+  "CellWidth": 224,
+  "CellHeight": 212,
+  "PivotX": 112,
+  "PivotY": 184,
+  "PixelsPerMeter": 44,
+  "Columns": 8,
+  "Clips": {
+    "Idle": {
+      "Row": 0,
+      "Frames": 4,
+      "Fps": 6,
+      "Loop": true
+    },
+    "Walk": {
+      "Row": 4,
+      "Frames": 8,
+      "Fps": 10,
+      "Loop": true
+    },
+    "Run": {
+      "Row": 12,
+      "Frames": 6,
+      "Fps": 12,
+      "Loop": true
+    },
+    "Shoot": {
+      "Row": 18,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 1,
+      "Origin": [
+        99,
+        80
+      ]
+    },
+    "Attack": {
+      "Row": 24,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Hurt": {
+      "Row": 30,
+      "Frames": 2,
+      "Fps": 8,
+      "Loop": false
+    },
+    "Death": {
+      "Row": 32,
+      "Frames": 6,
+      "Fps": 8,
+      "Loop": false
+    }
+  },
+  "Source": "SK_Centaur + SK_Body_Armor, SK_Shoulder_Pads, hair pieces, SK_Sheath + SK_Sword_Idle, SK_Bow_Action + SK_Arrow_Action, clips ANIM_Centaur_*Bow; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art"
+}

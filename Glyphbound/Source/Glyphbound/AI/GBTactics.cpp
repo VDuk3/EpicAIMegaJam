@@ -218,6 +218,8 @@ float GBTactics::ScorePosition(const FPositionInput& In, const FPositionWeights&
 	{
 		Score -= W.CrossFire;
 	}
+	// Cornering: a point on a side where the player has room to run cuts that escape (0 weight = off, the default).
+	Score += W.Corner * FMath::Clamp(In.EscapeOpenness, 0.f, 1.f);
 	return Score;
 }
 

@@ -117,12 +117,19 @@
 					"DelayBefore": 0,
 					"Spawns": [
 						{
-							"EnemyId": "Imp_Past",
-							"Count": 3
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 1,
+							"Behavior": "Guard"
 						},
 						{
 							"EnemyId": "Orc_Past",
-							"Count": 2
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
 						}
 					]
 				},
@@ -131,13 +138,32 @@
 					"Spawns": [
 						{
 							"EnemyId": "Orc_Past",
-							"Count": 3
+							"Count": 2
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 2
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 1
 						}
 					]
 				}
 			],
 			"SkillPoints": 1,
-			"Rewards": []
+			"Rewards": [],
+			"Prespawn": true,
+			"Comment": "Provisional (overnight, 2026-11-15): the lower ward, the first fight. A shaman on the terrace's edge, orcs and a barghest pair around the camp fire; then orcs and barghests from the gate side, then a champion."
 		},
 		{
 			"Id": "Opening_Future",
@@ -711,46 +737,46 @@
 			"Rewards": []
 		},
 		{
-				"Id": "SubBoss_Future",
-				"Prespawn": true,
-				"Waves": [
-					{
-						"DelayBefore": 0,
-						"Spawns": [
-							{
-								"EnemyId": "Orc_Future_Warlord",
-								"Count": 1,
-								"Behavior": "Guard"
-							},
-							{
-								"EnemyId": "Orc_Future_Enforcer",
-								"Count": 2,
-								"Behavior": "Patrol"
-							},
-							{
-								"EnemyId": "Drone_Future",
-								"Count": 2,
-								"Behavior": "Patrol"
-							}
-						]
-					}
-				],
-				"SkillPoints": 2,
-				"Rewards": [
-					{
-						"ItemId": "PowerCell",
-						"Count": 1,
-						"Chance": 1
-					},
-					{
-						"ItemId": "Ammo_Magazine",
-						"Count": 2,
-						"Chance": 1
-					}
-				],
-				"Comment": "Provisional (enemies block, 2026-11-14): the sub-boss hall. Clearing it opens the hall freight door (FutureSubBossDefeated) and gives the first Power Cell of the lab gate.",
-				"ClearedFlag": "FutureSubBossDefeated"
-			},
+			"Id": "SubBoss_Future",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Future_Warlord",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2,
+							"Behavior": "Patrol"
+						}
+					]
+				}
+			],
+			"SkillPoints": 2,
+			"Rewards": [
+				{
+					"ItemId": "PowerCell",
+					"Count": 1,
+					"Chance": 1
+				},
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
+			],
+			"Comment": "Provisional (enemies block, 2026-11-14): the sub-boss hall. Clearing it opens the hall freight door (FutureSubBossDefeated) and gives the first Power Cell of the lab gate.",
+			"ClearedFlag": "FutureSubBossDefeated"
+		},
 		{
 			"Id": "Zone_Fire",
 			"Waves": [
@@ -758,12 +784,24 @@
 					"DelayBefore": 0,
 					"Spawns": [
 						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Centaur_Past",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
 							"EnemyId": "Orc_Past",
-							"Count": 4
+							"Count": 2,
+							"Behavior": "Patrol"
 						},
 						{
 							"EnemyId": "Imp_Past",
-							"Count": 4
+							"Count": 2,
+							"Behavior": "Patrol"
 						}
 					]
 				},
@@ -775,29 +813,8 @@
 							"Count": 2
 						},
 						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 2
-						},
-						{
-							"EnemyId": "Orc_Past",
-							"Count": 2
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past_Champion",
-							"Count": 2
-						},
-						{
 							"EnemyId": "Imp_Past",
-							"Count": 4
+							"Count": 3
 						}
 					]
 				},
@@ -807,27 +824,6 @@
 						{
 							"EnemyId": "Orc_Past_Juggernaut",
 							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past",
-							"Count": 4
-						},
-						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 2
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past",
-							"Count": 4
 						},
 						{
 							"EnemyId": "Orc_Past_Shaman",
@@ -837,7 +833,9 @@
 				}
 			],
 			"SkillPoints": 3,
-			"Rewards": []
+			"Rewards": [],
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the King's Hall (fire zone, leg C2), a wide hall: ranged at its far wall (a shaman and a centaur), orcs and barghests on the floor; then two champions with barghests; last a juggernaut with two shamans."
 		},
 		{
 			"Id": "Zone_Lightning",
@@ -926,12 +924,24 @@
 					"DelayBefore": 0,
 					"Spawns": [
 						{
-							"EnemyId": "Orc_Past",
-							"Count": 5
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2,
+							"Behavior": "Guard"
 						},
 						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 2
+							"EnemyId": "Orc_Past_Juggernaut",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
 						}
 					]
 				},
@@ -939,28 +949,11 @@
 					"DelayBefore": 2,
 					"Spawns": [
 						{
-							"EnemyId": "Imp_Past",
-							"Count": 8
+							"EnemyId": "Centaur_Past",
+							"Count": 1
 						},
 						{
 							"EnemyId": "Orc_Past_Champion",
-							"Count": 1
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past_Champion",
-							"Count": 2
-						},
-						{
-							"EnemyId": "Orc_Past_Shaman",
 							"Count": 2
 						}
 					]
@@ -969,39 +962,20 @@
 					"DelayBefore": 2,
 					"Spawns": [
 						{
-							"EnemyId": "Orc_Past_Juggernaut",
+							"EnemyId": "Orc_Past_Brute",
 							"Count": 1
 						},
 						{
 							"EnemyId": "Imp_Past",
-							"Count": 6
-						},
-						{
-							"EnemyId": "Orc_Past",
-							"Count": 3
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Imp_Past",
-							"Count": 6
-						},
-						{
-							"EnemyId": "Orc_Past",
-							"Count": 3
+							"Count": 4
 						}
 					]
 				}
 			],
 			"SkillPoints": 3,
-			"Rewards": []
+			"Rewards": [],
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the Side Hall (ice zone, leg C3; the GDD puts ice in the undercroft, which is not built: the Side Hall holds it for now). A juggernaut and two shamans hold the far end, orcs and barghests the floor; then a centaur and two champions; last a brute with four barghests."
 		},
 		{
 			"Id": "Zone_Air",
@@ -1010,8 +984,19 @@
 					"DelayBefore": 0,
 					"Spawns": [
 						{
-							"EnemyId": "Imp_Past",
-							"Count": 8
+							"EnemyId": "Centaur_Past",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
 						}
 					]
 				},
@@ -1019,16 +1004,8 @@
 					"DelayBefore": 2,
 					"Spawns": [
 						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 4
-						},
-						{
 							"EnemyId": "Imp_Past",
-							"Count": 4
-						},
-						{
-							"EnemyId": "Orc_Past_Champion",
-							"Count": 1
+							"Count": 3
 						}
 					]
 				},
@@ -1037,63 +1014,19 @@
 					"Spawns": [
 						{
 							"EnemyId": "Orc_Past_Champion",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Imp_Past",
-							"Count": 4
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past_Champion",
 							"Count": 1
 						},
 						{
 							"EnemyId": "Orc_Past_Shaman",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Imp_Past",
-							"Count": 4
-						}
-					]
-				},
-				{
-					"DelayBefore": 2,
-					"Spawns": [
-						{
-							"EnemyId": "Orc_Past_Juggernaut",
 							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past_Champion",
-							"Count": 1
-						},
-						{
-							"EnemyId": "Orc_Past_Shaman",
-							"Count": 3
-						},
-						{
-							"EnemyId": "Imp_Past",
-							"Count": 4
 						}
 					]
 				}
 			],
 			"SkillPoints": 3,
-			"Rewards": []
+			"Rewards": [],
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the wall walk (air zone, leg C2), 3 m wide and 80 m long. Long sight lines: a centaur archer at the corner tower, a shaman half way, two orcs coming single file; barghests come in behind the player from the keep-end tower; then a champion and a shaman."
 		},
 		{
 			"Id": "Valkyrie_Past",
@@ -1103,13 +1036,16 @@
 					"Spawns": [
 						{
 							"EnemyId": "Valkyrie_Past",
-							"Count": 1
+							"Count": 1,
+							"Behavior": "Guard"
 						}
 					]
 				}
 			],
 			"SkillPoints": 5,
-			"Rewards": []
+			"Rewards": [],
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the past Valkyrie in the Top Level's highest room (+26 m), alone: the castle's boss (leg C3)."
 		},
 		{
 			"Id": "Valkyrie_Future",
@@ -1218,162 +1154,288 @@
 			"Rewards": []
 		},
 		{
-				"Comment": "Provisional (enemies block, 2026-11-14): the transfer bay, the base combat hall. Prespawned and patrolling: robots, orcs and a drone first, then orcs with spiders as reinforcements, then a sentinel and an enforcer.",
-				"Id": "Future_Bay",
-				"Prespawn": true,
-				"Waves": [
-					{
-						"DelayBefore": 0,
-						"Spawns": [
-							{
-								"EnemyId": "Robot_Future",
-								"Count": 2,
-								"Behavior": "Patrol"
-							},
-							{
-								"EnemyId": "Orc_Future",
-								"Count": 1,
-								"Behavior": "Patrol"
-							},
-							{
-								"EnemyId": "Orc_Future",
-								"Count": 1,
-								"Behavior": "Guard"
-							},
-							{
-								"EnemyId": "Drone_Future",
-								"Count": 1,
-								"Behavior": "Patrol"
-							}
-						]
-					},
-					{
-						"DelayBefore": 2,
-						"Spawns": [
-							{
-								"EnemyId": "Orc_Future_GunCarrier",
-								"Count": 1
-							},
-							{
-								"EnemyId": "Orc_Future",
-								"Count": 1
-							},
-							{
-								"EnemyId": "Spider_Future",
-								"Count": 2
-							}
-						]
-					},
-					{
-						"DelayBefore": 2,
-						"Spawns": [
-							{
-								"EnemyId": "Sentinel_Future",
-								"Count": 1
-							},
-							{
-								"EnemyId": "Orc_Future_Enforcer",
-								"Count": 1
-							}
-						]
-					}
-				],
-				"SkillPoints": 1,
-				"Rewards": [
-					{
-						"ItemId": "Ammo_Magazine",
-						"Count": 2,
-						"Chance": 1
-					}
-				]
-			},
+			"Comment": "Provisional (enemies block, 2026-11-14): the transfer bay, the base combat hall. Prespawned and patrolling: robots, orcs and a drone first, then orcs with spiders as reinforcements, then a sentinel and an enforcer.",
+			"Id": "Future_Bay",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Robot_Future",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 1,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 1,
+							"Behavior": "Patrol"
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Future_GunCarrier",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 2
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Sentinel_Future",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Future_Enforcer",
+							"Count": 1
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 2,
+					"Chance": 1
+				}
+			]
+		},
 		{
-				"Comment": "Provisional (enemies block): a spider ambush in a corridor. The spiders lie dormant until he comes close.",
-				"Id": "Future_Spiders",
-				"Prespawn": true,
-				"Waves": [
-					{
-						"DelayBefore": 0,
-						"Spawns": [
-							{
-								"EnemyId": "Spider_Future",
-								"Count": 4,
-								"Behavior": "Dormant"
-							}
-						]
-					}
-				],
-				"SkillPoints": 1,
-				"Rewards": []
-			},
+			"Comment": "Provisional (enemies block): a spider ambush in a corridor. The spiders lie dormant until he comes close.",
+			"Id": "Future_Spiders",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 4,
+							"Behavior": "Dormant"
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
 		{
-				"Comment": "Provisional (enemies block): the deep wing. Its sentinel guards the second Power Cell of the lab gate.",
-				"Id": "Future_DeepWing",
-				"Prespawn": true,
-				"Waves": [
-					{
-						"DelayBefore": 0,
-						"Spawns": [
-							{
-								"EnemyId": "Orc_Future",
-								"Count": 2,
-								"Behavior": "Patrol"
-							},
-							{
-								"EnemyId": "Robot_Future",
-								"Count": 1,
-								"Behavior": "Patrol"
-							},
-							{
-								"EnemyId": "Spider_Future",
-								"Count": 2,
-								"Behavior": "Dormant"
-							}
-						]
-					},
-					{
-						"DelayBefore": 2,
-						"Spawns": [
-							{
-								"EnemyId": "Sentinel_Future",
-								"Count": 1
-							},
-							{
-								"EnemyId": "Drone_Future",
-								"Count": 2
-							}
-						]
-					}
-				],
-				"SkillPoints": 1,
-				"Rewards": [
-					{
-						"ItemId": "PowerCell",
-						"Count": 1,
-						"Chance": 1
-					}
-				]
-			},
-			{
-				"Comment": "Provisional (enemies AI block, 2026-11-14): the Valkyrie in her room. Dormant until he comes in; the architect places the encounter actor.",
-				"Id": "Boss_Valkyrie_Future",
-				"Prespawn": true,
-				"Waves": [
-					{
-						"DelayBefore": 0,
-						"Spawns": [
-							{
-								"EnemyId": "Valkyrie_Future",
-								"Count": 1,
-								"Behavior": "Dormant"
-							}
-						]
-					}
-				],
-				"SkillPoints": 3,
-				"Rewards": [],
-				"ClearedFlag": "FutureValkyrieDefeated",
-				"WakeFlag": "ValkyrieTubeBroken"
-			}
-		]
+			"Comment": "Provisional (enemies block): the deep wing. Its sentinel guards the second Power Cell of the lab gate.",
+			"Id": "Future_DeepWing",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Future",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Robot_Future",
+							"Count": 1,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Spider_Future",
+							"Count": 2,
+							"Behavior": "Dormant"
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Sentinel_Future",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Drone_Future",
+							"Count": 2
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": [
+				{
+					"ItemId": "PowerCell",
+					"Count": 1,
+					"Chance": 1
+				}
+			]
+		},
+		{
+			"Comment": "Provisional (enemies AI block, 2026-11-14): the Valkyrie in her room. Dormant until he comes in; the architect places the encounter actor.",
+			"Id": "Boss_Valkyrie_Future",
+			"Prespawn": true,
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Valkyrie_Future",
+							"Count": 1,
+							"Behavior": "Dormant"
+						}
+					]
+				}
+			],
+			"SkillPoints": 3,
+			"Rewards": [],
+			"ClearedFlag": "FutureValkyrieDefeated",
+			"WakeFlag": "ValkyrieTubeBroken"
+		},
+		{
+			"Id": "Castle_Yard",
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the side yard with the orcs' stores on the upper ward. Open and long: a centaur archer guards the stores at the far end, orcs and barghests close in; then a champion with two orcs.",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Centaur_Past",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Castle_FrontHall",
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the Front Hall, a long aisle between pillars: close combat. Orcs and a barghest pack stand in it; two shamans and a champion come in from the back.",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 3,
+							"Behavior": "Patrol"
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 2
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
+					]
+				}
+			],
+			"SkillPoints": 1,
+			"Rewards": []
+		},
+		{
+			"Id": "Castle_MainHall",
+			"Prespawn": true,
+			"Comment": "Provisional (overnight): the Main Hall, the ground's sub-boss. The orc brute holds the middle of the hall with a shaman at the back and two orcs; barghests and a champion come in as the brute falls back.",
+			"Waves": [
+				{
+					"DelayBefore": 0,
+					"Spawns": [
+						{
+							"EnemyId": "Orc_Past_Brute",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past_Shaman",
+							"Count": 1,
+							"Behavior": "Guard"
+						},
+						{
+							"EnemyId": "Orc_Past",
+							"Count": 2,
+							"Behavior": "Patrol"
+						}
+					]
+				},
+				{
+					"DelayBefore": 2,
+					"Spawns": [
+						{
+							"EnemyId": "Imp_Past",
+							"Count": 3
+						},
+						{
+							"EnemyId": "Orc_Past_Champion",
+							"Count": 1
+						}
+					]
+				}
+			],
+			"SkillPoints": 2,
+			"Rewards": []
+		}
+	]
 }

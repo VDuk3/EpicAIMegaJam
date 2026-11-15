@@ -561,6 +561,8 @@ bool UGBSquadSubsystem::FindPosition(FSquad& Squad, FMember& Member, FGBTactical
 	Weights.Path = Game(this, TEXT("TacPath"), Weights.Path);
 	Weights.CrossFire = Game(this, TEXT("TacCrossFire"), Weights.CrossFire);
 	Weights.ViewCone = Game(this, TEXT("TacViewCone"), Weights.ViewCone);
+	// Cornering is per enemy (the castle's), off for everyone else.
+	Weights.Corner = Enemy->StatValue("TacCorner", 0.f);
 
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSquadCover), false, Enemy);
 	Params.AddIgnoredActor(Player);
@@ -671,6 +673,7 @@ bool UGBSquadSubsystem::FindPosition(FSquad& Squad, FMember& Member, FGBTactical
 		// A straight run from where it is passing close to the player crosses his line of fire.
 		In.bCrossesFireLine = FMath::PointDistToSegment(PlayerPos, Me, P) < CrossFireDistance && FVector::Dist2D(Me, P) > 300.f;
 		In.PathLength = FVector::Dist2D(Me, P);
+		In.EscapeOpenness = Weights.Corner > 0.f ? GetEscapeOpenness(Bearing) : 0.f;
 		Candidate.Score = GBTactics::ScorePosition(In, Weights);
 		Candidates.Add(Candidate);
 	}
@@ -748,7 +751,185 @@ bool UGBSquadSubsystem::TryBeginMeleeAttack(AGBEnemyCharacter* Enemy)
 	}
 	Self->bMeleeCommitted = true;
 	Self->MeleeLeaseStart = Time;
+	Self->bPincerWaiting = false;
+
+	// Smoke / log: a pincer is two commits a moment apart from well apart round the player.
+	if (const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this))
+	{
+		const float Bearing = GBSquadLocal::BearingDegrees(Player->GetActorLocation(), Enemy->GetActorLocation());
+		const float Window = GBSquadLocal::Game(this, TEXT("SquadPincerWindow"), 0.8f);
+		for (const FMember& Other : Squad->Members)
+		{
+			if (&Other == Self || !Other.Enemy.IsValid() || Time - Other.LastCommitTime > Window)
+			{
+				continue;
+			}
+			const float Apart = GBSquadLocal::AngleDelta(Bearing, Other.CommitBearing);
+			if (Apart >= 90.f)
+			{
+				++PincerCount;
+				BestPincerAngle = FMath::Max(BestPincerAngle, Apart);
+				if (bLogTactics)
+				{
+					UE_LOG(LogGB, Display, TEXT("TACTICS pincer: %s and %s closed in %.2f s apart from %.0f degrees apart"), *Enemy->GetEnemyId().ToString(),
+						*Other.Enemy->GetEnemyId().ToString(), Time - Other.LastCommitTime, Apart);
+				}
+			}
+		}
+		Self->LastCommitTime = Time;
+		Self->CommitBearing = Bearing;
+	}
 	return true;
+}
+
+bool UGBSquadSubsystem::MayCommitMelee(AGBEnemyCharacter* Enemy)
+{
+	FSquad* Squad = FindSquadOf(Enemy);
+	FMember* Self = FindMember(Enemy);
+	const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this);
+	const float MaxWait = Enemy ? Enemy->StatValue("PincerWait", 0.f) : 0.f;
+	if (!Squad || !Self || !Player || MaxWait <= 0.f)
+	{
+		return true;
+	}
+	const float Time = Now();
+	const FVector PlayerPos = Player->GetActorLocation();
+	const float Window = GBSquadLocal::Game(this, TEXT("SquadPincerWindow"), 0.8f);
+	const float ReachMult = GBSquadLocal::Game(this, TEXT("SquadPincerReach"), 1.3f);
+
+	// The squad's attackers: its nearest pincer melee members (as many as may attack at once).
+	TArray<const AGBEnemyCharacter*> Melee;
+	for (const FMember& Member : Squad->Members)
+	{
+		const AGBEnemyCharacter* Other = Member.Enemy.Get();
+		if (Other && !Other->IsDead() && Other->IsReadyToFight() && Other->GetSquadClass() == EGBSquadClass::Melee && Other->StatValue("PincerWait", 0.f) > 0.f
+			&& Other->GetEraComponent()->IsPresent())
+		{
+			if (Other != Enemy && Time - Member.LastCommitTime < Window)
+			{
+				Self->bPincerWaiting = false;
+				return true;   // a partner just went in: this one is the other jaw
+			}
+			Melee.Add(Other);
+		}
+	}
+	SortPincerAttackers(*Squad, Melee, PlayerPos);
+	const int32 MaxAttackers = FMath::Max(1, FMath::RoundToInt(GBSquadLocal::Game(this, TEXT("SquadMaxMeleeAttackers"), 2.f)));
+	const int32 Attackers = FMath::Min(MaxAttackers, Melee.Num());
+	const int32 SelfIndex = Melee.IndexOfByKey(Enemy);
+	if (Attackers < 2 || SelfIndex == INDEX_NONE)
+	{
+		Self->bPincerWaiting = false;
+		return true;   // alone: nothing to wait for
+	}
+	if (SelfIndex >= Attackers)
+	{
+		Self->bPincerWaiting = false;   // it lost its attack place: a later turn waits afresh
+		return false;  // not its turn (or it just attacked): it waits at the wait radius
+	}
+	bool bAllInPlace = true;
+	for (int32 Index = 0; Index < Attackers; ++Index)
+	{
+		const AGBEnemyCharacter* Other = Melee[Index];
+		if (Other == Enemy)
+		{
+			continue;
+		}
+		const float Reach = FMath::Max(Other->StatValue("AttackRange", 150.f), Other->StatValue("LungeRange", 0.f)) * ReachMult;
+		bAllInPlace &= FVector::Dist2D(Other->GetActorLocation(), PlayerPos) <= Reach;
+	}
+	// The wait starts once, at the first ask of this attempt, and holds across gaps between asks (long frames, a partner that
+	// never arrives); it ends when it commits (TryBeginMeleeAttack), gives up here, or loses its attack place.
+	if (!Self->bPincerWaiting)
+	{
+		Self->bPincerWaiting = true;
+		Self->PincerWaitStart = Time;
+	}
+	if (bAllInPlace || Time - Self->PincerWaitStart >= MaxWait)
+	{
+		Self->bPincerWaiting = false;
+		return true;
+	}
+	return false;
+}
+
+void UGBSquadSubsystem::SortPincerAttackers(const FSquad& Squad, TArray<const AGBEnemyCharacter*>& InOut, const FVector& PlayerPos) const
+{
+	struct FKey
+	{
+		int32 Group = 2;
+		float LastCommit = 0.f;
+		float Distance = 0.f;
+	};
+	const float RingRadius = GBSquadLocal::Game(this, TEXT("MeleeWaitRadius"), 450.f);
+	TMap<const AGBEnemyCharacter*, FKey> Keys;
+	for (const AGBEnemyCharacter* Enemy : InOut)
+	{
+		FKey& Key = Keys.Add(Enemy);
+		Key.Distance = FVector::Dist2D(Enemy->GetActorLocation(), PlayerPos);
+		const float Ring = FMath::Max(Enemy->StatValue("MeleeWaitRadius", RingRadius), Enemy->StatValue("AttackRange", 150.f) * 1.5f);
+		for (const FMember& Member : Squad.Members)
+		{
+			if (Member.Enemy.Get() == Enemy)
+			{
+				Key.LastCommit = Member.LastCommitTime;
+				Key.Group = Member.bMeleeCommitted ? 0 : (Key.Distance <= Ring * 1.5f ? 1 : 2);
+				break;
+			}
+		}
+	}
+	InOut.Sort([&Keys](const AGBEnemyCharacter& A, const AGBEnemyCharacter& B)
+	{
+		const FKey& KA = Keys.FindChecked(&A);
+		const FKey& KB = Keys.FindChecked(&B);
+		if (KA.Group != KB.Group)
+		{
+			return KA.Group < KB.Group;
+		}
+		if (KA.Group == 1 && !FMath::IsNearlyEqual(KA.LastCommit, KB.LastCommit))
+		{
+			return KA.LastCommit < KB.LastCommit;
+		}
+		return KA.Distance < KB.Distance;
+	});
+}
+
+float UGBSquadSubsystem::GetEscapeOpenness(float BearingDegrees) const
+{
+	const int32 Count = EscapeOpen.Num();
+	if (Count == 0)
+	{
+		return 1.f;
+	}
+	float Slot = FRotator::ClampAxis(BearingDegrees) / (360.f / Count);
+	const int32 A = FMath::FloorToInt(Slot) % Count;
+	const int32 B = (A + 1) % Count;
+	const float Alpha = Slot - FMath::FloorToFloat(Slot);
+	return FMath::Lerp(EscapeOpen[A], EscapeOpen[B], Alpha);
+}
+
+void UGBSquadSubsystem::UpdateEscape()
+{
+	UWorld* World = GetWorld();
+	const AGBPlayerCharacter* Player = AGBPlayerCharacter::Get(this);
+	if (!World || !Player)
+	{
+		return;
+	}
+	constexpr int32 Directions = 12;
+	const float Probe = FMath::Max(GBSquadLocal::Game(this, TEXT("SquadCornerProbe"), 700.f), 50.f);
+	EscapeOpen.SetNum(Directions);
+	const FVector From = Player->GetActorLocation();
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GBSquadEscape), false, Player);
+	FCollisionResponseParams IgnorePawns;
+	IgnorePawns.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+	for (int32 Index = 0; Index < Directions; ++Index)
+	{
+		const float Angle = FMath::DegreesToRadians(Index * 360.f / Directions);
+		const FVector To = From + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * Probe;
+		FHitResult Hit;
+		EscapeOpen[Index] = World->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, Params, IgnorePawns) ? FMath::Clamp(Hit.Distance / Probe, 0.f, 1.f) : 1.f;
+	}
 }
 
 void UGBSquadSubsystem::EndMeleeAttack(AGBEnemyCharacter* Enemy)
@@ -804,6 +985,53 @@ bool UGBSquadSubsystem::GetMeleeSlot(const AGBEnemyCharacter* Enemy, FVector& Ou
 	ByDistance.Sort([&PlayerPos](const AGBEnemyCharacter& A, const AGBEnemyCharacter& B) { return FVector::DistSquared2D(A.GetActorLocation(), PlayerPos) < FVector::DistSquared2D(B.GetActorLocation(), PlayerPos); });
 	const int32 MaxAttackers = FMath::Max(1, FMath::RoundToInt(GBSquadLocal::Game(this, TEXT("SquadMaxMeleeAttackers"), 2.f)));
 	bOutMayAttack = Enemy->AlwaysMeleeAttacks() || ByDistance.IndexOfByKey(Enemy) < MaxAttackers;
+
+	if (Enemy->StatValue("PincerWait", 0.f) > 0.f)
+	{
+		// The pincer ring (the castle's melee): the attackers spread evenly round the player among themselves (two = opposite
+		// sides), the ring turned towards his open sides (CornerWeight) so he is pushed to the walls; the others wait between them.
+		// They take turns: one that just attacked yields its place for a moment.
+		SortPincerAttackers(*Squad, ByDistance, PlayerPos);
+		bOutMayAttack = Enemy->AlwaysMeleeAttacks() || ByDistance.IndexOfByKey(Enemy) < MaxAttackers;
+		const int32 NumAttackers = FMath::Min(MaxAttackers, ByDistance.Num());
+		const float Base = GBSquadLocal::BearingDegrees(PlayerPos, ByDistance[0]->GetActorLocation());
+		float Offset = 0.f;
+		const float Corner = Enemy->StatValue("CornerWeight", 0.f);
+		if (Corner > 0.f && EscapeOpen.Num() > 0)
+		{
+			float Best = -1.0e9f;
+			for (int32 Step = -3; Step <= 3; ++Step)
+			{
+				const float Turn = Step * 20.f;
+				float Score = -FMath::Abs(Turn) / 60.f;   // a short walk round him beats a long one
+				for (int32 K = 0; K < NumAttackers; ++K)
+				{
+					Score += Corner * GetEscapeOpenness(Base + Turn + K * 360.f / NumAttackers);
+				}
+				if (Score > Best)
+				{
+					Best = Score;
+					Offset = Turn;
+				}
+			}
+		}
+		TArray<const AGBEnemyCharacter*> Group;
+		const bool bAttacker = ByDistance.IndexOfByKey(Enemy) < NumAttackers;
+		for (int32 Index = bAttacker ? 0 : NumAttackers; Index < (bAttacker ? NumAttackers : ByDistance.Num()); ++Index)
+		{
+			Group.Add(ByDistance[Index]);
+		}
+		// Each takes the slot on its own side: sorted by bearing measured from the nearest attacker.
+		auto Around = [&PlayerPos, Base](const AGBEnemyCharacter* A) { return FRotator::ClampAxis(GBSquadLocal::BearingDegrees(PlayerPos, A->GetActorLocation()) - Base); };
+		Group.Sort([&Around](const AGBEnemyCharacter& A, const AGBEnemyCharacter& B) { return Around(&A) < Around(&B); });
+		const int32 Slot = Group.IndexOfByKey(Enemy);
+		const float Step = 360.f / FMath::Max(Group.Num(), 1);
+		const float AngleDeg = Base + Offset + (bAttacker ? Slot * Step : (Slot + 0.5f) * Step);
+		const float AttackRange = Enemy->StatValue("AttackRange", 150.f);
+		const float Radius = bOutMayAttack ? AttackRange * 0.85f : FMath::Max(Enemy->StatValue("MeleeWaitRadius", GBSquadLocal::Game(this, TEXT("MeleeWaitRadius"), 450.f)), AttackRange * 1.5f);
+		OutPoint = PlayerPos + FVector(FMath::Cos(FMath::DegreesToRadians(AngleDeg)), FMath::Sin(FMath::DegreesToRadians(AngleDeg)), 0.f) * Radius;
+		return true;
+	}
 
 	Melee.Sort([&PlayerPos](const AGBEnemyCharacter& A, const AGBEnemyCharacter& B) { return GBSquadLocal::BearingDegrees(PlayerPos, A.GetActorLocation()) < GBSquadLocal::BearingDegrees(PlayerPos, B.GetActorLocation()); });
 	const int32 Slot = Melee.IndexOfByKey(Enemy);
@@ -878,6 +1106,10 @@ void UGBSquadSubsystem::Tick(float DeltaSeconds)
 	TickAccumulator = 0.f;
 	const float Time = Now();
 	const float LoseTime = GBSquadLocal::Game(this, TEXT("EncounterLoseTargetTime"), 10.f);
+	if (Squads.Num() > 0)
+	{
+		UpdateEscape();
+	}
 
 	TArray<TWeakObjectPtr<AGBEncounter>> Empty;
 	for (TPair<TWeakObjectPtr<AGBEncounter>, FSquad>& Pair : Squads)

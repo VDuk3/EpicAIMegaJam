@@ -1,0 +1,43 @@
+{
+  "Id": "OrcBrute",
+  "CellWidth": 232,
+  "CellHeight": 208,
+  "PivotX": 116,
+  "PivotY": 188,
+  "PixelsPerMeter": 44,
+  "Columns": 8,
+  "Clips": {
+    "Idle": {
+      "Row": 0,
+      "Frames": 6,
+      "Fps": 6,
+      "Loop": true
+    },
+    "Walk": {
+      "Row": 6,
+      "Frames": 8,
+      "Fps": 6,
+      "Loop": true
+    },
+    "Attack": {
+      "Row": 14,
+      "Frames": 7,
+      "Fps": 8,
+      "Loop": false,
+      "HitFrame": 4
+    },
+    "Hurt": {
+      "Row": 21,
+      "Frames": 2,
+      "Fps": 8,
+      "Loop": false
+    },
+    "Death": {
+      "Row": 23,
+      "Frames": 7,
+      "Fps": 8,
+      "Loop": false
+    }
+  },
+  "Source": "SK_Orc scaled 1.35 (2.84 m) with clips A_Orc_*, SM_Axe in hand_r; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art"
+}

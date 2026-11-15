@@ -868,8 +868,33 @@ ENCOUNTERS_ON = True
 ENCOUNTERS = [
     # the opening fight: it starts when the player is out of the gate passage; the orcs are at the fire, behind the
     # barricades and on the terrace
+    # Points are listed in the order the first wave's enemies take them (Encounters.json lists the guards and the ranged
+    # first): the shaman on the terrace's edge.
     ('Opening_Past', (500.0, 0.0, 150.0), (350.0, 900.0, 300.0),
-     [(1650, 250, 0), (1550, -300, 0), (2050, 500, 0), (2150, -1250, 0), (1950, 1450, 0), (3300, 0, 210), (3400, 700, 210), (3400, -700, 210)]),
+     [(3300, 0, 210), (1650, 250, 0), (1550, -300, 0), (2050, 500, 0), (2150, -1250, 0), (1950, 1450, 0), (3400, 700, 210), (3400, -700, 210)]),
+    # Overnight point 5 (2026-11-15, provisional): one fight in every open zone, made for its shape. Floors and open cells
+    # measured with traces (a cell is open when its 8 neighbours are floor at the same height): the keep's floor is 250,
+    # the upper ward 225, the wall walk 1203, the Top Level's highest room 2612.
+    # the side yard and its stores: the centaur at the stores' end, the rest between
+    ('Castle_Yard', (6300.0, 1950.0, 450.0), (1300.0, 700.0, 300.0),
+     [(7200, 2200, 225), (6400, 1800, 225), (5600, 1800, 225), (6400, 2400, 225), (5400, 2400, 225), (6000, 1400, 225)]),
+    # the Front Hall: orcs and barghests spread down the aisle
+    ('Castle_FrontHall', (6500.0, 0.0, 450.0), (1100.0, 1700.0, 300.0),
+     [(7300, -1100, 250), (7300, 1100, 250), (6500, -100, 250), (6100, 1100, 250), (6100, -1100, 250), (6900, 500, 250), (7500, 100, 250), (5500, 100, 250)]),
+    # the Main Hall: the brute in the middle, the shaman at the back by the crypt's stair
+    ('Castle_MainHall', (8500.0, 0.0, 450.0), (1000.0, 1700.0, 300.0),
+     [(8500, -100, 250), (9300, 500, 250), (8300, -1100, 250), (8300, 1500, 250), (7700, 700, 250), (7700, -500, 250), (9300, -1500, 250), (9300, 1500, 250)]),
+    # the wall walk on the King's side: the centaur at the corner tower, the shaman half way, the orcs nearer the keep
+    ('Zone_Air', (3300.0, -2816.0, 1400.0), (4000.0, 250.0, 300.0),
+     [(-300, -2816, 1203), (1500, -2816, 1203), (3000, -2816, 1203), (4200, -2816, 1203), (5400, -2816, 1203), (6600, -2816, 1203)]),
+    # the King's Hall: the ranged at its far (south) wall, the rest on the floor
+    ('Zone_Fire', (9000.0, -4000.0, 450.0), (1500.0, 900.0, 300.0),
+     [(10200, -4400, 250), (8000, -4400, 250), (9000, -4000, 250), (9800, -3800, 250), (8400, -3800, 250), (9600, -4400, 250), (10200, -3200, 250), (8000, -3200, 250), (9200, -3200, 250)]),
+    # the Side Hall: the shamans and the juggernaut at its far (north) end
+    ('Zone_Ice', (9300.0, 3100.0, 450.0), (1400.0, 1600.0, 300.0),
+     [(10400, 4300, 250), (8200, 4300, 250), (9200, 4100, 250), (9200, 2900, 250), (10200, 2700, 250), (8200, 3100, 250), (10400, 1700, 250), (8200, 1700, 250)]),
+    # the Top Level's highest room: the past Valkyrie, the castle's boss
+    ('Valkyrie_Past', (8600.0, 0.0, 2850.0), (1100.0, 1400.0, 300.0), [(8800, -400, 2612)]),
 ]
 
 # Review spots: (name, x, y, floor z, yaw). gb.Smoke tour stands the player on each and takes a screenshot.
@@ -935,6 +960,9 @@ async def stage_gameplay():
     nav2.set_actor_scale3d(unreal.Vector(18.0, 40.0, 8.0))
     tag(nav2, s, 'Gameplay')    # the volume's brush is a 2 m cube
     tag(nav, s, 'Gameplay')
+    nav3 = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector(8600.0, -1000.0, 2700.0), rot())
+    nav3.set_actor_scale3d(unreal.Vector(25.0, 30.0, 4.0))    # the Top Level (its rooms from +23 to +31 m), for the Valkyrie
+    tag(nav3, s, 'Gameplay')
     log.append('gameplay: %d fights, %d review spots, nav bounds' % (len(ENCOUNTERS) if ENCOUNTERS_ON else 0, len(TOUR)))
 
 

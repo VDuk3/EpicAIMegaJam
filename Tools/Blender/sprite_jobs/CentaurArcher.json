@@ -1,0 +1,382 @@
+{
+ "Id": "CentaurArcher",
+ "SourceText": "SK_Centaur + SK_Body_Armor, SK_Shoulder_Pads, hair pieces, SK_Sheath + SK_Sword_Idle, SK_Bow_Action + SK_Arrow_Action, clips ANIM_Centaur_*Bow; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art",
+ "Parts": [
+  {
+   "fbx": "Centaur/SK_Centaur.fbx",
+   "textures": {
+    "CENTAUR_BODY_Legacy_1": "Centaur/T_Centaur_Body_BaseColor_1.png",
+    "CENTAUR_EYES": "Centaur/T_Centaur_Eyes.png",
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Body_Armor.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Centaur/SK_Shoulder_Pads.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Centaur/SK_Beard.fbx",
+   "textures": {
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png",
+    "M_CENTAUR_BODY_1": "Centaur/T_Centaur_Body_BaseColor_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Mane.fbx",
+   "textures": {
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png",
+    "M_CENTAUR_BODY_1": "Centaur/T_Centaur_Body_BaseColor_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Mustaches.fbx",
+   "textures": {
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png",
+    "M_CENTAUR_BODY_1": "Centaur/T_Centaur_Body_BaseColor_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Goaty.fbx",
+   "textures": {
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png",
+    "M_CENTAUR_BODY_1": "Centaur/T_Centaur_Body_BaseColor_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Pork_Chops.fbx",
+   "textures": {
+    "CENTAUR_HAIR_1": "Centaur/T_Centaur_Hair_1.png",
+    "M_CENTAUR_BODY_1": "Centaur/T_Centaur_Body_BaseColor_1.png"
+   },
+   "alpha_cut": [
+    "CENTAUR_HAIR_1"
+   ]
+  },
+  {
+   "fbx": "Centaur/SK_Sheath.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Centaur/SK_Sword_Idle.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Centaur/SK_Bow_Action.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  },
+  {
+   "fbx": "Centaur/SK_Arrow_Action.fbx",
+   "textures": {
+    "CENTAUR_GEAR_Legacy": "Centaur/T_Centaur_Gear_BaseColor.png"
+   }
+  }
+ ],
+ "Scale": 1,
+ "Forward": [
+  0,
+  -1,
+  0
+ ],
+ "PelvisBone": "CENTAUR_ Pelvis",
+ "Cell": [
+  224,
+  212
+ ],
+ "Pivot": [
+  112,
+  184
+ ],
+ "PixelsPerMeter": 44,
+ "PitchDeg": 12,
+ "Supersample": 4,
+ "Hysteresis": 0.3,
+ "Light": {
+  "dir": [
+   -0.55,
+   0.65,
+   0.5
+  ],
+  "ambient": 0.35,
+  "wrap": 0.15
+ },
+ "Ramps": {
+  "skin": [
+   "#8E5B48",
+   "#C88A6A",
+   "#F9C990",
+   "#FBD6AA"
+  ],
+  "chestnut": [
+   "#2A1410",
+   "#4A2416",
+   "#6E3A1E",
+   "#94542A",
+   "#B8743A"
+  ],
+  "leather": [
+   "#2A1A1C",
+   "#4A2F22",
+   "#6E4A2C",
+   "#946A3A"
+  ],
+  "iron": [
+   "#262827",
+   "#434848",
+   "#758685",
+   "#9DAAA9"
+  ],
+  "bone": [
+   "#A19D4F",
+   "#E2DE9C"
+  ]
+ },
+ "Regions": [
+  {
+   "name": "skin",
+   "ramp": "skin",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "weight": 1.2
+  },
+  {
+   "name": "coat",
+   "ramp": "chestnut",
+   "range": [
+    0.3,
+    1.05
+   ]
+  },
+  {
+   "name": "hair",
+   "ramp": "chestnut",
+   "range": [
+    0.6,
+    1.9
+   ],
+   "close": 1
+  },
+  {
+   "name": "leather",
+   "ramp": "leather",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "inner_outline": false
+  },
+  {
+   "name": "iron",
+   "ramp": "iron",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "weight": 1.5
+  },
+  {
+   "name": "bone",
+   "ramp": "bone",
+   "range": [
+    0.4,
+    0.95
+   ],
+   "weight": 2,
+   "min_cov": 0.2,
+   "thin": true
+  }
+ ],
+ "Rules": [
+  {
+   "region": "hair",
+   "material": "CENTAUR_HAIR_1"
+  },
+  {
+   "region": "skin",
+   "material": "CENTAUR_EYES"
+  },
+  {
+   "region": "skin",
+   "material": "CENTAUR_BODY_Legacy_1",
+   "hue": [
+    0,
+    40
+   ],
+   "sat": [
+    0.15,
+    0.6
+   ],
+   "lum": [
+    0.45,
+    2
+   ]
+  },
+  {
+   "region": "coat",
+   "material": [
+    "CENTAUR_BODY_Legacy_1",
+    "M_CENTAUR_BODY_1"
+   ]
+  },
+  {
+   "region": "bone",
+   "material": "CENTAUR_GEAR_Legacy",
+   "hue": [
+    35,
+    70
+   ],
+   "lum": [
+    0.6,
+    2
+   ]
+  },
+  {
+   "region": "iron",
+   "material": "CENTAUR_GEAR_Legacy",
+   "sat": [
+    0,
+    0.22
+   ],
+   "lum": [
+    0.3,
+    2
+   ]
+  },
+  {
+   "region": "leather"
+  }
+ ],
+ "Clips": [
+  {
+   "name": "Idle",
+   "src": "Centaur/ANIM_Centaur_IdleAiming.fbx",
+   "frames": 4,
+   "fps": 6,
+   "loop": true
+  },
+  {
+   "name": "Walk",
+   "src": "Centaur/ANIM_Centaur_WalkBow.fbx",
+   "frames": 8,
+   "fps": 10,
+   "loop": true,
+   "root": "linear",
+   "range": [
+    1,
+    31
+   ]
+  },
+  {
+   "name": "Run",
+   "src": "Centaur/ANIM_Centaur_GallopBow.fbx",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "root": "linear",
+   "range": [
+    1,
+    19
+   ]
+  },
+  {
+   "name": "Shoot",
+   "src": "Centaur/ANIM_Centaur_ShootArrowToIdleAiming.fbx",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hit": 1,
+   "root": "cancel",
+   "keys": [
+    1,
+    4,
+    8,
+    15,
+    25,
+    35
+   ],
+   "origin_bone": "ArrowAction",
+   "hide": {
+    "Arrow": 2
+   }
+  },
+  {
+   "name": "Attack",
+   "src": "Centaur/ANIM_Centaur_LegAttackBow.fbx",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hit": 3,
+   "root": "cancel",
+   "keys": [
+    1,
+    10,
+    18,
+    25,
+    33,
+    48
+   ]
+  },
+  {
+   "name": "Hurt",
+   "src": "Centaur/ANIM_Centaur_GetHitBow.fbx",
+   "frames": 2,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "keys": [
+    7,
+    13
+   ]
+  },
+  {
+   "name": "Death",
+   "src": "Centaur/ANIM_Centaur_DeathBow.fbx",
+   "frames": 6,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "keys": [
+    1,
+    16,
+    31,
+    39,
+    46,
+    69
+   ]
+  }
+ ],
+ "InnerOutline": {
+  "enabled": true,
+  "depth": 0.3
+ }
+}

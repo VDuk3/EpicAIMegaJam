@@ -1,0 +1,447 @@
+{
+ "Id": "OrcBrute",
+ "SourceText": "SK_Orc scaled 1.35 (2.84 m) with clips A_Orc_*, SM_Axe in hand_r; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art",
+ "Parts": [
+  {
+   "fbx": "Orc/SK_Orc.fbx",
+   "textures": {
+    "M_Orc": "Orc/T_Orc_BaseColor.png"
+   }
+  }
+ ],
+ "Scale": 1.35,
+ "Forward": [
+  0,
+  -1,
+  0
+ ],
+ "Weapon": {
+  "fbx": "Weapons/SM_Axe.fbx",
+  "textures": {
+   "M_Axe_01": "Weapons/T_Axe_01_C.png",
+   "M_Axe_02": "Weapons/T_Axe_02_C.png"
+  },
+  "bone": "hand_r",
+  "mode": "fist",
+  "axis": "+Z",
+  "up": "+X",
+  "grip": [
+   0,
+   0,
+   -0.1
+  ],
+  "roll": 0,
+  "tilt": 35,
+  "grip_along_hand": 0.8,
+  "offset": [
+   0,
+   0,
+   0
+  ],
+  "scale": 1.25
+ },
+ "Cell": [
+  256,
+  216
+ ],
+ "Pivot": [
+  128,
+  190
+ ],
+ "PixelsPerMeter": 44,
+ "PitchDeg": 12,
+ "Supersample": 4,
+ "Light": {
+  "dir": [
+   -0.55,
+   0.65,
+   0.5
+  ],
+  "ambient": 0.35,
+  "wrap": 0.15
+ },
+ "Ramps": {
+  "orc_skin": [
+   "#16241F",
+   "#22392A",
+   "#31502F",
+   "#476B36",
+   "#628A40"
+  ],
+  "leather": [
+   "#2A1A1C",
+   "#4A2F22",
+   "#6E4A2C",
+   "#946A3A"
+  ],
+  "cloth": [
+   "#1D1D25",
+   "#252734",
+   "#32343C",
+   "#655478"
+  ],
+  "iron": [
+   "#262827",
+   "#434848",
+   "#758685",
+   "#9DAAA9"
+  ],
+  "wood": [
+   "#41290D",
+   "#6C4B24",
+   "#926806"
+  ],
+  "eye": [
+   "#FF0000"
+  ],
+  "tusk": [
+   "#E2DE9C"
+  ],
+  "paint": [
+   "#B70000"
+  ]
+ },
+ "Regions": [
+  {
+   "name": "skin",
+   "ramp": "orc_skin",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "albedo_weight": 0.3
+  },
+  {
+   "name": "face_dark",
+   "ramp": "orc_skin",
+   "range": [
+    9,
+    10
+   ],
+   "weight": 2.5,
+   "min_cov": 0.15,
+   "thin": true,
+   "inner_outline": false
+  },
+  {
+   "name": "leather",
+   "ramp": "leather",
+   "range": [
+    0.3,
+    1.05
+   ]
+  },
+  {
+   "name": "belt",
+   "ramp": "leather",
+   "range": [
+    0.55,
+    1.6
+   ]
+  },
+  {
+   "name": "cloth",
+   "ramp": "cloth",
+   "range": [
+    0.3,
+    1.05
+   ]
+  },
+  {
+   "name": "iron",
+   "ramp": "iron",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "weight": 2,
+   "min_cov": 0.2,
+   "thin": true,
+   "spec": true,
+   "spec_threshold": 0.75,
+   "spec_max": 4
+  },
+  {
+   "name": "wood",
+   "ramp": "wood",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "weight": 2,
+   "min_cov": 0.2,
+   "thin": true
+  },
+  {
+   "name": "eye",
+   "ramp": "eye",
+   "range": [
+    0,
+    1
+   ],
+   "weight": 8,
+   "min_cov": 0.1,
+   "keep_single": true,
+   "inner_outline": false
+  },
+  {
+   "name": "tusk",
+   "ramp": "tusk",
+   "range": [
+    0,
+    1
+   ],
+   "weight": 3,
+   "min_cov": 0.15,
+   "keep_single": true,
+   "inner_outline": false
+  },
+  {
+   "name": "paint",
+   "ramp": "paint",
+   "range": [
+    0.3,
+    1.05
+   ],
+   "weight": 2,
+   "min_cov": 0.12,
+   "inner_outline": false
+  }
+ ],
+ "Rules": [
+  {
+   "region": "iron",
+   "material": "M_Axe_02"
+  },
+  {
+   "region": "wood",
+   "material": "M_Axe_01"
+  },
+  {
+   "region": "paint",
+   "hue": [
+    0,
+    40
+   ],
+   "sat": [
+    0.55,
+    2
+   ],
+   "lum": [
+    0.3,
+    2
+   ]
+  },
+  {
+   "region": "eye",
+   "bone": [
+    "head"
+   ],
+   "sat": [
+    0,
+    0.25
+   ],
+   "lum": [
+    0.45,
+    2
+   ]
+  },
+  {
+   "region": "face_dark",
+   "bone": [
+    "head"
+   ],
+   "lum": [
+    0.15,
+    0.3
+   ]
+  },
+  {
+   "region": "skin",
+   "bone": [
+    "head"
+   ],
+   "lum": [
+    0.15,
+    2
+   ]
+  },
+  {
+   "region": "skin",
+   "bone": [
+    "arms"
+   ]
+  },
+  {
+   "region": "belt",
+   "bone": [
+    "hips"
+   ]
+  },
+  {
+   "region": "cloth",
+   "bone": [
+    "thighs"
+   ]
+  },
+  {
+   "region": "leather"
+  }
+ ],
+ "Clips": [
+  {
+   "name": "Idle",
+   "src": "Orc/A_Orc_Idle.fbx",
+   "frames": 6,
+   "fps": 6,
+   "loop": true,
+   "range": [
+    1,
+    229
+   ]
+  },
+  {
+   "name": "Walk",
+   "src": "Orc/A_Orc_Unarmed_Walk_Fwd.fbx",
+   "frames": 8,
+   "fps": 6,
+   "loop": true,
+   "range": [
+    1,
+    46
+   ],
+   "root": "linear"
+  },
+  {
+   "name": "Attack",
+   "src": "Orc/A_Orc_ChargedAttack.fbx",
+   "keys": [
+    1,
+    16,
+    26,
+    32,
+    37,
+    42,
+    52
+   ],
+   "frames": 7,
+   "fps": 8,
+   "loop": false,
+   "hit": 4,
+   "root": "cancel"
+  },
+  {
+   "name": "Hurt",
+   "src": "Orc/A_Orc_HitReact_Front_Lgt_01.fbx",
+   "keys": [
+    3,
+    6
+   ],
+   "frames": 2,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "tilt": {
+    "dir": "back",
+    "angles": [
+     4,
+     9
+    ],
+    "shift": [
+     0
+    ],
+    "ground": true
+   }
+  },
+  {
+   "name": "Death",
+   "src": "Orc/A_Orc_Death_Back_01.fbx",
+   "keys": [
+    1,
+    4,
+    7,
+    9,
+    9,
+    9,
+    9
+   ],
+   "frames": 7,
+   "fps": 8,
+   "loop": false,
+   "root": "cancel",
+   "tilt": {
+    "dir": "front",
+    "angles": [
+     0,
+     0,
+     0,
+     22,
+     48,
+     70,
+     70
+    ],
+    "shift": [
+     0,
+     0,
+     0,
+     0.15,
+     0.4,
+     0.65,
+     0.65
+    ],
+    "ground_from": 5
+   }
+  }
+ ],
+ "BoneRegions": [
+  [
+   "arms",
+   [
+    "upperarm_",
+    "lowerarm_",
+    "hand_",
+    "index_",
+    "middle_",
+    "ring_",
+    "pinky_",
+    "thumb_"
+   ]
+  ],
+  [
+   "head",
+   [
+    "head",
+    "neck_02"
+   ]
+  ],
+  [
+   "torso",
+   [
+    "spine_",
+    "clavicle_",
+    "neck_"
+   ]
+  ],
+  [
+   "hips",
+   [
+    "pelvis"
+   ]
+  ],
+  [
+   "thighs",
+   [
+    "thigh_"
+   ]
+  ],
+  [
+   "feet",
+   [
+    "calf_",
+    "foot_",
+    "ball_"
+   ]
+  ]
+ ],
+ "Hysteresis": 0.3
+}

@@ -1,0 +1,76 @@
+{
+  "Id": "ValkyriePixel",
+  "CellWidth": 176,
+  "CellHeight": 160,
+  "PivotX": 88,
+  "PivotY": 146,
+  "PixelsPerMeter": 44,
+  "Columns": 8,
+  "Clips": {
+    "Idle": {
+      "Row": 0,
+      "Frames": 4,
+      "Fps": 6,
+      "Loop": true
+    },
+    "Walk": {
+      "Row": 4,
+      "Frames": 8,
+      "Fps": 8,
+      "Loop": true
+    },
+    "Run": {
+      "Row": 12,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": true
+    },
+    "Attack": {
+      "Row": 18,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Attack2": {
+      "Row": 24,
+      "Frames": 6,
+      "Fps": 10,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Cast": {
+      "Row": 30,
+      "Frames": 5,
+      "Fps": 6,
+      "Loop": false,
+      "HitFrame": 3
+    },
+    "Leap": {
+      "Row": 35,
+      "Frames": 6,
+      "Fps": 8,
+      "Loop": false,
+      "HitFrame": 4
+    },
+    "Hurt": {
+      "Row": 41,
+      "Frames": 2,
+      "Fps": 8,
+      "Loop": false
+    },
+    "Death": {
+      "Row": 43,
+      "Frames": 6,
+      "Fps": 8,
+      "Loop": false
+    },
+    "Dormant": {
+      "Row": 49,
+      "Frames": 1,
+      "Fps": 1,
+      "Loop": false
+    }
+  },
+  "Source": "SK_Valkyrie (1.95 m, scaled 1.07 to read as the boss) with clips A_Valkyrie_*, SM_ValkyrieSword in hand_r; rendered in Blender (Tools/Blender/sprite_bake.py) and reduced to pixel art matching the hand-drawn valki sprite"
+}
