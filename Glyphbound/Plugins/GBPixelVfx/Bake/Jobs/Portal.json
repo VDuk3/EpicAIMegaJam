@@ -1,0 +1,69 @@
+{
+  "Id": "Portal",
+  "Comment": "Portal FX pack (SHOGUN GAMES, Fab), NS_Portal_9: the orange ring of sparks. Loop. Fixed facing: the portal stands where it is placed and does not turn to the camera.",
+  "System": "/Game/PortalFX/FX/NS_Portal_9.NS_Portal_9",
+  "UserFloats": {},
+  "UserVectors": {},
+  "UserColors": {},
+  "Capture": {
+    "Resolution": 512,
+    "AutoFrame": false,
+    "AutoFramePadding": 0.04,
+    "WidthCm": 330,
+    "CenterCm": [
+      0,
+      0,
+      0
+    ],
+    "ViewYawDeg": 0,
+    "ViewPitchDeg": 0,
+    "Projection": "Perspective",
+    "FovDeg": 10,
+    "WarmupSeconds": 4,
+    "DurationSeconds": 2,
+    "SimFps": 60,
+    "Exposure": 1,
+    "KeyLight": false,
+    "KeyLightIntensity": 8
+  },
+  "Pixel": {
+    "FrameWidth": 64,
+    "FrameHeight": 64,
+    "Fps": 12,
+    "Loop": true,
+    "LoopBlendFrames": 6,
+    "AlphaMode": "Max",
+    "AlphaThreshold": 0.25,
+    "ColorMode": "Ramp",
+    "Ramps": [
+      [
+        "#4B0F0F",
+        "#BC2A12",
+        "#F03416",
+        "#F3610B",
+        "#E2DE9C",
+        "#F5F3CF"
+      ]
+    ],
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.7,
+    "Hysteresis": 0.03,
+    "MinIslandPixels": 2,
+    "FillHoles": false,
+    "Outline": "None",
+    "MinColorClusterPixels": 3
+  },
+  "Light": {
+    "Enabled": true,
+    "Color": "#F3610B",
+    "Intensity": 40,
+    "RadiusCm": 900,
+    "CastShadows": true,
+    "TrackMode": "Baked"
+  },
+  "World": {
+    "Facing": "Fixed",
+    "Glow": 1.6,
+    "Lit": false
+  }
+}
