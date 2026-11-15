@@ -113,18 +113,6 @@ namespace GBStaffView
 	{
 		return HoldSpellTime >= 0.0 && FPlatformTime::Seconds() - HoldSpellTime < 1.5;
 	}
-
-	static double HoldSpellTime = -1.0;
-
-	void NoteHoldSpell()
-	{
-		HoldSpellTime = FPlatformTime::Seconds();
-	}
-
-	bool ShouldShowHoldHint()
-	{
-		return HoldSpellTime >= 0.0 && FPlatformTime::Seconds() - HoldSpellTime < 1.5;
-	}
 }
 
 namespace GBHudText
@@ -711,44 +699,6 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const double Now = GetRealTime();
 	const float Dt = LastShieldUpdateTime < 0.0 ? 0.f : FMath::Clamp((float)(Now - LastShieldUpdateTime), 0.f, 0.1f);
 	LastShieldUpdateTime = Now;
-
-	// Lower-left reminder while the flamethrower (a hold-to-sustain spell) burns (owner, 2026-11-15).
-	if (GBStaffView::ShouldShowHoldHint() && GetOpenMenu() == EGBMenu::None)
-	{
-		const FString HoldText(TEXT("Hold to keep casting"));
-		if (GetCurrentSkin() == EGBHudSkin::Cyberpunk)
-		{
-			const float S = UIScale();
-			FCyTextStyle Style;
-			Style.Face = ECyFace::Condensed;
-			Style.Px = 22.f;
-			Style.Spacing = 100;
-			Style.bUpper = true;
-			Style.Color = GBCy::Pale;
-			const FVector2D Size = MeasureCyText(HoldText, Style);
-			const float X = 40.f * S;
-			const float Y = FMath::RoundToFloat(Canvas->ClipY * 0.80f);
-			DrawFade(X - 16.f * S, Y - 8.f * S, Size.X + 32.f * S, 42.f * S, FLinearColor(0.f, 0.f, 0.f, 0.45f), false);
-			DrawCyText(HoldText, X, Y, Style, 0.f);
-		}
-		else
-		{
-			const float AP = ArtPixel();
-			const int32 Scale = FMath::Max(2, FMath::RoundToInt(AP * 0.75f));
-			const FVector2D Size = MeasurePixelText(HoldText, Scale);
-			const float PW = FMath::CeilToFloat((Size.X + 8.f * AP) / AP) * AP;
-			const float PH = 12.f * AP;
-			const float X = 6.f * AP;
-			const float Y = FMath::RoundToFloat((Canvas->ClipY - (bOverBar ? 22.f * AP : 0.f) - PH - 4.f * AP) / AP) * AP;
-			FillRect(X, Y, PW, PH, GBAlpha(GBRpg::StoneDeep, 0.9f));
-			RpgFrame(X, Y, PW, PH, ERpgFrame::Bone);
-			FPixelTextStyle Style;
-			Style.Scale = Scale;
-			Style.Ink = &GBRpg::InkBone;
-			Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.9f);
-			DrawPixelText(HoldText, X + 4.f * AP, Y + FMath::RoundToFloat((PH - Size.Y) * 0.5f), Style, 0.f);
-		}
-	}
 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
 
