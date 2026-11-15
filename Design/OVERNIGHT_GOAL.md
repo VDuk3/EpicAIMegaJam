@@ -78,7 +78,7 @@ Fuera el ragdoll en **todos** los enemigos 3D. Cada uno tiene su animación de m
 | 4 | Humo con Niagara Fluids en los túneles | pendiente | |
 | 5 | Enemigos pixel art y boss Valquiria | pendiente | |
 | 6 | IA de grupo en el castillo | pendiente | |
-| 7 | Plan de portales | pendiente | |
+| 7 | Plan de portales | hecho | GDD v0.70 §4 "Portals and the route between the eras": P0-P4, seis tramos alternos, zonas del castillo solo desde el futuro (commit de este punto) |
 
 ## Al terminar todo
 1. Suite completa y `Smoke-Jam.ps1` completo, una sola vez, en verde.
