@@ -10,6 +10,9 @@ struct FGBPixelVfxBakeJob
 	TMap<FName, float> UserFloats;
 	TMap<FName, FVector> UserVectors;
 	TMap<FName, FLinearColor> UserColors;
+	// User static mesh parameters: name -> object path (the fluid fire emits from User.StaticMesh: a narrow mesh gives
+	// a torch's flame instead of a bonfire's)
+	TMap<FName, FString> UserStaticMeshes;
 
 	// Capture
 	int32 Resolution = 512;

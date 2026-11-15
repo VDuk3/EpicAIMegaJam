@@ -256,6 +256,18 @@ bool AGBPixelVfxBakeGameMode::BakeSpawnRig(int32 RTWidth)
 	{
 		NiagaraComp->SetVariableLinearColor(Pair.Key, Pair.Value);
 	}
+	for (const auto& Pair : Job.UserStaticMeshes)
+	{
+		UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *Pair.Value));
+		if (Mesh)
+		{
+			NiagaraComp->SetVariableStaticMesh(Pair.Key, Mesh);
+		}
+		else
+		{
+			UE_LOG(LogGBPixelVfx, Error, TEXT("PVFX bake: user static mesh %s not found"), *Pair.Value);
+		}
+	}
 	NiagaraComp->Activate(true);
 
 	const FVector Dir = BakeCameraDirection();

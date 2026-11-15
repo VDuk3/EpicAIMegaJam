@@ -57,6 +57,9 @@ _twins = {}
 
 # The author's loose dressed stones, bricks and slabs, dotted over the keep's faces; the builder's own thresholds use
 # SM_BlockC, which stays.
+PENDING_TORCHES = []
+TORCH_SPACING = 900.0      # cm: in the great halls the author hung a torch every few metres; one lit torch per 9 m
+FLAME = dict(size=0.19, offset=(0.0, 9.0, 68.0), light=0.4)   # the torch flame clip (TorchFire, 3 m tall as baked) at ~58 cm; its light at 60%
 PIXEL_DROP = ('SM_BlockA', 'SM_BlockB', 'SM_BrickA', 'SM_SlabA', 'SM_SlabB')
 
 def pixel(stage):
@@ -134,6 +137,9 @@ def mesh(stage, folder, path, loc, r=None, scale=(1, 1, 1), mats=None, shadow=Tr
     if pixel(stage) and path.startswith(CT):
         if 'SeamHider' in path:
             return None             # it hides the joint between two sculpted modules; the flat twins meet on the same planes
+        if path.split('/')[-1] == 'SM_Torch_A':
+            PENDING_TORCHES.append((stage, folder, loc, r or rot()))
+            return None             # a lit torch actor (flame and light) is placed instead; see place_torches
         if path.split('/')[-1] in PIXEL_DROP:
             return None             # the author's loose stones and slabs on the towers' faces: in plain blocks they read as faults
         tw = twin(path)
@@ -216,6 +222,55 @@ def kit(name):
     if name not in _kits:
         _kits[name] = json.load(open(KIT_DIR + name + '.json'))['items']
     return _kits[name]
+
+
+def torch(stage, folder, loc, r):
+    """A wall torch (AGBTorch): the twin of the pack's torch as its holder, a baked Niagara Fluids flame
+    (Content/Data/Vfx/TorchFire, made by the GBPixelVfx plugin) with its own light, which follows the flame."""
+    a = eas.spawn_actor_from_class(unreal.GBTorch, unreal.Vector(*loc), r)
+    holder = a.get_editor_property('holder')
+    holder.set_static_mesh(asset(twin(CT + 'Static_Mesh/Props/SM_Torch_A')))
+    a.set_editor_property('flame_size', FLAME['size'])
+    a.set_editor_property('light_scale', FLAME['light'])
+    a.get_editor_property('flame').set_editor_property('relative_location', unreal.Vector(*FLAME['offset']))
+    tag(a, stage, folder)
+    return a
+
+
+def place_torches(stage, spacing=TORCH_SPACING):
+    """The author's torches of this stage, thinned: a torch is lit only if no lit torch is within spacing (the great
+    halls had one every few metres; a lone torch on a stair or in a passage always stays)."""
+    kept = []
+    mine = [t for t in PENDING_TORCHES if t[0] == stage]
+    for st, folder, loc, r in mine:
+        if all(math.dist(loc, k[2]) >= spacing for k in kept):
+            kept.append((st, folder, loc, r))
+    for st, folder, loc, r in kept:
+        torch(st, 'Torches', loc, r)
+    PENDING_TORCHES[:] = [t for t in PENDING_TORCHES if t[0] != stage]
+    return len(mine), len(kept)
+
+
+def torch_on_wall(stage, folder, x, y, z_hint, dx, dy, height=215.0):
+    """A torch on the wall found from (x, y) looking along (dx, dy): the floor under the point is found first, the
+    torch hangs `height` above it, its head leaning out of the wall."""
+    world = ues.get_editor_world()
+    down = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z_hint + 150), unreal.Vector(x, y, z_hint - 600),
+                                                  unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
+    if not down:
+        log.append('torch: no floor at (%d, %d)' % (x, y))
+        return None
+    z = down.to_tuple()[4].z + height
+    hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z), unreal.Vector(x + dx * 900, y + dy * 900, z),
+                                                 unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
+    if not hit:
+        log.append('torch: no wall from (%d, %d) along (%d, %d)' % (x, y, dx, dy))
+        return None
+    t = hit.to_tuple()
+    p, nrm = t[4], t[6]
+    # the torch leans out along its own +Y: turn it so +Y is the wall's normal
+    yaw = math.degrees(math.atan2(nrm.y, nrm.x)) - 90.0
+    return torch(stage, folder, (p.x + nrm.x * 3.0, p.y + nrm.y * 3.0, z - 40.0), rot(yaw=yaw))
 
 
 def place_level(stage, folder, name, to, yaw=0.0, drop=None, keep=None, inside=None, skip=None):
@@ -341,6 +396,11 @@ async def stage_keep():
         total += n
         torches += tl
         await asyncio.sleep(0)
+    if pixel(s):
+        # owner, 2026-11-14: torches with a fluid-simulated flame; fewer lights in the great halls
+        hung, lit = place_torches(s)
+        log.append("keep: %d pieces from six of the author levels; of his %d torches %d are lit (one per %d m)" % (total, hung, lit, TORCH_SPACING / 100))
+        return
     # A warm light at every torch the author hung (his torches were blueprints with a flame; ours are the mesh and a light).
     for x, y, z in torches:
         point_light(s, 'Torches', (x, y, z + 70.0), (255, 196, 140), 34.0, 1300.0)
@@ -574,8 +634,9 @@ async def stage_crypt():
         mesh(s, 'Hall', CA + 'SM_PillarBlock_01', (sx + dx + 69.0, sy + dy - 110.0, CRYPT_Z), scale=(1.0, 1.0, 0.3), mats=C_WALL)
     point_light(s, 'Light', (sx, sy, CRYPT_Z + 230.0), (170, 215, 255), 120.0, 2800.0, shadow=True)
     point_light(s, 'Light', (sx, sy + 900.0, CRYPT_Z + 330.0), (150, 190, 255), 16.0, 1800.0)
-    # Candle light: one flame's worth at each turn of the stair and in each bay of the corridor.
-    for x, y, z in ((x1 - 420.0, y1 - 400.0, FLOOR_Z - 40.0), (lx + 400.0, y1 - 400.0, FLOOR_Z - 600.0 + 260.0),
+    # Candle light: one flame's worth at each turn of the stair and in each bay of the corridor (in the pixel look,
+    # torches on the walls instead: stage "torches").
+    for x, y, z in () if pixel(s) else ((x1 - 420.0, y1 - 400.0, FLOOR_Z - 40.0), (lx + 400.0, y1 - 400.0, FLOOR_Z - 600.0 + 260.0),
                     (lx + 400.0, cy - 200.0, CRYPT_Z + 260.0), (lx + 60.0, cy - 1200.0, CRYPT_Z + 260.0), (lx + 60.0, cy - 2000.0, CRYPT_Z + 260.0),
                     (lx + 1200.0, cy - 1200.0, CRYPT_Z + 200.0)):
         point_light(s, 'Light', (x, y, z), (255, 190, 130), 14.0, 1100.0)
@@ -901,8 +962,25 @@ def enable_collision():
     log.append('collision: complex-as-simple set on %d mesh assets (of %d in use)' % (done, len(seen)))
 
 
+async def stage_torches():
+    """More light in the passages (owner, 2026-11-14), each a torch on a wall: the gate passage, the crypt stair's
+    landing and lower flights, the cell corridor. Found by looking for the wall from the passage's middle."""
+    s = 'torches'
+    if not pixel(s):
+        log.append('torches: pack look, nothing to do')
+        return
+    x0, x1, y0, y1 = PIT
+    lx, cy = x1 + 800.0, y0 - 1600.0
+    spots = [(-850.0, 0.0, 0.0, 0, 1), (-850.0, 0.0, 0.0, 0, -1), (-350.0, 0.0, 0.0, 0, 1), (-350.0, 0.0, 0.0, 0, -1),   # gate passage
+             (lx + 400.0, y1 - 400.0, FLOOR_Z - 600.0, 1, 0),                                                      # crypt landing
+             (lx + 400.0, y0 - 400.0, FLOOR_Z - 750.0, 1, 0), (lx + 400.0, y0 - 1200.0, CRYPT_Z + 150.0, -1, 0),  # lower flights
+             (lx + 400.0, cy - 400.0, CRYPT_Z, -1, 0), (lx + 400.0, cy - 1200.0, CRYPT_Z, -1, 0), (lx + 400.0, cy - 2000.0, CRYPT_Z, -1, 0)]  # cell corridor
+    n = sum(1 for x, y, z, dx, dy in spots if torch_on_wall(s, 'Torches', x, y, z, dx, dy))
+    log.append('torches: %d torches in the passages (of %d places)' % (n, len(spots)))
+
+
 ALL = [('world', stage_world), ('ground', stage_ground), ('keep', stage_keep), ('gate', stage_gate), ('walls', stage_walls),
-       ('wards', stage_wards), ('camp', stage_camp), ('crypt', stage_crypt), ('gameplay', stage_gameplay)]
+       ('wards', stage_wards), ('camp', stage_camp), ('crypt', stage_crypt), ('torches', stage_torches), ('gameplay', stage_gameplay)]
 
 # ---- run ----
 if not eal.does_asset_exist(MAP):

@@ -380,3 +380,32 @@ Frame time was not measured on both: the pack castle was not rebuilt to measure 
 - `Package-Jam.ps1`: `BUILD SUCCESSFUL` (BuildCookRun 106 s). `TeamTBD_Glyphbound.zip` **2,024.9 MB** (was 2,628.8 MB): still over the jam's 1 GB; the rest is mostly the future base's kits.
 - **The castle pack in the cook: 84 MB, was 1,172 MB.** What is left is not the castle's: the future base's map (`FutureBase.umap`) uses two pieces of the pack's rubble (`SM_Rubble_02`, `SM_PillarTop_Broken`) and their wood and stone textures. Replacing those two in the base takes the pack out of the package.
 - On the package: `Smoke-Jam.ps1 -Packaged -Map /Game/Glyphbound/Maps/PastCastle -Only tour -Offscreen`: `SMOKE tour block passed: 42 spots, 0 without floor`, the seal's map can be opened, no LogGB warnings or errors, **0 engine errors**, 154 s.
+
+---
+
+## Eighth part: torches with a fluid-simulated flame, and the castle's light moved to the passages
+The owner (Spanish):
+
+> *"Vamos a reemplazar las luces del castillo por antorchas. En el proyecto ya hay hecho un plugin de Niagara Fluids. La idea es que haga una antorcha que el fuego y el poco humo que bote lo haga con Niagara Fluids y que usen el plugin para convertirlo a pixel art. También reduce el número de luces que hay en los salones grandes y pon más en los pasillos."*
+
+Translation: let's replace the castle's lights with torches. The project already has a Niagara Fluids plugin. Make a torch whose fire and the little smoke it gives off are made with Niagara Fluids, and use the plugin to turn it into pixel art. Also reduce the number of lights in the great halls and put more in the passages.
+
+### The flame
+- A new bake job, `Glyphbound/Plugins/GBPixelVfx/Bake/Jobs/TorchFire.json`, baked by `PixelVfx-Jam.ps1 -Action Bake -Id TorchFire` into `Content/Data/Vfx/TorchFire.png/.json`: 24 frames of 20 x 36 px at 12 fps, a loop, on the fire ramp with a thin trail of smoke.
+- **The template's fire is a bonfire.** Epic's `Grid3D_Gas_Fire` emits from a sphere (its `User.StaticMesh`): a wide base. A narrower simulation domain (`User.WorldSpaceSize`) changed nothing; the 2D smoke-fire template is a line of fire on the ground; the coloured-fire template did not bake. **The bake tool now takes `UserStaticMeshes`** (a Niagara user parameter and a mesh), and the fire emitting from the engine's cone is narrow and tall: a torch's flame. Its exposure is lowered so the core keeps orange instead of going white.
+- The clip's light is scaled with the flame (the runtime scales the light radius by the sprite's size): radius 5,800 cm in the clip, about 11 m at a torch's size.
+
+### The torch
+- **`AGBTorch`** (`Source/Glyphbound/World/GBTorch.h/.cpp`): the holder is the pixel twin of the pack's torch; the flame is the plugin's `UGBPixelVfxComponent` playing `TorchFire` from `BeginPlay`, each torch from its own point of the loop so they do not flicker in step; the light is the clip's own point light, which follows the flame's baked brightness and casts shadows. About forty lines, written by the architect directly (an exception to the default implementer: a small actor tied to the map work).
+- Placed by `Build-PastCastle.py` (`torch`): flame at 0.19 of the clip (about 58 cm), over the torch's cup, light at 40% of the clip's.
+
+### Where the light is now
+- **Great halls: fewer.** Of the author's 50 torches, a torch is lit only when no lit torch is within 9 m (`place_torches`): **23 are kept**, the rest go. A lone torch on a stair or in a passage always stays.
+- **Passages: more.** A new builder stage, `torches`, hangs **10 torches** on the walls of the gate passage (four), the crypt stair's landing and lower flights (three) and the cell corridor (three); each finds its wall with a trace from the passage's middle and hangs 2.15 m above the floor found under it. The crypt's six candle lights, which had no fixture, are gone.
+- Total: **33 torch lights**, where there were 50 torch lights and 6 candle lights.
+
+### Checks
+- Editor target build: `Result: Succeeded` (32 s); the bake tool with the plugin: `Result: Succeeded`.
+- Builder: `walks: clear on 12 walks`.
+- Tour (Editor build): `SMOKE tour block passed: 42 spots, 0 without floor`, no LogGB errors, 0 engine errors. Pictures of the gate passage and the cell corridor looked at close: the flame first sat half inside the torch's cup and the wall beside it burned white; it was raised over the cup, the light lowered to 40% and the clip's glow to 1.2.
+- **Sol 6.1 review** (medium, read-only, Codex CLI through the logged wrapper; prompt `Prompts/review_castle_torches_sol.md`): *"No concrete defects found in the reviewed change."*

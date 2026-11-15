@@ -218,6 +218,17 @@ bool FGBPixelVfxBakeJob::LoadFromFile(const FString& Path)
 	{
 		GBPixelVfxJobLocal::ReadColors(*Sub, Fresh.UserColors);
 	}
+	if (Root->TryGetObjectField(TEXT("UserStaticMeshes"), Sub) && Sub)
+	{
+		for (const auto& Pair : (*Sub)->Values)
+		{
+			FString Path;
+			if (Pair.Value.IsValid() && Pair.Value->TryGetString(Path))
+			{
+				Fresh.UserStaticMeshes.Add(FName(*Pair.Key), Path);
+			}
+		}
+	}
 
 	const TSharedPtr<FJsonObject> Capture = Root->GetObjectField(TEXT("Capture"));
 	Fresh.Resolution = static_cast<int32>(GBPixelVfxJobLocal::ReadNumber(Capture, TEXT("Resolution"), Fresh.Resolution));

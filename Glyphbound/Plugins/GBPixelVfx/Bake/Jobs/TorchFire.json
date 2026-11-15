@@ -1,0 +1,81 @@
+{
+  "Id": "TorchFire",
+  "Comment": "Torch flame: the Niagara Fluids 3D gas fire (engine template) emitting from a cone (User.StaticMesh) instead of its sphere, so the flame is narrow and tall; low exposure keeps orange in it. Loop. Fire ramp, a thin grey smoke above.",
+  "System": "/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_Fire.Grid3D_Gas_Fire",
+  "UserFloats": {},
+  "UserVectors": {},
+  "UserColors": {},
+  "Capture": {
+    "Resolution": 512,
+    "AutoFrame": true,
+    "AutoFramePadding": 0.06,
+    "WidthCm": 600,
+    "CenterCm": [
+      0,
+      0,
+      250
+    ],
+    "ViewYawDeg": 0,
+    "ViewPitchDeg": 0,
+    "Projection": "Perspective",
+    "FovDeg": 10,
+    "WarmupSeconds": 4,
+    "DurationSeconds": 2,
+    "SimFps": 60,
+    "Exposure": 0.45,
+    "KeyLight": true,
+    "KeyLightIntensity": 8
+  },
+  "Pixel": {
+    "FrameWidth": 20,
+    "FrameHeight": 36,
+    "Fps": 12,
+    "Loop": true,
+    "LoopBlendFrames": 6,
+    "AlphaMode": "Max",
+    "AlphaThreshold": 0.25,
+    "ColorMode": "Split",
+    "HotLuminance": 0.55,
+    "HotSaturation": 0.35,
+    "Ramps": [
+      [
+        "#4B0F0F",
+        "#BC2A12",
+        "#F03416",
+        "#F3610B",
+        "#E2DE9C",
+        "#F5F3CF"
+      ],
+      [
+        "#373837",
+        "#434848",
+        "#555957",
+        "#6E716F"
+      ]
+    ],
+    "LevelsPercentile": 0.95,
+    "Gamma": 0.7,
+    "Hysteresis": 0.03,
+    "MinIslandPixels": 2,
+    "FillHoles": true,
+    "Outline": "None",
+    "MinColorClusterPixels": 2
+  },
+  "Light": {
+    "Enabled": true,
+    "Color": "#F3610B",
+    "Intensity": 40,
+    "RadiusCm": 5800,
+    "CastShadows": true,
+    "TrackMode": "Baked",
+    "Comment": "scaled with the flame: a torch plays it at 0.19, so its light reaches about 11 m"
+  },
+  "World": {
+    "Facing": "Upright",
+    "Glow": 1.2,
+    "Lit": false
+  },
+  "UserStaticMeshes": {
+    "User.StaticMesh": "/Engine/BasicShapes/Cone.Cone"
+  }
+}
