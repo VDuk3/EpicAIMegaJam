@@ -370,6 +370,14 @@ FString AGBValkyrieEnemy::DescribeTactics() const
 		LancesFired, VolleyCount, HasGripCurl() ? 1 : 0, LiftApplied);
 }
 
+void GBHoldOverlay(const UGBEnemyAnimInstance* Inst, float AtFrac, float Seconds);   // GBEnemyAnimInstance.cpp
+
+namespace GBReaperStagger
+{
+	// seconds of stagger left per fighter (file-local: no header change)
+	static TMap<TWeakObjectPtr<const AGBValkyrieEnemy>, float> Left;
+}
+
 void AGBValkyrieEnemy::EnterPhaseTwo()
 {
 	if (bPhaseTwo)
@@ -377,6 +385,19 @@ void AGBValkyrieEnemy::EnterPhaseTwo()
 		return;
 	}
 	bPhaseTwo = true;
+	// PhaseTwoStagger (the final boss, owner): at half health it reels, stunned, for that many seconds; it cannot move or
+	// attack, the player's window to hit it hard. The clip is Anim.Action5 (its hop slot, unused by it), held part-way.
+	if (const float Stagger = S(TEXT("PhaseTwoStagger"), 0.f); Stagger > 0.f)
+	{
+		ResetFightState();
+		StopMoving();
+		GBReaperStagger::Left.Add(this, Stagger);
+		float Length = 0.f;
+		if (PlayActionClip(5, Length) && AnimInst && Length > 0.f)
+		{
+			GBHoldOverlay(AnimInst, S(TEXT("StaggerHoldFrac"), 0.55f), FMath::Max(0.f, Stagger - Length));
+		}
+	}
 	// She opens the second phase with her spell.
 	SpellCooldown = FMath::Min(SpellCooldown, V(TEXT("PhaseTwoSpellDelay"), 0.8f));
 	UE_LOG(LogGB, Display, TEXT("VALKYRIE phase two begins"));
@@ -465,6 +486,17 @@ bool AGBValkyrieEnemy::TickRanged(AActor* Goal, float DeltaSeconds)
 	if (!bPhaseTwo && Attributes && Attributes->GetMaxHealth() > 0.f && Attributes->GetHealth() < Attributes->GetMaxHealth() * S(TEXT("PhaseTwoHealthFraction"), 0.5f))
 	{
 		EnterPhaseTwo();
+	}
+	if (float* Stagger = GBReaperStagger::Left.Find(this))
+	{
+		*Stagger -= DeltaSeconds;
+		if (*Stagger > 0.f)
+		{
+			StopMoving();
+			return true;
+		}
+		GBReaperStagger::Left.Remove(this);
+		FinishAction(0.f);
 	}
 
 	const float Distance = FVector::Dist2D(GetActorLocation(), Goal->GetActorLocation());

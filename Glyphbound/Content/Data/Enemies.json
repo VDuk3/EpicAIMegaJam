@@ -850,11 +850,6 @@
 					"Count": 1,
 					"Chance": 1,
 					"FlagOnPickup": "GotFirstGun"
-				},
-				{
-					"WeaponId": "CrimsonKatana",
-					"Count": 1,
-					"Chance": 1
 				}
 			]
 		},
@@ -1217,6 +1212,109 @@
 				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
 			},
 			"Drops": [
+				{
+					"ItemId": "Ammo_Magazine",
+					"Count": 1,
+					"Chance": 0.12
+				},
+				{
+					"ItemId": "HealthInjection",
+					"Count": 1,
+					"Chance": 0.08
+				},
+				{
+					"ItemId": "ElectricGrenade",
+					"Count": 1,
+					"Chance": 0.06
+				}
+			]
+		},
+		{
+			"Comment": "Soldier template (60 HP, ranged rifle): a skeletal robot with a hitscan rifle. Robots show sparks, not blood.",
+			"Id": "Robot_Future_RifleCarrier",
+			"Comment": "Owner 2026-11-15: a Robot_Future copy that carries the rifle; the robot of the deep wing corridor (Future_DeepWing).",
+			"DisplayName": "Security Robot",
+			"ActorClass": "/Script/Glyphbound.GBSkeletalEnemy",
+			"AttackMode": "Ranged",
+			"Element": "Physical",
+			"bPixelArt": false,
+			"Stats": {
+					"PatrolSpeed": 150,
+					"CombatSpeed": 260,
+					"Aggression": 0.3,
+					"CoverStayMin": 6,
+					"CoverStayMax": 12,
+					"NoticeTime": 0.6,
+					"HearingRange": 2500,
+					"AlertPause": 0.5,
+					"AnimRateMin": 0.7,
+					"AnimRateMax": 1.35,
+					"Acceleration": 900,
+					"BrakingDeceleration": 1400,
+					"BurstsPerPeek": 1,
+					"PatrolPauseMin": 1,
+					"PatrolPauseMax": 3,
+				"MaxHealth": 60,
+				"MoveSpeed": 430,
+				"AttackDamage": 3,
+				"AttackRange": 1600,
+				"AttackInterval": 1.4,
+				"AttackWindup": 0.5,
+				"AggroRange": 2600,
+				"ProjectileSpeed": 2600,
+				"ProjectileRadius": 10,
+				"ProjectileGravity": 0,
+				"HeadFraction": 0.22,
+				"CapsuleRadius": 42,
+				"CapsuleHalfHeight": 96,
+				"LightningDamageTaken": 1.25,
+				"LightningBuildUpTaken": 1.5,
+				"FireDamageTaken": 0.75,
+				"FireBuildUpTaken": 0.5,
+				"PreferredRangeMin": 600,
+				"PreferredRangeMax": 1400,
+				"BurstCount": 3,
+				"BurstShotInterval": 0.12,
+				"SpreadDegrees": 4,
+				"MoveSpreadDegrees": 3,
+				"SightAngle": 140,
+				"AlertRadius": 1800,
+				"WalkAnimSpeed": 150,
+				"RunAnimSpeed": 400,
+				"MeshScale": 1,
+				"CorpseTime": 4,
+				"MeshYaw": -90,
+				"TurnRate": 420
+			},
+			"Strings": {
+				"Color": "#6A7A8A",
+				"Mesh": "/Game/Glyphbound/Characters/Robot/SK_Robot",
+				"Armor": "",
+				"Anim.Idle": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Idle_ADS",
+				"Anim.Walk": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Fwd",
+				"Anim.Run": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Jog_Fwd",
+				"Anim.StrafeLeft": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Left",
+				"Anim.StrafeRight": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Right",
+				"Anim.WalkBack": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Walk_Bwd",
+				"Anim.Attack": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Rifle_Fire",
+				"Anim.Hit": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_HitReact_Front_Lgt_01",
+				"Anim.Death": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_Death_Slump",
+					"Anim.RelaxedIdle": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_KB_Rifle_RelaxedIdle",
+					"Anim.PatrolWalk": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_KB_Rifle_PatrolWalk",
+					"Anim.Sprint": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_KB_Rifle_Sprint",
+					"Anim.CrouchIdle": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_KB_Rifle_CrouchIdle",
+					"Anim.CrouchWalk": "/Game/Glyphbound/Characters/Robot/Anims/A_Robot_KB_Rifle_CrouchWalk",
+				"Weapon": "/Game/Glyphbound/Weapons/EnemyRifle/SM_EnemyRifle",
+				"WeaponSocket": "hand_r",
+				"WeaponOffset": "0.8 -5.2 -0.4 6.4 -93.6 70.3 1",
+				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Technology_Impact_1"
+			},
+			"Drops": [
+				{
+					"WeaponId": "Rifle",
+					"Count": 1,
+					"Chance": 1
+				},
 				{
 					"ItemId": "Ammo_Magazine",
 					"Count": 1,
@@ -1980,6 +2078,8 @@
 				"DashChain": 1,
 				"DashChainMax": 2,
 				"ChaseLead": 0.35,
+				"PhaseTwoStagger": 3,
+				"StaggerHoldFrac": 0.55,
 				"ChaseAlways": 1,
 				"ChaseStopDistance": 60,
 				"ChaseWalkDistance": 0,
@@ -2109,7 +2209,7 @@
 				"Anim.Hit": "/Game/Glyphbound/Characters/Reaper/Anims/A_Reaper_Hit1",
 				"Anim.Death": "/Game/Glyphbound/Characters/Reaper/Anims/A_Reaper_Death",
 				"Fx.HitImpact": "/Game/SciFi_Impacts/FX/NS_Energy_Impact_2",
-				"Anim.Action5": "/Game/Glyphbound/Characters/Reaper/Anims/A_Reaper_Evade_Back",
+				"Anim.Action5": "/Game/Glyphbound/Characters/Reaper/Anims/A_Reaper_Stagger",
 				"Anim.Action6": "/Game/Glyphbound/Characters/Reaper/Anims/A_Reaper_Heavy1_Start",
 				"Fx.LanceNiagara": "/Game/Glyphbound/FX/Reaper/NS_Reaper_PlagueBall",
 				"Fx.LanceImpactNiagara": "/Game/Glyphbound/FX/Reaper/NS_Reaper_PlagueImpact",

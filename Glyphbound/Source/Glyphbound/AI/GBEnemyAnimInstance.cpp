@@ -633,6 +633,22 @@ int32 UGBEnemyAnimInstance::GetClipCount() const
 	return Count;
 }
 
+// A held one-shot (the final boss's stagger): the overlay reaches AtFrac of its clip, sways around that pose for Seconds,
+// then plays out. File-local so it needs no header change; called from GBValkyrieEnemy.cpp.
+namespace GBOverlayHold
+{
+	struct FHold { float At = 0.f; float Left = 0.f; float Time = 0.f; };
+	static TMap<TWeakObjectPtr<const UGBEnemyAnimInstance>, FHold> Holds;
+}
+
+void GBHoldOverlay(const UGBEnemyAnimInstance* Inst, float AtFrac, float Seconds)
+{
+	if (Inst)
+	{
+		GBOverlayHold::Holds.Add(Inst, { FMath::Clamp(AtFrac, 0.f, 1.f), FMath::Max(Seconds, 0.f), 0.f });
+	}
+}
+
 bool UGBEnemyAnimInstance::PlayOneShot(EGBEnemyClip Clip, bool bUpperBodyOnly)
 {
 	if (!HasClip(Clip) || Frame.bDead)
@@ -806,6 +822,21 @@ void UGBEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		const UAnimSequence* Clip = GetClip(static_cast<EGBEnemyClip>(Frame.OverlayClip));
 		const float Length = Clip ? Clip->GetPlayLength() : 0.f;
 		Frame.OverlayTime += DeltaSeconds;
+		if (GBOverlayHold::FHold* Hold = GBOverlayHold::Holds.Find(this))
+		{
+			const float At = Hold->At * Length;
+			if (Hold->Left > 0.f && Frame.OverlayTime >= At)
+			{
+				// dazed: rocks slowly back and forth just before the held pose
+				Hold->Left -= DeltaSeconds;
+				Hold->Time += DeltaSeconds;
+				Frame.OverlayTime = At - FMath::Min(0.15f, At) * (0.5f - 0.5f * FMath::Cos(Hold->Time * 2.6f));
+			}
+			else if (Hold->Left <= 0.f)
+			{
+				GBOverlayHold::Holds.Remove(this);
+			}
+		}
 		if (!Clip || Frame.OverlayTime >= Length)
 		{
 			Frame.OverlayClip = -1;

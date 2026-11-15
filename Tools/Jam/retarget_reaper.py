@@ -34,6 +34,8 @@ CLIPS = {
     "Death2": "Death2",
     "Heavy1_Start": "Attack_Heavy1_Start",
     "Equip": "Equip_Idle1",
+    "Stagger": "Guard_Break",
+    "Knockdown": "Hit_knockdown",
 }
 LOG = []
 
