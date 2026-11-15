@@ -1,0 +1,35 @@
+{
+	"Id": "LightningArcQ2",
+	"Atlas": "LightningArcQ2.png",
+	"FrameWidth": 64,
+	"FrameHeight": 48,
+	"Columns": 4,
+	"FrameCount": 8,
+	"Fps": 14,
+	"Loop": true,
+	"WorldWidthCm": 64,
+	"WorldHeightCm": 48,
+	"PivotU": 0,
+	"PivotV": 0.5,
+	"Facing": "Fixed",
+	"Glow": 2,
+	"Lit": false,
+	"Light": {
+		"Enabled": false,
+		"Color": "#B83ECC",
+		"Intensity": 0,
+		"RadiusCm": 0,
+		"CastShadows": false,
+		"AnchorU": 0.5,
+		"AnchorV": 0.5,
+		"TrackMode": "Constant",
+		"Track": []
+	},
+	"Source": {
+		"System": "Tools/Jam/import_laptop_lightning.js (LAPTOP script-generated sprites, vfx_jugador, arcano)",
+		"DurationSeconds": 0.5714285714285714,
+		"SimFps": 14,
+		"EngineVersion": "",
+		"BakedUtc": ""
+	}
+}

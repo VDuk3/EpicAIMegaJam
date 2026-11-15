@@ -1,0 +1,44 @@
+{
+	"Id": "LightningSpark",
+	"Atlas": "LightningSpark.png",
+	"FrameWidth": 64,
+	"FrameHeight": 64,
+	"Columns": 4,
+	"FrameCount": 8,
+	"Fps": 20,
+	"Loop": true,
+	"WorldWidthCm": 64,
+	"WorldHeightCm": 64,
+	"PivotU": 0.5,
+	"PivotV": 0.5,
+	"Facing": "Billboard",
+	"Glow": 2.5,
+	"Lit": false,
+	"Light": {
+		"Enabled": true,
+		"Color": "#B83ECC",
+		"Intensity": 40,
+		"RadiusCm": 500,
+		"CastShadows": false,
+		"AnchorU": 0.5,
+		"AnchorV": 0.5,
+		"TrackMode": "Baked",
+		"Track": [
+			1,
+			0.6,
+			0.9,
+			0.5,
+			1,
+			0.7,
+			0.4,
+			0.8
+		]
+	},
+	"Source": {
+		"System": "Tools/Jam/import_laptop_lightning.js (LAPTOP script-generated sprites, vfx_jugador, arcano)",
+		"DurationSeconds": 0.4,
+		"SimFps": 20,
+		"EngineVersion": "",
+		"BakedUtc": ""
+	}
+}

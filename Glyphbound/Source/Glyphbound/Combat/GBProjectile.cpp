@@ -18,6 +18,8 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraComponent.h"
+#include "TimerManager.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GBPixelVfxActor.h"
 #include "GBPixelVfxComponent.h"
@@ -27,6 +29,253 @@ namespace GBProjectileLocal
 {
 	/** Same lift as the radial damage obstruction trace (GBCombatLibrary.cpp), so a blast on the floor is not blocked by it. */
 	constexpr float KnockbackTraceLiftCm = 5.f;
+}
+
+// Instant lightning (owner, 2026-11-15): the Storm staff's shot and the Lightning Bolt spell do not fly. A projectile whose
+// FlightVfx names "LightningArc" resolves its whole path on its first tick (AGBProjectile::Tick), through the same
+// HitTarget / Explode / Finish code as a flying one, so damage, build-up, weak points and OnImpact (the staff's splash,
+// the spell's area hit) are unchanged. Then a purple arc of the LAPTOP's lightning sprites (Tools/Jam/import_laptop_lightning.js)
+// flickers from the staff's head to where it hit for a moment. The arc is half-ribbon tiles one after another, each
+// turned about the bolt's axis to face the camera and sized to its distance from it, so the bolt keeps the same
+// thickness on screen from the staff to far away. The same rule renders the previews in that script.
+// Data: FlightVfx "LightningArc", FlightVfxHeight = the ribbon's height in cm per metre from the camera (12 or more =
+// the big spell look: three layers, longer), ImpactVfx (the hit clip), ImpactVfxSize = the hit clip's smallest width, cm.
+// Used by Spells/GBSpell_Projectile.cpp too (declared there), for the small arcs of the spell's area hit.
+namespace GBLightningFx
+{
+	const FString ArcPrefix(TEXT("LightningArc"));
+	const FName SparkClip(TEXT("LightningSpark"));
+	/** Height of the ribbon clips' frame in their own cm (48 px at 1 cm per px). Half tiles are 128 wide, quarters 64. */
+	constexpr float ClipHeightCm = 48.f;
+	constexpr float HalfAspect = 128.f / 48.f;
+	constexpr int32 MaxTilesPerLayer = 40;
+	constexpr float BigHeightPer100 = 12.f;
+	constexpr float FlickerStep = 0.035f;
+
+	bool IsArcClip(FName ClipId)
+	{
+		return !ClipId.IsNone() && ClipId.ToString().StartsWith(ArcPrefix);
+	}
+
+	const FGBPixelVfxClip* FindClip(const UObject* WorldContext, FName ClipId)
+	{
+		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+		const UGBPixelVfxSubsystem* Vfx = GameInstance ? GameInstance->GetSubsystem<UGBPixelVfxSubsystem>() : nullptr;
+		return Vfx ? Vfx->FindClip(ClipId) : nullptr;
+	}
+
+	FName TileClip(int32 Index, bool bQuarter)
+	{
+		// Halves alternate H0, H1 (seamless: they are the two halves of one tileable ribbon); a quarter is the left
+		// quarter of the half that would come next.
+		return bQuarter ? FName(*FString::Printf(TEXT("LightningArcQ%d"), (Index % 2) * 2)) : FName(*FString::Printf(TEXT("LightningArcH%d"), Index % 2));
+	}
+
+	bool HasClips(const UObject* WorldContext)
+	{
+		for (int32 Index = 0; Index < 2; ++Index)
+		{
+			if (!FindClip(WorldContext, TileClip(Index, false)) || !FindClip(WorldContext, TileClip(Index, true)))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	FVector CameraLocation(const UWorld* World, const FVector& Fallback)
+	{
+		const APlayerController* Viewer = World ? World->GetFirstPlayerController() : nullptr;
+		return (Viewer && Viewer->PlayerCameraManager) ? Viewer->PlayerCameraManager->GetCameraLocation() : Fallback;
+	}
+
+	FName LayerTag(int32 Layer)
+	{
+		return FName(*FString::Printf(TEXT("LightningLayer%d"), Layer));
+	}
+
+	/** One layer of the arc from A to B, built on Owner. Same tiling as arcTiles() in import_laptop_lightning.js. */
+	void BuildLayer(AActor* Owner, const FVector& A, const FVector& B, const FVector& Cam, float HeightPer100, float Phase, int32 Layer)
+	{
+		const FVector Dir = (B - A).GetSafeNormal();
+		const float Length = FVector::Dist(A, B);
+		if (Dir.IsNearlyZero())
+		{
+			return;
+		}
+		float Pos = 0.f;
+		for (int32 Index = 0; Index < MaxTilesPerLayer && Pos < Length; ++Index)
+		{
+			const FVector P = A + Dir * Pos;
+			const float Height = FMath::Max(3.f, HeightPer100 * FVector::Dist(P, Cam) / 100.f);
+			const float Width = Height * HalfAspect;
+			const float Remaining = Length - Pos;
+			bool bQuarter = false;
+			if (Remaining < Width * 0.25f)
+			{
+				break;
+			}
+			if (Remaining < Width * 0.75f)
+			{
+				bQuarter = true;
+			}
+			// X along the bolt, Z toward the camera with the bolt's part removed (it turns about its own axis), Y = Z x X.
+			const FVector ToCam = Cam - P;
+			FVector Z = (ToCam - Dir * FVector::DotProduct(ToCam, Dir)).GetSafeNormal();
+			if (Z.IsNearlyZero())
+			{
+				Z = FVector::CrossProduct(Dir, FMath::Abs(Dir.Z) < 0.9f ? FVector::UpVector : FVector::ForwardVector).GetSafeNormal();
+			}
+			const FVector Y = FVector::CrossProduct(Z, Dir);
+			UGBPixelVfxComponent* Tile = NewObject<UGBPixelVfxComponent>(Owner, NAME_None, RF_Transient);
+			Tile->FacingOverride = TEXT("Fixed");
+			Tile->bEnableLight = false;
+			Tile->SizeScale = Height / ClipHeightCm;
+			Tile->PlayRate = 1.6f;
+			Tile->StartTimeOffset = Phase;
+			Tile->ComponentTags.Add(LayerTag(Layer));
+			Tile->AttachToComponent(Owner->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+			Tile->SetWorldLocationAndRotation(P, FMatrix(Dir, Y, Z, FVector::ZeroVector).Rotator());
+			Tile->RegisterComponent();
+			if (!Tile->Play(TileClip(Index, bQuarter)))
+			{
+				Tile->DestroyComponent();
+				break;
+			}
+			if (bQuarter)
+			{
+				break;
+			}
+			Pos += Width;
+		}
+	}
+
+	/** The flickering arc from Start to End. Lives a moment, then removes itself. */
+	void SpawnArc(UWorld* World, const FVector& Start, const FVector& End, float HeightPer100)
+	{
+		if (!World || FVector::DistSquared(Start, End) < 1.f)
+		{
+			return;
+		}
+		const bool bBig = HeightPer100 >= BigHeightPer100;
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AGBPixelVfxActor* Arc = World->SpawnActor<AGBPixelVfxActor>(AGBPixelVfxActor::StaticClass(), FTransform(Start), Params);
+		if (!Arc || !Arc->GetRootComponent())
+		{
+			return;
+		}
+		const FVector Cam = CameraLocation(World, Start);
+		// Main bolt; a thinner one drawn from the far end (its zigzag runs the other way); the spell adds a third, thinner still.
+		BuildLayer(Arc, Start, End, Cam, HeightPer100, 0.f, 0);
+		BuildLayer(Arc, End, Start, Cam, HeightPer100 * 0.6f, 0.21f, 1);
+		if (bBig)
+		{
+			BuildLayer(Arc, Start, End, Cam, HeightPer100 * 0.4f, 0.37f, 2);
+		}
+		// One unshadowed purple light a little way along the bolt, flickering with it.
+		UPointLightComponent* Light = NewObject<UPointLightComponent>(Arc, NAME_None, RF_Transient);
+		Light->SetMobility(EComponentMobility::Movable);
+		Light->SetIntensityUnits(ELightUnits::Candelas);
+		Light->SetLightColor(FLinearColor(FColor(0xB8, 0x3E, 0xCC)));
+		Light->SetAttenuationRadius(bBig ? 1200.f : 700.f);
+		Light->SetCastShadows(false);
+		const float LightCandelas = bBig ? 90.f : 35.f;
+		Light->SetIntensity(LightCandelas);
+		Light->AttachToComponent(Arc->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		Light->SetWorldLocation(FMath::Lerp(Start, End, FMath::Min(0.3f, 400.f / FMath::Max(1.f, FVector::Dist(Start, End)))));
+		Light->RegisterComponent();
+
+		const float Life = bBig ? 0.3f : 0.16f;
+		Arc->SetLifeSpan(Life);
+		// Flicker: the thin layers blink at random, the whole arc drops out for one step in the middle, the light jumps.
+		TSharedRef<int32> Step = MakeShared<int32>(0);
+		const TWeakObjectPtr<UPointLightComponent> WeakLight(Light);
+		FTimerHandle Handle;
+		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(Arc, [Arc, Step, WeakLight, LightCandelas, Life]()
+		{
+			const int32 Now = ++(*Step);
+			const bool bGap = Now == FMath::RoundToInt(Life * 0.5f / FlickerStep);
+			TInlineComponentArray<UGBPixelVfxComponent*> Tiles(Arc);
+			bool bLayerOn[3] = { !bGap, !bGap && FMath::FRand() < 0.7f, !bGap && FMath::FRand() < 0.6f };
+			for (UGBPixelVfxComponent* Tile : Tiles)
+			{
+				for (int32 Layer = 0; Layer < 3; ++Layer)
+				{
+					if (Tile->ComponentHasTag(LayerTag(Layer)))
+					{
+						Tile->SetVisibility(bLayerOn[Layer], true);
+					}
+				}
+			}
+			if (UPointLightComponent* L = WeakLight.Get())
+			{
+				L->SetIntensity(bGap ? 0.f : LightCandelas * FMath::FRandRange(0.5f, 1.2f));
+			}
+		}), FlickerStep, true);
+	}
+
+	/** The hit clip at At, facing the camera; at least MinWidthCm wide, wider far away so it still reads. */
+	void SpawnImpact(UWorld* World, FName ClipId, const FVector& At, float MinWidthCm, float HeightPer100)
+	{
+		const FGBPixelVfxClip* Clip = FindClip(World, ClipId);
+		if (!World || !Clip || Clip->WorldWidthCm <= 0.f)
+		{
+			return;
+		}
+		const float Width = FMath::Max(MinWidthCm, HeightPer100 * 1.1f * FVector::Dist(CameraLocation(World, At), At) / 100.f);
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AGBPixelVfxActor* Actor = World->SpawnActor<AGBPixelVfxActor>(AGBPixelVfxActor::StaticClass(), FTransform(At), Params);
+		if (!Actor || !Actor->PixelVfx)
+		{
+			return;
+		}
+		UGBPixelVfxComponent* Vfx = Actor->PixelVfx;
+		Vfx->SizeScale = Width / Clip->WorldWidthCm;
+		Vfx->PlayRate = 1.3f;
+		Vfx->FacingOverride = TEXT("Billboard");
+		Vfx->bLightCastsShadows = false;
+		Vfx->bLightCastsShadowsSet = true;
+		Vfx->bAutoDestroyOwnerWhenFinished = true;
+		if (!Vfx->Play(ClipId))
+		{
+			Actor->Destroy();
+		}
+	}
+
+	/** The spark at the staff's head as it fires; rides the caster's camera so it stays on the drawn staff. */
+	void SpawnSpark(UWorld* World, AActor* Caster, const FVector& At, float SizeCm, float Life)
+	{
+		const FGBPixelVfxClip* Clip = FindClip(World, SparkClip);
+		if (!World || !Clip || Clip->WorldWidthCm <= 0.f)
+		{
+			return;
+		}
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AGBPixelVfxActor* Actor = World->SpawnActor<AGBPixelVfxActor>(AGBPixelVfxActor::StaticClass(), FTransform(At), Params);
+		if (!Actor || !Actor->PixelVfx)
+		{
+			return;
+		}
+		UGBPixelVfxComponent* Vfx = Actor->PixelVfx;
+		Vfx->SizeScale = SizeCm / Clip->WorldWidthCm;
+		Vfx->FacingOverride = TEXT("Billboard");
+		Vfx->bLightCastsShadows = false;
+		Vfx->bLightCastsShadowsSet = true;
+		if (!Vfx->Play(SparkClip))
+		{
+			Actor->Destroy();
+			return;
+		}
+		if (USceneComponent* Camera = Caster ? Caster->FindComponentByClass<UCameraComponent>() : nullptr)
+		{
+			Actor->AttachToComponent(Camera, FAttachmentTransformRules::KeepWorldTransform);
+		}
+		Actor->SetLifeSpan(Life);
+	}
 }
 
 AGBProjectile::AGBProjectile()
@@ -139,7 +388,24 @@ void AGBProjectile::InitProjectile(const FGBProjectileConfig& InConfig, const FV
 	if (Config.bPixelArt)
 	{
 		Mesh->SetVisibility(false);
-		if (!Config.FlightVfxId.IsNone() && SetupFlightVfx())
+		const bool bLightningArc = GBLightningFx::IsArcClip(Config.FlightVfxId);
+		if (bLightningArc && GBLightningFx::HasClips(this))
+		{
+			// Instant lightning: nothing flies and nothing touches it; the first Tick resolves the hit (collision off
+			// is how Tick knows). See GBLightningFx above.
+			Sprite->SetVisibility(false);
+			Sprite->SetHiddenInGame(true);
+			SetActorEnableCollision(false);
+		}
+		else if (bLightningArc)
+		{
+			UE_LOG(LogGB, Warning, TEXT("Projectile: lightning arc clips (LightningArcH0/H1/Q0/Q2) not found; the bolt flies as the sprite '%s' instead"), *Config.SpriteId.ToString());
+			if (UGBPixelSpriteLibrary* SpriteLibrary = UGBPixelSpriteLibrary::Get(this))
+			{
+				SpriteLibrary->SetupBillboard(Sprite, Config.SpriteId, VisualSize);
+			}
+		}
+		else if (!Config.FlightVfxId.IsNone() && SetupFlightVfx())
 		{
 			Sprite->SetVisibility(false);
 			Sprite->SetHiddenInGame(true);
@@ -304,6 +570,84 @@ void AGBProjectile::Tick(float DeltaSeconds)
 
 	if (bFinished)
 	{
+		return;
+	}
+
+	// Instant lightning (GBLightningFx): the whole path is resolved now, then the projectile is finished.
+	if (!GetActorEnableCollision() && GBLightningFx::IsArcClip(Config.FlightVfxId))
+	{
+		UWorld* World = GetWorld();
+		const FVector Start = StartLocation;
+		FVector Dir = Movement ? Movement->Velocity.GetSafeNormal() : FVector::ZeroVector;
+		if (Dir.IsNearlyZero())
+		{
+			Dir = GetActorForwardVector();
+		}
+		const float Range = Config.MaxRange > 0.f ? Config.MaxRange : Config.Speed * Config.MaxLifetime;
+		FVector Stop = Start + Dir * Range;
+		const FCollisionShape Shape = FCollisionShape::MakeSphere(FMath::Max(Config.Radius, 1.f));
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GBLightningTrace), false, this);
+		if (AActor* Caster = Config.Damage.Instigator.Get())
+		{
+			Params.AddIgnoredActor(Caster);
+		}
+		// The world blocks it (what the flying projectile's collision blocks on); characters and dynamic things are hit
+		// along the way up to there, nearest first, through the same HitTarget a flying one uses.
+		FHitResult WorldHit;
+		const bool bWorldHit = World && World->SweepSingleByObjectType(WorldHit, Start, Stop, FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldStatic), Shape, Params);
+		if (bWorldHit)
+		{
+			Stop = WorldHit.bStartPenetrating ? Start : FVector(WorldHit.Location);
+		}
+		FVector ArcEnd = bWorldHit ? FVector(WorldHit.ImpactPoint) : Stop;
+		TArray<FVector, TInlineAllocator<4>> HitPoints;
+		if (World)
+		{
+			FCollisionObjectQueryParams Targets;
+			Targets.AddObjectTypesToQuery(ECC_Pawn);
+			Targets.AddObjectTypesToQuery(ECC_WorldDynamic);
+			TArray<FHitResult> Hits;
+			World->SweepMultiByObjectType(Hits, Start, Stop, FQuat::Identity, Targets, Shape, Params);
+			Hits.Sort([](const FHitResult& A, const FHitResult& B) { return A.Distance < B.Distance; });
+			for (const FHitResult& Hit : Hits)
+			{
+				AActor* Other = Hit.GetActor();
+				if (bFinished)
+				{
+					break;
+				}
+				if (!IsValidTarget(Other))
+				{
+					continue;
+				}
+				const FVector Point = Hit.bStartPenetrating ? FMath::ClosestPointOnSegment(Other->GetActorLocation(), Start, Stop) : FVector(Hit.ImpactPoint);
+				HitPoints.Add(Point);
+				ArcEnd = Point;
+				HitTarget(Other, Point);
+			}
+		}
+		if (!bFinished)
+		{
+			// A piercing bolt (or a miss) ends on the world or at its range.
+			ArcEnd = bWorldHit ? FVector(WorldHit.ImpactPoint) : Stop;
+			if (bWorldHit)
+			{
+				HitPoints.Add(ArcEnd);
+			}
+			if (Config.ExplosionRadius > 0.f)
+			{
+				Explode(ArcEnd);
+			}
+			Finish(bWorldHit ? WorldHit.GetActor() : nullptr, ArcEnd);
+		}
+		const float HeightPer100 = FMath::Max(Config.FlightVfxHeight, 1.f);
+		const bool bBig = HeightPer100 >= GBLightningFx::BigHeightPer100;
+		GBLightningFx::SpawnArc(World, Start, ArcEnd, HeightPer100);
+		for (const FVector& Point : HitPoints)
+		{
+			GBLightningFx::SpawnImpact(World, Config.ImpactVfxId, Point, Config.ImpactVfxSize, HeightPer100);
+		}
+		GBLightningFx::SpawnSpark(World, Config.Damage.Instigator.Get(), Start, bBig ? 9.f : 6.f, bBig ? 0.22f : 0.12f);
 		return;
 	}
 

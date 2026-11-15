@@ -127,13 +127,17 @@
 				"LightRadius": 800,
 				"GlowPulsePeriod": 2.4,
 				"GlowMin": 0.06,
-				"GlowMax": 0.3
+				"GlowMax": 0.3,
+				"FlightVfxHeight": 8,
+				"ImpactVfxSize": 90
 			},
 			"Strings": {
 				"Sprite": "staff_storm",
 				"GlowSprite": "staff_storm_glow",
 				"LightColor": "#B23EDB",
-				"ProjectileSprite": "lightning_bolt"
+				"ProjectileSprite": "lightning_bolt",
+				"FlightVfx": "LightningArc",
+				"ImpactVfx": "LightningImpact"
 			}
 		},
 		{

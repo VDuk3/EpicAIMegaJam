@@ -4,6 +4,86 @@
 #include "Data/GBDataSubsystem.h"
 #include "Engine/World.h"
 #include "Player/GBPlayerCharacter.h"
+#include "Combat/GBCombatLibrary.h"
+#include "Engine/OverlapResult.h"
+
+// Defined in Combat/GBProjectile.cpp (instant lightning look).
+namespace GBLightningFx
+{
+	bool IsArcClip(FName ClipId);
+	void SpawnArc(UWorld* World, const FVector& Start, const FVector& End, float HeightPer100);
+	void SpawnImpact(UWorld* World, FName ClipId, const FVector& At, float MinWidthCm, float HeightPer100);
+}
+
+// Area hit on impact (owner, 2026-11-15, Lightning Bolt): Spells.json Params "SplashRadius" (cm, 0 = none) and
+// "SplashDamageFraction" (share of the hit dealt to the other hostiles around the hit point, no falloff). Never the
+// caster; the directly hit enemy already took the full hit. Same rule as the Storm staff's splash (GBStaff.cpp).
+// A lightning spell also draws a small arc and a hit to each hostile around.
+namespace GBSpellSplash
+{
+	const FName Radius(TEXT("SplashRadius"));
+	const FName DamageFraction(TEXT("SplashDamageFraction"));
+	constexpr int32 MaxSmallArcs = 6;
+
+	void Bind(AGBProjectile* Projectile, const FGBProjectileConfig& Config, float SplashRadius, float Fraction, AActor* Caster)
+	{
+		if (!Projectile || SplashRadius <= 0.f || Fraction <= 0.f)
+		{
+			return;
+		}
+		FGBDamageInfo SplashInfo = Config.Damage;
+		SplashInfo.Amount *= Fraction;
+		SplashInfo.BuildUp *= Fraction;
+		SplashInfo.OnHitEffect = NAME_None;
+		const bool bLightning = GBLightningFx::IsArcClip(Config.FlightVfxId);
+		const FName ImpactClip = Config.ImpactVfxId;
+		const float HeightPer100 = Config.FlightVfxHeight;
+		const TWeakObjectPtr<AActor> WeakCaster(Caster);
+		Projectile->OnImpact.AddLambda([SplashInfo, SplashRadius, bLightning, ImpactClip, HeightPer100, WeakCaster](AGBProjectile* Shot, AActor* HitActor, const FVector& Location)
+		{
+			// Null = it reached the end of its range in the air: no area hit.
+			UWorld* World = Shot ? Shot->GetWorld() : nullptr;
+			if (!HitActor || !World)
+			{
+				return;
+			}
+			AActor* Owner = WeakCaster.Get();
+			TArray<AActor*, TInlineAllocator<2>> Ignore;
+			if (Owner)
+			{
+				Ignore.Add(Owner);
+			}
+			if (UGBCombatLibrary::CanDamage(Owner, HitActor))
+			{
+				Ignore.Add(HitActor);
+			}
+			if (bLightning)
+			{
+				// Visual only: small arcs from the hit point to the hostiles around it (before the damage, which may kill them).
+				FCollisionObjectQueryParams Objects;
+				Objects.AddObjectTypesToQuery(ECC_Pawn);
+				TArray<FOverlapResult> Overlaps;
+				World->OverlapMultiByObjectType(Overlaps, Location, FQuat::Identity, Objects, FCollisionShape::MakeSphere(SplashRadius));
+				TSet<AActor*> Seen;
+				for (const FOverlapResult& Overlap : Overlaps)
+				{
+					AActor* Other = Overlap.GetActor();
+					if (Seen.Num() >= MaxSmallArcs || !IsValid(Other) || Seen.Contains(Other) || Ignore.Contains(Other) || !UGBCombatLibrary::CanDamage(Owner, Other))
+					{
+						continue;
+					}
+					Seen.Add(Other);
+					const FVector To = UGBCombatLibrary::GetDamageTargetLocation(Other, Location);
+					GBLightningFx::SpawnArc(World, Location, To, HeightPer100 * 0.5f);
+					GBLightningFx::SpawnImpact(World, ImpactClip, To, 60.f, HeightPer100 * 0.5f);
+				}
+			}
+			FGBDamageInfo Info = SplashInfo;
+			Info.Causer = Shot;
+			UGBCombatLibrary::DealRadialDamage(Shot, Location, SplashRadius, Info, Ignore, /*bLinearFalloff*/ false);
+		});
+	}
+}
 
 void AGBSpell_Projectile::StartSpell()
 {
@@ -76,9 +156,14 @@ void AGBSpell_Projectile::StartSpell()
 		ShotDir = AimDir;
 	}
 
-	if (!AGBProjectile::SpawnProjectile(World, Config, Muzzle, ShotDir, GetCaster()))
+	AGBProjectile* Projectile = AGBProjectile::SpawnProjectile(World, Config, Muzzle, ShotDir, GetCaster());
+	if (!Projectile)
 	{
 		UE_LOG(LogGB, Warning, TEXT("Spell '%s': the projectile could not be spawned."), *SpellCast.SpellId.ToString());
+	}
+	else
+	{
+		GBSpellSplash::Bind(Projectile, Config, SpellCast.Get(GBSpellSplash::Radius, 0.f), SpellCast.Get(GBSpellSplash::DamageFraction, 0.f), GetCaster());
 	}
 	EndSpell();
 }

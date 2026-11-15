@@ -296,7 +296,7 @@
 		{
 			"Id": "LightningBolt",
 			"DisplayName": "Lightning Bolt",
-			"Description": "A fast bolt that goes through every enemy in its path. Builds up lightning.",
+			"Description": "An instant bolt that strikes the first enemy in its path and arcs to the enemies around it. Builds up lightning.",
 			"Element": "Lightning",
 			"ActorClass": "/Script/Glyphbound.GBSpell_Projectile",
 			"bStartsKnown": true,
@@ -351,9 +351,9 @@
 					"ScaledBy": "None"
 				},
 				"Pierce": {
-					"Base": 1,
-					"Min": 1,
-					"Max": 1,
+					"Base": 0,
+					"Min": 0,
+					"Max": 0,
 					"ScaledBy": "None"
 				},
 				"VisualScale": {
@@ -379,10 +379,36 @@
 					"Min": 0,
 					"Max": 0,
 					"ScaledBy": "None"
+				},
+				"SplashRadius": {
+					"Base": 250,
+					"Min": 250,
+					"Max": 250,
+					"ScaledBy": "None"
+				},
+				"SplashDamageFraction": {
+					"Base": 0.5,
+					"Min": 0.5,
+					"Max": 0.5,
+					"ScaledBy": "None"
+				},
+				"FlightVfxHeight": {
+					"Base": 13,
+					"Min": 13,
+					"Max": 13,
+					"ScaledBy": "None"
+				},
+				"ImpactVfxSize": {
+					"Base": 160,
+					"Min": 160,
+					"Max": 160,
+					"ScaledBy": "None"
 				}
 			},
 			"Strings": {
 				"Sprite": "lightning_bolt",
+				"FlightVfx": "LightningArc",
+				"ImpactVfx": "LightningImpact",
 				"Color": "#FFE84A"
 			}
 		},

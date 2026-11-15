@@ -62,6 +62,18 @@ bool AGBStaff::PerformAttack()
 		{
 			Config.SpriteId = FName(**Sprite);
 		}
+		// Optional baked clips (Weapons.json Strings FlightVfx / ImpactVfx, sizes in Stats). FlightVfx "LightningArc"
+		// makes the shot instant lightning (GBLightningFx in GBProjectile.cpp); damage and splash are unchanged.
+		if (const FString* FlightVfx = Def->Strings.Find(GBString::FlightVfx))
+		{
+			Config.FlightVfxId = FName(**FlightVfx);
+			Config.FlightVfxHeight = GetStat(TEXT("FlightVfxHeight"), Config.FlightVfxHeight);
+		}
+		if (const FString* ImpactVfx = Def->Strings.Find(GBString::ImpactVfx))
+		{
+			Config.ImpactVfxId = FName(**ImpactVfx);
+			Config.ImpactVfxSize = GetStat(TEXT("ImpactVfxSize"), Config.ImpactVfxSize);
+		}
 	}
 
 	AGBProjectile* Projectile = AGBProjectile::SpawnProjectile(World, Config, Muzzle, Direction, Player);
