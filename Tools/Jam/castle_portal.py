@@ -6,7 +6,7 @@
 import unreal
 
 MAP = '/Game/Glyphbound/Maps/PastCastle'
-SPOT = unreal.Vector(11290.0, -7000.0, -951.0 + 150.0)   # middle of the slab SM_Px_FloorCorridor13 (owner), ring centre 1.5 m up
+SPOT = unreal.Vector(11290.0, -7000.0, -951.0 + 200.0)   # middle of the slab SM_Px_FloorCorridor13 (owner), ring centre 2 m up
 YAW = 0.0
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
@@ -21,7 +21,7 @@ p = eas.spawn_actor_from_class(unreal.GBTorch, SPOT, unreal.Rotator(90.0, 0.0, Y
 p.set_actor_label('Portal_1')
 p.set_folder_path('Portal')
 p.set_editor_property('clip_id', 'Portal')
-p.set_editor_property('flame_size', 1.0)
+p.set_editor_property('flame_size', 1.25)
 p.set_editor_property('light_offset', unreal.Vector(0, 0, 0))
 saved = les.save_current_level()
 'portal at %s, saved=%s' % (SPOT, saved)
