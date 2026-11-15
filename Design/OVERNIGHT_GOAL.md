@@ -89,6 +89,11 @@ Fuera el ragdoll en **todos** los enemigos 3D. Cada uno tiene su animación de m
 - **(6)** Tácticas de escuadra: coberturas, ráfagas al asomarse y cambios de posición, en verde.
 - **(7)** Sin cambios desde el commit 945e6c6.
 
+Capturas nuevas del juego empaquetado sobre 77b4d40, en `Devlog/media/2026-11-15_final_points_1_3_4.png`; los tres smokes filtrados (Valkyrie, Enemies3D:shooters y FogVisit) salieron en verde:
+- **(1)** La Valquiria con las alas fijas en la espalda, la espada en la mano y su hechizo de lanzas.
+- **(3)** Orco y robot tendidos en el suelo con su propia animación de muerte.
+- **(4)** El gas bajo y en capas en el pasillo gastado, sin formas de nube.
+
 ## Al terminar todo
 1. Suite completa y `Smoke-Jam.ps1` completo, una sola vez, en verde.
 2. `Build-Jam.ps1 -Target Glyphbound` y el paquete (< 1 GB), con el tour del juego empaquetado.
