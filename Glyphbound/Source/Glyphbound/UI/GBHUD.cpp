@@ -594,34 +594,8 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	}
 	else if (Item && Slot == EGBHeldSlot::Gun)
 	{
-		// The gun is a 3D model drawn by the world; only the hands are drawn here. Recoil pushes them down.
-		// With Maintain Y the gun's offset from the screen centre scales with height: anchored at ClipX/2 + k*ClipY
-		// (k chosen so 16:9 stays exactly as today: 0.66 -> 0.5 + 0.16*16/9, 0.54 -> 0.5 + 0.04*16/9).
-		const float RightCenterX = W * 0.5f + (0.16f * 16.f / 9.f) * Canvas->ClipY;
-		const float LeftCenterX = W * 0.5f + (0.04f * 16.f / 9.f) * Canvas->ClipY;
-		// Reload (both guns): the right hand follows the gun's pose, the left hand goes down with the old magazine and
-		// comes back up with the new one. Driven by the same progress as the model, so a pinned preview shows too.
-		const AGBGun* GunItem = Cast<AGBGun>(Item);
-		const bool bModelGun = GunItem && GunItem->HasViewModel();
-		const GBReloadAnim::FHandBeat Beat = bModelGun ? GunItem->GetReloadHandBeat() : GBReloadAnim::FHandBeat();
-		const float RightFollow = bModelGun ? GunItem->GetReloadPoseAmount() : 0.f;
-		// One motion grid with the gun: all shifts in old hand art pixels, snapped to screen via MotionToScreenPx.
-		const FVector2D RightMotionArt = BobArt + FVector2D(0.f, Kick01 * 3.f)
-			+ (GunItem ? GunItem->GetReloadRightHandFollow() * RightFollow : FVector2D::ZeroVector)
-			+ FVector2D(0.f, -Beat.Push * GBHudLayout::ReloadSeatPush);
-		const FVector2D RightMotion = GBViewBob::MotionToScreenPx(RightMotionArt, Canvas->ClipY, false);
-		DrawSprite(HandRight, RightCenterX - RightSize.X * 0.5f + RightMotion.X, H - RightSize.Y * 0.7f + RightMotion.Y, P);
-		if (!bCastPose)
-		{
-			const FVector2D ReachArt = (GunItem ? GunItem->GetReloadHandReach() : FVector2D::ZeroVector) * Beat.Reach;
-			const float DropY = Beat.Drop * (LeftSize.Y + FMath::Abs(ReachArt.Y * P));
-			// A gun with a pump: the left hand rides the forend back and forward with it.
-			const FVector2D PumpArt = (bModelGun ? GunItem->GetPumpHandShift() : FVector2D::ZeroVector);
-			const FVector2D LeftMotionArt = BobArt + FVector2D(0.f, Kick01 * 3.f) + ReachArt + PumpArt
-				+ FVector2D(0.f, -Beat.Push * GBHudLayout::ReloadSeatPush);
-			const FVector2D LeftMotion = GBViewBob::MotionToScreenPx(LeftMotionArt, Canvas->ClipY, false);
-			DrawSprite(HandLeft, LeftCenterX - LeftSize.X * 0.5f + LeftMotion.X, H - LeftSize.Y * 0.6f + LeftMotion.Y + DropY, P);
-		}
+		// Guns are shown alone, without hands (owner, 2026-11-14): the 3D model and its own animations (kick, reload,
+		// pump) are drawn by the world; nothing is drawn here.
 	}
 	else if (Item && Slot == EGBHeldSlot::Sword)
 	{
@@ -656,11 +630,11 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 	const float Step = Dt / GBHudLayout::ShieldSlideTime;
 	ShieldRaise01 = bBlockRaised ? FMath::Min(1.f, ShieldRaise01 + Step) : FMath::Max(0.f, ShieldRaise01 - Step);
 
-	if (!HasHandOverlay() && bCastPose && ShieldRaise01 < 0.5f && !bMantling)
+	const bool bGunInHand = Item && Slot == EGBHeldSlot::Gun;
+	if (!HasHandOverlay() && !bGunInHand && bCastPose && ShieldRaise01 < 0.5f && !bMantling)
 	{
-		// The left hand draws the glyph: over the gun with a gun, raised at the left otherwise.
-		const float CastX = (Item && Slot == EGBHeldSlot::Gun) ? W * 0.56f : W * 0.30f;
-		DrawSprite(HandCast, CastX - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
+		// The left hand draws the glyph, raised at the left (no hands at all with a gun in hand).
+		DrawSprite(HandCast, W * 0.30f - CastSize.X * 0.5f + Bob.X * 0.5f, H - CastSize.Y * 1.1f + Bob.Y * 0.5f, P);
 	}
 	else if (!HasHandOverlay() && !bCastPose && !(Item && Slot == EGBHeldSlot::Gun) && ShieldRaise01 <= 0.f)
 	{
