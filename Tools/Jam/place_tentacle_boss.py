@@ -7,11 +7,10 @@
 #   node Tools/Jam/mcp_call.js py Tools/Jam/place_tentacle_boss.py
 # It refuses during PIE, on another map, or when another map package is dirty; it backs up the .umap first, then
 # saves only FutureBase.
-import unreal
+import unreal, os, shutil, datetime
 
 
 def run():
-    import os, shutil, datetime
     MAP = '/Game/Glyphbound/Maps/FutureBase'
     TAG = 'GBBase'
     ENC = 'Boss_Tentacle'
