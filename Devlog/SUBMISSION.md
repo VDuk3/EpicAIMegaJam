@@ -10,7 +10,7 @@ Deadline: **2026-11-15 20:59 EST = 2026-11-16 01:59 UTC** (`Devlog/README.md`, r
 
 Text to paste into the form's "Tools you used" field (one line):
 
-> Unreal Engine 5.9.0 (C++, Niagara, Niagara Fluids, Lumen, Unreal Editor MCP server and toolsets, Fab plugin), Claude Code (Claude Opus 5.5, Claude Fable 5.2, Claude Sonnet 5.5 subagents), OpenCode (Muse Spark 1.3 Contributor), Codex CLI and Codex desktop/IDE (GPT Sol 6.1, GPT-6-Astra, GPT-6.1 Terra, GPT-6 Luna), Cursor (Claude Opus 5.5, Claude Sonnet 5.5, Grok 4.6 / 4.7, Composer 2.5, Gemini 3.7 / 3.8 Flash), Tripo (Studio canvas, CLI and API; models H3.1 and P2; image generation), Meshy (meshy-t2.5, meshy-7), ChatGPT (image generation), Nano Banana (reference images), fal (ElevenLabs Music, Lyria 2, MiniMax Music 2 trials), Blender 5.2 / 5.3, Pixelorama, ffmpeg, Node.js, Python, PowerShell, git, Fab.
+> Unreal Engine 5.9.0 (C++, Niagara, Niagara Fluids, Lumen, Unreal Editor MCP server and toolsets, Fab plugin), Claude Code (Claude Opus 5.5, Claude Fable 5.2, Claude Sonnet 5.5 subagents), OpenCode (Muse Spark 1.3 Contributor), Codex CLI and Codex desktop/IDE (GPT Sol 6.1, GPT-6-Astra, GPT-6.1 Terra, GPT-6 Luna), Cursor (Claude Opus 5.5, Claude Sonnet 5.5, Grok 4.6 / 4.7, Composer 2.5, Gemini 3.7 / 3.8 Flash), Tripo (Studio canvas, CLI and API; models H3.1 and P2; image generation), Meshy (meshy-t2.5, meshy-7), ChatGPT (image generation), Nano Banana (reference images), fal (ElevenLabs Music, Lyria 2, MiniMax Music 2 trials), Guitar Pro 6, Audacity, Soundsnap (sound effects library), Blender 5.2 / 5.3, Pixelorama, ffmpeg, Node.js, Python, PowerShell, git, Fab.
 
 ### Engine and plugins
 | Tool | What it was used for | Evidence |
@@ -44,7 +44,7 @@ Text to paste into the form's "Tools you used" field (one line):
 | **Meshy** (meshy-t2.5 geometry, meshy-7 textures) | Pistol and shotgun candidates (15 credits each) | Not found: the pistol keeps the Tripo base, and the shipped shotgun is a Tripo model (`SourceArt/Weapons/Shotgun/README.md`) | `2026-11-12.md` ninth block and "Assets created" |
 | **ChatGPT** (image generation) | The pistol's reference image | Reference only | `2026-11-12.md` ninth block |
 | **Nano Banana** | Reference images for the enemy models | Reference only | `2026-11-14_enemies_block.md` ("made with Tripo from Nano Banana reference images") |
-| **fal**: ElevenLabs Music, Lyria 2 (failed with code 422), MiniMax Music 2 | Boss music trials on ASSETS | **Not found in the game**: the C++ source has no sound code | `Devlog/days/2026-11-13_DRAFT.md` (ASSETS, Cursor, 15:30 to 15:43 UTC) |
+| **fal**: ElevenLabs Music (used), Lyria 2 (failed with code 422), MiniMax Music 2 | Four boss music tracks (generated on ASSETS, 2026-11-13; prompts in `Devlog/raw/ASSETS/2026-11-13/cursor-66d9f2ce-*`). Terms of the generator: **owner to confirm** | **Yes, from 2026-11-15**: boss fights and the final arena (`music_boss_past`, `music_boss_future`, `music_entity` in `Content/Data/Audio.json`) | `Devlog/days/2026-11-15_audio_block.md` |
 | **Hyper3D Rodin** | MCP installed and verified on ASSETS (`rodin_list_uploads` returned an empty list); **no generation was run**. The owner paused it ("Rodin pausado por decisión del usuario", in Spanish: Rodin paused by the user's decision) | **No** | `Devlog/days/2026-11-12_DRAFT.md` (14:47 and 14:52 UTC); `2026-11-12.md` ninth block ("Rodin was paused by the owner"); `Devlog/raw/ASSETS/2026-11-12/reports/` |
 
 > **Partner prizes, flagged:**
@@ -98,6 +98,13 @@ Every Fab pack below is under the **Fab Standard License** (Professional for pai
 Not installed (looked at only): AdaptivePathfindingSystem (`2026-11-14_enemies_block.md`).
 
 ---
+
+### Sound effects and music (2026-11-15)
+
+| Asset | Source | License | Where used | Evidence |
+|---|---|---|---|---|
+| 190 sound effects ("Medie bits" 60 WAV, "SciFiCoreSounds" 130 WAV; about 118 files used, converted to 44.1 kHz) | **Soundsnap** (https://soundsnap.com), confirmed by the team member who downloaded them. No per-file IDs, authors or license files were supplied | Soundsnap license: **owner to confirm the exact terms** (not audited) | Weapons, spells, hits, enemies, UI, doors, chests, footsteps, ambience: `Content/Data/Audio.json` | `Devlog/days/2026-11-15_audio_block.md`; `Incoming/ASSETS/20261116-002002_Bibliotecas_Sonidos/MANIFEST_SHA256.json` |
+| Main theme ("la canción principal"): original acoustic-guitar composition by the team, 118 s | Made by hand by a team member: six guitar parts programmed in Guitar Pro 6, exported, effects added in Audacity; a couple of sound effects recorded on a phone from an acoustic guitar. Guitars only | Original work, made during the jam | Main menu and the PastCastle (game start) | `Devlog/days/2026-11-15_audio_block.md` |
 
 ## 3. Prior work declared
 

@@ -1,0 +1,817 @@
+{
+	"Sounds": {
+		"staff_Staff_Apprentice": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Apprentice_1.staff_Staff_Apprentice_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"staff_Staff_Ember": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Ember_1.staff_Staff_Ember_1",
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Ember_2.staff_Staff_Ember_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"staff_Staff_Frost": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Frost_1.staff_Staff_Frost_1",
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Frost_2.staff_Staff_Frost_2"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"staff_Staff_Storm": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Storm_1.staff_Staff_Storm_1",
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Storm_2.staff_Staff_Storm_2",
+				"/Game/Glyphbound/Audio/Player/staff_Staff_Storm_3.staff_Staff_Storm_3"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"gun_Pistol": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/gun_Pistol_1.gun_Pistol_1",
+				"/Game/Glyphbound/Audio/Player/gun_Pistol_2.gun_Pistol_2",
+				"/Game/Glyphbound/Audio/Player/gun_Pistol_3.gun_Pistol_3",
+				"/Game/Glyphbound/Audio/Player/gun_Pistol_4.gun_Pistol_4"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.96,
+			"PitchMax": 1.04,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"gun_Shotgun": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/gun_Shotgun_1.gun_Shotgun_1",
+				"/Game/Glyphbound/Audio/Player/gun_Shotgun_2.gun_Shotgun_2",
+				"/Game/Glyphbound/Audio/Player/gun_Shotgun_3.gun_Shotgun_3"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"gun_Rifle": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/gun_Rifle_1.gun_Rifle_1",
+				"/Game/Glyphbound/Audio/Player/gun_Rifle_2.gun_Rifle_2",
+				"/Game/Glyphbound/Audio/Player/gun_Rifle_3.gun_Rifle_3",
+				"/Game/Glyphbound/Audio/Player/gun_Rifle_4.gun_Rifle_4"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.97,
+			"PitchMax": 1.05,
+			"Range": 0,
+			"Cooldown": 0.02,
+			"Loop": false,
+			"Music": false
+		},
+		"gun_reload": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/gun_reload_1.gun_reload_1",
+				"/Game/Glyphbound/Audio/Player/gun_reload_2.gun_reload_2"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"sword_swing": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/sword_swing_1.sword_swing_1",
+				"/Game/Glyphbound/Audio/Player/sword_swing_2.sword_swing_2",
+				"/Game/Glyphbound/Audio/Player/sword_swing_3.sword_swing_3",
+				"/Game/Glyphbound/Audio/Player/sword_swing_4.sword_swing_4"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_sword": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_sword_1.hit_sword_1",
+				"/Game/Glyphbound/Audio/Hits/hit_sword_2.hit_sword_2",
+				"/Game/Glyphbound/Audio/Hits/hit_sword_3.hit_sword_3",
+				"/Game/Glyphbound/Audio/Hits/hit_sword_4.hit_sword_4",
+				"/Game/Glyphbound/Audio/Hits/hit_sword_5.hit_sword_5"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3500,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"player_dash": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/player_dash_1.player_dash_1",
+				"/Game/Glyphbound/Audio/Player/player_dash_2.player_dash_2"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"footstep_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/footstep_past_1.footstep_past_1",
+				"/Game/Glyphbound/Audio/Player/footstep_past_2.footstep_past_2",
+				"/Game/Glyphbound/Audio/Player/footstep_past_3.footstep_past_3",
+				"/Game/Glyphbound/Audio/Player/footstep_past_4.footstep_past_4"
+			],
+			"Volume": 0.5,
+			"PitchMin": 0.9,
+			"PitchMax": 1.1,
+			"Range": 0,
+			"Cooldown": 0.15,
+			"Loop": false,
+			"Music": false
+		},
+		"footstep_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/footstep_future_1.footstep_future_1",
+				"/Game/Glyphbound/Audio/Player/footstep_future_2.footstep_future_2",
+				"/Game/Glyphbound/Audio/Player/footstep_future_3.footstep_future_3"
+			],
+			"Volume": 0.5,
+			"PitchMin": 0.9,
+			"PitchMax": 1.1,
+			"Range": 0,
+			"Cooldown": 0.15,
+			"Loop": false,
+			"Music": false
+		},
+		"player_hurt": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/player_hurt_1.player_hurt_1"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.75,
+			"PitchMax": 0.88,
+			"Range": 0,
+			"Cooldown": 0.1,
+			"Loop": false,
+			"Music": false
+		},
+		"player_death": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Player/player_death_1.player_death_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 1,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_Fireball": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_Fireball_1.spell_Fireball_1",
+				"/Game/Glyphbound/Audio/Spells/spell_Fireball_2.spell_Fireball_2"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_FireWall": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_FireWall_1.spell_FireWall_1"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_Flamethrower": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_Flamethrower_1.spell_Flamethrower_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.6,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_LightningBolt": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_LightningBolt_1.spell_LightningBolt_1",
+				"/Game/Glyphbound/Audio/Spells/spell_LightningBolt_2.spell_LightningBolt_2"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_LightningRune": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_LightningRune_1.spell_LightningRune_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_StaticOrb": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_StaticOrb_1.spell_StaticOrb_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_IceWall": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_IceWall_1.spell_IceWall_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_IceShield": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_IceShield_1.spell_IceShield_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_IceFloor": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_IceFloor_1.spell_IceFloor_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_Air_Dash": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_Air_Dash_1.spell_Air_Dash_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_Air_DoubleJump": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_Air_DoubleJump_1.spell_Air_DoubleJump_1"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_WeaponEnchant": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Spells/spell_WeaponEnchant_1.spell_WeaponEnchant_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"spell_fail": {
+			"Files": [
+				"/Game/Glyphbound/Audio/UI/spell_fail_1.spell_fail_1",
+				"/Game/Glyphbound/Audio/UI/spell_fail_2.spell_fail_2"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.25,
+			"Loop": false,
+			"Music": false
+		},
+		"explosion": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/explosion_1.explosion_1",
+				"/Game/Glyphbound/Audio/Hits/explosion_2.explosion_2",
+				"/Game/Glyphbound/Audio/Hits/explosion_3.explosion_3"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 6000,
+			"Cooldown": 0.12,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_flesh": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_flesh_1.hit_flesh_1",
+				"/Game/Glyphbound/Audio/Hits/hit_flesh_2.hit_flesh_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_robot": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_robot_1.hit_robot_1",
+				"/Game/Glyphbound/Audio/Hits/hit_robot_2.hit_robot_2",
+				"/Game/Glyphbound/Audio/Hits/hit_robot_3.hit_robot_3"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_Lightning": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_Lightning_1.hit_Lightning_1",
+				"/Game/Glyphbound/Audio/Hits/hit_Lightning_2.hit_Lightning_2"
+			],
+			"Volume": 0.5,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_Fire": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_Fire_1.hit_Fire_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"hit_Ice": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Hits/hit_Ice_1.hit_Ice_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 3000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"death_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/death_past_1.death_past_1",
+				"/Game/Glyphbound/Audio/Enemies/death_past_2.death_past_2",
+				"/Game/Glyphbound/Audio/Enemies/death_past_3.death_past_3"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 5000,
+			"Cooldown": 0.1,
+			"Loop": false,
+			"Music": false
+		},
+		"death_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/death_future_1.death_future_1",
+				"/Game/Glyphbound/Audio/Enemies/death_future_2.death_future_2",
+				"/Game/Glyphbound/Audio/Enemies/death_future_3.death_future_3"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 5000,
+			"Cooldown": 0.1,
+			"Loop": false,
+			"Music": false
+		},
+		"death_boss": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/death_boss_1.death_boss_1",
+				"/Game/Glyphbound/Audio/Enemies/death_boss_2.death_boss_2"
+			],
+			"Volume": 1,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 1,
+			"Loop": false,
+			"Music": false
+		},
+		"enemy_attack_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_past_1.enemy_attack_past_1",
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_past_2.enemy_attack_past_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4500,
+			"Cooldown": 0.25,
+			"Loop": false,
+			"Music": false
+		},
+		"enemy_attack_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_future_1.enemy_attack_future_1",
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_future_2.enemy_attack_future_2",
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_future_3.enemy_attack_future_3",
+				"/Game/Glyphbound/Audio/Enemies/enemy_attack_future_4.enemy_attack_future_4"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4500,
+			"Cooldown": 0.25,
+			"Loop": false,
+			"Music": false
+		},
+		"enemy_alert_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/enemy_alert_past_1.enemy_alert_past_1"
+			],
+			"Volume": 0.7,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4500,
+			"Cooldown": 0.4,
+			"Loop": false,
+			"Music": false
+		},
+		"enemy_alert_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/enemy_alert_future_1.enemy_alert_future_1",
+				"/Game/Glyphbound/Audio/Enemies/enemy_alert_future_2.enemy_alert_future_2",
+				"/Game/Glyphbound/Audio/Enemies/enemy_alert_future_3.enemy_alert_future_3"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4500,
+			"Cooldown": 0.4,
+			"Loop": false,
+			"Music": false
+		},
+		"boss_roar": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Enemies/boss_roar_1.boss_roar_1",
+				"/Game/Glyphbound/Audio/Enemies/boss_roar_2.boss_roar_2",
+				"/Game/Glyphbound/Audio/Enemies/boss_roar_3.boss_roar_3"
+			],
+			"Volume": 1,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 9000,
+			"Cooldown": 1,
+			"Loop": false,
+			"Music": false
+		},
+		"ui_move": {
+			"Files": [
+				"/Game/Glyphbound/Audio/UI/ui_move_1.ui_move_1",
+				"/Game/Glyphbound/Audio/UI/ui_move_2.ui_move_2",
+				"/Game/Glyphbound/Audio/UI/ui_move_3.ui_move_3"
+			],
+			"Volume": 0.4,
+			"PitchMin": 0.98,
+			"PitchMax": 1.02,
+			"Range": 0,
+			"Cooldown": 0.03,
+			"Loop": false,
+			"Music": false
+		},
+		"ui_select": {
+			"Files": [
+				"/Game/Glyphbound/Audio/UI/ui_select_1.ui_select_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"ui_back": {
+			"Files": [
+				"/Game/Glyphbound/Audio/UI/ui_back_1.ui_back_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"pickup": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/pickup_1.pickup_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 1,
+			"PitchMax": 1.15,
+			"Range": 0,
+			"Cooldown": 0.1,
+			"Loop": false,
+			"Music": false
+		},
+		"chest_open": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/chest_open_1.chest_open_1",
+				"/Game/Glyphbound/Audio/World/chest_open_2.chest_open_2"
+			],
+			"Volume": 0.9,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"potion": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/potion_1.potion_1"
+			],
+			"Volume": 0.6,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"victory": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/victory_1.victory_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 3,
+			"Loop": false,
+			"Music": false
+		},
+		"door_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/door_past_1.door_past_1",
+				"/Game/Glyphbound/Audio/World/door_past_2.door_past_2",
+				"/Game/Glyphbound/Audio/World/door_past_3.door_past_3"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"door_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/door_future_1.door_future_1",
+				"/Game/Glyphbound/Audio/World/door_future_2.door_future_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"portal": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/portal_1.portal_1",
+				"/Game/Glyphbound/Audio/World/portal_2.portal_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 1,
+			"Loop": false,
+			"Music": false
+		},
+		"torch_loop": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/torch_loop_1.torch_loop_1"
+			],
+			"Volume": 0.35,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 1200,
+			"Cooldown": 0.04,
+			"Loop": true,
+			"Music": false
+		},
+		"breakable": {
+			"Files": [
+				"/Game/Glyphbound/Audio/World/breakable_1.breakable_1",
+				"/Game/Glyphbound/Audio/World/breakable_2.breakable_2"
+			],
+			"Volume": 0.8,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 4000,
+			"Cooldown": 0.04,
+			"Loop": false,
+			"Music": false
+		},
+		"amb_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Ambience/amb_future_1.amb_future_1"
+			],
+			"Volume": 0.35,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": true,
+			"Music": false
+		},
+		"amb_arena": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Ambience/amb_arena_1.amb_arena_1"
+			],
+			"Volume": 0.3,
+			"PitchMin": 0.94,
+			"PitchMax": 1.06,
+			"Range": 0,
+			"Cooldown": 0.04,
+			"Loop": true,
+			"Music": false
+		},
+		"music_menu": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_menu_1.music_menu_1"
+			],
+			"Volume": 0.8,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_castle": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_castle_1.music_castle_1"
+			],
+			"Volume": 0.55,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_future_1.music_future_1"
+			],
+			"Volume": 0.45,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_boss_past": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_boss_past_1.music_boss_past_1"
+			],
+			"Volume": 0.6,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_boss_future": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_boss_future_1.music_boss_future_1"
+			],
+			"Volume": 0.6,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_entity": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_entity_1.music_entity_1"
+			],
+			"Volume": 0.65,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		}
+	},
+	"Maps": {
+		"PastCastle": {
+			"Music": "music_castle"
+		},
+		"FutureBase": {
+			"Music": "music_future",
+			"Ambience": "amb_future"
+		},
+		"EntityArena": {
+			"Music": "music_entity",
+			"Ambience": "amb_arena"
+		}
+	}
+}

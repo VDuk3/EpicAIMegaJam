@@ -1,0 +1,828 @@
+[
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Apprentice_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Apprentice_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ataque con magia 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Ember_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Ember_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ataque con magia, bola de fuego/ataque con magia.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Ember_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Ember_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ataque con magia, bola de fuego/ataque con magia 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Frost_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Frost_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/magic 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Frost_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Frost_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/magig.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Storm_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Storm_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Storm_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Storm_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/staff_Staff_Storm_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/staff_Staff_Storm_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Pistol_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Pistol_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pistola/pistola 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Pistol_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Pistol_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pistola/pistola 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Pistol_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Pistol_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pistola/pistola 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Pistol_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Pistol_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pistola/pistola 4.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Shotgun_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Shotgun_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/escopeta/escopeta 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Shotgun_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Shotgun_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/escopeta/escopeta 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Shotgun_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Shotgun_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/escopeta/escopeta 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Rifle_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Rifle_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/rifle/111.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Rifle_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Rifle_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/rifle/112.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Rifle_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Rifle_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/rifle/113.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_Rifle_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_Rifle_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/rifle/114.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_reload_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_reload_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/recarga/arma cargando para disparar.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/gun_reload_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/gun_reload_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/recarga/arma cargando para disparar 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/sword_swing_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/sword_swing_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada esquivada.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/sword_swing_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/sword_swing_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/sword_swing_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/sword_swing_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/sword_swing_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/sword_swing_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_sword_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_sword_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_sword_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_sword_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_sword_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_sword_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_sword_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_sword_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada 4.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_sword_5",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_sword_5.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/espada/espada 5.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/player_dash_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/player_dash_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/player_dash_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/player_dash_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_past_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/pasos/pasos 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_past_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_past_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/pasos/pasos 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_past_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_past_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/pasos/pasos sobre tierra.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_past_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_past_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/pasos/pasos sobre grava o tierra.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_future_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pasos en metal/Metal_Footstep_01.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_future_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_future_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pasos en metal/Metal_Footstep_02.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/footstep_future_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/footstep_future_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/pasos en metal/Metal_Footstep_03.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/player_hurt_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/player_hurt_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/golpe.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Player/player_death_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Player/player_death_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/perder algo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_Fireball_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_Fireball_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ataque con magia, bola de fuego/ataque con magia 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_Fireball_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_Fireball_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ataque con magia, bola de fuego/ataque con magia 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_FireWall_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_FireWall_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/madera/fogata o antorcha.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_Flamethrower_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_Flamethrower_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/vapor/vapor 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_LightningBolt_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_LightningBolt_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 4.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_LightningBolt_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_LightningBolt_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 5.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_LightningRune_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_LightningRune_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electricidad 6.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_StaticOrb_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_StaticOrb_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/computos/computos 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_IceWall_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_IceWall_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/explosion de piedras.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_IceShield_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_IceShield_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/recarga/dispositivo cargando.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_IceFloor_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_IceFloor_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/vapor/vapor 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_Air_Dash_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_Air_Dash_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_Air_DoubleJump_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_Air_DoubleJump_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esquivar/esquivar 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Spells/spell_WeaponEnchant_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Spells/spell_WeaponEnchant_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ganar algo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/spell_fail_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/spell_fail_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/error/error 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/spell_fail_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/spell_fail_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/error/error 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/explosion_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/explosion_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/252692-SW001-8-Bit-Games-024-Explosion.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/explosion_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/explosion_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/511979-8_Bit_Large_Destroyed_02_-GAMEVideo-8_bit-impact-hit-damaged-destroyed.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/explosion_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/explosion_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/explosion.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_flesh_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_flesh_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/golpe.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_flesh_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_flesh_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/madera/golpe a madera.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_robot_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_robot_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito/corto circuito 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_robot_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_robot_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito/corto circuito 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_robot_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_robot_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito/corto circuito 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_Lightning_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_Lightning_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 4.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_Lightning_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_Lightning_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/electricidad/electric 5.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_Fire_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_Fire_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/511980-8_Bit_Small_Destroyed_01_-GAMEVideo-8_bit-impact-hit-damaged-destroyed.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Hits/hit_Ice_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Hits/hit_Ice_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/pequeñas piedras cayendo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_past_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esqueleto/esqueleto.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_past_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_past_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/esqueleto/esqueleto 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_past_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_past_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/criaturas/403435-Fantasy_Orc_-Heeeh_-Soft_Snort_-07_-Humanoid_Monster_Voice_006536_.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_future_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito/corto circuito 4.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_future_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_future_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito/corto circuito 5.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_future_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_future_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/corto circuito que se va apagando.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_boss_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_boss_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/explosion de piedras.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/death_boss_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/death_boss_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/explosion/511979-8_Bit_Large_Destroyed_02_-GAMEVideo-8_bit-impact-hit-damaged-destroyed.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_past_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/criaturas/527897-Monster_Breath_03.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_past_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_past_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/criaturas/403435-Fantasy_Orc_-Heeeh_-Soft_Snort_-07_-Humanoid_Monster_Voice_006536_.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_future_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/Robots/Robots 01.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_future_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_future_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/Robots/Robots 02.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_future_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_future_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/Robots/Robots 03.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_attack_future_4",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_attack_future_4.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/Robots/Robots 04.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_alert_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_alert_past_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/criaturas/403435-Fantasy_Orc_-Heeeh_-Soft_Snort_-07_-Humanoid_Monster_Voice_006536_.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_alert_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_alert_future_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/criatura tecnologica.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_alert_future_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_alert_future_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/criatura tipo drone.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/enemy_alert_future_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/enemy_alert_future_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/Organic/AlienChitter_01.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/boss_roar_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/boss_roar_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/criatura gruñido.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/boss_roar_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/boss_roar_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/sonido gutural de criatura.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Enemies/boss_roar_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Enemies/boss_roar_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/criaturas/criatura tecnologica 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/ui_move_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/ui_move_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/ui_move_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/ui_move_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/ui_move_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/ui_move_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/ui_select_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/ui_select_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 5.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/UI/ui_back_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/UI/ui_back_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 6.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/pickup_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/pickup_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ganar algo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/chest_open_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/chest_open_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/madera/abrir cofre.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/chest_open_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/chest_open_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/madera/cofre 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/potion_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/potion_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/digital bleeps/digital bleeps 9.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/victory_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/victory_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/ganar batalla.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/door_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/door_past_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/puerta de madera/puerta 1.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/door_past_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/door_past_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/puerta de madera/puerta 2.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/door_past_3",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/door_past_3.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/puerta de madera/puerta 3.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/door_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/door_future_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/puerta automatica/puerta automatica.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/door_future_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/door_future_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/puerta automatica/puerta automatica pesada.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/portal_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/portal_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/preparacion de robot.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/portal_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/portal_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "SciFiCoreSounds/mecanismo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/torch_loop_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/torch_loop_1.wav",
+  "loop": true,
+  "music": false,
+  "source": "Medie bits/madera/fogata o antorcha.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/breakable_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/breakable_1.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/esplosion en piedras.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/World/breakable_2",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/World/breakable_2.wav",
+  "loop": false,
+  "music": false,
+  "source": "Medie bits/stone/piedras cayendo.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Ambience/amb_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Ambience/amb_future_1.wav",
+  "loop": true,
+  "music": false,
+  "source": "SciFiCoreSounds/ambientación/ambiente con ventilacion.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Ambience/amb_arena_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Ambience/amb_arena_1.wav",
+  "loop": true,
+  "music": false,
+  "source": "SciFiCoreSounds/ambientación/ambiente tenso.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_menu_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_menu_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "ABS:Glyphbound/SourceArt/Audio/Music_src/main_theme.mpeg"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_castle_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_castle_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "ABS:Glyphbound/SourceArt/Audio/Music_src/main_theme.mpeg"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_future_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "SciFiCoreSounds/ambientación/musica de tension.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_boss_past_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_boss_past_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "MP3:24kp9fr4263ke1IrsJp6-_music_generated.mp3"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_boss_future_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_boss_future_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "MP3:oWHG97rLWY-D5i7IN3K9M_music_generated.mp3"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_entity_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_entity_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "MP3:Tentacle_Boss.mp3"
+ }
+]
