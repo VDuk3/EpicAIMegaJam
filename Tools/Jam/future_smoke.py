@@ -127,6 +127,14 @@ def mist_material():
     link(nmix, nsel, 'B')
     link(scalar('NoiseOpacity', 1.0, -1000, 180), nsel, 'Alpha')
     o = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, scalar('Opacity', 0.2, -700, 120), nsel, -550, 80), fade, -400, 140)
+    # Owner, again: "the mist is still square". The planes cross in a grid, and a plane seen side-on drew a line,
+    # the grid's cells showing where the planes add up. A plane now fades as it turns side-on to the camera
+    # (|camera . normal| squared), so the grid's lines and cells melt into one even volume.
+    facing = op(unreal.MaterialExpressionDotProduct, node(unreal.MaterialExpressionCameraVectorWS, -700, 520),
+                node(unreal.MaterialExpressionVertexNormalWS, -700, 600), -550, 560)
+    fabs = node(unreal.MaterialExpressionAbs, -420, 560)
+    link(facing, fabs, '')
+    o = op(unreal.MaterialExpressionMultiply, o, op(unreal.MaterialExpressionMultiply, fabs, fabs, -320, 560), -300, 300)
     df = node(unreal.MaterialExpressionDepthFade, -250, 140, fade_distance_default=300.0)
     link(o, df, 'Opacity')
     MEL.connect_material_property(df, '', unreal.MaterialProperty.MP_OPACITY)
