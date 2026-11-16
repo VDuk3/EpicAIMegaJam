@@ -512,6 +512,54 @@ void AGBHUD::DrawHUD()
 			}
 		}
 	}
+	// Boss bar (2026-11-15): the nearest awake boss (max health 2000 and up: the two Valkyries, the reaper, the sub-boss and the big bosses)
+	// within reach gets its name and a health bar at the top of the screen.
+	if (Player && !bMenuOpen && !Player->IsDead())
+	{
+		AGBEnemyCharacter* Boss = nullptr;
+		float BestDist = 5000.f;
+		if (UWorld* HudWorld = GetWorld())
+		{
+			for (TActorIterator<AGBEnemyCharacter> It(HudWorld); It; ++It)
+			{
+				AGBEnemyCharacter* Enemy = *It;
+				if (!Enemy || Enemy->IsDead() || Enemy->GetState() == EGBEnemyState::Idle || !Enemy->GetAttributes())
+				{
+					continue;
+				}
+				if (Enemy->GetEraComponent() && !Enemy->GetEraComponent()->IsPresent())
+				{
+					continue;
+				}
+				if (Enemy->GetAttributes()->GetMaxHealth() < 2000.f)
+				{
+					continue;
+				}
+				const float Dist = FVector::Dist(Player->GetActorLocation(), Enemy->GetActorLocation());
+				if (Dist < BestDist)
+				{
+					BestDist = Dist;
+					Boss = Enemy;
+				}
+			}
+		}
+		if (Boss)
+		{
+			const float Max = FMath::Max(1.f, Boss->GetAttributes()->GetMaxHealth());
+			const float Frac = FMath::Clamp(Boss->GetAttributes()->GetHealth() / Max, 0.f, 1.f);
+			const float W = FMath::Min(Canvas->ClipX * 0.5f, 900.f);
+			const float H = 14.f;
+			const float X = (Canvas->ClipX - W) * 0.5f;
+			const float Y = 52.f;
+			const FGBEnemyDefinition* Def = Boss->GetDefinition();
+			const FString Name = Def && !Def->DisplayName.IsEmpty() ? Def->DisplayName : FString(TEXT("Boss"));
+			DrawLabel(Name, FLinearColor(1.f, 0.92f, 0.8f), Canvas->ClipX * 0.5f, Y - 26.f, 20.f, 0.5f, true, false);
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), X - 3.f, Y - 3.f, W + 6.f, H + 6.f);
+			DrawRect(FLinearColor(0.25f, 0.05f, 0.05f, 0.9f), X, Y, W, H);
+			DrawRect(FLinearColor(0.85f, 0.12f, 0.1f, 1.f), X, Y, W * Frac, H);
+		}
+	}
+
 	if (Player)
 	{
 		DrawHands(Player);
