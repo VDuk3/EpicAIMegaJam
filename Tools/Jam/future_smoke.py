@@ -16,7 +16,7 @@ import unreal
 
 TAG = 'FutureSmoke'
 SMOKE_DIR = '/Game/Glyphbound/FX/Smoke'
-FOG_MAT = '/Game/Glyphbound/Castle/M_NightFog'
+FOG_MAT = '/Game/Glyphbound/FX/Smoke/M_GB_SmokeMist'   # the mist planes' own material (made below)
 FLICKER = '/Game/Glyphbound/Materials/M_GB_LightFlicker'
 PLANE = '/Engine/BasicShapes/Plane'
 
@@ -60,6 +60,82 @@ BASE_FOG = [((9500, 11000), 6.0), ((12254, 14762), 8.0)]
 
 # Lamps inside this box (x0, x1, y0, y1, z0, z1) get the failing-lamp light function: the worn corridor's.
 FLICKER_BOX = (6954, 11000, -300, 300, Z - 50, Z + 400)
+
+
+def mist_material():
+    """M_GB_SmokeMist: the eye-level mist planes' own material (owner: "the mist in the room looks made of squares";
+    the castle's M_NightFog magnifies a 64 x 64 noise texture until its texels show as squares). Same parameters as
+    M_NightFog, but a procedural 3D gradient noise in world space, smooth at any size, drifting slowly."""
+    eal = unreal.EditorAssetLibrary
+    MEL = unreal.MaterialEditingLibrary
+    if eal.does_asset_exist(FOG_MAT):
+        mat = unreal.load_asset(FOG_MAT)
+        MEL.delete_all_material_expressions(mat)
+    else:
+        mat = unreal.AssetToolsHelpers.get_asset_tools().create_asset('M_GB_SmokeMist', SMOKE_DIR, unreal.Material, unreal.MaterialFactoryNew())
+    mat.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+    mat.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
+    mat.set_editor_property('two_sided', True)
+
+    def node(cls, x, y, **props):
+        e = MEL.create_material_expression(mat, cls, x, y)
+        for k, v in props.items():
+            e.set_editor_property(k, v)
+        return e
+
+    def link(a, b, inp, out=''):
+        MEL.connect_material_expressions(a, out, b, inp)
+
+    def op(cls, a, b, x, y):
+        e = node(cls, x, y)
+        link(a, e, 'A')
+        link(b, e, 'B')
+        return e
+
+    def const(v, x, y):
+        return node(unreal.MaterialExpressionConstant, x, y, r=v)
+
+    def scalar(name, v, x, y):
+        return node(unreal.MaterialExpressionScalarParameter, x, y, parameter_name=name, default_value=v)
+
+    wp = node(unreal.MaterialExpressionWorldPosition, -1800, 0)
+    wz = node(unreal.MaterialExpressionComponentMask, -1600, 300, r=False, g=False, b=True, a=False)
+    link(wp, wz, '')
+    tm = node(unreal.MaterialExpressionTime, -1800, -200)
+    drift = op(unreal.MaterialExpressionMultiply, tm, node(unreal.MaterialExpressionConstant3Vector, -1800, -120,
+                                                           constant=unreal.LinearColor(12.0, 5.0, 4.0, 0.0)), -1600, -160)
+    pos = op(unreal.MaterialExpressionAdd, wp, drift, -1450, -60)
+    fn = [m for m in dir(unreal.NoiseFunction) if m.startswith('NOISEFUNCTION_GRADIENT_TEX') and not m.endswith('3D')]
+    n = node(unreal.MaterialExpressionNoise, -1250, -60, scale=0.0035, levels=3, level_scale=2.4, output_min=0.0, output_max=1.0,
+             quality=2, turbulence=False, noise_function=getattr(unreal.NoiseFunction, fn[0] if fn else 'NOISEFUNCTION_GRADIENT_ALU'))
+    link(pos, n, 'Position')
+    nmix = node(unreal.MaterialExpressionLinearInterpolate, -1050, -60)
+    link(const(0.3, -1200, 40), nmix, 'A')
+    link(const(1.0, -1200, 80), nmix, 'B')
+    link(n, nmix, 'Alpha')
+    # vertical fade: 1 under FogFadeStart, 0 at FogTop
+    fstart = scalar('FogFadeStart', -500.0, -1400, 250)
+    ftop = scalar('FogTop', -300.0, -1400, 330)
+    frac = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, wz, fstart, -1200, 250),
+              op(unreal.MaterialExpressionSubtract, ftop, fstart, -1200, 330), -1050, 280)
+    sat = node(unreal.MaterialExpressionSaturate, -900, 280)
+    link(frac, sat, '')
+    fade = node(unreal.MaterialExpressionOneMinus, -780, 280)
+    link(sat, fade, '')
+    nsel = node(unreal.MaterialExpressionLinearInterpolate, -850, 60)
+    link(const(1.0, -1000, 140), nsel, 'A')
+    link(nmix, nsel, 'B')
+    link(scalar('NoiseOpacity', 1.0, -1000, 180), nsel, 'Alpha')
+    o = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, scalar('Opacity', 0.2, -700, 120), nsel, -550, 80), fade, -400, 140)
+    df = node(unreal.MaterialExpressionDepthFade, -250, 140, fade_distance_default=300.0)
+    link(o, df, 'Opacity')
+    MEL.connect_material_property(df, '', unreal.MaterialProperty.MP_OPACITY)
+    col = node(unreal.MaterialExpressionVectorParameter, -700, -400, parameter_name='FogColor', default_value=unreal.LinearColor(0.5, 0.52, 0.55, 1.0))
+    e = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, col, scalar('Brightness', 0.1, -700, -280), -500, -340), nmix, -300, -300)
+    MEL.connect_material_property(e, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    MEL.recompile_material(mat)
+    eal.save_asset(FOG_MAT, only_if_is_dirty=False)
+    return mat
 
 
 def mist_instance(name, z0, z1, opacity, fade, color, top_pad=80.0):
@@ -244,6 +320,7 @@ def build():
     log = ['removed %d' % gone]
     plane = unreal.load_asset(PLANE)
     carpet_material()
+    mist_material()
     for name, d in AREAS.items():
         x0, x1, y0, y1, z0, z1 = d['box']
         c = unreal.Vector((x0 + x1) / 2.0, (y0 + y1) / 2.0, (z0 + z1) / 2.0)
