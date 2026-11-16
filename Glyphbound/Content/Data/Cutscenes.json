@@ -2,6 +2,14 @@
 	"Comment": "Provisional caption text (GDD 4, opening sequence). Each line: Text and Seconds. TriggerFlag = plays by itself the first time that progress flag is set.",
 	"Cutscenes": [
 		{
+			"Id": "CastleDoor",
+			"Lines": [
+				{ "Text": "The old stones hum as you cross the threshold.", "Seconds": 3.0 },
+				{ "Text": "The castle tears away.", "Seconds": 3.0 },
+				{ "Text": "Somewhere far ahead in time, a voice: 'Help me... please.'", "Seconds": 4.0 }
+			]
+		},
+		{
 			"Id": "Seal",
 			"Lines": [
 				{ "Text": "The seal flares under your hand.", "Seconds": 3.0 },

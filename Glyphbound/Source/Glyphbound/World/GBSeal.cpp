@@ -16,6 +16,9 @@
 #include "Engine/World.h"
 #include "Misc/PackageName.h"
 
+// Defined in GBPortal.cpp: opens a map and hands the player's whole state over to it.
+void GBBeginMapTravel(UObject* Context, AGBPlayerCharacter* Player, const FString& MapPath, const FString& ArrivalId);
+
 namespace GBSealLocal
 {
 	// Placeholder disc (cm) and colors: visuals only.
@@ -173,7 +176,8 @@ void AGBSeal::Tick(float DeltaSeconds)
 		PendingPlayer.Reset();
 		SetActorTickEnabled(false);
 		UE_LOG(LogGB, Log, TEXT("%s: the seal opens the map %s."), *GetName(), *TravelMapPath);
-		UGameplayStatics::OpenLevel(this, FName(*TravelMapPath));
+		// With the player's whole state (GBPortal.cpp): arrival at the new map's player start.
+		GBBeginMapTravel(this, Player, TravelMapPath, FString());
 		return;
 	}
 	UGBEraSubsystem* Era = UGBEraSubsystem::Get(this);
