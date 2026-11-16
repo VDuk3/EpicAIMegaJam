@@ -36,6 +36,7 @@
 #include "CollisionQueryParams.h"
 #include "CoreGlobals.h"
 #include "Misc/App.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 namespace
 {
@@ -229,6 +230,20 @@ void AGBPlayerCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	UpdateFocusedInteractable();
+	{
+		// Footsteps: one every ~2.3 m walked on the ground; the surface follows the map era.
+		static float Walked = 0.f;
+		const UCharacterMovementComponent* Move = GetCharacterMovement();
+		if (Move && Move->IsMovingOnGround() && !IsDead() && GetVelocity().Size2D() > 60.f)
+		{
+			Walked += GetVelocity().Size2D() * DeltaSeconds;
+			if (Walked >= 230.f)
+			{
+				Walked = 0.f;
+				GBAudio::Play(this, FName(GBAudio::IsFutureMap(this) ? TEXT("footstep_future") : TEXT("footstep_past")), nullptr, 1.f, 1.f);
+			}
+		}
+	}
 
 	if (IsQTEActive())
 	{

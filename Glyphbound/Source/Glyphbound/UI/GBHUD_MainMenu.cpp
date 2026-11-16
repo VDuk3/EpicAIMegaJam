@@ -21,6 +21,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Misc/Parse.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 static TAutoConsoleVariable<float> CVarMouseSensitivityScale(TEXT("gb.MouseSensitivityScale"), 1.f,
 	TEXT("Multiplier of the mouse look sensitivity (the title screen's Options)."));
@@ -385,6 +386,7 @@ void AGBHUD::ToggleMainMenuSkin()
 
 void AGBHUD::MainMenuNavigate(FIntPoint Direction)
 {
+	GBAudio::Play(this, FName(TEXT("ui_move")), nullptr, 1.f, 1.f);
 	using namespace GBMainMenuLocal;
 	switch (MenuState.Page)
 	{
@@ -423,6 +425,7 @@ void AGBHUD::MainMenuNavigate(FIntPoint Direction)
 
 void AGBHUD::MainMenuConfirm()
 {
+	GBAudio::Play(this, FName(TEXT("ui_select")), nullptr, 1.f, 1.f);
 	using namespace GBMainMenuLocal;
 	switch (MenuState.Page)
 	{
@@ -487,6 +490,7 @@ void AGBHUD::MainMenuConfirm()
 
 bool AGBHUD::MainMenuBack()
 {
+	GBAudio::Play(this, FName(TEXT("ui_back")), nullptr, 1.f, 1.f);
 	using namespace GBMainMenuLocal;
 	if (MenuState.Page != MainPageRoot)
 	{
@@ -504,6 +508,7 @@ bool AGBHUD::MainMenuBack()
 
 void AGBHUD::DrawMainMenu(EGBHudSkin Skin)
 {
+	GBAudio::MenuPing(this);
 	using namespace GBMainMenuLocal;
 	if (LookLoadedFor.Get() != this)
 	{

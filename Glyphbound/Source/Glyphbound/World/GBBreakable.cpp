@@ -14,6 +14,7 @@
 #include "Stats/GBStatsComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/GBProgressSubsystem.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 namespace
 {
@@ -163,6 +164,10 @@ void AGBBreakable::HandleDamaged(const FGBDamageInfo& Info, float ActualDamage)
 void AGBBreakable::Break()
 {
 	bBroken = true;
+	{
+		const FVector SoundAt = GetActorLocation();
+		GBAudio::Play(this, FName(TEXT("breakable")), &SoundAt, 1.f, 1.f);
+	}
 	if (!BrokenFlag.IsNone())
 	{
 		if (UGBProgressSubsystem* Progress = UGBProgressSubsystem::Get(this))

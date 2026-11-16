@@ -7,6 +7,7 @@
 #include "Player/GBPlayerCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/GBProgressSubsystem.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 AGBDoor::AGBDoor()
 {
@@ -56,6 +57,11 @@ void AGBDoor::Tick(float DeltaSeconds)
 		bWantOpen = bNear && bUnlocked;
 	}
 
+	if (bWantOpen && OpenAlpha <= 0.f)
+	{
+		const FVector SoundAt = GetActorLocation();
+		GBAudio::Play(this, FName(GBAudio::IsFutureMap(this) ? TEXT("door_future") : TEXT("door_past")), &SoundAt, 1.f, 1.f);
+	}
 	const float Step = OpenSeconds > KINDA_SMALL_NUMBER ? DeltaSeconds / OpenSeconds : 1.f;
 	const float NewAlpha = FMath::Clamp(OpenAlpha + (bWantOpen ? Step : -Step), 0.f, 1.f);
 	if (!FMath::IsNearlyEqual(NewAlpha, OpenAlpha))

@@ -16,6 +16,7 @@
 
 #include "Engine/Canvas.h"
 #include "Kismet/KismetSystemLibrary.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 namespace GBHudMenuLocal
 {
@@ -439,6 +440,7 @@ bool AGBHUD::MenuClick(const FVector2D& ScreenPosition)
 
 void AGBHUD::MenuNavigate(FIntPoint Direction)
 {
+	GBAudio::Play(this, FName(TEXT("ui_move")), nullptr, 1.f, 1.f);
 	using namespace GBHudMenuLocal;
 	if (MenuState.PendingUnlock != NAME_None)
 	{
@@ -498,6 +500,7 @@ void AGBHUD::MenuNavigate(FIntPoint Direction)
 
 void AGBHUD::MenuConfirm()
 {
+	GBAudio::Play(this, FName(TEXT("ui_select")), nullptr, 1.f, 1.f);
 	AGBPlayerCharacter* Player = GetPlayer();
 	switch (GetOpenMenu())
 	{

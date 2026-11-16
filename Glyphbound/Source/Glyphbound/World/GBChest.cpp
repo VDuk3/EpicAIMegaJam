@@ -11,6 +11,7 @@
 #include "Weapons/GBEquipmentComponent.h"
 #include "World/GBPickup.h"
 #include "World/GBProgressSubsystem.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 namespace GBChestLocal
 {
@@ -167,6 +168,10 @@ void AGBChest::Interact(AGBPlayerCharacter* Player)
 	if (!CanInteract(Player))
 	{
 		return;
+	}
+	{
+		const FVector SoundAt = GetActorLocation();
+		GBAudio::Play(this, FName(TEXT("chest_open")), &SoundAt, 1.f, 1.f);
 	}
 
 	TArray<FString> Found;

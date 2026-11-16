@@ -13,6 +13,291 @@
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
+#include "Sound/SoundAttenuation.h"
+#include "Components/AudioComponent.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "EngineUtils.h"
+#include "AI/GBValkyrieEnemy.h"
+
+// ---- GBAudio: data-driven sound playback (Content/Data/Audio.json, written by Tools/Jam/audio_defs.js) ----
+// Callers declare what they use by hand (no header, so Live Coding can apply it):
+//   namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc, float PitchMul, float VolMul); ... }
+namespace GBAudioImpl
+{
+	struct FEntry
+	{
+		TArray<FSoftObjectPath> Files;
+		float Volume = 1.f, PitchMin = 1.f, PitchMax = 1.f, Range = 0.f, Cooldown = 0.f;
+		double LastPlay = -1e9;
+		int32 LastIndex = -1;
+	};
+	TMap<FName, FEntry> Table;
+	TMap<FString, FName> MapMusic, MapAmbience; // map name part -> music key / ambience key
+	bool bLoaded = false;
+	TMap<int32, TStrongObjectPtr<USoundAttenuation>> Attenuations;
+	TWeakObjectPtr<UAudioComponent> MusicComp, AmbComp;
+	FName CurMusic, CurAmb;
+	TWeakObjectPtr<UWorld> MusicWorld;
+	double LastMenuPing = -1e9;
+
+	void Load()
+	{
+		if (bLoaded)
+		{
+			return;
+		}
+		bLoaded = true;
+		FString Text;
+		if (!FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/Audio.json"))))
+		{
+			return;
+		}
+		TSharedPtr<FJsonObject> Root;
+		if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid())
+		{
+			return;
+		}
+		const TSharedPtr<FJsonObject>* Sounds = nullptr;
+		if (Root->TryGetObjectField(TEXT("Sounds"), Sounds))
+		{
+			for (const auto& Pair : (*Sounds)->Values)
+			{
+				const TSharedPtr<FJsonObject>* Obj = nullptr;
+				if (!Pair.Value->TryGetObject(Obj))
+				{
+					continue;
+				}
+				FEntry& Entry = Table.Add(FName(*Pair.Key));
+				const TArray<TSharedPtr<FJsonValue>>* Files = nullptr;
+				if ((*Obj)->TryGetArrayField(TEXT("Files"), Files))
+				{
+					for (const TSharedPtr<FJsonValue>& File : *Files)
+					{
+						Entry.Files.Add(FSoftObjectPath(File->AsString()));
+					}
+				}
+				double Value = 0;
+				if ((*Obj)->TryGetNumberField(TEXT("Volume"), Value)) { Entry.Volume = Value; }
+				if ((*Obj)->TryGetNumberField(TEXT("PitchMin"), Value)) { Entry.PitchMin = Value; }
+				if ((*Obj)->TryGetNumberField(TEXT("PitchMax"), Value)) { Entry.PitchMax = Value; }
+				if ((*Obj)->TryGetNumberField(TEXT("Range"), Value)) { Entry.Range = Value; }
+				if ((*Obj)->TryGetNumberField(TEXT("Cooldown"), Value)) { Entry.Cooldown = Value; }
+			}
+		}
+		const TSharedPtr<FJsonObject>* Maps = nullptr;
+		if (Root->TryGetObjectField(TEXT("Maps"), Maps))
+		{
+			for (const auto& Pair : (*Maps)->Values)
+			{
+				const TSharedPtr<FJsonObject>* Obj = nullptr;
+				if (Pair.Value->TryGetObject(Obj))
+				{
+					FString Music, Amb;
+					(*Obj)->TryGetStringField(TEXT("Music"), Music);
+					(*Obj)->TryGetStringField(TEXT("Ambience"), Amb);
+					MapMusic.Add(FString(Pair.Key), FName(*Music));
+					MapAmbience.Add(FString(Pair.Key), FName(*Amb));
+				}
+			}
+		}
+	}
+
+	USoundBase* Pick(FEntry& Entry)
+	{
+		if (Entry.Files.Num() == 0)
+		{
+			return nullptr;
+		}
+		int32 Index = FMath::RandRange(0, Entry.Files.Num() - 1);
+		if (Entry.Files.Num() > 1 && Index == Entry.LastIndex)
+		{
+			Index = (Index + 1) % Entry.Files.Num();
+		}
+		Entry.LastIndex = Index;
+		return Cast<USoundBase>(Entry.Files[Index].TryLoad());
+	}
+
+	USoundAttenuation* GetAttenuation(float Range)
+	{
+		const int32 Key = FMath::RoundToInt(Range);
+		TStrongObjectPtr<USoundAttenuation>& Slot = Attenuations.FindOrAdd(Key);
+		if (!Slot.IsValid())
+		{
+			USoundAttenuation* A = NewObject<USoundAttenuation>(GetTransientPackage());
+			A->Attenuation.bAttenuate = true;
+			A->Attenuation.bSpatialize = true;
+			A->Attenuation.AttenuationShape = EAttenuationShape::Sphere;
+			A->Attenuation.AttenuationShapeExtents = FVector(Range * 0.2f, 0.f, 0.f);
+			A->Attenuation.FalloffDistance = Range * 0.8f;
+			A->Attenuation.DistanceAlgorithm = EAttenuationDistanceModel::Linear;
+			Slot.Reset(A);
+		}
+		return Slot.Get();
+	}
+
+	void Crossfade(UWorld* World, TWeakObjectPtr<UAudioComponent>& Comp, FName& Current, FName Want, float FadeIn)
+	{
+		if (Want == Current)
+		{
+			return;
+		}
+		if (UAudioComponent* Old = Comp.Get())
+		{
+			Old->FadeOut(1.5f, 0.f);
+		}
+		Comp.Reset();
+		Current = Want;
+		FEntry* Entry = Table.Find(Want);
+		if (Want.IsNone() || !Entry)
+		{
+			return;
+		}
+		if (USoundBase* Sound = Pick(*Entry))
+		{
+			if (UAudioComponent* New = UGameplayStatics::CreateSound2D(World, Sound, Entry->Volume, 1.f, 0.f, nullptr, false, true))
+			{
+				New->bIsUISound = true; // keeps playing while the game is paused (menus)
+				New->FadeIn(FadeIn, 1.f);
+				Comp = New;
+			}
+		}
+	}
+}
+
+namespace GBAudio
+{
+	bool Play(const UObject* Ctx, FName Key, const FVector* Loc, float PitchMul, float VolMul)
+	{
+		using namespace GBAudioImpl;
+		Load();
+		FEntry* Entry = Table.Find(Key);
+		UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(Ctx, EGetWorldErrorMode::ReturnNull) : nullptr;
+		if (!Entry || !World || Entry->Files.Num() == 0)
+		{
+			return false;
+		}
+		const double Now = World->GetRealTimeSeconds();
+		if (Now - Entry->LastPlay < Entry->Cooldown)
+		{
+			return true;
+		}
+		Entry->LastPlay = Now;
+		USoundBase* Sound = Pick(*Entry);
+		if (!Sound)
+		{
+			return true;
+		}
+		const float Pitch = FMath::FRandRange(Entry->PitchMin, FMath::Max(Entry->PitchMin, Entry->PitchMax)) * PitchMul;
+		const bool bVaries = Entry->PitchMax > Entry->PitchMin;
+		const float Volume = Entry->Volume * VolMul * (bVaries ? FMath::FRandRange(0.88f, 1.f) : 1.f);
+		if (Entry->Range <= 0.f || !Loc)
+		{
+			UGameplayStatics::PlaySound2D(World, Sound, Volume, Pitch);
+		}
+		else
+		{
+			UGameplayStatics::PlaySoundAtLocation(World, Sound, *Loc, FRotator::ZeroRotator, Volume, Pitch, 0.f, GetAttenuation(Entry->Range));
+		}
+		return true;
+	}
+
+	/** A looping 3D sound at a place (torches). The component dies with its world. */
+	void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc)
+	{
+		using namespace GBAudioImpl;
+		Load();
+		FEntry* Entry = Table.Find(Key);
+		UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(Ctx, EGetWorldErrorMode::ReturnNull) : nullptr;
+		if (!Entry || !World)
+		{
+			return;
+		}
+		if (USoundBase* Sound = Pick(*Entry))
+		{
+			UGameplayStatics::SpawnSoundAtLocation(World, Sound, Loc, FRotator::ZeroRotator, Entry->Volume, FMath::FRandRange(0.92f, 1.08f),
+				FMath::FRandRange(0.f, 20.f), GetAttenuation(Entry->Range > 0.f ? Entry->Range : 1200.f));
+		}
+	}
+
+	bool IsFutureMap(const UObject* Ctx)
+	{
+		const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(Ctx, EGetWorldErrorMode::ReturnNull) : nullptr;
+		const FString Name = World ? World->GetMapName() : FString();
+		return Name.Contains(TEXT("Future")) || Name.Contains(TEXT("Entity"));
+	}
+
+	void MenuPing(const UObject* Ctx)
+	{
+		const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(Ctx, EGetWorldErrorMode::ReturnNull) : nullptr;
+		if (World)
+		{
+			GBAudioImpl::LastMenuPing = World->GetRealTimeSeconds();
+		}
+	}
+
+	/** Called about twice a second by the game mode: picks the music (menu / boss / map) and the ambience, crossfading on change. */
+	void UpdateMusic(UWorld* World)
+	{
+		using namespace GBAudioImpl;
+		Load();
+		if (!World)
+		{
+			return;
+		}
+		if (MusicWorld.Get() != World)
+		{
+			MusicWorld = World;
+			MusicComp.Reset();
+			AmbComp.Reset();
+			CurMusic = NAME_None;
+			CurAmb = NAME_None;
+		}
+		FName WantMusic, WantAmb;
+		const FString MapName = World->GetMapName();
+		for (const auto& Pair : MapMusic)
+		{
+			if (MapName.Contains(Pair.Key))
+			{
+				WantMusic = Pair.Value;
+				if (const FName* Amb = MapAmbience.Find(Pair.Key)) { WantAmb = *Amb; }
+				break;
+			}
+		}
+		const bool bMenu = World->GetRealTimeSeconds() - LastMenuPing < 0.6;
+		if (bMenu)
+		{
+			WantMusic = FName(TEXT("music_menu"));
+		}
+		else if (!MapName.Contains(TEXT("Entity")))
+		{
+			// A Valkyrie alive and near the player: her fight's music.
+			const APlayerController* PC = World->GetFirstPlayerController();
+			const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+			if (Pawn)
+			{
+				for (TActorIterator<AGBValkyrieEnemy> It(World); It; ++It)
+				{
+					if (UGBCombatLibrary::IsAlive(*It) && FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) < FMath::Square(5500.f))
+					{
+						WantMusic = FName(IsFutureMap(World) ? TEXT("music_boss_future") : TEXT("music_boss_past"));
+						break;
+					}
+				}
+			}
+		}
+		if (WantMusic != CurMusic && (WantMusic == FName(TEXT("music_boss_past")) || WantMusic == FName(TEXT("music_boss_future"))))
+		{
+			Play(World, FName(TEXT("boss_roar")), nullptr, 1.f, 1.f);
+		}
+		Crossfade(World, MusicComp, CurMusic, WantMusic, 2.0f);
+		Crossfade(World, AmbComp, CurAmb, WantAmb, 3.0f);
+	}
+}
 
 namespace GBCombatLocal
 {
@@ -110,6 +395,40 @@ float UGBCombatLibrary::DealDamage(AActor* Target, const FGBDamageInfo& Info, bo
 	{
 		OnDamageDealt().Broadcast(Target, FinalInfo, Dealt);
 		ApplyBuildUp(Target, FinalInfo);
+		{
+			// Hit sound at the point of impact: the player's pain, a sword's steel, an element's crackle, or flesh / machinery.
+			const FVector At = FinalInfo.HitLocation.IsNearlyZero() ? Target->GetActorLocation() : FinalInfo.HitLocation;
+			if (Cast<AGBPlayerCharacter>(Target))
+			{
+				GBAudio::Play(Target, FName(TEXT("player_hurt")), nullptr, 1.f, 1.f);
+			}
+			else
+			{
+				const FString Source = FinalInfo.SourceId.ToString();
+				FName Key = FName(TEXT("hit_flesh"));
+				if (Source.Contains(TEXT("Sword")) || Source.Contains(TEXT("Katana")))
+				{
+					Key = FName(TEXT("hit_sword"));
+				}
+				else if (FinalInfo.Element == EGBElement::Lightning)
+				{
+					Key = FName(TEXT("hit_Lightning"));
+				}
+				else if (FinalInfo.Element == EGBElement::Fire)
+				{
+					Key = FName(TEXT("hit_Fire"));
+				}
+				else if (FinalInfo.Element == EGBElement::Ice)
+				{
+					Key = FName(TEXT("hit_Ice"));
+				}
+				else if (GBAudio::IsFutureMap(Target))
+				{
+					Key = FName(TEXT("hit_robot"));
+				}
+				GBAudio::Play(Target, Key, &At, 1.f, 1.f);
+			}
+		}
 	}
 
 	if (Dealt > 0.f && !FinalInfo.OnHitEffect.IsNone())
@@ -141,6 +460,10 @@ int32 UGBCombatLibrary::DealRadialDamage(const UObject* WorldContextObject, cons
 	}
 
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	if (World && Radius >= 120.f)
+	{
+		GBAudio::Play(WorldContextObject, FName(TEXT("explosion")), &Origin, 1.f, 1.f);
+	}
 	if (!World)
 	{
 		return 0;

@@ -28,6 +28,7 @@
 #include "UI/GBPixelSpriteLibrary.h"
 #include "World/GBEraComponent.h"
 #include "World/GBPickup.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 // Named (not anonymous) so unity builds cannot collide with another file's helpers.
 namespace GBEnemyCharacterLocal
@@ -351,6 +352,18 @@ void AGBEnemyCharacter::SetState(EGBEnemyState NewState)
 	if (State == EGBEnemyState::Windup && NewState != EGBEnemyState::Windup)
 	{
 		SetTelegraph(false);
+	}
+	if (NewState != State && State != EGBEnemyState::Dead)
+	{
+		const FVector SoundAt = GetActorLocation();
+		if (NewState == EGBEnemyState::Windup)
+		{
+			GBAudio::Play(this, FName(GBAudio::IsFutureMap(this) ? TEXT("enemy_attack_future") : TEXT("enemy_attack_past")), &SoundAt, 1.f, 1.f);
+		}
+		else if (NewState == EGBEnemyState::Chase && State == EGBEnemyState::Idle)
+		{
+			GBAudio::Play(this, FName(GBAudio::IsFutureMap(this) ? TEXT("enemy_alert_future") : TEXT("enemy_alert_past")), &SoundAt, 1.f, 1.f);
+		}
 	}
 	State = NewState;
 	StateTime = 0.f;
@@ -1116,6 +1129,12 @@ void AGBEnemyCharacter::HandleDeath(const FGBDamageInfo& KillingBlow)
 	}
 	SetState(EGBEnemyState::Dead);
 	ControlLockTime = 0.f;
+	{
+		const FString ClassName = GetClass()->GetName();
+		const bool bBoss = ClassName.Contains(TEXT("Valkyrie")) || ClassName.Contains(TEXT("Entity"));
+		const FVector DeathAt = GetActorLocation();
+		GBAudio::Play(this, FName(bBoss ? TEXT("death_boss") : (GBAudio::IsFutureMap(this) ? TEXT("death_future") : TEXT("death_past"))), &DeathAt, 1.f, 1.f);
+	}
 	if (UGBSquadSubsystem* Squad = UGBSquadSubsystem::Get(this))
 	{
 		Squad->Leave(this);

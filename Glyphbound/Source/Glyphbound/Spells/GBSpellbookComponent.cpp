@@ -11,6 +11,7 @@
 #include "Stats/GBStatsComponent.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "World/GBProgressSubsystem.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 UGBSpellbookComponent::UGBSpellbookComponent()
 {
@@ -424,6 +425,10 @@ bool UGBSpellbookComponent::TryCastSpell(FName SpellId)
 	const EGBCastFailReason Reason = CanCast(SpellId);
 	if (Reason != EGBCastFailReason::None)
 	{
+		if (Reason == EGBCastFailReason::NotEnoughMana)
+		{
+			GBAudio::Play(this, FName(TEXT("spell_fail")), nullptr, 1.f, 1.f);
+		}
 		OnCastFailed.Broadcast(SpellId, Reason);
 		return false;
 	}
@@ -449,6 +454,7 @@ bool UGBSpellbookComponent::BeginCast(FName SpellId)
 		Equipment->SetSwitchLocked(true);
 	}
 	PendingSpellId = SpellId;
+	GBAudio::Play(this, FName(*(TEXT("spell_") + SpellId.ToString())), nullptr, 1.f, 1.f);
 
 	UGBQTEComponent* QTE = GetOwnerQTE();
 	if (!QTE)

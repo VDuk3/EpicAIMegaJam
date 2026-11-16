@@ -1,3 +1,4 @@
+#include "Misc/App.h"
 #include "Core/GBGameMode.h"
 
 #include "Engine/Engine.h"
@@ -16,6 +17,7 @@
 #include "UI/GBHUD.h"
 #include "World/GBProgressSubsystem.h"
 #include "World/GBTestArena.h"
+namespace GBAudio { bool Play(const UObject* Ctx, FName Key, const FVector* Loc = nullptr, float PitchMul = 1.f, float VolMul = 1.f); void SpawnLoop(const UObject* Ctx, FName Key, const FVector& Loc); bool IsFutureMap(const UObject* Ctx); void MenuPing(const UObject* Ctx); void UpdateMusic(UWorld* World); }
 
 AGBGameMode::AGBGameMode()
 {
@@ -148,6 +150,7 @@ AActor* AGBGameMode::ChoosePlayerStart_Implementation(AController* Player)
 
 void AGBGameMode::HandlePlayerDeath(AGBPlayerCharacter* Player)
 {
+	GBAudio::Play(this, FName(TEXT("player_death")), nullptr, 1.f, 1.f);
 	if (bWaitingToRespawn)
 	{
 		return;
@@ -181,6 +184,15 @@ void AGBGameMode::HandlePlayerDeath(AGBPlayerCharacter* Player)
 void AGBGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	{
+		static float MusicClock = 0.f;
+		MusicClock += FApp::GetDeltaTime();
+		if (MusicClock >= 0.4f)
+		{
+			MusicClock = 0.f;
+			GBAudio::UpdateMusic(GetWorld());
+		}
+	}
 
 	// Timers do not run while the game is paused (the death screen pauses it): fall back to real time.
 	if (bWaitingToRespawn && GetWorld() && GetWorld()->GetRealTimeSeconds() >= RespawnRealTime)
