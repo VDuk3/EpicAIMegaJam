@@ -715,7 +715,8 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 		const bool bAnimated = Sprites->HasSprite(AnimId);
 		UTexture2D* Blade = Sprites->GetSprite(bAnimated ? AnimId : BladeId);
 		const FLinearColor Tint = bAnimated ? GBHudLocal::White : FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(BladeElement), 0.5f);
-		const float BladePx = bAnimated ? FMath::Max(1.f, (float)FMath::RoundToInt(P * 0.45f)) : P;
+		// One art pixel per sprite pixel: blade and guard reach about 60% of the screen height, like the katana's 3D view model.
+		const float BladePx = P;
 		const FVector2D BladeSize = SizeOf(Blade) * (BladePx / P);
 		// It rises from the lower right and leans a little to the left; the swing sweeps it across and back, pivoting on
 		// the pommel, which sits just below the bottom of the view (no hand holds it).
