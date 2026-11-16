@@ -39,6 +39,8 @@ namespace GBAudioImpl
 	TMap<FName, FEntry> Table;
 	TMap<FString, FName> MapMusic, MapAmbience; // map name part -> music key / ambience key
 	bool bLoaded = false;
+	struct FZone { FString Map; FBox Box; FName Music; };
+	TArray<FZone> Zones; // a box of a map with its own music (Audio.json "Zones")
 	TMap<int32, TStrongObjectPtr<USoundAttenuation>> Attenuations;
 	TWeakObjectPtr<UAudioComponent> MusicComp, AmbComp;
 	FName CurMusic, CurAmb;
@@ -87,6 +89,27 @@ namespace GBAudioImpl
 				if ((*Obj)->TryGetNumberField(TEXT("PitchMax"), Value)) { Entry.PitchMax = Value; }
 				if ((*Obj)->TryGetNumberField(TEXT("Range"), Value)) { Entry.Range = Value; }
 				if ((*Obj)->TryGetNumberField(TEXT("Cooldown"), Value)) { Entry.Cooldown = Value; }
+			}
+		}
+		const TArray<TSharedPtr<FJsonValue>>* ZoneList = nullptr;
+		if (Root->TryGetArrayField(TEXT("Zones"), ZoneList))
+		{
+			for (const TSharedPtr<FJsonValue>& Value : *ZoneList)
+			{
+				const TSharedPtr<FJsonObject>* Obj = nullptr;
+				const TArray<TSharedPtr<FJsonValue>>* Min = nullptr;
+				const TArray<TSharedPtr<FJsonValue>>* Max = nullptr;
+				if (!Value->TryGetObject(Obj) || !(*Obj)->TryGetArrayField(TEXT("Min"), Min) || !(*Obj)->TryGetArrayField(TEXT("Max"), Max) || Min->Num() < 3 || Max->Num() < 3)
+				{
+					continue;
+				}
+				FZone Zone;
+				(*Obj)->TryGetStringField(TEXT("Map"), Zone.Map);
+				FString MusicKey;
+				(*Obj)->TryGetStringField(TEXT("Music"), MusicKey);
+				Zone.Music = FName(*MusicKey);
+				Zone.Box = FBox(FVector((*Min)[0]->AsNumber(), (*Min)[1]->AsNumber(), (*Min)[2]->AsNumber()), FVector((*Max)[0]->AsNumber(), (*Max)[1]->AsNumber(), (*Max)[2]->AsNumber()));
+				Zones.Add(Zone);
 			}
 		}
 		const TSharedPtr<FJsonObject>* Maps = nullptr;
@@ -269,11 +292,26 @@ namespace GBAudio
 			}
 		}
 		const bool bMenu = World->GetRealTimeSeconds() - LastMenuPing < 0.6;
+		bool bInZone = false;
+		if (!bMenu)
+		{
+			const APlayerController* ZonePC = World->GetFirstPlayerController();
+			const APawn* ZonePawn = ZonePC ? ZonePC->GetPawn() : nullptr;
+			for (const FZone& Zone : Zones)
+			{
+				if (ZonePawn && MapName.Contains(Zone.Map) && Zone.Box.IsInside(ZonePawn->GetActorLocation()))
+				{
+					WantMusic = Zone.Music;
+					bInZone = true;
+					break;
+				}
+			}
+		}
 		if (bMenu)
 		{
 			WantMusic = FName(TEXT("music_menu"));
 		}
-		else if (!MapName.Contains(TEXT("Entity")))
+		else if (!bInZone && !MapName.Contains(TEXT("Entity")))
 		{
 			// A Valkyrie alive and near the player: her fight's music.
 			const APlayerController* PC = World->GetFirstPlayerController();
@@ -301,7 +339,7 @@ namespace GBAudio
 				PendingMusic = WantMusic;
 				PendingSince = NowReal;
 			}
-			const bool bCombatTrack = WantMusic == FName(TEXT("music_boss_past")) || WantMusic == FName(TEXT("music_boss_future")) || WantMusic == FName(TEXT("music_entity"));
+			const bool bCombatTrack = WantMusic == FName(TEXT("music_boss_past")) || WantMusic == FName(TEXT("music_boss_future")) || WantMusic == FName(TEXT("music_entity")) || bInZone;
 			if (bCombatTrack && NowReal - PendingSince < 2.0)
 			{
 				WantMusic = CurMusic;

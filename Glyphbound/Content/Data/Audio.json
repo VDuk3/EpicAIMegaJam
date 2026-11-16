@@ -788,6 +788,18 @@
 			"Loop": true,
 			"Music": true
 		},
+		"music_orc_zone": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_orc_zone_1.music_orc_zone_1"
+			],
+			"Volume": 0.5,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
 		"music_entity": {
 			"Files": [
 				"/Game/Glyphbound/Audio/Music/music_entity_1.music_entity_1"
@@ -813,5 +825,21 @@
 			"Music": "music_entity",
 			"Ambience": "amb_arena"
 		}
-	}
+	},
+	"Zones": [
+		{
+			"Map": "FutureBase",
+			"Music": "music_orc_zone",
+			"Min": [
+				2250,
+				-850,
+				-300
+			],
+			"Max": [
+				5400,
+				2440,
+				900
+			]
+		}
+	]
 }

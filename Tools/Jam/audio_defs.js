@@ -87,6 +87,7 @@ M('music_castle', 'ABS:Glyphbound/SourceArt/Audio/Music_src/main_theme.mpeg', 0.
 M('music_future', SC + 'ambientación/musica de tension.wav', 0.45, { abs: false });
 M('music_boss_past', 'MP3:24kp9fr4263ke1IrsJp6-_music_generated.mp3', 0.6);
 M('music_boss_future', 'MP3:oWHG97rLWY-D5i7IN3K9M_music_generated.mp3', 0.6);
+M('music_orc_zone', 'MP3:tRgp4nnhYncK4Oyf6CwmB_music_generated.mp3', 0.5);
 M('music_entity', 'MP3:Tentacle_Boss.mp3', 0.65);
 
 // ---- conversion ----
@@ -114,6 +115,8 @@ for (const [key, d] of Object.entries(D)) {
 }
 // Which music plays where (map name substring -> key); boss tracks are chosen by GBAudio from the fight.
 json.Maps = { PastCastle: { Music: 'music_castle' }, FutureBase: { Music: 'music_future', Ambience: 'amb_future' }, EntityArena: { Music: 'music_entity', Ambience: 'amb_arena' } };
+// Zones: a box of a map with its own music (the orc zone of FutureBase: the big hall, 2323..5301 x -752..1963, owner 2026-11-15).
+json.Zones = [{ Map: 'FutureBase', Music: 'music_orc_zone', Min: [2250, -850, -300], Max: [5400, 2440, 900] }];
 fs.writeFileSync(path.join(ROOT, 'Glyphbound', 'Content', 'Data', 'Audio.json'), JSON.stringify(json, null, '\t'));
 fs.writeFileSync(path.join(__dirname, 'audio_import_list.json'), JSON.stringify(list, null, 1));
 console.log('keys', Object.keys(D).length, 'files', list.length);

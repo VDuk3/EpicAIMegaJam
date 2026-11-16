@@ -819,6 +819,13 @@
   "source": "MP3:oWHG97rLWY-D5i7IN3K9M_music_generated.mp3"
  },
  {
+  "asset": "/Game/Glyphbound/Audio/Music/music_orc_zone_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_orc_zone_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "MP3:tRgp4nnhYncK4Oyf6CwmB_music_generated.mp3"
+ },
+ {
   "asset": "/Game/Glyphbound/Audio/Music/music_entity_1",
   "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_entity_1.wav",
   "loop": true,
