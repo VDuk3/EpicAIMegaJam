@@ -40,3 +40,13 @@ event that takes them to the future happens; coming back to the past, they appea
 - `Tools/Jam/portals_future.py`: Portal_ToPast, Arrival_Base, FinalPortal in FutureBase's control room.
 - `Tools/Jam/portals_castle.py`: Event_CastleDoor, Portal_Dungeon, Arrival_Dungeon in PastCastle.
 Both back the map up to `Glyphbound/Saved/MapBackups/` first, probe the floors and abort without saving if a spot is wrong.
+
+## The missing elemental chests (owner, same evening)
+- Owner: place the two missing spellbooks and the two missing staffs. `Tools/Jam/castle_chests_elements.py` puts four
+  `AGBChest` in PastCastle along the route after its fights: `Staff_Storm` at the back of the Front Hall, the Lightning
+  book in the King's Hall, `Staff_Frost` and the Ice book in the Side Hall (before the Top Level: the past Valkyrie takes
+  more ice damage). Spots chosen by traces against the live map (one first guess was inside a wall, one on a barrel);
+  each chest stands against a wall, away from the doorways. The cell chests and the Mimic are untouched.
+- Valkyrie check (owner asked): both fights have their encounter, room, AI (strafe and bursts, combos, dash, Judgement
+  circles, lances, phase two under half health) and drops (Rune Shard; Cryo Core and the hilt). Not checked by walking:
+  that the castle's Top Level is reachable on foot (the navmesh path stops near +15 m, between two nav volumes).
