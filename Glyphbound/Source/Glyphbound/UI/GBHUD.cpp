@@ -703,18 +703,33 @@ void AGBHUD::DrawHands(AGBPlayerCharacter* Player)
 				BladeId = FName(**SpriteId);
 			}
 		}
-		UTexture2D* Blade = Sprites->GetSprite(BladeId);
-		const FVector2D BladeSize = SizeOf(Blade);
-		// The weapon enchant tints the blade while it lasts (owner, 2026-11-15: swords take the enchant).
+		// The weapon enchant changes the element shown while it lasts (owner, 2026-11-15: swords take the enchant).
 		EGBElement BladeElement = Item->GetElement();
 		FName EnchantEffect = NAME_None;
 		Item->GetActiveEnchant(BladeElement, EnchantEffect);
-		const FLinearColor Tint = FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(BladeElement), 0.5f);
-		// The swing moves the sword to the left.
-		const float CenterX = W * 0.70f + Bob.X - Kick01 * 12.f * P;
-		// Where the (no longer drawn) hand held the hilt: the blade rises from the same place.
-		const float HandY = H - RightSize.Y * 0.75f + Bob.Y;
-		DrawSprite(Blade, CenterX - BladeSize.X * 0.5f, HandY - BladeSize.Y + 4.f * P, P, Tint);
+		// Animated blade per element (owner, 2026-11-15): sword_blade_<element>_<frame>, 8 frames, a solid hilt, guard and
+		// blade base with an ethereal blade above. Without those sprites the single old blade is drawn, tinted.
+		const TCHAR* ElementKey = BladeElement == EGBElement::Lightning ? TEXT("lightning") : BladeElement == EGBElement::Ice ? TEXT("ice") : TEXT("fire");
+		const int32 SwordFrame = FMath::FloorToInt(Time * 10.f) & 7;
+		const FName AnimId(*FString::Printf(TEXT("%s_%s_%d"), *BladeId.ToString(), ElementKey, SwordFrame));
+		const bool bAnimated = Sprites->HasSprite(AnimId);
+		UTexture2D* Blade = Sprites->GetSprite(bAnimated ? AnimId : BladeId);
+		const FLinearColor Tint = bAnimated ? GBHudLocal::White : FMath::Lerp(GBHudLocal::White, GBHudText::ElementColor(BladeElement), 0.5f);
+		const float BladePx = bAnimated ? FMath::Max(1.f, (float)FMath::RoundToInt(P * 0.45f)) : P;
+		const FVector2D BladeSize = SizeOf(Blade) * (BladePx / P);
+		// It rises from the lower right and leans a little to the left; the swing sweeps it across and back, pivoting on
+		// the pommel, which sits just below the bottom of the view (no hand holds it).
+		const float SwingDeg = bAnimated ? -Kick01 * 38.f : 0.f;
+		const float RestDeg = bAnimated ? 9.f : 0.f;
+		const FVector2D Pivot(W * 0.70f + Bob.X - Kick01 * 12.f * P, H + 4.f * BladePx + Bob.Y);
+		if (Blade)
+		{
+			FCanvasTileItem Tile(Pivot - FVector2D(BladeSize.X * 0.5f, BladeSize.Y), Blade->GetResource(), BladeSize, Tint);
+			Tile.Rotation = FRotator(0.f, -RestDeg + SwingDeg, 0.f);
+			Tile.PivotPoint = FVector2D(0.5f, 1.f);
+			Tile.BlendMode = SE_BLEND_Translucent;
+			Canvas->DrawItem(Tile);
+		}
 	}
 	// Empty-handed: nothing (no hands).
 
