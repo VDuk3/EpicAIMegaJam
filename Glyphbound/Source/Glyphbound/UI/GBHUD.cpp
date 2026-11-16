@@ -43,6 +43,38 @@
 #include "World/GBEraComponent.h"
 #include "Player/GBPlayerController.h"
 #include "InputCoreTypes.h"
+#include "UI/GBLogo.h"
+
+namespace GBLogo
+{
+	float Draw(UCanvas* InCanvas, float CX, float TopY, float MaxW, float MaxH, float Alpha)
+	{
+		static TWeakObjectPtr<UTexture2D> Cached;
+		UTexture2D* Tex = Cached.Get();
+		if (!Tex)
+		{
+			Tex = LoadObject<UTexture2D>(nullptr, TEXT("/Game/Glyphbound/UI/T_ArcaneOverride_Logo.T_ArcaneOverride_Logo"));
+			Cached = Tex;
+		}
+		if (!InCanvas || !Tex || !Tex->GetResource() || Tex->GetSizeX() <= 0 || Tex->GetSizeY() <= 0)
+		{
+			return 0.f;
+		}
+		const float Aspect = (float)Tex->GetSizeX() / (float)Tex->GetSizeY();
+		float DrawW = MaxW;
+		float DrawH = DrawW / Aspect;
+		if (DrawH > MaxH)
+		{
+			DrawH = MaxH;
+			DrawW = DrawH * Aspect;
+		}
+		FCanvasTileItem Item(FVector2D(FMath::RoundToFloat(CX - DrawW * 0.5f), FMath::RoundToFloat(TopY)), Tex->GetResource(),
+			FVector2D(DrawW, DrawH), FLinearColor(1.f, 1.f, 1.f, Alpha));
+		Item.BlendMode = SE_BLEND_Translucent;
+		InCanvas->DrawItem(Item);
+		return DrawH;
+	}
+}
 
 // End credits after the final boss (the plague reaper, Enemies.json Entity_Phase2). File-local state: no header change.
 namespace GBCredits
@@ -70,7 +102,7 @@ namespace GBCredits
 	static const FLine* Lines(int32& OutCount)
 	{
 		static const FLine L[] = {
-			{ TEXT("GLYPHBOUND"), 8, 0 },
+			{ TEXT("ARCANE OVERRIDE"), 8, 5 },
 			{ TEXT(""), 0, 4 },
 			{ TEXT("A game by"), 3, 1 },
 			{ TEXT("Romelt Diaz"), 4, 2 },
@@ -722,9 +754,10 @@ void AGBHUD::DrawHUD()
 			const GBCredits::FLine* L = GBCredits::Lines(Count);
 			float Total = 0.f;
 			float LastTop = 0.f;
+			const float LogoH = FMath::Min(H * 0.4f, W * 0.35f);
 			for (int32 I = 0; I < Count; ++I)
 			{
-				const float LineH = L[I].Kind == 4 ? 40.f * K : (7.f * L[I].Scale * K + (L[I].Kind == 1 ? 26.f : 16.f) * K);
+				const float LineH = L[I].Kind == 5 ? LogoH + 30.f * K : L[I].Kind == 4 ? 40.f * K : (7.f * L[I].Scale * K + (L[I].Kind == 1 ? 26.f : 16.f) * K);
 				if (I == Count - 1)
 				{
 					LastTop = Total;
@@ -744,6 +777,19 @@ void AGBHUD::DrawHUD()
 				if (Line.Kind == 4)
 				{
 					Y += 40.f * K;
+					continue;
+				}
+				if (Line.Kind == 5)
+				{
+					if (Y > -LogoH && Y < H && GBLogo::Draw(Canvas, W * 0.5f, Y, LogoH * 2.f, LogoH) <= 0.f)
+					{
+						FPixelTextStyle Style;
+						Style.Scale = Line.Scale * K;
+						Style.Color = FLinearColor(1.f, 0.82f, 0.35f);
+						Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
+						DrawPixelText(FString(Line.Text), W * 0.5f, Y + LogoH * 0.5f - 3.5f * Line.Scale * K, Style, 0.5f);
+					}
+					Y += LogoH + 30.f * K;
 					continue;
 				}
 				const float GlyphH = 7.f * Line.Scale * K;

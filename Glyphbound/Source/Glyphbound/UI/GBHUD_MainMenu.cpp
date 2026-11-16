@@ -5,6 +5,7 @@
 
 #include "UI/GBHUDShared.h"
 #include "Player/GBPlayerCharacter.h"
+#include "UI/GBLogo.h"
 #include "Player/GBPlayerController.h"
 #include "Weapons/GBEquipmentComponent.h"
 #include "Data/GBDataSubsystem.h"
@@ -557,7 +558,22 @@ float AGBHUD::DrawMainTitle(EGBHudSkin Skin, const FString& PageTitle)
 		Sub.Px = 15.f;
 		Sub.Color = GBCy::RedDim;
 		const float TopY = bRoot ? H * 0.16f : 56.f * S;
-		DrawCyText(bRoot ? TEXT("// BOOT SEQUENCE COMPLETE  //  DIRECTOR'S CUT") : TEXT("// GLYPHBOUND  //  DIRECTOR'S CUT"), X, TopY, Sub, 0.f);
+		if (bRoot)
+		{
+			// The logo, big and centered (owner, 2026-11-15); the old title text only if the texture is missing.
+			DrawCyText(TEXT("// BOOT SEQUENCE COMPLETE  //  DIRECTOR'S CUT"), W * 0.5f, TopY - 20.f * S, Sub, 0.5f);
+			const float LogoH = GBLogo::Draw(Canvas, W * 0.5f, TopY, W * 0.6f, H * 0.26f, FMath::Clamp(Since / 0.4f, 0.f, 1.f));
+			if (LogoH > 0.f)
+			{
+				const float RulerY = TopY + LogoH + 8.f * S;
+				CyRuler(W * 0.5f - 360.f * S, RulerY, 720.f * S, GBAlpha(GBCy::RedDim, 0.8f));
+				return RulerY + 30.f * S;
+			}
+		}
+		else
+		{
+			DrawCyText(TEXT("// ARCANE OVERRIDE  //  DIRECTOR'S CUT"), X, TopY, Sub, 0.f);
+		}
 		FCyTextStyle Title;
 		Title.Face = ECyFace::Condensed;
 		Title.Px = bRoot ? 150.f : 84.f;
@@ -565,7 +581,7 @@ float AGBHUD::DrawMainTitle(EGBHudSkin Skin, const FString& PageTitle)
 		Title.bUpper = true;
 		Title.Color = GBCy::Red;
 		Title.Split = (Since < 0.35f ? (1.f - Since / 0.35f) * 10.f : 1.5f * FMath::Abs(FMath::Sin(Since * 1.7f))) * S;
-		const FVector2D TS = DrawCyText(bRoot ? TEXT("Glyphbound") : PageTitle, X, TopY + 18.f * S, Title, 0.f);
+		const FVector2D TS = DrawCyText(bRoot ? TEXT("Arcane Override") : PageTitle, X, TopY + 18.f * S, Title, 0.f);
 		const float RulerY = TopY + 18.f * S + TS.Y + 8.f * S;
 		CyRuler(X, RulerY, bRoot ? 720.f * S : W - 2.f * X, GBAlpha(GBCy::RedDim, 0.8f));
 		return RulerY + 30.f * S;
@@ -593,8 +609,13 @@ float AGBHUD::DrawMainTitle(EGBHudSkin Skin, const FString& PageTitle)
 	Title.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.85f);
 	Title.Color = FLinearColor(1.f, 1.f, 1.f, FMath::Clamp(Since / 0.4f, 0.f, 1.f));
 	const float TitleY = FMath::RoundToFloat((bRoot ? H * 0.12f : H * 0.05f) / P) * P;
-	DrawPixelText(TEXT("GLYPHBOUND"), W * 0.5f, TitleY, Title, 0.5f);
-	float Y = TitleY + 7.f * Scale + 5.f * P;
+	// The logo (owner, 2026-11-15); the old gilt title text only if the texture is missing.
+	const float LogoH = GBLogo::Draw(Canvas, W * 0.5f, TitleY, W * (bRoot ? 0.6f : 0.3f), H * (bRoot ? 0.26f : 0.11f), Title.Color.A);
+	if (LogoH <= 0.f)
+	{
+		DrawPixelText(TEXT("ARCANE OVERRIDE"), W * 0.5f, TitleY, Title, 0.5f);
+	}
+	float Y = TitleY + (LogoH > 0.f ? LogoH : 7.f * Scale) + 5.f * P;
 	if (bRoot)
 	{
 		FPixelTextStyle Sub;
