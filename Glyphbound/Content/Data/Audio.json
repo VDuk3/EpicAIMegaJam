@@ -756,7 +756,7 @@
 			"Files": [
 				"/Game/Glyphbound/Audio/Music/music_future_1.music_future_1"
 			],
-			"Volume": 0.5,
+			"Volume": 0.45,
 			"PitchMin": 1,
 			"PitchMax": 1,
 			"Range": 0,

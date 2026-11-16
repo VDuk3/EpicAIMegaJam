@@ -84,7 +84,7 @@ S('amb_arena', 'Ambience', sc(['ambientación/ambiente tenso.wav']), { vol: 0.3,
 const M = (key, file, vol, o = {}) => { D[key] = Object.assign({ cat: 'Music', src: [file], vol, pmin: 1, pmax: 1, range: 0, cd: 0, dur: 0, loop: true, stereo: true, music: true, abs: true }, o); };
 M('music_menu', 'ABS:Glyphbound/SourceArt/Audio/Music_src/main_theme.mpeg', 0.8);
 M('music_castle', 'ABS:Glyphbound/SourceArt/Audio/Music_src/main_theme.mpeg', 0.55);
-M('music_future', 'MP3:tRgp4nnhYncK4Oyf6CwmB_music_generated.mp3', 0.5);
+M('music_future', SC + 'ambientación/musica de tension.wav', 0.45, { abs: false });
 M('music_boss_past', 'MP3:24kp9fr4263ke1IrsJp6-_music_generated.mp3', 0.6);
 M('music_boss_future', 'MP3:oWHG97rLWY-D5i7IN3K9M_music_generated.mp3', 0.6);
 M('music_entity', 'MP3:Tentacle_Boss.mp3', 0.65);
