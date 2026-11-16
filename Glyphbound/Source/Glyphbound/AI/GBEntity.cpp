@@ -1165,6 +1165,10 @@ void AGBEntity::Tick(float DeltaSeconds)
 			Beam->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			Beam->SetCastShadow(false);
 			Beam->SetCanEverAffectNavigation(false);
+			// a laser lights nothing around it (owner): no Lumen bounce from its glow, only the narrow spot along it
+			Beam->bAffectDynamicIndirectLighting = false;
+			Beam->bAffectDistanceFieldLighting = false;
+			Beam->SetVisibleInRayTracing(false);
 			Beam->RegisterComponent();
 			GBPlaceholder::SetupShape(Beam, EGBShape::Cylinder, FVector(10.f, 10.f, 100.f), LaserColor * StatOr(TEXT("TB_LaserGlow"), 12.f), /*bGlow*/ true);
 			Boss.Beam = Beam;

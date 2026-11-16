@@ -9,6 +9,7 @@ import unreal, os, shutil, datetime
 def run():
     MAP = '/Game/Glyphbound/Maps/FutureBase'
     X0, X1, Y0, Y1, Z0, Z1 = 14762.0, 18362.0, -1400.0, 1400.0, -700.0, 700.0
+    EXPOSURE = 1.0                  # fixed adaptation (min = max brightness): the base's lit rooms adapt around this
     les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
@@ -32,9 +33,28 @@ def run():
         if X0 <= l.x <= X1 and Y0 <= l.y <= Y1 and Z0 <= l.z <= Z1:
             gone.append('%s (%.0f, %.0f, %.0f)' % (a.get_actor_label(), l.x, l.y, l.z))
             eas.destroy_actor(a)
+    # the wing's own exposure (histogram, down to 0.03) brightens a dark hall back up: the boss's hall gets a fixed
+    # exposure, as if lit like the base, so what has no light stays dark
+    for old in eas.get_all_level_actors():
+        if old.get_actor_label() == 'Boss_Tentacle_Exposure':
+            eas.destroy_actor(old)
+    ppv = eas.spawn_actor_from_class(unreal.PostProcessVolume, unreal.Vector((X0 + X1) / 2.0, 0.0, 0.0), unreal.Rotator(0, 0, 0))
+    ppv.set_actor_label('Boss_Tentacle_Exposure')
+    ppv.set_folder_path(unreal.Name('Base/encounters/Gameplay'))
+    ppv.set_actor_scale3d(unreal.Vector((X1 - X0) / 200.0, (Y1 - Y0) / 200.0, (Z1 - Z0) / 200.0))
+    ppv.set_editor_property('unbound', False)
+    ppv.set_editor_property('priority', 10.0)
+    ppv.set_editor_property('blend_radius', 150.0)
+    st = ppv.get_editor_property('settings')
+    for name, value in (('auto_exposure_method', unreal.AutoExposureMethod.AEM_HISTOGRAM), ('auto_exposure_bias', 0.0),
+                        ('auto_exposure_min_brightness', EXPOSURE), ('auto_exposure_max_brightness', EXPOSURE)):
+        st.set_editor_property('override_' + name, True)
+        st.set_editor_property(name, value)
+    ppv.set_editor_property('settings', st)
+    ppv = st = None
     a = l = None
     saved = unreal.EditorLoadingAndSavingUtils.save_packages([unreal.load_package(MAP)], True)
-    return 'removed %d lights: %s; backup %s; saved=%s' % (len(gone), ', '.join(gone), backup, saved)
+    return 'exposure fixed at %s; removed %d lights: %s; backup %s; saved=%s' % (EXPOSURE, len(gone), ', '.join(gone), backup, saved)
 
 
 run()
