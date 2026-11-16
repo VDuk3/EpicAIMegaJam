@@ -1342,7 +1342,6 @@ async def stage_deep():
     for k, (dx, dy, size, yaw, which) in enumerate(((0, 0, 420, 0, 'SM_Rubble_02'), (190, 120, 300, 70, 'SM_Rubble_02'), (-210, 90, 340, 160, 'SM_Rubble_02'),
                                                     (60, -230, 280, 250, 'SM_Rubble_02'), (-120, -140, 260, 30, 'SM_PillarTop_Broken'), (260, -90, 220, 200, 'SM_PillarTop_Broken'))):
         sized(s, 'Rubble', RUBBLE + which, (hx + dx, hy + dy, Z), size, rot(yaw=yaw))
-    light(s, 'Lamps', 'SpotLight', (hx, hy, 560), rot(pitch=-90), {'intensity': 160.0, 'color': (170, 215, 255), 'attenuation_radius': 1500.0, 'shadow': False})
     # Crates thrown about (one way up to the south gallery is still standing), scorch and grime.
     half = BIG_W / 2.0 + 1.0
     boss_crate(s, x0 + 900, y0 + 400 + half, 0, 0, Z)
@@ -1355,15 +1354,8 @@ async def stage_deep():
         decal(s, SCORCH % which, (x, y, Z + 5), size, yaw=53.0 * k)
     for k, (x, y, size, which) in enumerate(((x0 + 1800, 0, 600, 1), (x1 - 1000, 600, 520, 3), (x0 + 900, -900, 480, 2))):
         decal(s, DIRT % which, (x, y, Z + 5), size, yaw=77.0 * k)
-    # Light: what is left of it. Two of the hall's lamps, one of them failing, and red where the galleries broke.
-    light(s, 'Lamps', 'RectLight', (x0 + 900, -500, 560), rot(pitch=-90), {'intensity': 40.0, 'color': (255, 232, 205), 'attenuation_radius': 2200.0,
-                                                                          'source_width': 300.0, 'source_height': 600.0, 'shadow': False, 'flicker': True})
-    light(s, 'Lamps', 'RectLight', (x1 - 900, 300, 560), rot(pitch=-90), {'intensity': 34.0, 'color': (255, 232, 205), 'attenuation_radius': 2400.0,
-                                                                         'source_width': 300.0, 'source_height': 600.0, 'shadow': False})
-    light(s, 'Lamps', 'RectLight', (x0 + 1900, -700, 560), rot(pitch=-90), {'intensity': 22.0, 'color': (255, 225, 200), 'attenuation_radius': 2200.0,
-                                                                           'source_width': 300.0, 'source_height': 600.0, 'shadow': False})
-    for x, y in ((x0 + 2000, y0 + 420), (x1 - 420, y0 + 800), (x0 + 400, y0 + 1000)):
-        light(s, 'Lamps', 'PointLight', (x, y, G + 150), rot(), {'intensity': 8.0, 'color': (255, 70, 45), 'attenuation_radius': 1000.0, 'shadow': False})
+    # No light at all in the boss's hall (owner, 2026-11-15: "elimina toda la luz de esa sala"; the hall, not the corridor):
+    # only the boss's own glow and its eye laser light it, through the smoke.
     nav = eas.spawn_actor_from_class(unreal.NavMeshBoundsVolume, unreal.Vector((WELL[0] + PIT[1]) / 2.0, 0, Z + 300), rot())
     nav.set_actor_scale3d(unreal.Vector((PIT[1] - WELL[0]) / 200.0 + 1.0, 15.0, 8.0))
     tag(nav, s, 'Gameplay')

@@ -1997,7 +1997,7 @@
 				"TB_FanDeg": 40,
 				"TB_FanCooldown": 4,
 				"TB_Laser": 1,
-				"TB_LaserThickness": 10,
+				"TB_LaserThickness": 4,
 				"TB_LaserGlow": 12,
 				"TB_LaserLength": 6000,
 				"TB_LaserLight": 6000,
