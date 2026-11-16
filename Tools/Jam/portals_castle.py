@@ -15,7 +15,7 @@ import unreal
 
 MAP = '/Game/Glyphbound/Maps/PastCastle'
 TAG = 'GBPortalsScript'
-DOOR = (5150.0, 0.0, 210.0)          # the keep's door: top of the wide stair (4900) into the Front Hall (5750)
+DOOR = (5450.0, 0.0, 250.0)          # the keep's door: the arched passage (Back_Arch3 at 5350, Back_Arch2 at 5690, 3 m wide) into the keep
 DUNGEON = (11290.0, -7000.0, -951.0)  # floor under the pixel portal Portal_1
 ARRIVE_DUNGEON = (11290.0, -6650.0, -951.0)
 
@@ -63,7 +63,7 @@ def main():
         return actor
 
     door = eas.spawn_actor_from_class(unreal.GBPortal, unreal.Vector(*DOOR), unreal.Rotator(0, 0, 0))
-    tagged(door, 'Event_CastleDoor', ['GBMap=/Game/Glyphbound/Maps/FutureBase', 'GBOnEnter', 'GBRadius=220',
+    tagged(door, 'Event_CastleDoor', ['GBMap=/Game/Glyphbound/Maps/FutureBase', 'GBOnEnter', 'GBRadius=200',
                                       'GBOnceFlag=CastleDoorEvent', 'GBSetFlag=SealUsed', 'GBCutscene=CastleDoor', 'GBNoFrame'])
     dun = eas.spawn_actor_from_class(unreal.GBPortal, unreal.Vector(dx, dy, dz), unreal.Rotator(0, 0, 0))
     tagged(dun, 'Portal_Dungeon', ['GBMap=/Game/Glyphbound/Maps/FutureBase', 'GBArrive=Base', 'GBRequires=SealUsed', 'GBNoFrame'])

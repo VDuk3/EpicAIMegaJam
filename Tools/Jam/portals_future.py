@@ -15,7 +15,7 @@ import unreal
 
 MAP = '/Game/Glyphbound/Maps/FutureBase'
 TAG = 'GBPortalsScript'
-PORTAL = (-1500.0, 60.0, 0.0)       # floor under the portal, west end of the control room, opening facing +X
+PORTAL = (-1380.0, 60.0, 0.0)       # floor under the portal, west end of the control room, opening facing +X
 FINAL = (-1100.0, -750.0, 0.0)
 
 
