@@ -290,6 +290,27 @@ namespace GBAudio
 				}
 			}
 		}
+		// Combat tracks start about two seconds after the player enters the zone (no combat-start system exists), not at once.
+		static FName PendingMusic;
+		static double PendingSince = 0.0;
+		if (WantMusic != CurMusic)
+		{
+			const double NowReal = World->GetRealTimeSeconds();
+			if (WantMusic != PendingMusic)
+			{
+				PendingMusic = WantMusic;
+				PendingSince = NowReal;
+			}
+			const bool bCombatTrack = WantMusic == FName(TEXT("music_boss_past")) || WantMusic == FName(TEXT("music_boss_future")) || WantMusic == FName(TEXT("music_entity"));
+			if (bCombatTrack && NowReal - PendingSince < 2.0)
+			{
+				WantMusic = CurMusic;
+			}
+		}
+		else
+		{
+			PendingMusic = NAME_None;
+		}
 		if (WantMusic != CurMusic && (WantMusic == FName(TEXT("music_boss_past")) || WantMusic == FName(TEXT("music_boss_future"))))
 		{
 			Play(World, FName(TEXT("boss_roar")), nullptr, 1.f, 1.f);
