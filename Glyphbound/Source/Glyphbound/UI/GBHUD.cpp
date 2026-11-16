@@ -41,6 +41,72 @@
 #include "AI/GBEnemyCharacter.h"
 #include "Combat/GBElementalStatusComponent.h"
 #include "World/GBEraComponent.h"
+#include "Player/GBPlayerController.h"
+#include "InputCoreTypes.h"
+
+// End credits after the final boss (the plague reaper, Enemies.json Entity_Phase2). File-local state: no header change.
+namespace GBCredits
+{
+	struct FState
+	{
+		TWeakObjectPtr<const AHUD> Hud;
+		TWeakObjectPtr<AGBEnemyCharacter> Boss;
+		double NextScan = 0.0;
+		double StartTime = -1.0;
+		bool bFinished = false;
+		bool bForce = false;
+	};
+	static FState& State()
+	{
+		static FState S;
+		return S;
+	}
+	struct FLine
+	{
+		const TCHAR* Text;
+		int32 Scale;
+		int32 Kind; // 0 title, 1 heading, 2 name, 3 small, 4 gap
+	};
+	static const FLine* Lines(int32& OutCount)
+	{
+		static const FLine L[] = {
+			{ TEXT("GLYPHBOUND"), 8, 0 },
+			{ TEXT(""), 0, 4 },
+			{ TEXT("A game by"), 3, 1 },
+			{ TEXT("Romelt Diaz"), 4, 2 },
+			{ TEXT("María Isabel García"), 4, 2 },
+			{ TEXT("Nasry Hermida"), 4, 2 },
+			{ TEXT("Cristina León"), 4, 2 },
+			{ TEXT("Juan Rubiano"), 4, 2 },
+			{ TEXT(""), 0, 4 },
+			{ TEXT("Third-party assets"), 3, 1 },
+			{ TEXT("Fab packs (Fab Standard License):"), 2, 3 },
+			{ TEXT("Hologram Shader - SERLO"), 2, 3 },
+			{ TEXT("Medieval Kingdom, Realistic Gun VFX - Hivemind"), 2, 3 },
+			{ TEXT("Sci-Fi Creatures Research Lab - Tirgames Assets"), 2, 3 },
+			{ TEXT("Sci-fi Impacts, Muzzle Flash 3D, Smoke Niagara Fluids - SHOGUN GAMES"), 2, 3 },
+			{ TEXT("Scifi Material Pack - JulioSillet"), 2, 3 },
+			{ TEXT("High Tech Base - YaMaKundra"), 2, 3 },
+			{ TEXT("Spaceship Corridor Damaged - ArmTm"), 2, 3 },
+			{ TEXT("Modular SciFi Station - Martin Milz"), 2, 3 },
+			{ TEXT("Deep Water Station - Kyrylo Sibiriakov"), 2, 3 },
+			{ TEXT("Pistol and Rifle Locomotion Animations - Kingboars"), 2, 3 },
+			{ TEXT("\"red scifi katana\" by M@xim (Fab), licensed CC BY"), 2, 3 },
+			{ TEXT("Sound effects and ambience music: Soundsnap"), 2, 3 },
+			{ TEXT("Main theme: original music by the team"), 2, 3 },
+			{ TEXT(""), 0, 4 },
+			{ TEXT("Made for the Epic AI MegaJam 2026"), 3, 1 },
+			{ TEXT(""), 0, 4 },
+			{ TEXT("Thanks for playing!"), 5, 0 },
+		};
+		OutCount = UE_ARRAY_COUNT(L);
+		return L;
+	}
+	static FAutoConsoleCommand CmdShowCredits(
+		TEXT("gb.ShowCredits"),
+		TEXT("Shows the end credits now (preview, same as beating the final boss)."),
+		FConsoleCommandDelegate::CreateLambda([]() { State().bForce = true; }));
+}
 
 static TAutoConsoleVariable<int32> CVarShowElemental(
 	TEXT("gb.ShowElemental"),
@@ -595,6 +661,128 @@ void AGBHUD::DrawHUD()
 		DrawMenus(Player);
 		// Menu actions answer with toasts (skill unlocks, combines): above the menu, low, clear of titles and tabs.
 		DrawToasts(GetMenuSkin(), Canvas->ClipY * 0.80f);
+	}
+
+	// End credits: after the reaper (Entity_Phase2) dies, or gb.ShowCredits.
+	{
+		GBCredits::FState& CS = GBCredits::State();
+		if (CS.Hud.Get() != this)
+		{
+			const bool bForce = CS.bForce;
+			CS = GBCredits::FState();
+			CS.Hud = this;
+			CS.bForce = bForce;
+		}
+		if (CS.bForce)
+		{
+			CS.bForce = false;
+			CS.bFinished = false;
+			CS.StartTime = Now;
+		}
+		if (CS.StartTime < 0.0 && !CS.bFinished)
+		{
+			if (CS.Boss.IsValid())
+			{
+				if (CS.Boss->IsDead())
+				{
+					CS.StartTime = Now + 3.5;
+				}
+			}
+			else if (CS.Boss.IsStale())
+			{
+				CS.StartTime = Now + 3.5;
+			}
+			else if (Now >= CS.NextScan && GetWorld())
+			{
+				CS.NextScan = Now + 0.5;
+				for (TActorIterator<AGBEnemyCharacter> It(GetWorld()); It; ++It)
+				{
+					if (*It && !It->IsDead() && It->GetEnemyId() == FName(TEXT("Entity_Phase2")))
+					{
+						CS.Boss = *It;
+						break;
+					}
+				}
+			}
+		}
+		if (CS.StartTime >= 0.0 && Now >= CS.StartTime && !CS.bFinished)
+		{
+			const float T = (float)(Now - CS.StartTime);
+			APlayerController* PC = GetOwningPlayerController();
+			if (PC && Player && Player->InputEnabled())
+			{
+				Player->DisableInput(PC);
+			}
+			const float W = Canvas->ClipX;
+			const float H = Canvas->ClipY;
+			const int32 K = FMath::Max(1, FMath::RoundToInt(H / 1080.f));
+			FillRect(0.f, 0.f, W, H, FLinearColor(0.01f, 0.01f, 0.02f, FMath::Clamp(T / 1.5f, 0.f, 1.f) * 0.96f));
+
+			int32 Count = 0;
+			const GBCredits::FLine* L = GBCredits::Lines(Count);
+			float Total = 0.f;
+			float LastTop = 0.f;
+			for (int32 I = 0; I < Count; ++I)
+			{
+				const float LineH = L[I].Kind == 4 ? 40.f * K : (7.f * L[I].Scale * K + (L[I].Kind == 1 ? 26.f : 16.f) * K);
+				if (I == Count - 1)
+				{
+					LastTop = Total;
+				}
+				Total += LineH;
+			}
+			const float Speed = 55.f * K;
+			const float ScrollT = FMath::Max(0.f, T - 1.5f);
+			// The last line stops at the screen's middle.
+			const float StopOffset = H * 0.5f - LastTop - 3.5f * 5.f * K;
+			const float Offset = FMath::Max(H - ScrollT * Speed, StopOffset);
+			const bool bAtEnd = Offset <= StopOffset;
+			float Y = Offset;
+			for (int32 I = 0; I < Count; ++I)
+			{
+				const GBCredits::FLine& Line = L[I];
+				if (Line.Kind == 4)
+				{
+					Y += 40.f * K;
+					continue;
+				}
+				const float GlyphH = 7.f * Line.Scale * K;
+				if (Y > -GlyphH && Y < H)
+				{
+					FPixelTextStyle Style;
+					Style.Scale = Line.Scale * K;
+					Style.Color = Line.Kind == 0 ? FLinearColor(1.f, 0.82f, 0.35f) : Line.Kind == 1 ? FLinearColor(0.55f, 0.85f, 1.f) : Line.Kind == 2 ? FLinearColor::White : FLinearColor(0.75f, 0.75f, 0.8f);
+					Style.Shadow = FLinearColor(0.f, 0.f, 0.f, 0.8f);
+					DrawPixelText(FString(Line.Text), W * 0.5f, Y, Style, 0.5f);
+				}
+				Y += GlyphH + (Line.Kind == 1 ? 26.f : 16.f) * K;
+			}
+
+			const float EndAt = (H - StopOffset) / Speed + 1.5f;
+			bool bLeave = T > EndAt + 6.f;
+			if (T > 5.f && PC)
+			{
+				FPixelTextStyle Hint;
+				Hint.Scale = 2 * K;
+				Hint.Color = FLinearColor(0.6f, 0.6f, 0.65f, bAtEnd ? 1.f : 0.6f);
+				DrawPixelText(TEXT("Press Space or Enter to return to the main menu"), W * 0.5f, H - 40.f * K, Hint, 0.5f);
+				bLeave = bLeave || PC->WasInputKeyJustPressed(EKeys::SpaceBar) || PC->WasInputKeyJustPressed(EKeys::Enter)
+					|| PC->WasInputKeyJustPressed(EKeys::LeftMouseButton) || PC->WasInputKeyJustPressed(EKeys::Gamepad_FaceButton_Bottom);
+			}
+			if (bLeave)
+			{
+				CS.bFinished = true;
+				CS.StartTime = -1.0;
+				if (PC && Player)
+				{
+					Player->EnableInput(PC);
+				}
+				if (AGBPlayerController* GBPC = GetGBController())
+				{
+					GBPC->SetMenu(EGBMenu::MainMenu);
+				}
+			}
+		}
 	}
 }
 
