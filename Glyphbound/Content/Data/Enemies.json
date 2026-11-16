@@ -1996,6 +1996,12 @@
 				"TB_FanCount": 5,
 				"TB_FanDeg": 40,
 				"TB_FanCooldown": 4,
+				"TB_Laser": 1,
+				"TB_LaserThickness": 10,
+				"TB_LaserGlow": 12,
+				"TB_LaserLength": 6000,
+				"TB_LaserLight": 6000,
+				"TB_LaserLightCone": 2.5,
 				"MaxHealth": 2000,
 				"MoveSpeed": 700,
 				"AttackDamage": 20,
@@ -2026,6 +2032,7 @@
 			"Strings": {
 				"Color": "#3AFFB0",
 				"ProjectileColor": "#3AFFB0",
+				"LaserColor": "#3AFFB0",
 				"LightningStatusReaction": "Interrupt",
 				"IceStatusReaction": "Slow"
 			},

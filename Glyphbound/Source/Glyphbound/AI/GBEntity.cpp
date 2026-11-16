@@ -169,7 +169,16 @@ AGBEntity::AGBEntity()
 // bolt. File-local state: no header change.
 namespace GBTentacleBoss
 {
-	struct FState { bool bChasing = true; float ModeLeft = 0.f; float FanCooldown = 0.f; };
+	struct FState
+	{
+		bool bChasing = true;
+		float ModeLeft = 0.f;
+		float FanCooldown = 0.f;
+		// the eye laser (owner): a solid glowing rod straight out of the eye to the first thing it meets, and a narrow
+		// spot light along it that lights the hall's smoke
+		TWeakObjectPtr<UStaticMeshComponent> Beam;
+		TWeakObjectPtr<USpotLightComponent> BeamLight;
+	};
 	static TMap<TWeakObjectPtr<const AGBEntity>, FState> States;
 }
 
@@ -1141,6 +1150,61 @@ void AGBEntity::Tick(float DeltaSeconds)
 			Intent.WorldTarget = Goal ? GetGoalHeadLocation(Goal) : GetActorLocation();
 			Intent.Windup = bAlive ? WindupAlpha : 0.f;
 			TentacleRig->SetIntent(Intent);
+		}
+	}
+
+	if (bVisualBuilt && StatOr(TEXT("TB_Laser"), 0.f) > 0.5f)
+	{
+		GBTentacleBoss::FState& Boss = GBTentacleBoss::States.FindOrAdd(this);
+		const FGBEnemyDefinition* LaserDef = GetDefinition();
+		const FLinearColor LaserColor = UGBDataSubsystem::ParseColor(LaserDef ? LaserDef->Strings.FindRef(TEXT("LaserColor")) : FString(),
+			FLinearColor(0.04f, 1.f, 0.43f));
+		if (!Boss.Beam.IsValid())
+		{
+			UStaticMeshComponent* Beam = NewObject<UStaticMeshComponent>(this, TEXT("TentacleBossLaser"));
+			Beam->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Beam->SetCastShadow(false);
+			Beam->SetCanEverAffectNavigation(false);
+			Beam->RegisterComponent();
+			GBPlaceholder::SetupShape(Beam, EGBShape::Cylinder, FVector(10.f, 10.f, 100.f), LaserColor * StatOr(TEXT("TB_LaserGlow"), 12.f), /*bGlow*/ true);
+			Boss.Beam = Beam;
+			USpotLightComponent* Light = NewObject<USpotLightComponent>(this, TEXT("TentacleBossLaserLight"));
+			Light->SetMobility(EComponentMobility::Movable);
+			Light->CastShadows = false;
+			Light->IntensityUnits = ELightUnits::Candelas;
+			Light->RegisterComponent();
+			Light->SetLightColor(LaserColor);
+			Light->SetInnerConeAngle(0.5f);
+			Light->SetOuterConeAngle(StatOr(TEXT("TB_LaserLightCone"), 2.5f));
+			Light->SetIntensity(StatOr(TEXT("TB_LaserLight"), 6000.f));
+			Boss.BeamLight = Light;
+		}
+		UStaticMeshComponent* Beam = Boss.Beam.Get();
+		USpotLightComponent* Light = Boss.BeamLight.Get();
+		const bool bOn = !IsDead() && !bDying && EntityEye;
+		Beam->SetVisibility(bOn);
+		if (Light)
+		{
+			Light->SetVisibility(bOn);
+		}
+		if (bOn)
+		{
+			// straight out of the eye, along where the eye looks; it ends where it meets the first wall, floor or body
+			const FVector Origin = GetEyeCentreWorld();
+			const FVector Dir = EntityEye->GetForwardVector();
+			const float MaxLength = StatOr(TEXT("TB_LaserLength"), 6000.f);
+			FHitResult Hit;
+			FCollisionQueryParams Params(SCENE_QUERY_STAT(TentacleLaser), false, this);
+			const float Length = GetWorld()->LineTraceSingleByChannel(Hit, Origin, Origin + Dir * MaxLength, ECC_Visibility, Params)
+				? FMath::Max(Hit.Distance, 1.f) : MaxLength;
+			const float Thick = StatOr(TEXT("TB_LaserThickness"), 10.f);
+			Beam->SetWorldLocationAndRotation(Origin + Dir * (Length * 0.5f), FRotationMatrix::MakeFromZ(Dir).Rotator());
+			Beam->SetWorldScale3D(FVector(Thick / 100.f, Thick / 100.f, Length / 100.f));
+			if (Light)
+			{
+				Light->SetWorldLocationAndRotation(Origin, Dir.Rotation());
+				Light->SetAttenuationRadius(Length + 100.f);
+			}
 		}
 	}
 
