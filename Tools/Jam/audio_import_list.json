@@ -826,6 +826,20 @@
   "source": "MP3:tRgp4nnhYncK4Oyf6CwmB_music_generated.mp3"
  },
  {
+  "asset": "/Game/Glyphbound/Audio/Music/music_zone_kings_hall_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_zone_kings_hall_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "ABS:Incoming/ASSETS/20261116-011058_Musica_Ambiente_Soundsnap/dark.wav"
+ },
+ {
+  "asset": "/Game/Glyphbound/Audio/Music/music_zone_side_hall_1",
+  "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_zone_side_hall_1.wav",
+  "loop": true,
+  "music": true,
+  "source": "ABS:Incoming/ASSETS/20261116-011058_Musica_Ambiente_Soundsnap/musica de ambiente.wav"
+ },
+ {
   "asset": "/Game/Glyphbound/Audio/Music/music_entity_1",
   "file": "C:/GameJam/Glyphbound/SourceArt/Audio/Music/music_entity_1.wav",
   "loop": true,

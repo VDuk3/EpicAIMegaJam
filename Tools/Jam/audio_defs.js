@@ -88,6 +88,8 @@ M('music_future', SC + 'ambientación/musica de tension.wav', 0.45, { abs: false
 M('music_boss_past', 'MP3:24kp9fr4263ke1IrsJp6-_music_generated.mp3', 0.6);
 M('music_boss_future', 'MP3:oWHG97rLWY-D5i7IN3K9M_music_generated.mp3', 0.6);
 M('music_orc_zone', 'MP3:tRgp4nnhYncK4Oyf6CwmB_music_generated.mp3', 0.5);
+M('music_zone_kings_hall', 'ABS:Incoming/ASSETS/20261116-011058_Musica_Ambiente_Soundsnap/dark.wav', 0.55);
+M('music_zone_side_hall', 'ABS:Incoming/ASSETS/20261116-011058_Musica_Ambiente_Soundsnap/musica de ambiente.wav', 0.55);
 M('music_entity', 'MP3:Tentacle_Boss.mp3', 0.65);
 
 // ---- conversion ----
@@ -116,7 +118,10 @@ for (const [key, d] of Object.entries(D)) {
 // Which music plays where (map name substring -> key); boss tracks are chosen by GBAudio from the fight.
 json.Maps = { PastCastle: { Music: 'music_castle' }, FutureBase: { Music: 'music_future', Ambience: 'amb_future' }, EntityArena: { Music: 'music_entity', Ambience: 'amb_arena' } };
 // Zones: a box of a map with its own music. The orc zone of FutureBase is the sub-boss hall (BOSS in Build-FutureBase.py, x 1980..4780, y 7600..11200; owner confirmed by its ceiling lights SM_Lighting_Ceiling_2/3), 2026-11-15.
-json.Zones = [{ Map: 'FutureBase', Music: 'music_orc_zone', Min: [1980, 7600, -300], Max: [4780, 11200, 1400] }];
+json.Zones = [{ Map: 'FutureBase', Music: 'music_orc_zone', Min: [1980, 7600, -300], Max: [4780, 11200, 1400] },
+  // PastCastle ambience songs (2026-11-15): the King's Hall (Zone_Fire, x 7500..10500, y -4900..-3100) and the Side Hall (Zone_Ice, x 7900..10700, y 1500..4700), keep floor only (z 0..1000: not the crypt below, not the Top Level)
+  { Map: 'PastCastle', Music: 'music_zone_kings_hall', Min: [7500, -4900, 0], Max: [10500, -3100, 1000] },
+  { Map: 'PastCastle', Music: 'music_zone_side_hall', Min: [7900, 1500, 0], Max: [10700, 4700, 1000] }];
 fs.writeFileSync(path.join(ROOT, 'Glyphbound', 'Content', 'Data', 'Audio.json'), JSON.stringify(json, null, '\t'));
 fs.writeFileSync(path.join(__dirname, 'audio_import_list.json'), JSON.stringify(list, null, 1));
 console.log('keys', Object.keys(D).length, 'files', list.length);

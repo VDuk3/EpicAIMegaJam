@@ -800,6 +800,30 @@
 			"Loop": true,
 			"Music": true
 		},
+		"music_zone_kings_hall": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_zone_kings_hall_1.music_zone_kings_hall_1"
+			],
+			"Volume": 0.55,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
+		"music_zone_side_hall": {
+			"Files": [
+				"/Game/Glyphbound/Audio/Music/music_zone_side_hall_1.music_zone_side_hall_1"
+			],
+			"Volume": 0.55,
+			"PitchMin": 1,
+			"PitchMax": 1,
+			"Range": 0,
+			"Cooldown": 0,
+			"Loop": true,
+			"Music": true
+		},
 		"music_entity": {
 			"Files": [
 				"/Game/Glyphbound/Audio/Music/music_entity_1.music_entity_1"
@@ -839,6 +863,34 @@
 				4780,
 				11200,
 				1400
+			]
+		},
+		{
+			"Map": "PastCastle",
+			"Music": "music_zone_kings_hall",
+			"Min": [
+				7500,
+				-4900,
+				0
+			],
+			"Max": [
+				10500,
+				-3100,
+				1000
+			]
+		},
+		{
+			"Map": "PastCastle",
+			"Music": "music_zone_side_hall",
+			"Min": [
+				7900,
+				1500,
+				0
+			],
+			"Max": [
+				10700,
+				4700,
+				1000
 			]
 		}
 	]

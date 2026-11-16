@@ -35,3 +35,12 @@ Soundsnap (sound effects library), Guitar Pro 6 and Audacity (main theme), Eleve
 No PIE was run (rule: a human tests). Which of the four generated tracks suits which boss was assigned by file name
 only (nobody listened): the Tentacle track plays in EntityArena; the other three are guesses and can be swapped in
 `audio_defs.js`.
+
+## Later the same day: zone music
+- The spare generated track plays only in FutureBase's sub-boss hall (the orc zone); the box is in `Audio.json` `Zones`.
+  Zone music fades in about 2 s after entering and out on leaving; combat zones use the same delay.
+- Two ambience songs from **Soundsnap** (source confirmed by the team member; no per-file IDs or license files; license to
+  confirm by the owner), delivered in `Incoming/ASSETS/20261116-011058_Musica_Ambiente_Soundsnap` (SHA-256 in its note):
+  `dark.wav` plays in PastCastle's King's Hall (x 7500..10500, y -4900..-3100) and `musica de ambiente.wav` in the Side
+  Hall (x 7900..10700, y 1500..4700), keep floor only (z 0..1000), so they do not overlap each other, the crypt below or the
+  Top Level's Valkyrie room.
