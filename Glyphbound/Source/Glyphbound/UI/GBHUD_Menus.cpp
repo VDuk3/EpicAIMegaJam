@@ -376,9 +376,6 @@ void AGBHUD::ActivateMenuHit(const FMenuHit& Hit)
 	case EMenuHitKind::SkillReset:
 		ResetSkills(Player);
 		break;
-	case EMenuHitKind::SkillAddPoint:
-		AddTestSkillPoint(Player);
-		break;
 	case EMenuHitKind::SkillTreeTab:
 		SelectSkillTree(Hit.Index);
 		break;
@@ -2729,7 +2726,7 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 	const TArray<FSkillNodeRef> Nodes = GetSkillNodes();
 	const bool bCyber = Skin == EGBHudSkin::Cyberpunk;
 
-	// Top row: points in the middle, "+1 skill point" (test) on the left, reset on the right.
+	// Top row: points in the middle, reset on the right. (The "+1 skill point" test button is gone for release, owner 2026-11-15.)
 	{
 		const int32 Points = SkillTree->GetPoints();
 		const FString PointsText = FString::Printf(TEXT("%d"), Points);
@@ -2743,16 +2740,11 @@ void AGBHUD::DrawSkillTrees(AGBPlayerCharacter* Player, EGBHudSkin Skin, float X
 		UiText(Skin, EGBTextSize::Heading, Points > 0 ? EGBTextTone::Warn : EGBTextTone::Accent, PointsText, CX + GroupW * 0.5f - NumSize.X, RowY + (BtnH - NumSize.Y) * 0.5f);
 		const int32 Spent = SkillTree->GetPointsSpent();
 		const FString ResetText = FString::Printf(TEXT("Reset skills (+%d)"), Spent);
-		const FString AddText(TEXT("+1 skill point"));
 		const float ResetW = UiMeasure(Skin, EGBTextSize::Small, ResetText).X + (bCyber ? 40.f * S : 14.f * P);
-		const float AddW = UiMeasure(Skin, EGBTextSize::Small, AddText).X + (bCyber ? 40.f * S : 14.f * P);
 		const float Margin = bCyber ? 40.f * S : 12.f * P;
 		const float ResetX = CX + GroupW * 0.5f + Margin;
-		const float AddX = CX - GroupW * 0.5f - Margin - AddW;
 		MenuButton(Skin, ResetX, RowY, ResetW, BtnH, ResetText, Spent > 0, IsMouseOver(ResetX, RowY, ResetW, BtnH));
 		AddMenuHit(EMenuHitKind::SkillReset, ResetX, RowY, ResetW, BtnH);
-		MenuButton(Skin, AddX, RowY, AddW, BtnH, AddText, true, IsMouseOver(AddX, RowY, AddW, BtnH));
-		AddMenuHit(EMenuHitKind::SkillAddPoint, AddX, RowY, AddW, BtnH);
 		Y += BtnH + (bCyber ? 18.f * S : 6.f * P);
 		H -= BtnH + (bCyber ? 18.f * S : 6.f * P);
 	}
