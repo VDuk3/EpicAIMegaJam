@@ -1049,6 +1049,7 @@
 			"SkillPoints": 6,
 			"Rewards": [],
 			"Prespawn": true,
+			"ClearedFlag": "PastValkyrieDefeated",
 			"Comment": "Provisional (overnight): the past Valkyrie in the Top Level's highest room (+26 m), alone: the castle's boss (leg C3)."
 		},
 		{
