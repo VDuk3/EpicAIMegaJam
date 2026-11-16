@@ -40,6 +40,19 @@ def main():
     if pixel:
         l = pixel[0].get_actor_location()
         dx, dy = l.x, l.y
+    probes = []
+    for name, (x, y, z) in (('door', DOOR), ('dungeon', (dx, dy, dz)), ('arrival', (dx, ARRIVE_DUNGEON[1], ARRIVE_DUNGEON[2]))):
+        hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z + 150), unreal.Vector(x, y, z - 200),
+                                                     unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, False, [], unreal.DrawDebugTrace.NONE, True)
+        floor = hit.to_tuple()[4].z if hit else None
+        side = []
+        for sy in (1, -1):
+            h2 = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, z + 120), unreal.Vector(x, y + sy * 800, z + 120),
+                                                        unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, False, [], unreal.DrawDebugTrace.NONE, True)
+            side.append(round(h2.to_tuple()[4].y - y) if h2 else None)
+        probes.append('%s floor=%s sides=%s' % (name, floor, side))
+        if floor is None or abs(floor - z) > 60:
+            return 'ABORT, nothing saved: %s' % probes
     made = []
 
     def tagged(actor, label, extra=()):
@@ -59,7 +72,7 @@ def main():
     tagged(arr, 'Arrival_Dungeon', ['GBArrival=Dungeon'])
 
     saved = les.save_current_level()
-    return 'made %s (pixel portal found: %s at %.0f,%.0f), saved=%s' % (made, bool(pixel), dx, dy, saved)
+    return 'made %s (pixel portal found: %s at %.0f,%.0f), saved=%s, probes %s' % (made, bool(pixel), dx, dy, saved, probes)
 
 
 main()

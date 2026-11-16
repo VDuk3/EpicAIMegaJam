@@ -1,6 +1,6 @@
 # portals_future.py - 2026-11-15: the portals of FutureBase (route: Design/2026-11-15_PortalRoute.md).
 #   Portal_ToPast   in the control room, behind the seal: opens PastCastle, arrival at the dungeon portal
-#                   (GBArrival=Dungeon). Usable once GotFirstGun is set (the first leg of the future is played first).
+#                   (GBArrival=Dungeon). Always usable (no gate: a locked portal could soft-lock the route).
 #   Arrival_Base    where the castle's dungeon portal arrives (GBArrival=Base), in front of Portal_ToPast.
 #   FinalPortal     AGBFinalPortal in the control room's south side; appears with FinalPortalOpen (both quest items
 #                   combined) and opens Game.json EntityMapPath (EntityArena).
@@ -37,6 +37,18 @@ def main():
             eas.destroy_actor(a)
 
     px, py, pz = PORTAL
+    # probes: floor under each spot and a capsule's room at the arrival (the hand-over teleports without a sweep)
+    probes = []
+    for name, (x, y) in (('portal', (px, py)), ('arrival', (px + 280.0, py)), ('final', FINAL[:2])):
+        hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(x, y, 150), unreal.Vector(x, y, -200),
+                                                     unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, False, [], unreal.DrawDebugTrace.NONE, True)
+        floor = hit.to_tuple()[4].z if hit else None
+        blocked = unreal.SystemLibrary.capsule_overlap_actors(world, unreal.Vector(x, y, 100), 45.0, 95.0, [unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY1, unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY2], unreal.Actor, [])
+        blocked = (blocked[-1] if isinstance(blocked, tuple) else blocked) or []
+        blocked = [a.get_actor_label() for a in blocked if not a.actor_has_tag(TAG)]
+        probes.append('%s floor=%s blocked=%s' % (name, floor, blocked))
+        if floor is None or abs(floor - pz) > 30:
+            return 'ABORT, nothing saved: %s' % probes
     made = []
 
     def tagged(actor, label, extra=()):
@@ -48,7 +60,7 @@ def main():
 
     # logic
     portal = eas.spawn_actor_from_class(unreal.GBPortal, unreal.Vector(px + 40.0, py, pz), unreal.Rotator(0, 0, 0))
-    tagged(portal, 'Portal_ToPast', ['GBMap=/Game/Glyphbound/Maps/PastCastle', 'GBArrive=Dungeon', 'GBRequires=GotFirstGun', 'GBNoFrame'])
+    tagged(portal, 'Portal_ToPast', ['GBMap=/Game/Glyphbound/Maps/PastCastle', 'GBArrive=Dungeon', 'GBNoFrame'])
     # look: frame
     frame = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(px, py, pz), unreal.Rotator(0, 0, 0))
     frame.static_mesh_component.set_static_mesh(unreal.load_asset('/Game/SciFiWorld/Modules/Meshes/SM_MGate01-500x350-1_GateFrame'))
@@ -62,6 +74,15 @@ def main():
     smc.set_editor_property('cast_shadow', False)
     surf.set_actor_scale3d(unreal.Vector(1.0, 2.15, 1.65))
     tagged(surf, 'Portal_ToPast_Surface')
+    # its background disc just behind, so the refractive swirl reads against something
+    bg = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(px - 4.0, py, pz + 170.0), unreal.Rotator(0, 0, 0))
+    bsm = bg.static_mesh_component
+    bsm.set_static_mesh(unreal.load_asset('/Game/PortalFX/Meshes/SM_PortalSurface_BG'))
+    bsm.set_material(0, unreal.load_asset('/Game/PortalFX/Materials/MI_PortalSurface_BG_2'))
+    bsm.set_collision_profile_name('NoCollision')
+    bsm.set_editor_property('cast_shadow', False)
+    bg.set_actor_scale3d(unreal.Vector(1.0, 2.15, 1.65))
+    tagged(bg, 'Portal_ToPast_SurfaceBG')
     light = eas.spawn_actor_from_class(unreal.PointLight, unreal.Vector(px + 120.0, py, pz + 180.0), unreal.Rotator(0, 0, 0))
     lc = light.point_light_component
     lc.set_intensity(6.0)
@@ -78,7 +99,7 @@ def main():
     tagged(final, 'FinalPortal')
 
     saved = les.save_current_level()
-    return 'made %s, saved=%s' % (made, saved)
+    return 'made %s, saved=%s, probes %s' % (made, saved, probes)
 
 
 main()

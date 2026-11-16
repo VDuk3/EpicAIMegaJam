@@ -285,6 +285,8 @@ AGBPortal::AGBPortal()
 void AGBPortal::BeginPlay()
 {
 	Super::BeginPlay();
+	// A new map (or a new PIE run after one stopped mid-caption): no portal is in use.
+	GBPortalLocal::bPortalBusy = false;
 
 	const bool bNoFrame = ActorHasTag(FName(TEXT("GBNoFrame")));
 	if (bNoFrame)
